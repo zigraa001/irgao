@@ -1,0 +1,9 @@
+{
+  "name": "irgao",
+  "version": "1.0.0",
+  "description": "Hello World Node.js web app",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
