@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Contact Irago - Get in touch with our team for emergency dispatch, operator partnerships, or general inquiries.">
-  <title>Contact Us - Irago Air Taxi Platform</title>
+  <meta name="description" content="Contact IraGo - Get in touch with our team for demo requests, partnerships, or general inquiries.">
+  <title>Contact Us - IraGo Air Mobility</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +19,12 @@
   <link rel="stylesheet" href="css/responsive.css">
 
   <style>
+    body {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+    }
+
     .contact-hero {
       padding-top: calc(var(--nav-height) + var(--space-20));
       padding-bottom: var(--space-20);
@@ -27,6 +33,7 @@
       min-height: 80vh;
       display: flex;
       align-items: center;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-deep) 100%);
     }
 
     .form-group {
@@ -39,15 +46,15 @@
     .form-label {
       font-size: var(--text-sm);
       font-weight: 500;
-      color: var(--text-muted);
+      color: rgba(255,255,255,0.5);
     }
 
     .form-control {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius-sm);
       padding: var(--space-3) var(--space-4);
-      color: var(--text-primary);
+      color: #fff;
       font-family: var(--font-body);
       font-size: var(--text-base);
       transition: all var(--transition-base);
@@ -55,13 +62,13 @@
     }
 
     .form-control:focus {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.25);
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.15);
     }
 
     .form-control::placeholder {
-      color: var(--text-hint);
+      color: rgba(255,255,255,0.3);
     }
 
     textarea.form-control {
@@ -83,21 +90,24 @@
 ═══════════════════════════════════════════════ -->
 <nav class="navbar" id="navbar">
   <div class="container navbar-inner">
-
-    <a href="/" class="navbar-logo" aria-label="Irago Home">
-      <img src="assets/images/image-removebg-preview.png" alt="Irago Logo" class="brand-logo">
+    <a href="/" class="navbar-logo" aria-label="IraGo Home">
+      <img src="assets/images/image-removebg-preview.png" alt="IraGo Logo" class="brand-logo">
     </a>
 
     <ul class="navbar-links">
-      <li><a href="/#air-taxi"     class="nav-link" data-color="sky">Air Taxi</a></li>
-      <li><a href="/#golden-hour" class="nav-link" data-color="red">Golden Hour</a></li>
-      <li><a href="/#air-shuttle"  class="nav-link" data-color="gold">Air Shuttle</a></li>
-      <li><a href="/#operators"    class="nav-link" data-color="white">For Operators</a></li>
-      <li><a href="vision.html"    class="nav-link" data-color="violet">Vision</a></li>
+      <li><a href="/" class="nav-link">Home</a></li>
+      <li><a href="/#about" class="nav-link">About</a></li>
+      <li><a href="/#technology" class="nav-link">Technology</a></li>
+      <li><a href="/#use-cases" class="nav-link">Use Cases</a></li>
+      <li><a href="vision.html" class="nav-link">Vision</a></li>
+      <li><a href="team.html" class="nav-link">Team</a></li>
     </ul>
 
     <div class="navbar-actions">
-      <a href="https://app.irago.in" class="btn btn-primary navbar-cta">Try Irago →</a>
+      <a href="contact.html" class="nav-link nav-contact-link" style="color: #fff !important">Contact</a>
+      <a href="contact.html" class="btn-nav-cta">Request a Demo
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+      </a>
     </div>
 
     <button class="navbar-toggle" id="navToggle" aria-label="Menu">
@@ -106,24 +116,26 @@
   </div>
 
   <div class="navbar-drawer" id="navDrawer">
-    <a href="/#air-taxi"     class="nav-link" data-color="sky">Air Taxi</a>
-    <a href="/#golden-hour" class="nav-link" data-color="red">Golden Hour</a>
-    <a href="/#air-shuttle"  class="nav-link" data-color="gold">Air Shuttle</a>
-    <a href="/#operators"    class="nav-link" data-color="white">For Operators</a>
-    <a href="vision.html"    class="nav-link" data-color="violet">Vision</a>
-    <a href="https://app.irago.in" class="btn btn-primary" style="margin-top:16px;width:100%;justify-content:center">Try Irago →</a>
+    <div class="drawer-nav-group">
+      <div class="drawer-label">Navigation</div>
+      <a href="/" class="drawer-link">Home</a>
+      <a href="/#about" class="drawer-link">About</a>
+      <a href="vision.html" class="drawer-link">Vision</a>
+      <a href="team.html" class="drawer-link">Team</a>
+    </div>
+    <a href="contact.html" class="btn btn-primary drawer-cta">Request a Demo →</a>
   </div>
 </nav>
 
 <!-- ═══════════════════════════════════════════════
      CONTACT HERO & FORM
 ═══════════════════════════════════════════════ -->
-<section class="contact-hero" id="contact-hero" style="background:transparent">
+<section class="contact-hero" id="contact-hero">
   <div class="container" style="position:relative;z-index:1">
     
     <div style="text-align:center;margin-bottom:var(--space-12)">
-      <span class="section-label red">Contact Us</span>
-      <h1 class="hero-h1" style="font-size:clamp(40px, 5vw, 64px);margin-bottom:var(--space-4);color:#FAFAFA">We're here to help.</h1>
+      <span class="section-label" style="color: var(--accent-light); display: block; text-align: center">Contact Us</span>
+      <h1 style="font-size:clamp(40px, 5vw, 64px);font-weight:800;letter-spacing:-0.04em;margin-bottom:var(--space-4);color:#fff">We're here to help.</h1>
       <p style="font-size:var(--text-lg);color:var(--text-muted);max-width:600px;margin:0 auto">
         Whether you have an emergency dispatch request, want to become an operator partner, or just have a general inquiry.
       </p>
@@ -143,7 +155,7 @@
           </div>
           <div>
             <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">Golden Hour Emergency</div>
-            <div style="font-size:var(--text-nav);color:var(--emergency)">1800-XXX-XXXX</div>
+            <div style="font-size:var(--text-nav);color:var(--emergency)">Contact number: </div>
             <div style="font-size:var(--text-sm);color:var(--text-muted);margin-top:var(--space-1)">24/7 dedicated dispatch line.</div>
           </div>
         </div>
@@ -258,15 +270,6 @@
           </a>
           <p class="footer-tagline">Sky is not the limit.<br>India's on-demand air mobility platform.</p>
           <div class="footer-socials">
-            <a href="#" class="footer-social-icon" aria-label="Twitter">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="#" class="footer-social-icon" aria-label="LinkedIn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg>
-            </a>
-            <a href="#" class="footer-social-icon" aria-label="Instagram">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-            </a>
           </div>
         </div>
         <div>
@@ -294,7 +297,7 @@
             </div>
             <div class="footer-contact-item emergency">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-              1800-XXX-XXXX
+              Contact number: 
             </div>
             <div class="footer-contact-item">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
@@ -316,8 +319,6 @@
           Platform Online
         </span>
         <div class="footer-bottom-links">
-          <a href="#" class="footer-bottom-link">Privacy Policy</a>
-          <a href="#" class="footer-bottom-link">Terms of Service</a>
         </div>
       </div>
     </div>

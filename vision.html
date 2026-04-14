@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Irago Vision - Why we're building India's first air mobility platform. Our mission, technology, and roadmap.">
-  <title>Vision - Irago Air Taxi Platform</title>
+  <meta name="description" content="IraGo Vision - Building Bharat's AI-powered air mobility network for faster, smarter, and more accessible journeys.">
+  <title>Vision - IraGo Air Mobility</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,60 +14,53 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
-
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/responsive.css">
 
   <style>
-    /* Vision page extras */
-    .vision-hero-text {
-      font-family: var(--font-display);
-      font-size: clamp(36px, 6vw, 72px);
-      font-weight: 800;
-      line-height: 1.12;
-      letter-spacing: -0.04em;
+    body {
+      background: var(--bg-main);
       color: var(--text-primary);
-      text-align: center;
-      max-width: 900px;
-      margin: 0 auto;
+      font-family: var(--font-body);
     }
 
-    .vision-hero-sub {
-      font-size: clamp(16px, 2vw, 20px);
-      color: var(--text-body);
-      text-align: center;
-      max-width: 560px;
-      margin: var(--space-6) auto 0;
-      line-height: 1.75;
-    }
-
-    .vision-stat-number {
-      font-family: var(--font-display);
-      font-size: clamp(var(--text-4xl), 5vw, var(--text-hero));
-      font-weight: 800;
-      color: var(--sky);
-      line-height: 1;
-    }
-
-    .pillar-card {
-      padding: var(--space-8);
-      border-top: 2px solid rgba(255, 255, 255, 0.15);
-    }
-
-    .tech-tile {
-      padding: var(--space-8);
+    .vision-tagline-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      box-shadow: var(--shadow-card);
       display: flex;
-      flex-direction: column;
+      align-items: flex-start;
       gap: var(--space-4);
     }
 
-    .roadmap-year {
-      font-family: var(--font-display);
-      font-size: var(--text-2xl);
-      font-weight: 800;
-      color: var(--sky);
-      line-height: 1;
-      margin-bottom: var(--space-2);
+    .vision-tagline-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+    }
+
+    .vision-cta-section {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-deep) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .vision-cta-section::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(232, 114, 42, 0.06) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -78,22 +71,24 @@
 ═══════════════════════════════════════════════ -->
 <nav class="navbar" id="navbar">
   <div class="container navbar-inner">
-
-    <a href="/" class="navbar-logo" aria-label="Irago Home">
-      <img src="assets/images/image-removebg-preview.png" alt="Irago Logo" class="brand-logo">
+    <a href="/" class="navbar-logo" aria-label="IraGo Home">
+      <img src="assets/images/image-removebg-preview.png" alt="IraGo Logo" class="brand-logo">
     </a>
 
     <ul class="navbar-links">
-      <li><a href="/#air-taxi"     class="nav-link" data-color="sky">Air Taxi</a></li>
-      <li><a href="/#golden-hour" class="nav-link" data-color="red">Golden Hour</a></li>
-      <li><a href="/#air-shuttle"  class="nav-link" data-color="gold">Air Shuttle</a></li>
-      <li><a href="/#operators"    class="nav-link" data-color="white">For Operators</a></li>
-      <li><a href="vision.html"    class="nav-link" data-color="violet" style="color:var(--text-primary)">Vision</a></li>
+      <li><a href="/" class="nav-link">Home</a></li>
+      <li><a href="/#about" class="nav-link">About</a></li>
+      <li><a href="/#technology" class="nav-link">Technology</a></li>
+      <li><a href="/#use-cases" class="nav-link">Use Cases</a></li>
+      <li><a href="vision.html" class="nav-link active">Vision</a></li>
+      <li><a href="team.html" class="nav-link">Team</a></li>
     </ul>
 
     <div class="navbar-actions">
-      <a href="contact.html" class="nav-link nav-link-contact" data-color="white">Contact</a>
-      <a href="https://app.irago.in" class="btn btn-primary navbar-cta">Try Irago →</a>
+      <a href="contact.html" class="nav-link nav-contact-link">Contact</a>
+      <a href="contact.html" class="btn-nav-cta">Request a Demo
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+      </a>
     </div>
 
     <button class="navbar-toggle" id="navToggle" aria-label="Menu">
@@ -102,126 +97,85 @@
   </div>
 
   <div class="navbar-drawer" id="navDrawer">
-    <a href="/#air-taxi"     class="nav-link" data-color="sky">Air Taxi</a>
-    <a href="/#golden-hour" class="nav-link" data-color="red">Golden Hour</a>
-    <a href="/#air-shuttle"  class="nav-link" data-color="gold">Air Shuttle</a>
-    <a href="/#operators"    class="nav-link" data-color="white">For Operators</a>
-    <a href="vision.html"    class="nav-link" data-color="violet">Vision</a>
-    <a href="contact.html"   class="nav-link" data-color="white">Contact</a>
-    <a href="https://app.irago.in" class="btn btn-primary" style="margin-top:16px;width:100%;justify-content:center">Try Irago →</a>
+    <div class="drawer-nav-group">
+      <div class="drawer-label">Navigation</div>
+      <a href="/" class="drawer-link">Home</a>
+      <a href="/#about" class="drawer-link">About</a>
+      <a href="/#technology" class="drawer-link">Technology</a>
+      <a href="/#use-cases" class="drawer-link">Use Cases</a>
+      <a href="vision.html" class="drawer-link">Vision</a>
+      <a href="team.html" class="drawer-link">Team</a>
+    </div>
+    <div class="drawer-nav-group">
+      <div class="drawer-label">Get in Touch</div>
+      <a href="contact.html" class="drawer-link">Contact Us</a>
+    </div>
+    <a href="contact.html" class="btn btn-primary drawer-cta">Request a Demo →</a>
   </div>
 </nav>
 
 <!-- ═══════════════════════════════════════════════
-     MANIFESTO HERO
+     VISION HERO
 ═══════════════════════════════════════════════ -->
-<section class="manifesto-hero section" id="vision-section" style="background:transparent">
-  <div class="container" style="position:relative;z-index:1">
-    <span class="section-label violet" style="text-align:center;display:block;margin-bottom:var(--space-8)">Our Vision</span>
+<section class="vision-hero" style="padding: var(--space-32) 0 var(--space-20)">
+  <div class="container" style="position: relative; z-index: 1; text-align: center; max-width: 900px">
+    <span class="section-label" style="color: var(--accent-light); display: block; text-align: center; margin-bottom: var(--space-6)">Our Vision</span>
 
-    <div class="vision-hero-text" id="manifesto-text">
-      <span class="manifesto-word">Air</span>
-      <span class="manifesto-word">Taxis.</span><br>
-      <span class="manifesto-word" style="color:var(--text-primary)">Air</span>
-      <span class="manifesto-word" style="color:var(--text-primary)">Ambulances.</span><br>
-      <span class="manifesto-word" style="color:var(--text-muted)">Air</span>
-      <span class="manifesto-word" style="color:var(--text-muted)">Shuttles.</span>
-    </div>
+    <h1 style="font-size: clamp(36px, 6vw, 64px); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; color: #fff; margin-bottom: var(--space-6)" class="reveal">
+      To Build Bharat's AI-Powered<br>Air Mobility Network
+    </h1>
 
-    <p class="vision-hero-sub">
-      India has 1.4 billion people, 18.4% aviation growth, and a sky that barely anyone has dared to monetise. We're changing that - one rooftop at a time.
+    <p style="font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.55); max-width: 640px; margin: 0 auto var(--space-10); line-height: 1.75" class="reveal">
+      Delivering faster, smarter, and more accessible journeys through intelligent routing, dynamic scheduling, and real-time fleet orchestration.
     </p>
 
-    <div style="display:flex;justify-content:center;gap:var(--space-4);margin-top:var(--space-10)">
-      <a href="#why-india" class="btn btn-ghost">Why India, Why Now</a>
-    </div>
+    <a href="#mission" class="btn btn-primary reveal" style="padding: 15px 32px; font-size: 15px">Explore Our Mission</a>
   </div>
 </section>
 
-<div class="section-divider violet"></div>
-
 <!-- ═══════════════════════════════════════════════
-     WHY INDIA, WHY NOW
+     MISSION TAGLINE STACK
 ═══════════════════════════════════════════════ -->
-<section class="section" id="why-india" style="background:var(--bg-subtle)">
-  <div class="container">
-    <div style="text-align:center;margin-bottom:var(--space-16)">
-      <span class="section-label violet">The Problem</span>
-      <h2 class="section-heading" style="margin-bottom:0">Why India. Why Now.</h2>
+<section class="section" id="mission" style="background: var(--bg-main)">
+  <div class="container" style="max-width: 900px">
+    <div class="section-center" style="margin-bottom: var(--space-12)">
+      <span class="section-label accent">Our Purpose</span>
+      <h2 class="section-heading reveal">Mission, Vision &<br>Value Proposition</h2>
     </div>
 
-    <div class="grid-3 stagger">
-
-      <div class="glass-card glow-violet reveal" style="padding:var(--space-8);text-align:center">
-        <div class="vision-stat-number" style="color:var(--text-primary);margin-bottom:var(--space-4)">18.4%</div>
-        <div style="font-size:var(--text-xl);font-weight:700;color:var(--text-primary);margin-bottom:var(--space-3)">Aviation Growth</div>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.7">India's aviation sector is the fastest growing in the world - yet 90% of Indians have never been on a plane.</p>
-      </div>
-
-      <div class="glass-card glow-red reveal" style="padding:var(--space-8);text-align:center">
-        <div class="vision-stat-number" style="color:var(--text-primary);margin-bottom:var(--space-4)">14 min</div>
-        <div style="font-size:var(--text-xl);font-weight:700;color:var(--text-primary);margin-bottom:var(--space-3)">Golden Hour Gap</div>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.7">Average ambulance response time in Tier-2 India. Air dispatch cuts this to under 4 minutes - saving hundreds of lives annually.</p>
-      </div>
-
-      <div class="glass-card glow-sky reveal" style="padding:var(--space-8);text-align:center">
-        <div class="vision-stat-number" style="margin-bottom:var(--space-4)">₹2.1L cr</div>
-        <div style="font-size:var(--text-xl);font-weight:700;color:var(--text-primary);margin-bottom:var(--space-3)">Congestion Cost</div>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.7">Annual economic loss to India from urban traffic congestion alone. The sky is India's unused highway.</p>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<div class="section-divider violet"></div>
-
-<!-- ═══════════════════════════════════════════════
-     THREE PILLARS
-═══════════════════════════════════════════════ -->
-<section class="section" id="pillars">
-  <div class="container">
-    <div style="text-align:center;margin-bottom:var(--space-16)">
-      <span class="section-label violet">What We're Building</span>
-      <h2 class="section-heading" style="margin-bottom:0">Three pillars.<br>One platform.</h2>
-    </div>
-
-    <div class="grid-3 stagger">
-
-      <div class="glass-card glow-sky pillar-card reveal" style="border-top-color:rgba(255,255,255,0.2)">
-        <div class="icon-circle sky" style="margin-bottom:var(--space-5)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
-          </svg>
+    <div style="display: flex; flex-direction: column; gap: var(--space-6)" class="stagger">
+      <!-- Vision -->
+      <div class="vision-tagline-card reveal">
+        <div class="vision-tagline-icon" style="background: var(--accent-glow)">🔭</div>
+        <div>
+          <div style="font-weight: 700; color: var(--accent); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Vision</div>
+          <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
+            To build Bharat's AI-powered air mobility network — delivering faster, smarter, and more accessible journeys.
+          </p>
         </div>
-        <span class="badge badge-sky" style="margin-bottom:var(--space-4)">Pillar I</span>
-        <h3 style="font-size:var(--text-xl);font-weight:700;margin-bottom:var(--space-3)">Air Mobility</h3>
-        <p style="color:var(--text-body);font-size:var(--text-base);line-height:1.7">On-demand air taxis that replace hours of road travel with minutes of flight. Starting with India's top 25 city pairs, scaling to 200.</p>
       </div>
 
-      <div class="glass-card glow-red pillar-card reveal" style="border-top-color:rgba(239,68,68,0.4)">
-        <div class="icon-circle red" style="margin-bottom:var(--space-5)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-          </svg>
+      <!-- Mission -->
+      <div class="vision-tagline-card reveal">
+        <div class="vision-tagline-icon" style="background: rgba(74, 144, 217, 0.1)">🎯</div>
+        <div>
+          <div style="font-weight: 700; color: var(--sky); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Mission</div>
+          <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
+            To orchestrate safe, efficient, and scalable eVTOL operations through intelligent routing, scheduling, and fleet intelligence.
+          </p>
         </div>
-        <span class="badge badge-red" style="margin-bottom:var(--space-4)">Pillar II</span>
-        <h3 style="font-size:var(--text-xl);font-weight:700;margin-bottom:var(--space-3)">Emergency Response</h3>
-        <p style="color:var(--text-body);font-size:var(--text-base);line-height:1.7">A dedicated emergency air dispatch network. Every DGCA-certified air ambulance on Irago is pre-verified, pre-equipped, and on standby.</p>
       </div>
 
-      <div class="glass-card glow-gold pillar-card reveal" style="border-top-color:rgba(255,255,255,0.15)">
-        <div class="icon-circle gold" style="margin-bottom:var(--space-5)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>
-          </svg>
+      <!-- Value Proposition -->
+      <div class="vision-tagline-card reveal">
+        <div class="vision-tagline-icon" style="background: rgba(27, 42, 74, 0.08)">💎</div>
+        <div>
+          <div style="font-weight: 700; color: var(--navy); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Value Proposition</div>
+          <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
+            Saving time, expanding access, and elevating travel through seamless aerial mobility.
+          </p>
         </div>
-        <span class="badge badge-gold" style="margin-bottom:var(--space-4)">Pillar III</span>
-        <h3 style="font-size:var(--text-xl);font-weight:700;margin-bottom:var(--space-3)">Sky Tourism</h3>
-        <p style="color:var(--text-body);font-size:var(--text-base);line-height:1.7">Curated scenic and religious routes that transform pilgrimage and travel. Kedarnath by air. Shirdi in 45 minutes. India seen from above.</p>
       </div>
-
     </div>
   </div>
 </section>
@@ -229,233 +183,218 @@
 <div class="section-divider"></div>
 
 <!-- ═══════════════════════════════════════════════
-     TECHNOLOGY
+     PROBLEM SECTION
 ═══════════════════════════════════════════════ -->
-<section class="section" id="technology" style="background:var(--bg-subtle)">
+<section class="section" style="background: var(--bg-subtle)">
   <div class="container">
-    <div style="text-align:center;margin-bottom:var(--space-16)">
-      <span class="section-label violet">Under the Hood</span>
-      <h2 class="section-heading" style="margin-bottom:0">Built for India's<br>sky infrastructure.</h2>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-5)" class="tech-grid stagger">
-
-      <div class="glass-card tech-tile glow-sky reveal">
-        <div class="icon-circle sky">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round">
-            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-          </svg>
-        </div>
-        <h4 style="font-size:var(--text-base);font-weight:700">AI Scheduler</h4>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.6">Real-time fleet matching engine that optimises dispatch latency under 90 seconds across multiple concurrent requests.</p>
+    <div class="split">
+      <div>
+        <span class="section-label accent">The Problem</span>
+        <h2 class="section-heading reveal">Why India Needs<br>a New Mobility Layer</h2>
+        <p class="section-body reveal">
+          Every day, millions of hours are lost to congestion, delayed access, and fragmented mobility networks. For urgent travel, premium mobility, and time-critical movement, today's ground transport systems are often too slow, too uncertain, and too constrained.
+        </p>
+        <p class="section-body reveal" style="margin-top: var(--space-4)">
+          India needs a new mobility layer that is built for speed, reliability, and scale.
+        </p>
       </div>
 
-      <div class="glass-card tech-tile glow-sky reveal">
-        <div class="icon-circle sky">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round">
+      <div class="stagger">
+        <div class="feature-card reveal" style="padding: var(--space-6); text-align: center; margin-bottom: var(--space-5)">
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--accent); margin-bottom: var(--space-2)">₹2.1L cr</div>
+          <div style="font-size: var(--text-sm); color: var(--text-muted)">Annual congestion cost to India</div>
+        </div>
+        <div class="feature-card reveal" style="padding: var(--space-6); text-align: center; margin-bottom: var(--space-5)">
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--navy); margin-bottom: var(--space-2)">14 min</div>
+          <div style="font-size: var(--text-sm); color: var(--text-muted)">Avg. ambulance response in Tier-2 India</div>
+        </div>
+        <div class="feature-card reveal" style="padding: var(--space-6); text-align: center">
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--accent); margin-bottom: var(--space-2)">18.4%</div>
+          <div style="font-size: var(--text-sm); color: var(--text-muted)">Aviation growth — fastest in the world</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════
+     SOLUTION SECTION
+═══════════════════════════════════════════════ -->
+<section class="section" style="background: var(--bg-main)">
+  <div class="container" style="max-width: 800px; text-align: center">
+    <span class="section-label accent" style="text-align: center; display: block">The Solution</span>
+    <h2 class="section-heading reveal" style="margin-bottom: var(--space-6)">Introducing IraGo</h2>
+    <p class="section-body reveal" style="margin: 0 auto var(--space-6); text-align: center">
+      IraGo is developing an advanced air mobility platform designed to connect people and places through eVTOL-enabled journeys. Our technology stack is built to manage route optimization, scheduling intelligence, and fleet visibility in real time.
+    </p>
+    <p class="section-body reveal" style="margin: 0 auto; text-align: center">
+      We are creating the digital and operational backbone for next-generation aerial mobility in India — enabling efficient operations across emergency response, urgent travel, and high-value passenger movement.
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════
+     WHY IRAGO
+═══════════════════════════════════════════════ -->
+<section class="section" style="background: var(--bg-subtle)">
+  <div class="container">
+    <div class="section-center" style="margin-bottom: var(--space-12)">
+      <span class="section-label accent">Why IraGo</span>
+      <h2 class="section-heading reveal">What Sets IraGo Apart</h2>
+      <p class="section-body reveal">
+        IraGo is not just an air mobility concept. It is a systems platform built for operational intelligence, network scalability, and passenger experience.
+      </p>
+    </div>
+
+    <div class="grid-3 stagger">
+      <div class="feature-card reveal" style="padding: var(--space-8)">
+        <div class="icon-circle accent" style="margin-bottom: var(--space-5)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8722A" stroke-width="1.8" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/>
+          </svg>
+        </div>
+        <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-3); color: var(--navy)">AI-Driven Operations</h3>
+        <p style="color: var(--text-body); font-size: var(--text-sm); line-height: 1.7">AI-driven routing and scheduling for optimized fleet operations and minimal latency.</p>
+      </div>
+
+      <div class="feature-card reveal" style="padding: var(--space-8)">
+        <div class="icon-circle sky" style="margin-bottom: var(--space-5)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A90D9" stroke-width="1.8" stroke-linecap="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
         </div>
-        <h4 style="font-size:var(--text-base);font-weight:700">Live Fleet Tracking</h4>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.6">ADS-B enabled real-time aircraft position tracking. Passengers track their flight from gate to landing on a live map.</p>
+        <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-3); color: var(--navy)">Real-Time Coordination</h3>
+        <p style="color: var(--text-body); font-size: var(--text-sm); line-height: 1.7">Real-time fleet monitoring and coordination across all operational verticals.</p>
       </div>
 
-      <div class="glass-card tech-tile glow-violet reveal">
-        <div class="icon-circle violet">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round">
+      <div class="feature-card reveal" style="padding: var(--space-8)">
+        <div class="icon-circle navy" style="margin-bottom: var(--space-5)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="1.8" stroke-linecap="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </div>
-        <h4 style="font-size:var(--text-base);font-weight:700">Compliance Engine</h4>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.6">Automated DGCA regulation checks. Aircraft can only accept bookings if all compliance documents are current and valid.</p>
+        <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-3); color: var(--navy)">Bharat-First Vision</h3>
+        <p style="color: var(--text-body); font-size: var(--text-sm); line-height: 1.7">Scalable architecture for future eVTOL networks, designed from the ground up for India.</p>
       </div>
-
-      <div class="glass-card tech-tile glow-gold reveal">
-        <div class="icon-circle gold">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="1.8" stroke-linecap="round">
-            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-          </svg>
-        </div>
-        <h4 style="font-size:var(--text-base);font-weight:700">Dynamic Pricing</h4>
-        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:1.6">Market-rate pricing engine that balances operator earnings and passenger accessibility. Transparent fare breakdown always shown.</p>
-      </div>
-
     </div>
   </div>
 </section>
 
-
+<div class="section-divider"></div>
 
 <!-- ═══════════════════════════════════════════════
-     PARTNERSHIP APPROACH
+     CREDIBILITY
 ═══════════════════════════════════════════════ -->
-<section class="section" id="partners-vision" style="background:var(--bg-subtle)">
-  <div class="container" style="text-align:center">
-    <span class="section-label violet">Partners</span>
-    <h2 class="section-heading reveal" style="margin-bottom:var(--space-6)">Built together.</h2>
-    <p class="section-body reveal" style="margin:0 auto var(--space-12)">
-      Irago works with operators, hospitals, state governments, and aviation regulators to build the infrastructure India's sky needs.
+<section class="section" style="background: var(--bg-main)">
+  <div class="container" style="max-width: 800px; text-align: center">
+    <span class="section-label accent" style="text-align: center; display: block">Our Foundation</span>
+    <h2 class="section-heading reveal" style="margin-bottom: var(--space-6)">Built for Real-World Scale</h2>
+    <p class="section-body reveal" style="margin: 0 auto var(--space-6); text-align: center">
+      Our approach is grounded in a clear national and commercial opportunity: India needs new mobility infrastructure that can reduce time loss, improve access, and support modern transportation needs across cities and regions.
     </p>
-    <div class="partners-grid stagger" style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-6);max-width:560px;margin:0 auto var(--space-12)">
-      <!-- MInT - IIT Madras -->
-      <div class="glass-card partner-card glow-violet reveal">
-        <div style="width:100%;height:100px;display:flex;align-items:center;justify-content:center;padding:12px">
-          <img src="assets/images/MInT_On Dark BG colored icon 3x.png"
-               alt="MInT - IIT Madras"
-               style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block">
-        </div>
-        <div>
-          <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">MInT, IIT Madras</div>
-          <div style="font-size:var(--text-sm);color:var(--text-muted)">Incubation Partner</div>
-        </div>
-      </div>
-      <!-- Bosch -->
-      <div class="glass-card partner-card glow-violet reveal">
-        <div style="width:100%;height:100px;display:flex;align-items:center;justify-content:center;padding:12px">
-          <img src="assets/images/Bosch_symbol_logo_black_red.png"
-               alt="Bosch"
-               style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;filter:brightness(1.5)">
-        </div>
-        <div>
-          <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">Bosch</div>
-          <div style="font-size:var(--text-sm);color:var(--text-muted)">Industry Partner</div>
-        </div>
-      </div>
-    </div>
-
-    <a href="https://app.irago.in" class="btn btn-primary reveal" style="display:inline-flex">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
-      </svg>
-      Try Irago
-    </a>
+    <p class="section-body reveal" style="margin: 0 auto; text-align: center">
+      IraGo is building toward that future through a technology-led, mission-aligned, and commercially scalable platform.
+    </p>
   </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════
+     CLOSING CTA
+═══════════════════════════════════════════════ -->
+<section class="section vision-cta-section" style="padding: var(--space-24) 0; text-align: center">
+  <div class="container" style="position: relative; z-index: 1; max-width: 800px">
+    <span class="section-label" style="color: var(--accent-light); text-align: center; display: block">Join the Movement</span>
+    <h2 class="section-heading reveal" style="color: #fff; margin-bottom: var(--space-6)">The Future of Mobility<br>Is Airborne</h2>
+    <p class="section-body reveal" style="color: rgba(255,255,255,0.55); margin: 0 auto var(--space-10); text-align: center; max-width: 600px">
+      The future of mobility is not only about moving people. It is about saving time, creating access, and redefining what connected travel can mean for Bharat.
+    </p>
+    <a href="contact.html" class="btn btn-primary reveal" style="padding: 15px 36px; font-size: 15px">Join the Journey</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════ -->
 <footer class="site-footer">
   <div class="footer-glow-divider"></div>
 
-  <!-- CTA Band -->
   <div class="footer-cta-band">
     <div class="container">
       <div class="footer-cta-inner">
         <div class="footer-cta-text">
-          <h3>Ready to fly?</h3>
-          <p>Join India's air mobility revolution. Book your first flight in under 2 minutes.</p>
+          <h3>Ready to explore air mobility?</h3>
+          <p>IraGo Solutions Private Limited — AI-powered air mobility for Bharat.</p>
         </div>
         <div class="footer-cta-actions">
-          <a href="https://app.irago.in" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" />
-            </svg>
-            Try Irago
+          <a href="contact.html" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/></svg>
+            Request Demo
           </a>
-          <a href="contact.html" class="btn btn-ghost" style="border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7)">Contact Us</a>
+          <a href="contact.html" class="btn btn-ghost-white">Contact Us</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Main Footer -->
   <div class="footer-main">
     <div class="container">
       <div class="footer-grid-premium">
         <div class="footer-brand-col">
-          <a href="/" class="footer-logo" aria-label="Irago Home">
-            <img src="assets/images/image-removebg-preview.png" alt="Irago Logo" />
+          <a href="/" class="footer-logo" aria-label="IraGo Home">
+            <img src="assets/images/image-removebg-preview.png" alt="IraGo Logo">
           </a>
-          <p class="footer-tagline">Sky is not the limit.<br>India's on-demand air mobility platform.</p>
+          <p class="footer-tagline">IraGo Solutions Private Limited<br>AI-powered air mobility for Bharat.</p>
           <div class="footer-socials">
-            <a href="#" class="footer-social-icon" aria-label="Twitter">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="#" class="footer-social-icon" aria-label="LinkedIn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" /><circle cx="4" cy="4" r="2" /></svg>
-            </a>
-            <a href="#" class="footer-social-icon" aria-label="Instagram">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-            </a>
           </div>
         </div>
         <div>
-          <div class="footer-col-title">Platform</div>
+          <div class="footer-col-title">Navigation</div>
           <div class="footer-links">
-            <a href="/#air-taxi" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Air Taxi</a>
-            <a href="/#golden-hour" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Golden Hour</a>
-            <a href="/#air-shuttle" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Air Shuttle</a>
-            <a href="/#operators" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> For Operators</a>
+            <a href="/" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Home</a>
+            <a href="/#about" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> About</a>
+            <a href="vision.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Vision</a>
+            <a href="team.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Team</a>
           </div>
         </div>
         <div>
           <div class="footer-col-title">Company</div>
           <div class="footer-links">
-            <a href="vision.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Our Vision</a>
-            <a href="contact.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Contact Us</a>
-          </div>
-        </div>
-        <div>
-          <div class="footer-col-title">Get in Touch</div>
-          <div class="footer-links">
-            <div class="footer-contact-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-              <a href="mailto:info@irago.in" style="color:inherit;text-decoration:none">info@irago.in</a>
-            </div>
-            <div class="footer-contact-item emergency">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-              1800-XXX-XXXX
-            </div>
-            <div class="footer-contact-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-              The MInT, NAC-2, IIT Madras, Chennai - 600 036
-            </div>
+            <a href="contact.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Contact</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Bar -->
   <div class="footer-bottom">
     <div class="container">
       <div class="footer-bottom-inner">
-        <span class="footer-copyright">© 2025 Irago. All rights reserved.</span>
-        <span class="footer-status">
-          <span class="footer-status-dot"></span>
-          Platform Online
-        </span>
+        <span class="footer-copyright">© 2025 IraGo Solutions Pvt. Ltd. All rights reserved.</span>
+        <span class="footer-status"><span class="footer-status-dot"></span> Platform Active</span>
         <div class="footer-bottom-links">
-          <a href="#" class="footer-bottom-link">Privacy Policy</a>
-          <a href="#" class="footer-bottom-link">Terms of Service</a>
         </div>
       </div>
     </div>
   </div>
 </footer>
 
-<!-- ═══════════════════════════════════════════════
-     FLIGHT SCROLL INDICATOR
-═══════════════════════════════════════════════ -->
+<!-- Scroll Indicator -->
 <div class="flight-scroll-track" id="scrollTrack">
   <div class="flight-scroll-line"></div>
   <div class="flight-scroll-fill" id="scrollFill"></div>
   <div class="flight-scroll-ship" id="scrollShip">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-    </svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     BACK TO TOP BUTTON
-═══════════════════════════════════════════════ -->
 <button id="scrollToTopBtn" class="scroll-to-top" aria-label="Back to top">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-  </svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
 </button>
 
-<!-- Scripts -->
-<script src="js/canvas-constellation.js"></script>
 <script src="js/scroll-animations.js"></script>
 <script src="js/main.js"></script>
 
