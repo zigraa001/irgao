@@ -1,11 +1,9 @@
-import http from "node:http";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
-const DIST = path.join(__dirname, "dist");
+const ROOT = __dirname;
 
 const mimeTypes = {
   ".html": "text/html",
@@ -14,31 +12,34 @@ const mimeTypes = {
   ".json": "application/json",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
 
 const server = http.createServer((req, res) => {
-  let filePath = path.join(DIST, req.url === "/" ? "index.html" : req.url);
-  const ext = path.extname(filePath);
+  let url = req.url.split("?")[0];
+  if (url === "/") url = "/index.html";
 
-  if (!ext) {
-    filePath = path.join(DIST, "index.html");
+  const filePath = path.join(ROOT, url);
+
+  // Prevent directory traversal
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
   }
+
+  const ext = path.extname(filePath);
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      fs.readFile(path.join(DIST, "index.html"), (err2, data2) => {
-        if (err2) {
-          res.writeHead(500);
-          res.end("Server error");
-          return;
-        }
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(data2);
-      });
+      res.writeHead(404, { "Content-Type": "text/html" });
+      res.end("<h1>404 Not Found</h1>");
       return;
     }
 

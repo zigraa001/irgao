@@ -1,0 +1,112 @@
+/* ─── SCROLL REVEAL ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays */
+.stagger > *:nth-child(1) { transition-delay: 0ms;   }
+.stagger > *:nth-child(2) { transition-delay: 100ms; }
+.stagger > *:nth-child(3) { transition-delay: 200ms; }
+.stagger > *:nth-child(4) { transition-delay: 300ms; }
+.stagger > *:nth-child(5) { transition-delay: 400ms; }
+.stagger > *:nth-child(6) { transition-delay: 500ms; }
+
+/* ─── SECTION ENTRANCE ANIMATIONS ─── */
+.section-heading.reveal {
+  transform: translateY(30px);
+  transition-duration: 0.9s;
+}
+
+.section-body.reveal {
+  transform: translateY(25px);
+  transition-delay: 100ms;
+  transition-duration: 0.8s;
+}
+
+.section-label {
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: 
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.section-label.revealed,
+.section.in-view .section-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Glass/White cards scale up */
+.white-card.reveal,
+.glass-card.reveal,
+.feature-card.reveal,
+.use-case-card.reveal,
+.team-card.reveal {
+  transform: translateY(35px) scale(0.97);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.white-card.reveal.revealed,
+.glass-card.reveal.revealed,
+.feature-card.reveal.revealed,
+.use-case-card.reveal.revealed,
+.team-card.reveal.revealed {
+  transform: translateY(0) scale(1);
+}
+
+/* ─── HERO TEXT ENTRANCE ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-label  { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both; animation-delay: 0.1s; }
+.hero-h1     { animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) both; animation-delay: 0.2s; }
+.hero-sub    { animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) both; animation-delay: 0.4s; }
+.hero-ctas   { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both; animation-delay: 0.55s; }
+
+/* ─── COUNTER ─── */
+.counter-number {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+/* ─── FLOAT ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ─── SHIMMER ─── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* ─── PARALLAX-LIKE ─── */
+.section .container {
+  transition: transform 0.1s linear;
+}
+
+/* ─── REDUCED MOTION ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  canvas { display: none; }
+}

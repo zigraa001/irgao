@@ -1,0 +1,96 @@
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+.section {
+  padding: var(--section-pad) 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Section label - small uppercase tag above headings */
+.section-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+.section-label.navy   { color: var(--navy); }
+.section-label.accent { color: var(--accent); }
+.section-label.sky    { color: var(--sky); }
+.section-label.red    { color: var(--emergency); }
+
+/* Section heading */
+.section-heading {
+  font-size: clamp(var(--text-3xl), 5vw, var(--text-5xl));
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+/* Section body */
+.section-body {
+  font-size: var(--text-lg);
+  color: var(--text-body);
+  line-height: 1.75;
+  max-width: 640px;
+  letter-spacing: -0.01em;
+}
+
+/* Two column split */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  align-items: center;
+}
+
+/* Grid layouts */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+
+/* Section divider line */
+.section-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(27, 42, 74, 0.08) 50%,
+    transparent 100%
+  );
+  margin: 0;
+}
+
+/* For dark sections */
+.section-dark .section-divider,
+.section-divider.light {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
