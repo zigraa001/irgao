@@ -3,6 +3,11 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
+  "overrides": {
+    "glob": "^11.0.0",
+    "inflight": "npm:lru-cache@^10.0.0",
+    "rimraf": "^5.0.0"
+  },
   "scripts": {
     "dev": "vite --host :: --port 3000",
     "build": "node tools/generate-llms.js || true && vite build",
@@ -37,11 +42,12 @@
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
     "@babel/types": "^7.26.3",
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9.39.4",
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "^2.31.0",
@@ -49,7 +55,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "globals": "^15.14.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^3.4.19",
     "terser": "^5.37.0",
     "vite": "^8.0.8"
   }
