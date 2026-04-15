@@ -931,6 +931,90 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* ═══════════════════════════════════════════
+   POPULAR ROUTES
+   ═══════════════════════════════════════════ */
+.popular-routes { animation: slideUp 0.3s ease; }
+.popular-routes-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.popular-routes-title svg { width: 14px; height: 14px; }
+
+.route-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+.route-chip:hover {
+  border-color: var(--blue);
+  background: var(--blue-50);
+  box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+}
+.route-chip.red-hover:hover {
+  border-color: var(--red);
+  background: var(--red-50);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.08);
+}
+.route-chip.green-hover:hover {
+  border-color: var(--green);
+  background: var(--green-50);
+  box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+}
+
+.route-chip-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.route-chip-icon-blue { background: var(--blue-light); }
+.route-chip-icon-red { background: var(--red-light); }
+.route-chip-icon-green { background: var(--green-light); }
+
+.route-chip-info { flex: 1; min-width: 0; }
+.route-chip-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-chip-meta {
+  font-size: 11px;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+.route-chip-arrow {
+  color: var(--gray-300);
+  flex-shrink: 0;
+}
+.route-chip-arrow svg { width: 14px; height: 14px; }
+
+/* ═══════════════════════════════════════════
    TRACKING PANEL
    ═══════════════════════════════════════════ */
 .tracking-panel {
@@ -1320,6 +1404,9 @@ a { text-decoration: none; color: inherit; }
 
         <div id="extra-fields-area"></div>
 
+        <!-- Popular Routes -->
+        <div id="popular-routes-area" class="popular-routes" style="margin-top:14px;"></div>
+
         <button class="search-btn search-btn-blue" id="search-btn" onclick="searchRides()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
           <span id="search-btn-text">Find Available Rides</span>
@@ -1578,6 +1665,9 @@ function initMap() {
   // Add suggestion dropdown behavior
   setupAutocomplete('pickup-input', (name, coord) => setPickup(coord, name));
   setupAutocomplete('dest-input', (name, coord) => setDest(coord, name));
+
+  // Render initial popular routes
+  renderPopularRoutes('taxi');
 }
 
 function setupAutocomplete(inputId, callback) {
@@ -1765,6 +1855,94 @@ function switchService(service) {
   if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
   aircraftMarkers.forEach(m => map.removeLayer(m));
   aircraftMarkers = [];
+
+  renderPopularRoutes(service);
+}
+
+// ── Popular Routes per Service ──
+const popularRoutes = {
+  taxi: [
+    { from: 'Chennai Airport', to: 'IIT Madras Cricket Ground', emoji: '&#9992;&#65039;', meta: '15 min &middot; 18 km', tag: 'Campus' },
+    { from: 'IGI Airport T3, Delhi', to: 'IIT Delhi Campus', emoji: '&#127979;', meta: '12 min &middot; 14 km', tag: 'Campus' },
+    { from: 'Mumbai Airport', to: 'BKC, Mumbai', emoji: '&#127961;', meta: '8 min &middot; 12 km', tag: 'Business' },
+    { from: 'Kempegowda Airport, Bengaluru', to: 'Whitefield, Bengaluru', emoji: '&#128187;', meta: '18 min &middot; 35 km', tag: 'Tech Hub' },
+    { from: 'Connaught Place, Delhi', to: 'Cyber Hub, Gurugram', emoji: '&#127747;', meta: '14 min &middot; 28 km', tag: 'City' },
+    { from: 'Hi-Tech City, Hyderabad', to: 'Gachibowli, Hyderabad', emoji: '&#128296;', meta: '4 min &middot; 8 km', tag: 'Intra-City' },
+    { from: 'Marine Drive, Mumbai', to: 'Mumbai Airport', emoji: '&#127754;', meta: '10 min &middot; 20 km', tag: 'Airport' },
+    { from: 'MG Road, Bengaluru', to: 'Kempegowda Airport, Bengaluru', emoji: '&#9992;&#65039;', meta: '20 min &middot; 38 km', tag: 'Airport' },
+  ],
+  golden: [
+    { from: 'IGI Airport T3, Delhi', to: 'AIIMS Hospital, Delhi', emoji: '&#127973;', meta: '6 min &middot; 8 km', tag: 'Emergency' },
+    { from: 'Connaught Place, Delhi', to: 'Safdarjung Hospital, Delhi', emoji: '&#128657;', meta: '5 min &middot; 6 km', tag: 'Emergency' },
+    { from: 'Mumbai Airport', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '7 min &middot; 10 km', tag: 'Emergency' },
+    { from: 'Marine Drive, Mumbai', to: 'Lilavati Hospital, Mumbai', emoji: '&#128657;', meta: '6 min &middot; 9 km', tag: 'Emergency' },
+    { from: 'Chennai Airport', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '8 min &middot; 12 km', tag: 'Emergency' },
+    { from: 'Whitefield, Bengaluru', to: 'Narayana Health, Bengaluru', emoji: '&#128657;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
+    { from: 'Leh Airport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
+    { from: 'Shimla Airport', to: 'IGMC Hospital, Shimla', emoji: '&#9968;', meta: '5 min &middot; 7 km', tag: 'Remote' },
+    { from: 'Dehradun Airport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
+    { from: 'Dibrugarh Airport, Assam', to: 'AMCH Hospital, Dibrugarh', emoji: '&#127795;', meta: '4 min &middot; 5 km', tag: 'Remote' },
+    { from: 'Port Blair Airport, Andaman', to: 'GB Pant Hospital, Andaman', emoji: '&#127964;', meta: '5 min &middot; 6 km', tag: 'Remote' },
+    { from: 'Cyber Hub, Gurugram', to: 'Medanta Hospital, Gurugram', emoji: '&#127973;', meta: '4 min &middot; 5 km', tag: 'Emergency' },
+  ],
+  shuttle: [
+    { from: 'Connaught Place, Delhi', to: 'IGI Airport T3, Delhi', emoji: '&#9992;&#65039;', meta: '12 min &middot; 14 km &middot; Daily 8 slots', tag: 'Commuter' },
+    { from: 'Noida Sec 62', to: 'Cyber Hub, Gurugram', emoji: '&#128187;', meta: '18 min &middot; 40 km &middot; Daily 6 slots', tag: 'Business' },
+    { from: 'BKC, Mumbai', to: 'Mumbai Airport', emoji: '&#9992;&#65039;', meta: '6 min &middot; 12 km &middot; Daily 12 slots', tag: 'Commuter' },
+    { from: 'Marine Drive, Mumbai', to: 'BKC, Mumbai', emoji: '&#127961;', meta: '5 min &middot; 8 km &middot; Daily 10 slots', tag: 'Business' },
+    { from: 'Whitefield, Bengaluru', to: 'MG Road, Bengaluru', emoji: '&#128187;', meta: '9 min &middot; 22 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
+    { from: 'Koramangala, Bengaluru', to: 'Kempegowda Airport, Bengaluru', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Commuter' },
+    { from: 'Hi-Tech City, Hyderabad', to: 'Gachibowli, Hyderabad', emoji: '&#128296;', meta: '4 min &middot; 8 km &middot; Daily 15 slots', tag: 'Tech Corridor' },
+    { from: 'Chennai Airport', to: 'IIT Madras Campus', emoji: '&#127979;', meta: '15 min &middot; 18 km &middot; Daily 5 slots', tag: 'Commuter' },
+    { from: 'India Gate, Delhi', to: 'Noida Sec 62', emoji: '&#127747;', meta: '10 min &middot; 20 km &middot; Daily 6 slots', tag: 'Commuter' },
+  ],
+};
+
+function renderPopularRoutes(service) {
+  const area = document.getElementById('popular-routes-area');
+  const routes = popularRoutes[service] || [];
+  const colorMap = { taxi: 'blue', golden: 'red', shuttle: 'green' };
+  const color = colorMap[service];
+  const hoverCls = service === 'golden' ? 'red-hover' : service === 'shuttle' ? 'green-hover' : '';
+  const iconCls = `route-chip-icon-${color}`;
+
+  const titleIcon = service === 'taxi'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2"/></svg>'
+    : service === 'golden'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>';
+
+  const titleText = service === 'taxi' ? 'Popular Routes' : service === 'golden' ? 'Emergency Routes' : 'Shuttle Routes';
+
+  area.innerHTML = `
+    <div class="popular-routes-title" style="color:var(--${color})">
+      ${titleIcon} ${titleText}
+    </div>
+    ${routes.map(r => `
+      <button class="route-chip ${hoverCls}" onclick="selectRoute('${r.from}','${r.to}')">
+        <div class="route-chip-icon ${iconCls}">${r.emoji}</div>
+        <div class="route-chip-info">
+          <div class="route-chip-name">${r.from} &rarr; ${r.to}</div>
+          <div class="route-chip-meta">
+            <span>${r.meta}</span>
+            <span style="background:var(--${color}-light);color:var(--${color}-dark);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:600;">${r.tag}</span>
+          </div>
+        </div>
+        <div class="route-chip-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </button>
+    `).join('')}
+  `;
+}
+
+function selectRoute(from, to) {
+  const fromCoord = demoLocations[from];
+  const toCoord = demoLocations[to];
+  if (fromCoord) setPickup(fromCoord, from);
+  if (toCoord) setTimeout(() => setDest(toCoord, to), 200);
+  // Hide popular routes after selection
+  document.getElementById('popular-routes-area').innerHTML = '';
 }
 
 // ── Ride Data ──
