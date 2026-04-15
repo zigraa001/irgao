@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IraGo — Book Your Air Taxi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #F0F4F8;
+  color: #1e293b;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input, select, textarea { font-family: inherit; outline: none; }
+a { text-decoration: none; color: inherit; }
+
+/* ═══════════════════════════════════════════
+   CSS VARIABLES
+   ═══════════════════════════════════════════ */
+:root {
+  --blue: #3B82F6;
+  --blue-dark: #2563EB;
+  --blue-light: #DBEAFE;
+  --blue-50: #EFF6FF;
+  --blue-glow: rgba(59, 130, 246, 0.15);
+
+  --red: #EF4444;
+  --red-dark: #DC2626;
+  --red-light: #FEE2E2;
+  --red-50: #FEF2F2;
+
+  --green: #10B981;
+  --green-dark: #059669;
+  --green-light: #D1FAE5;
+  --green-50: #ECFDF5;
+
+  --orange: #F59E0B;
+  --purple: #8B5CF6;
+
+  --gray-50: #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-300: #CBD5E1;
+  --gray-400: #94A3B8;
+  --gray-500: #64748B;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1E293B;
+  --gray-900: #0F172A;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+  --shadow-xl: 0 20px 50px rgba(0,0,0,0.12);
+}
+
+/* ═══════════════════════════════════════════
+   VIEWS (show/hide)
+   ═══════════════════════════════════════════ */
+.view { display: none; }
+.view.active { display: flex; }
+
+/* ═══════════════════════════════════════════
+   LOGIN PAGE
+   ═══════════════════════════════════════════ */
+#login-view {
+  min-height: 100vh;
+  flex-direction: row;
+  background: #F0F4F8;
+}
+.login-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+.login-left::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+  top: 10%;
+  left: -10%;
+  border-radius: 50%;
+}
+.login-left::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%);
+  bottom: 5%;
+  right: -5%;
+  border-radius: 50%;
+}
+.login-right {
+  flex: 1;
+  background: linear-gradient(135deg, #1B2A4A 0%, #0F1B33 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
+}
+.login-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.login-right-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #fff;
+}
+.login-right-content h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.login-right-content p {
+  font-size: 16px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+  max-width: 380px;
+}
+.login-features {
+  display: flex;
+  gap: 24px;
+  margin-top: 40px;
+}
+.login-feature {
+  text-align: center;
+}
+.login-feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+.login-feature-icon svg { width: 24px; height: 24px; }
+.login-feature span {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.auth-logo img { height: 64px; margin-bottom: 2px; }
+.auth-logo .logo-text {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.auth-logo .ira { color: #4CAF50; }
+.auth-logo .go { color: #3B82F6; }
+.auth-logo .logo-sub {
+  font-size: 7.5px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.auth-tagline {
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 10px 0 28px;
+  position: relative;
+  z-index: 1;
+}
+.auth-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(59, 130, 246, 0.06);
+  position: relative;
+  z-index: 1;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.auth-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 24px;
+}
+.auth-field { margin-bottom: 16px; }
+.auth-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.auth-field input {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--gray-800);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-field input::placeholder { color: var(--gray-400); }
+.auth-field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+.btn-auth-primary {
+  width: 100%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-auth-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
+.btn-auth-primary:active { transform: scale(0.98); }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0;
+  color: var(--gray-400);
+  font-size: 12px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+.btn-google {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  color: var(--gray-700);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+.btn-google:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.btn-google svg { width: 18px; height: 18px; }
+.auth-switch {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.auth-switch button {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 13px;
+}
+.auth-switch button:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════
+   MAP BOOKING VIEW
+   ═══════════════════════════════════════════ */
+#booking-view {
+  flex-direction: column;
+  height: 100vh;
+}
+.booking-nav {
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 1000;
+}
+.booking-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.booking-nav-logo img { height: 32px; }
+.booking-nav-logo .nav-logo-text {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.booking-nav-logo .ira { color: #4CAF50; }
+.booking-nav-logo .go { color: #3B82F6; }
+
+.service-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  padding: 3px;
+}
+.service-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  transition: all 0.25s;
+}
+.service-tab:hover { color: var(--gray-700); }
+.service-tab.active { background: #fff; color: var(--gray-800); box-shadow: var(--shadow-sm); }
+.service-tab svg { width: 16px; height: 16px; }
+
+.nav-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-bell {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  transition: background 0.2s;
+}
+.nav-bell:hover { background: var(--gray-100); }
+.nav-bell svg { width: 20px; height: 20px; }
+.nav-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Map + Panel layout */
+.booking-body {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+#map {
+  flex: 1;
+  z-index: 1;
+}
+
+/* Left Panel */
+.booking-panel {
+  width: 420px;
+  background: #fff;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+.panel-section {
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.panel-section:last-child { border-bottom: none; }
+
+/* Location inputs */
+.location-inputs {
+  position: relative;
+}
+.loc-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.loc-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2.5px solid;
+}
+.loc-dot-pickup { border-color: var(--blue); background: var(--blue-light); }
+.loc-dot-dest { border-color: var(--red); background: var(--red-light); }
+.loc-line {
+  position: absolute;
+  left: 5px;
+  top: 18px;
+  bottom: 18px;
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--gray-300) 0, var(--gray-300) 4px, transparent 4px, transparent 8px);
+}
+.loc-input-wrap {
+  flex: 1;
+  position: relative;
+}
+.loc-input {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 40px 10px 12px;
+  font-size: 14px;
+  color: var(--gray-800);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.loc-input::placeholder { color: var(--gray-400); }
+.loc-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.loc-input.has-value { border-color: var(--green); background: var(--green-50); }
+.loc-gps-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  transition: all 0.2s;
+}
+.loc-gps-btn:hover { background: var(--gray-200); color: var(--gray-600); }
+.loc-gps-btn svg { width: 16px; height: 16px; }
+
+.swap-btn {
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-400);
+  z-index: 2;
+  transition: all 0.2s;
+}
+.swap-btn:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-50%) rotate(180deg); }
+.swap-btn svg { width: 14px; height: 14px; }
+
+.search-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.search-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.search-btn:active { transform: scale(0.98); }
+.search-btn svg { width: 18px; height: 18px; }
+.search-btn-blue { background: var(--blue); }
+.search-btn-red { background: var(--red); }
+.search-btn-green { background: var(--green); }
+
+/* ═══════════════════════════════════════════
+   RIDES PANEL (appears after search)
+   ═══════════════════════════════════════════ */
+.rides-section {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rides-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.rides-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.rides-header span {
+  font-size: 12px;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rides-header .live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.ride-card {
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.ride-card:hover { border-color: var(--blue); box-shadow: 0 2px 12px rgba(59,130,246,0.1); }
+.ride-card.selected { border-color: var(--blue); background: var(--blue-50); }
+.ride-card.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--blue);
+}
+.ride-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ride-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ride-icon svg { width: 22px; height: 22px; color: #fff; }
+.ride-icon-blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.ride-icon-gold { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.ride-icon-purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+.ride-icon-green { background: linear-gradient(135deg, #10B981, #059669); }
+
+.ride-info { flex: 1; min-width: 0; }
+.ride-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ride-name .ride-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-fastest { background: var(--blue-light); color: var(--blue-dark); }
+.badge-cheapest { background: var(--green-light); color: var(--green-dark); }
+.badge-premium { background: #F3E8FF; color: var(--purple); }
+
+.ride-desc {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 1px;
+}
+.ride-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+.ride-price-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+.ride-price-est {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.ride-stats {
+  display: flex;
+  gap: 6px;
+}
+.ride-stat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  background: var(--gray-50);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+.ride-stat svg { width: 13px; height: 13px; flex-shrink: 0; }
+.ride-stat.carbon { color: var(--green-dark); background: var(--green-50); }
+.ride-stat.carbon svg { color: var(--green); }
+
+/* ═══════════════════════════════════════════
+   BOOKING CONFIRMATION (overlay)
+   ═══════════════════════════════════════════ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.confirm-overlay.active { display: flex; }
+
+.confirm-card {
+  background: #fff;
+  border-radius: var(--radius-2xl);
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  animation: confirmIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes confirmIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.confirm-header {
+  padding: 32px 28px 20px;
+  text-align: center;
+  position: relative;
+}
+.confirm-check {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--green-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  animation: checkBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+@keyframes checkBounce {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+.confirm-check svg { width: 32px; height: 32px; color: var(--green-dark); }
+.confirm-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+.confirm-header p {
+  font-size: 14px;
+  color: var(--gray-500);
+}
+.confirm-id {
+  display: inline-block;
+  background: var(--gray-100);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.confirm-body { padding: 0 28px 20px; }
+.confirm-route {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.confirm-route-dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 4px 0;
+}
+.c-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.c-dot-blue { background: var(--blue); }
+.c-dot-red { background: var(--red); }
+.c-line {
+  flex: 1;
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--gray-300) 0, var(--gray-300) 3px, transparent 3px, transparent 6px);
+  min-height: 20px;
+}
+.confirm-route-info { flex: 1; }
+.confirm-route-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.confirm-route-place {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 14px;
+}
+.confirm-route-place:last-child { margin-bottom: 0; }
+
+.confirm-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.confirm-detail {
+  padding: 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.confirm-detail-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.confirm-detail-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.confirm-detail-val.green { color: var(--green-dark); }
+
+.confirm-footer { padding: 0 28px 24px; }
+.btn-confirm {
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+.btn-confirm-primary {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-confirm-primary:hover { background: var(--blue-dark); }
+.btn-confirm-ghost {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+.btn-confirm-ghost:hover { background: var(--gray-200); }
+
+/* ═══════════════════════════════════════════
+   GOLDEN HOUR SPECIFIC
+   ═══════════════════════════════════════════ */
+.emergency-banner {
+  padding: 10px 14px;
+  background: var(--red-50);
+  border: 1px solid rgba(239,68,68,0.12);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.emergency-banner svg { width: 16px; height: 16px; color: var(--red); flex-shrink: 0; }
+.emergency-banner strong { color: var(--gray-800); }
+
+.extra-field { margin-top: 12px; }
+.extra-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: block;
+}
+.extra-field select, .extra-field input {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--gray-800);
+  transition: border-color 0.2s;
+}
+.extra-field select:focus, .extra-field input:focus { border-color: var(--red); }
+
+/* ═══════════════════════════════════════════
+   AIR SHUTTLE SPECIFIC
+   ═══════════════════════════════════════════ */
+.shuttle-info-banner {
+  padding: 10px 14px;
+  background: var(--green-50);
+  border: 1px solid rgba(16,185,129,0.12);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gray-600);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.shuttle-info-banner strong { color: var(--gray-800); }
+
+/* ═══════════════════════════════════════════
+   CUSTOM LEAFLET MARKERS
+   ═══════════════════════════════════════════ */
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.marker-pickup, .marker-dest {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.marker-pickup { border-color: #3B82F6; background: #DBEAFE; }
+.marker-dest { border-color: #EF4444; background: #FEE2E2; }
+.marker-aircraft {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Flight path */
+.flight-path { stroke-dasharray: 12 6; animation: dashMove 1s linear infinite; }
+@keyframes dashMove { to { stroke-dashoffset: -18; } }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .login-right { display: none; }
+  .booking-panel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; max-height: 55vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); }
+  .service-tabs { display: none; }
+}
+@media (max-width: 600px) {
+  .booking-panel { max-height: 65vh; }
+  .booking-nav { padding: 0 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     1. LOGIN VIEW
+     ════════════════════════════════════════════ -->
+<div id="login-view" class="view active">
+  <div class="login-left">
+    <div class="auth-logo">
+      <img src="assets/images/image-removebg-preview.png" alt="IraGo" onerror="this.style.display='none'">
+      <div class="logo-text"><span class="ira">ira</span><span class="go">Go</span></div>
+      <div class="logo-sub">eVTOL AIR TAXI AGGREGATOR</div>
+    </div>
+    <div class="auth-tagline">India's Premium Air Taxi Platform</div>
+    <div class="auth-card" id="login-card">
+      <h2>Sign in to your account</h2>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com">
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;">
+      </div>
+      <button class="btn-auth-primary" onclick="doLogin()">Sign In</button>
+      <div class="auth-divider">or</div>
+      <button class="btn-google" onclick="doLogin()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-switch">
+        Don't have an account? <button onclick="toggleAuth()">Register</button>
+      </div>
+    </div>
+
+    <div class="auth-card" id="register-card" style="display:none">
+      <h2>Create your account</h2>
+      <div class="auth-field">
+        <label>Full Name</label>
+        <input type="text" placeholder="Priya Sharma">
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="auth-field">
+          <label>Phone</label>
+          <input type="tel" placeholder="+91 98765 43210">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" placeholder="Min 6 chars">
+        </div>
+      </div>
+      <button class="btn-auth-primary" onclick="doLogin()">Create Account</button>
+      <div class="auth-switch" style="margin-top:14px;">
+        Already have an account? <button onclick="toggleAuth()">Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-right-content">
+      <h2>Sky is no longer<br>the limit.</h2>
+      <p>Book air taxis, emergency air ambulances, and intra-city shuttles across India's top cities.</p>
+      <div class="login-features">
+        <div class="login-feature">
+          <div class="login-feature-icon" style="background:rgba(59,130,246,0.15)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+          </div>
+          <span>Air Taxi</span>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-icon" style="background:rgba(239,68,68,0.15)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4"/><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <span>Golden Hour</span>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-icon" style="background:rgba(16,185,129,0.15)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <span>Air Shuttle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     2. BOOKING VIEW (Map + Panel)
+     ════════════════════════════════════════════ -->
+<div id="booking-view" class="view">
+  <!-- Nav -->
+  <nav class="booking-nav">
+    <a href="/" class="booking-nav-logo">
+      <img src="assets/images/image-removebg-preview.png" alt="IraGo" onerror="this.style.display='none'" style="height:30px">
+      <span class="nav-logo-text"><span class="ira">ira</span><span class="go">Go</span></span>
+    </a>
+
+    <div class="service-tabs" id="service-tabs">
+      <button class="service-tab active" data-service="taxi" onclick="switchService('taxi')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+        Air Taxi
+      </button>
+      <button class="service-tab" data-service="golden" onclick="switchService('golden')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4"/><circle cx="12" cy="12" r="4"/></svg>
+        Golden Hour
+      </button>
+      <button class="service-tab" data-service="shuttle" onclick="switchService('shuttle')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Air Shuttle
+      </button>
+    </div>
+
+    <div class="nav-profile">
+      <button class="nav-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <div class="nav-avatar" id="nav-avatar">G</div>
+    </div>
+  </nav>
+
+  <!-- Body: Map + Panel -->
+  <div class="booking-body">
+    <!-- Left Panel -->
+    <div class="booking-panel" id="booking-panel">
+
+      <!-- LOCATION INPUTS -->
+      <div class="panel-section" id="panel-locations">
+        <div id="service-banner-area"></div>
+        <div class="location-inputs" style="margin-top:10px;">
+          <div class="loc-input-group" style="margin-bottom:12px; position:relative;">
+            <div class="loc-dot loc-dot-pickup"></div>
+            <div class="loc-input-wrap">
+              <input class="loc-input" id="pickup-input" type="text" placeholder="Enter pickup location" onfocus="this.select()">
+              <button class="loc-gps-btn" onclick="useCurrentLocation()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="loc-input-group" style="position:relative;">
+            <div class="loc-dot loc-dot-dest"></div>
+            <div class="loc-input-wrap">
+              <input class="loc-input" id="dest-input" type="text" placeholder="Enter destination" onfocus="this.select()">
+              <button class="loc-gps-btn" onclick="alert('Tap the map to set destination')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:2">
+            <button class="swap-btn" onclick="swapLocations()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="extra-fields-area"></div>
+
+        <button class="search-btn search-btn-blue" id="search-btn" onclick="searchRides()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+          <span id="search-btn-text">Find Available Rides</span>
+        </button>
+      </div>
+
+      <!-- RIDES LIST (hidden until search) -->
+      <div class="panel-section rides-section" id="rides-area" style="display:none;">
+        <div class="rides-header">
+          <h3 id="rides-title">Available Rides</h3>
+          <span><span class="live-dot"></span> Live</span>
+        </div>
+        <div id="rides-list"></div>
+        <button class="search-btn search-btn-blue" id="book-btn" style="display:none;" onclick="bookRide()">
+          Confirm Booking
+        </button>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     3. BOOKING CONFIRMATION OVERLAY
+     ════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-card">
+    <div class="confirm-header">
+      <div class="confirm-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>Booking Confirmed!</h2>
+      <p>Your ride is being prepared</p>
+      <div class="confirm-id" id="confirm-id">IRG-240415-7829</div>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-route">
+        <div class="confirm-route-dots">
+          <div class="c-dot c-dot-blue"></div>
+          <div class="c-line"></div>
+          <div class="c-dot c-dot-red"></div>
+        </div>
+        <div class="confirm-route-info">
+          <div class="confirm-route-label">Pickup</div>
+          <div class="confirm-route-place" id="confirm-pickup">—</div>
+          <div class="confirm-route-label">Destination</div>
+          <div class="confirm-route-place" id="confirm-dest">—</div>
+        </div>
+      </div>
+      <div class="confirm-details">
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">Vehicle</div>
+          <div class="confirm-detail-val" id="confirm-vehicle">—</div>
+        </div>
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">Est. Time</div>
+          <div class="confirm-detail-val" id="confirm-time">—</div>
+        </div>
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">Total Cost</div>
+          <div class="confirm-detail-val" id="confirm-cost">—</div>
+        </div>
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">CO&#8322; Saved</div>
+          <div class="confirm-detail-val green" id="confirm-carbon">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="confirm-footer">
+      <button class="btn-confirm btn-confirm-primary" onclick="closeConfirm()">Track My Ride</button>
+      <button class="btn-confirm btn-confirm-ghost" onclick="closeConfirm()">Back to Home</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════ -->
+<script>
+// ── State ──
+let map, pickupMarker, destMarker, routeLine, aircraftMarkers = [];
+let currentService = 'taxi';
+let selectedRide = null;
+let pickupCoord = null, destCoord = null;
+
+// ── Demo Cities (Indian locations) ──
+const demoLocations = {
+  'Connaught Place, Delhi':   [28.6315, 77.2167],
+  'India Gate, Delhi':        [28.6129, 77.2295],
+  'IGI Airport T3, Delhi':    [28.5562, 77.1000],
+  'Cyber Hub, Gurugram':      [28.4950, 77.0880],
+  'Noida Sec 62':             [28.6270, 77.3650],
+  'BKC, Mumbai':              [19.0660, 72.8710],
+  'Mumbai Airport':           [19.0896, 72.8656],
+  'Marine Drive, Mumbai':     [18.9440, 72.8235],
+  'Whitefield, Bengaluru':    [12.9698, 77.7500],
+  'MG Road, Bengaluru':       [12.9756, 77.6096],
+  'Koramangala, Bengaluru':   [12.9352, 77.6245],
+  'Hi-Tech City, Hyderabad':  [17.4435, 78.3772],
+  'Gachibowli, Hyderabad':    [17.4401, 78.3489],
+};
+
+// ── Auth ──
+function toggleAuth() {
+  const login = document.getElementById('login-card');
+  const register = document.getElementById('register-card');
+  if (login.style.display === 'none') {
+    login.style.display = 'block';
+    register.style.display = 'none';
+  } else {
+    login.style.display = 'none';
+    register.style.display = 'block';
+  }
+}
+
+function doLogin() {
+  document.getElementById('login-view').classList.remove('active');
+  document.getElementById('booking-view').classList.add('active');
+  initMap();
+}
+
+// ── Map Init ──
+function initMap() {
+  if (map) return;
+  map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 12);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  // Click to set locations
+  map.on('click', function(e) {
+    if (!pickupCoord) {
+      setPickup(e.latlng, 'Map Pin (Pickup)');
+    } else if (!destCoord) {
+      setDest(e.latlng, 'Map Pin (Destination)');
+    }
+  });
+
+  // Add suggestion dropdown behavior
+  setupAutocomplete('pickup-input', (name, coord) => setPickup(coord, name));
+  setupAutocomplete('dest-input', (name, coord) => setDest(coord, name));
+}
+
+function setupAutocomplete(inputId, callback) {
+  const input = document.getElementById(inputId);
+  let dropdown = null;
+
+  input.addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    if (dropdown) dropdown.remove();
+    if (val.length < 1) return;
+
+    const matches = Object.keys(demoLocations).filter(n => n.toLowerCase().includes(val));
+    if (!matches.length) return;
+
+    dropdown = document.createElement('div');
+    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--gray-200);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.08);z-index:100;max-height:200px;overflow-y:auto;margin-top:4px;';
+    matches.forEach(name => {
+      const item = document.createElement('div');
+      item.textContent = name;
+      item.style.cssText = 'padding:10px 14px;font-size:13px;cursor:pointer;transition:background 0.15s;';
+      item.onmouseover = () => item.style.background = '#F1F5F9';
+      item.onmouseout = () => item.style.background = '';
+      item.onclick = () => {
+        input.value = name;
+        input.classList.add('has-value');
+        dropdown.remove();
+        dropdown = null;
+        callback(name, demoLocations[name]);
+      };
+      dropdown.appendChild(item);
+    });
+    input.parentElement.appendChild(dropdown);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (dropdown && !input.parentElement.contains(e.target)) {
+      dropdown.remove();
+      dropdown = null;
+    }
+  });
+}
+
+function createMarker(latlng, type) {
+  const div = document.createElement('div');
+  div.className = 'custom-marker';
+  div.innerHTML = `<div class="marker-${type}"></div>`;
+  return L.marker(latlng, {
+    icon: L.divIcon({ html: div.outerHTML, className: '', iconSize: [14, 14], iconAnchor: [7, 7] })
+  });
+}
+
+function setPickup(latlng, name) {
+  pickupCoord = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
+  document.getElementById('pickup-input').value = name;
+  document.getElementById('pickup-input').classList.add('has-value');
+  if (pickupMarker) map.removeLayer(pickupMarker);
+  pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
+  if (pickupCoord && destCoord) drawRoute();
+  else map.setView(pickupCoord, 13);
+}
+
+function setDest(latlng, name) {
+  destCoord = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
+  document.getElementById('dest-input').value = name;
+  document.getElementById('dest-input').classList.add('has-value');
+  if (destMarker) map.removeLayer(destMarker);
+  destMarker = createMarker(destCoord, 'dest').addTo(map);
+  if (pickupCoord && destCoord) drawRoute();
+  else map.setView(destCoord, 13);
+}
+
+function drawRoute() {
+  if (routeLine) map.removeLayer(routeLine);
+  aircraftMarkers.forEach(m => map.removeLayer(m));
+  aircraftMarkers = [];
+
+  // Curved flight path
+  const midLat = (pickupCoord[0] + destCoord[0]) / 2;
+  const midLng = (pickupCoord[1] + destCoord[1]) / 2;
+  const dist = Math.sqrt(Math.pow(pickupCoord[0] - destCoord[0], 2) + Math.pow(pickupCoord[1] - destCoord[1], 2));
+  const arcHeight = dist * 0.3;
+  const perpLat = -(destCoord[1] - pickupCoord[1]);
+  const perpLng = destCoord[0] - pickupCoord[0];
+  const perpLen = Math.sqrt(perpLat * perpLat + perpLng * perpLng) || 1;
+  const ctrlLat = midLat + (perpLat / perpLen) * arcHeight;
+  const ctrlLng = midLng + (perpLng / perpLen) * arcHeight;
+
+  const points = [];
+  for (let t = 0; t <= 1; t += 0.03) {
+    const lat = (1-t)*(1-t)*pickupCoord[0] + 2*(1-t)*t*ctrlLat + t*t*destCoord[0];
+    const lng = (1-t)*(1-t)*pickupCoord[1] + 2*(1-t)*t*ctrlLng + t*t*destCoord[1];
+    points.push([lat, lng]);
+  }
+
+  routeLine = L.polyline(points, {
+    color: currentService === 'golden' ? '#EF4444' : currentService === 'shuttle' ? '#10B981' : '#3B82F6',
+    weight: 3,
+    opacity: 0.7,
+    dashArray: '10 6',
+    className: 'flight-path'
+  }).addTo(map);
+
+  // Add aircraft emoji at midpoint
+  const acIcon = L.divIcon({
+    html: '<div class="marker-aircraft">&#9992;&#65039;</div>',
+    className: '',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+  const acMarker = L.marker([ctrlLat, ctrlLng], { icon: acIcon }).addTo(map);
+  aircraftMarkers.push(acMarker);
+
+  const bounds = L.latLngBounds([pickupCoord, destCoord]).pad(0.3);
+  map.fitBounds(bounds);
+}
+
+function swapLocations() {
+  const tmpCoord = pickupCoord;
+  const tmpName = document.getElementById('pickup-input').value;
+  pickupCoord = destCoord;
+  destCoord = tmpCoord;
+  document.getElementById('pickup-input').value = document.getElementById('dest-input').value;
+  document.getElementById('dest-input').value = tmpName;
+  if (pickupMarker) map.removeLayer(pickupMarker);
+  if (destMarker) map.removeLayer(destMarker);
+  if (pickupCoord) pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
+  if (destCoord) destMarker = createMarker(destCoord, 'dest').addTo(map);
+  if (pickupCoord && destCoord) drawRoute();
+}
+
+function useCurrentLocation() {
+  // Simulate GPS - default to Connaught Place
+  setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
+}
+
+// ── Service Switching ──
+function switchService(service) {
+  currentService = service;
+  document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-service="${service}"]`).classList.add('active');
+
+  const btn = document.getElementById('search-btn');
+  const btnText = document.getElementById('search-btn-text');
+  const banner = document.getElementById('service-banner-area');
+  const extra = document.getElementById('extra-fields-area');
+
+  // Reset rides
+  document.getElementById('rides-area').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'none';
+  selectedRide = null;
+
+  btn.className = 'search-btn';
+  extra.innerHTML = '';
+  banner.innerHTML = '';
+
+  if (service === 'taxi') {
+    btn.classList.add('search-btn-blue');
+    btnText.textContent = 'Find Available Rides';
+  } else if (service === 'golden') {
+    btn.classList.add('search-btn-red');
+    btnText.textContent = 'Dispatch Air Ambulance';
+    banner.innerHTML = `
+      <div class="emergency-banner" style="margin-bottom:4px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div><strong>For emergencies, call 112 first.</strong> This dispatches DGCA-certified air ambulances.</div>
+      </div>`;
+    extra.innerHTML = `
+      <div class="extra-field">
+        <label>Nature of Emergency</label>
+        <select><option>Accident / Trauma</option><option>Cardiac Emergency</option><option>Stroke</option><option>Burns</option><option>Organ Transport</option><option>Neonatal</option><option>Other Medical</option></select>
+      </div>
+      <div class="extra-field">
+        <label>Contact Phone</label>
+        <input type="tel" placeholder="+91 98765 43210">
+      </div>`;
+  } else {
+    btn.classList.add('search-btn-green');
+    btnText.textContent = 'Find Shuttle Routes';
+    banner.innerHTML = `
+      <div class="shuttle-info-banner">
+        <strong>All routes DGCA-certified.</strong> Select pickup &amp; destination to see matching shuttle routes.
+      </div>`;
+  }
+
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  aircraftMarkers.forEach(m => map.removeLayer(m));
+  aircraftMarkers = [];
+}
+
+// ── Ride Data ──
+const rideOptions = {
+  taxi: [
+    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', basePrice: 8500, baseTime: 18, co2: 2.1 },
+    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', basePrice: 12000, baseTime: 22, co2: 3.4 },
+    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', basePrice: 22000, baseTime: 20, co2: 4.8 },
+    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', basePrice: 5500, baseTime: 32, co2: 1.2 },
+  ],
+  golden: [
+    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', basePrice: 45000, baseTime: 12, co2: 5.2 },
+    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', basePrice: 85000, baseTime: 15, co2: 7.8 },
+    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', basePrice: 95000, baseTime: 14, co2: 6.1 },
+  ],
+  shuttle: [
+    { name: 'Shuttle Standard', desc: 'Shared seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', basePrice: 3200, baseTime: 15, co2: 0.8 },
+    { name: 'Shuttle Business', desc: 'Priority boarding, lounge access', icon: 'purple', badge: '', badgeCls: '', basePrice: 5800, baseTime: 12, co2: 1.1 },
+    { name: 'Shuttle Express', desc: 'Non-stop, fastest route', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', basePrice: 7500, baseTime: 8, co2: 1.5 },
+  ]
+};
+
+function calcDistance() {
+  if (!pickupCoord || !destCoord) return 25;
+  const R = 6371;
+  const dLat = (destCoord[0] - pickupCoord[0]) * Math.PI / 180;
+  const dLng = (destCoord[1] - pickupCoord[1]) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(pickupCoord[0]*Math.PI/180)*Math.cos(destCoord[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function searchRides() {
+  if (!pickupCoord || !destCoord) {
+    // Auto-populate demo if empty
+    if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
+    if (!destCoord) {
+      setTimeout(() => setDest([28.5562, 77.1000], 'IGI Airport T3, Delhi'), 300);
+      setTimeout(searchRides, 700);
+      return;
+    }
+  }
+
+  const dist = calcDistance();
+  const rides = rideOptions[currentService];
+  const list = document.getElementById('rides-list');
+  const area = document.getElementById('rides-area');
+  const title = document.getElementById('rides-title');
+
+  title.textContent = currentService === 'taxi' ? 'Available Rides' : currentService === 'golden' ? 'Air Ambulances Nearby' : 'Shuttle Routes';
+
+  // Vary prices/times by distance
+  const factor = Math.max(0.5, dist / 25);
+
+  list.innerHTML = rides.map((r, i) => {
+    const price = Math.round(r.basePrice * factor / 100) * 100;
+    const time = Math.round(r.baseTime * Math.max(0.7, factor * 0.8));
+    const co2 = (r.co2 * factor).toFixed(1);
+    const roadTime = Math.round(time * 3.5);
+    return `
+      <div class="ride-card" data-idx="${i}" onclick="selectRideCard(this, ${i}, ${price}, ${time}, '${co2}')">
+        <div class="ride-card-top">
+          <div class="ride-icon ride-icon-${r.icon}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+          </div>
+          <div class="ride-info">
+            <div class="ride-name">
+              ${r.name}
+              ${r.badge ? `<span class="ride-badge ${r.badgeCls}">${r.badge}</span>` : ''}
+            </div>
+            <div class="ride-desc">${r.desc}</div>
+          </div>
+          <div class="ride-price">
+            <div class="ride-price-val">&#8377;${price.toLocaleString('en-IN')}</div>
+            <div class="ride-price-est">est. fare</div>
+          </div>
+        </div>
+        <div class="ride-stats">
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${time} min fly
+          </div>
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>
+            ${Math.round(dist)} km
+          </div>
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ~${roadTime} min road
+          </div>
+          <div class="ride-stat carbon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z"/><circle cx="12" cy="10" r="3"/></svg>
+            -${co2} kg CO&#8322;
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  area.style.display = 'block';
+  area.scrollIntoView({ behavior: 'smooth' });
+}
+
+function selectRideCard(el, idx, price, time, co2) {
+  document.querySelectorAll('.ride-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRide = { idx, price, time, co2, name: rideOptions[currentService][idx].name };
+  document.getElementById('book-btn').style.display = 'flex';
+  document.getElementById('book-btn').className = `search-btn search-btn-${currentService === 'golden' ? 'red' : currentService === 'shuttle' ? 'green' : 'blue'}`;
+}
+
+function bookRide() {
+  if (!selectedRide) return;
+
+  // Fill confirmation
+  document.getElementById('confirm-pickup').textContent = document.getElementById('pickup-input').value;
+  document.getElementById('confirm-dest').textContent = document.getElementById('dest-input').value;
+  document.getElementById('confirm-vehicle').textContent = selectedRide.name;
+  document.getElementById('confirm-time').textContent = selectedRide.time + ' min';
+  document.getElementById('confirm-cost').textContent = '\u20B9' + selectedRide.price.toLocaleString('en-IN');
+  document.getElementById('confirm-carbon').textContent = '-' + selectedRide.co2 + ' kg';
+  document.getElementById('confirm-id').textContent = 'IRG-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + Math.floor(1000 + Math.random() * 9000);
+
+  document.getElementById('confirm-overlay').classList.add('active');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  // Reset
+  document.getElementById('rides-area').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'none';
+  selectedRide = null;
+  pickupCoord = null;
+  destCoord = null;
+  document.getElementById('pickup-input').value = '';
+  document.getElementById('dest-input').value = '';
+  document.getElementById('pickup-input').classList.remove('has-value');
+  document.getElementById('dest-input').classList.remove('has-value');
+  if (pickupMarker) { map.removeLayer(pickupMarker); pickupMarker = null; }
+  if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  aircraftMarkers.forEach(m => map.removeLayer(m));
+  aircraftMarkers = [];
+  map.setView([28.6139, 77.2090], 12);
+}
+</script>
+</body>
+</html>
