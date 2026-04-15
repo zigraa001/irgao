@@ -1486,19 +1486,54 @@ let pickupCoord = null, destCoord = null;
 
 // ── Demo Cities (Indian locations) ──
 const demoLocations = {
-  'Connaught Place, Delhi':   [28.6315, 77.2167],
-  'India Gate, Delhi':        [28.6129, 77.2295],
-  'IGI Airport T3, Delhi':    [28.5562, 77.1000],
-  'Cyber Hub, Gurugram':      [28.4950, 77.0880],
-  'Noida Sec 62':             [28.6270, 77.3650],
-  'BKC, Mumbai':              [19.0660, 72.8710],
-  'Mumbai Airport':           [19.0896, 72.8656],
-  'Marine Drive, Mumbai':     [18.9440, 72.8235],
-  'Whitefield, Bengaluru':    [12.9698, 77.7500],
-  'MG Road, Bengaluru':       [12.9756, 77.6096],
-  'Koramangala, Bengaluru':   [12.9352, 77.6245],
-  'Hi-Tech City, Hyderabad':  [17.4435, 78.3772],
-  'Gachibowli, Hyderabad':    [17.4401, 78.3489],
+  // Delhi NCR
+  'Connaught Place, Delhi':       [28.6315, 77.2167],
+  'India Gate, Delhi':            [28.6129, 77.2295],
+  'IGI Airport T3, Delhi':        [28.5562, 77.1000],
+  'IIT Delhi Campus':             [28.5459, 77.1926],
+  'AIIMS Hospital, Delhi':        [28.5672, 77.2100],
+  'Safdarjung Hospital, Delhi':   [28.5685, 77.2065],
+  'Cyber Hub, Gurugram':          [28.4950, 77.0880],
+  'Noida Sec 62':                 [28.6270, 77.3650],
+  'Medanta Hospital, Gurugram':   [28.4396, 77.0426],
+
+  // Mumbai
+  'BKC, Mumbai':                  [19.0660, 72.8710],
+  'Mumbai Airport':               [19.0896, 72.8656],
+  'Marine Drive, Mumbai':         [18.9440, 72.8235],
+  'Kokilaben Hospital, Mumbai':   [19.1310, 72.8265],
+  'Lilavati Hospital, Mumbai':    [19.0509, 72.8289],
+
+  // Chennai
+  'Chennai Airport':              [12.9941, 80.1709],
+  'IIT Madras Cricket Ground':    [12.9916, 80.2336],
+  'IIT Madras Campus':            [12.9915, 80.2337],
+  'Apollo Hospital, Chennai':     [13.0067, 80.2206],
+  'Marina Beach, Chennai':        [13.0500, 80.2824],
+
+  // Bengaluru
+  'Whitefield, Bengaluru':        [12.9698, 77.7500],
+  'MG Road, Bengaluru':           [12.9756, 77.6096],
+  'Koramangala, Bengaluru':       [12.9352, 77.6245],
+  'Kempegowda Airport, Bengaluru':[13.1979, 77.7063],
+  'Narayana Health, Bengaluru':   [12.8828, 77.5987],
+
+  // Hyderabad
+  'Hi-Tech City, Hyderabad':      [17.4435, 78.3772],
+  'Gachibowli, Hyderabad':        [17.4401, 78.3489],
+  'NIMS Hospital, Hyderabad':     [17.3941, 78.5012],
+
+  // Remote / Emergency routes
+  'Leh Airport, Ladakh':          [34.1359, 77.5465],
+  'SNM Hospital, Leh':            [34.1526, 77.5771],
+  'Shimla Airport':               [31.0818, 77.0681],
+  'IGMC Hospital, Shimla':        [31.1048, 77.1734],
+  'Dehradun Airport':             [30.1897, 78.1803],
+  'AIIMS Rishikesh':              [30.0688, 78.3137],
+  'Dibrugarh Airport, Assam':     [27.4839, 95.0169],
+  'AMCH Hospital, Dibrugarh':     [27.4728, 94.9120],
+  'Port Blair Airport, Andaman':  [11.6410, 92.7297],
+  'GB Pant Hospital, Andaman':    [11.6683, 92.7358],
 };
 
 // ── Auth ──
