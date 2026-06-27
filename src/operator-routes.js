@@ -5,15 +5,57 @@
 // (booking.operatorId === req.user.id). Accept/reject and status-advance
 // actions are added in US-010/US-011.
 const express = require("express");
-const { prisma } = require("./db");
+const { query, queryOne } = require("./db");
 const { requireAuth, requireRole } = require("./auth");
 
 const router = express.Router();
 
-// Public shape of a customer attached to a booking — never the passwordHash.
-const customerSelect = { id: true, name: true, email: true };
-// Public shape of an aircraft attached to a booking.
-const aircraftSelect = { id: true, name: true, model: true, status: true };
+// Take a flat JOIN row (booking columns + aliased customer_*/aircraft_* columns)
+// and reshape it into the nested { ...booking, customer, aircraft } object the
+// client expects. A LEFT JOIN means aircraft may be absent (null id).
+function shapeTrip(row) {
+  const {
+    customer_id,
+    customer_name,
+    customer_email,
+    aircraft_id,
+    aircraft_name,
+    aircraft_model,
+    aircraft_status,
+    ...booking
+  } = row;
+
+  return {
+    ...booking,
+    customer: customer_id
+      ? { id: customer_id, name: customer_name, email: customer_email }
+      : null,
+    aircraft: aircraft_id
+      ? {
+          id: aircraft_id,
+          name: aircraft_name,
+          model: aircraft_model,
+          status: aircraft_status,
+        }
+      : null,
+  };
+}
+
+// SELECT list shared by the trips queries: every booking column plus the public
+// fields of the joined customer and aircraft (never the customer passwordHash).
+const TRIP_SELECT = `
+  b.*,
+  c.id    AS customer_id,
+  c.name  AS customer_name,
+  c.email AS customer_email,
+  a.id    AS aircraft_id,
+  a.name  AS aircraft_name,
+  a.model AS aircraft_model,
+  a.status AS aircraft_status
+  FROM bookings b
+  JOIN users c ON c.id = b.customerId
+  LEFT JOIN aircraft a ON a.id = b.aircraftId
+`;
 
 // GET /api/operator/trips — bookings assigned to the logged-in operator.
 // Includes the customer and assigned aircraft so the list can show route,
@@ -24,15 +66,11 @@ router.get(
   requireAuth,
   requireRole("operator"),
   async (req, res) => {
-    const trips = await prisma.booking.findMany({
-      where: { operatorId: req.user.id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        customer: { select: customerSelect },
-        aircraft: { select: aircraftSelect },
-      },
-    });
-    res.json({ trips });
+    const rows = await query(
+      `SELECT ${TRIP_SELECT} WHERE b.operatorId = ? ORDER BY b.createdAt DESC`,
+      [req.user.id]
+    );
+    res.json({ trips: rows.map(shapeTrip) });
   }
 );
 
@@ -45,7 +83,7 @@ async function loadOwnTrip(req, res) {
     res.status(400).json({ error: "Invalid trip id" });
     return null;
   }
-  const booking = await prisma.booking.findUnique({ where: { id } });
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
   // Re-check operatorId on the loaded record (don't trust the id alone): an
   // operator may only act on a mission dispatch actually assigned to them.
   if (!booking || booking.operatorId !== req.user.id) {
@@ -73,10 +111,13 @@ router.post(
       });
     }
 
-    const updated = await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "accepted" },
-    });
+    await query("UPDATE bookings SET status = ? WHERE id = ?", [
+      "accepted",
+      booking.id,
+    ]);
+    const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
+      booking.id,
+    ]);
     res.json({ booking: updated });
   }
 );
@@ -98,10 +139,13 @@ router.post(
       });
     }
 
-    const updated = await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "rejected", operatorId: null, aircraftId: null },
-    });
+    await query(
+      "UPDATE bookings SET status = ?, operatorId = NULL, aircraftId = NULL WHERE id = ?",
+      ["rejected", booking.id]
+    );
+    const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
+      booking.id,
+    ]);
     res.json({ booking: updated });
   }
 );

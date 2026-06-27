@@ -1,6 +1,6 @@
 // IraGo auth routes: signup + login. Mounted at /api/auth.
 const express = require("express");
-const { prisma } = require("./db");
+const { query, queryOne } = require("./db");
 const { hashPassword, verifyPassword, signToken } = require("./auth");
 
 const router = express.Router();
@@ -33,22 +33,26 @@ router.post("/signup", async (req, res) => {
       .json({ error: "Password must be at least 6 characters" });
   }
 
-  const existing = await prisma.user.findUnique({
-    where: { email: String(email).toLowerCase() },
-  });
+  const normalizedEmail = String(email).toLowerCase();
+
+  const existing = await queryOne("SELECT id FROM users WHERE email = ?", [
+    normalizedEmail,
+  ]);
   if (existing) {
     return res.status(409).json({ error: "An account with that email already exists" });
   }
 
   const passwordHash = await hashPassword(String(password));
-  const user = await prisma.user.create({
-    data: {
-      name: String(name),
-      email: String(email).toLowerCase(),
-      passwordHash,
-      role: "customer",
-    },
-  });
+  const result = await query(
+    "INSERT INTO users (name, email, passwordHash, role) VALUES (?, ?, ?, ?)",
+    [String(name), normalizedEmail, passwordHash, "customer"]
+  );
+
+  // Re-read the freshly inserted row so the response and token reflect exactly
+  // what the database stored (id, defaults, timestamps).
+  const user = await queryOne("SELECT * FROM users WHERE id = ?", [
+    result.insertId,
+  ]);
 
   const token = signToken(user);
   res.status(201).json({ token, user: publicUser(user) });
@@ -64,9 +68,9 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ error: "email and password are required" });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: String(email).toLowerCase() },
-  });
+  const user = await queryOne("SELECT * FROM users WHERE email = ?", [
+    String(email).toLowerCase(),
+  ]);
 
   const ok = user && (await verifyPassword(String(password), user.passwordHash));
   if (!ok) {

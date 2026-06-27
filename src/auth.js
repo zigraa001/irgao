@@ -12,7 +12,7 @@ const BCRYPT_ROUNDS = 10;
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 // Allowed user roles. role validation lives in app code because the DB stores
-// role as a plain String (Prisma enums are unsupported on SQLite).
+// role as a plain VARCHAR rather than a DB-level enum.
 const ROLES = ["customer", "operator", "admin"];
 
 // The signing secret. In production AUTH_SECRET MUST be set; locally we fall

@@ -5,7 +5,7 @@
 // authenticated customer. Fare and distance are computed server-side so we never
 // trust client-supplied money or geometry.
 const express = require("express");
-const { prisma } = require("./db");
+const { query, queryOne } = require("./db");
 const { requireAuth } = require("./auth");
 const { SERVICES, haversineKm, estimateFare } = require("./pricing");
 
@@ -53,9 +53,13 @@ router.post("/", requireAuth, async (req, res) => {
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
   const fareEstimate = estimateFare(service, distanceKm);
 
-  const booking = await prisma.booking.create({
-    data: {
-      customerId: req.user.id,
+  const result = await query(
+    `INSERT INTO bookings
+       (customerId, pickupName, pickupLat, pickupLng, destName, destLat, destLng,
+        service, distanceKm, fareEstimate, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      req.user.id,
       pickupName,
       pickupLat,
       pickupLng,
@@ -65,9 +69,15 @@ router.post("/", requireAuth, async (req, res) => {
       service,
       distanceKm,
       fareEstimate,
-      status: "requested",
-    },
-  });
+      "requested",
+    ]
+  );
+
+  // Return the persisted row so the client gets the generated id, status, and
+  // timestamps exactly as stored.
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [
+    result.insertId,
+  ]);
 
   res.status(201).json({ booking });
 });
@@ -82,7 +92,7 @@ router.get("/:id", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Invalid booking id" });
   }
 
-  const booking = await prisma.booking.findUnique({ where: { id } });
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
   if (!booking) {
     return res.status(404).json({ error: "Booking not found" });
   }
