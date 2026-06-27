@@ -15,8 +15,11 @@ const { initSchema } = require("../src/schema");
 
 const DEMO_PASSWORD = "password123";
 
+// Users may set their own password; anyone without `password` falls back to the
+// shared DEMO_PASSWORD. The primary admin gets real credentials so the live site
+// can be administered immediately after seeding.
 const USERS = [
-  { name: "Admin User", email: "admin@irago.test", role: "admin" },
+  { name: "Admin", email: "admin@irago.com", role: "admin", password: "iragoadmin@123" },
   { name: "Olivia Operator", email: "olivia@irago.test", role: "operator" },
   { name: "Owen Operator", email: "owen@irago.test", role: "operator" },
   { name: "Casey Customer", email: "casey@irago.test", role: "customer" },
@@ -34,15 +37,14 @@ async function main() {
   // without a separate init step).
   await initSchema();
 
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-
   for (const u of USERS) {
-    // On conflict (existing email) refresh name + role but leave the password
-    // hash untouched — mirrors the previous upsert semantics.
+    const passwordHash = await bcrypt.hash(u.password || DEMO_PASSWORD, 10);
+    // On conflict (existing email) refresh name + role AND the password hash, so
+    // re-seeding can also reset credentials (e.g. the admin password).
     await query(
       `INSERT INTO users (name, email, passwordHash, role)
        VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE name = VALUES(name), role = VALUES(role)`,
+       ON DUPLICATE KEY UPDATE name = VALUES(name), role = VALUES(role), passwordHash = VALUES(passwordHash)`,
       [u.name, u.email, passwordHash, u.role]
     );
   }
@@ -67,7 +69,8 @@ async function main() {
   const userCount = (await queryOne("SELECT COUNT(*) AS n FROM users")).n;
   const aircraftCount = (await queryOne("SELECT COUNT(*) AS n FROM aircraft")).n;
   console.log(`Seed complete: ${userCount} users, ${aircraftCount} aircraft.`);
-  console.log(`Demo password for all seeded users: "${DEMO_PASSWORD}"`);
+  console.log(`Admin login: admin@irago.com / iragoadmin@123`);
+  console.log(`Demo password for the other seeded users: "${DEMO_PASSWORD}"`);
 }
 
 main()
