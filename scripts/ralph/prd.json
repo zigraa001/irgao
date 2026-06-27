@@ -37,8 +37,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added GET /api/admin/users to src/admin-routes.js (requireAuth + requireRole('admin')). Returns { users: [{id,name,email,role,createdAt}] } ordered by createdAt DESC, id DESC. Optional ?role=operator|admin|customer filter via FILTERABLE_ROLES (customer allowed here, unlike create); invalid/absent role returns all. SELECT lists explicit columns so passwordHash is never selected. Added 5 tests (401/403 guards, newest-first + no passwordHash, role filter, invalid-role-returns-all). Full suite: 34 pass. Typecheck clean."
     },
     {
       "id": "US-003",

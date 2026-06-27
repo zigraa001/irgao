@@ -21,3 +21,12 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Pre-existing unrelated working-tree changes (scripts/seed.js, scripts/ralph/archive/, tasks/*.md) are harness/env artifacts — keep feature commits focused on src/ + test/ + PRD/progress.
 ---
 
+## Sun Jun 28 - US-002 Admin-only list-users API
+- Added `GET /api/admin/users` to src/admin-routes.js (requireAuth + requireRole('admin')). Returns `{ users: [{id,name,email,role,createdAt}] }` ordered by `createdAt DESC, id DESC`. Optional `?role=` filter validated against new FILTERABLE_ROLES = [operator,admin,customer] (customer IS allowed for listing, unlike CREATABLE_ROLES for create); invalid/absent role → all users.
+- Selected explicit columns (no `SELECT *`) so passwordHash can never leak. Added `listUser()` shaper alongside `publicUser()`.
+- Extended test/admin-routes.test.js: taught the in-memory db fake to handle the list SELECT (with optional WHERE role + newest-first sort) and added 5 tests. Full suite: 34 pass. Typecheck clean.
+- **Learnings for future iterations:**
+  - The db-fake matches by SQL prefix; list query starts `SELECT id, name, email, role, createdAt FROM users` — distinct enough not to collide with the existing `WHERE email` / `WHERE id` branches. When adding new SQL, keep the leading shape unambiguous.
+  - Filterable vs creatable roles differ on purpose: customers can be LISTED but never CREATED via /api/admin/users.
+---
+

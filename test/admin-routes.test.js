@@ -43,6 +43,23 @@ const fakeDb = (() => {
     if (s.includes("FROM users WHERE id")) {
       return users.filter((u) => u.id === params[0]).map((u) => ({ ...u }));
     }
+    // List endpoint: optional role filter, ordered newest-first.
+    if (s.startsWith("SELECT id, name, email, role, createdAt FROM users")) {
+      let rows = users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+      }));
+      if (s.includes("WHERE role")) {
+        rows = rows.filter((u) => u.role === params[0]);
+      }
+      rows.sort((a, b) =>
+        b.createdAt < a.createdAt ? -1 : b.createdAt > a.createdAt ? 1 : b.id - a.id
+      );
+      return rows;
+    }
     return [];
   }
 
@@ -90,6 +107,14 @@ async function post(body, token) {
     headers,
     body: JSON.stringify(body),
   });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+async function get(qs, token) {
+  const headers = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/admin/users${qs || ""}`, { headers });
   const json = await res.json().catch(() => null);
   return { status: res.status, json };
 }
@@ -194,4 +219,46 @@ test("duplicate email (case-insensitive) returns 409", async () => {
     adminToken()
   );
   assert.equal(second.status, 409);
+});
+
+// --- List endpoint (GET /api/admin/users) -------------------------------------
+
+test("GET /api/admin/users without a token returns 401", async () => {
+  const { status } = await get();
+  assert.equal(status, 401);
+});
+
+test("GET /api/admin/users with a non-admin token returns 403", async () => {
+  const { status } = await get("", customerToken());
+  assert.equal(status, 403);
+});
+
+test("GET /api/admin/users returns users newest-first, no passwordHash", async () => {
+  const { status, json } = await get("", adminToken());
+  assert.equal(status, 200);
+  assert.ok(Array.isArray(json.users));
+  assert.ok(json.users.length > 0);
+  for (const u of json.users) {
+    assert.equal("passwordHash" in u, false);
+    assert.ok("createdAt" in u);
+    assert.ok(u.id && u.name && u.email && u.role);
+  }
+  // Newest-first: ids are strictly descending given our monotonic createdAt.
+  const ids = json.users.map((u) => u.id);
+  const sorted = [...ids].sort((a, b) => b - a);
+  assert.deepEqual(ids, sorted);
+});
+
+test("GET /api/admin/users?role=admin filters by role", async () => {
+  const { status, json } = await get("?role=admin", adminToken());
+  assert.equal(status, 200);
+  assert.ok(json.users.length > 0);
+  assert.ok(json.users.every((u) => u.role === "admin"));
+});
+
+test("GET /api/admin/users with an invalid role returns all users", async () => {
+  const all = await get("", adminToken());
+  const bogus = await get("?role=superadmin", adminToken());
+  assert.equal(bogus.status, 200);
+  assert.equal(bogus.json.users.length, all.json.users.length);
 });
