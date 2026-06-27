@@ -1,272 +1,123 @@
 {
   "project": "IraGo",
-  "branchName": "ralph/irago-mvp",
-  "description": "IraGo Air Mobility Platform MVP - Express + Prisma + MySQL backend with bcrypt auth, plus customer, operator, and admin experiences served from a single app.html gated by role. Fare, live position, pre-flight checklist, and payments are mocked for now; the data layer (users, bookings, assignments, status) is real and persisted.",
+  "branchName": "ralph/auth-roles-and-admin-user-management",
+  "description": "Multi-Role Auth Page & Admin User Management - Customers self-register; login serves all three roles (customer, operator, admin) and routes each to its own area; operators and admins are created by an admin from a new Admin Dashboard with a user-management section. Adds an admin-only API to create and list users, hardens public signup so it can only ever create customers.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add Express + Prisma + MySQL backend skeleton",
-      "description": "As a developer, I need an Express server with a Prisma/MySQL connection so the app has a real API and database, following the Hostinger Node.js + MySQL setup.",
+      "title": "Admin-only create-user API",
+      "description": "As an admin, I want a secure endpoint to create operator and admin accounts so that elevated accounts are never self-registered.",
       "acceptanceCriteria": [
-        "Add dependencies: express, prisma, @prisma/client, bcrypt, dotenv",
-        "server.js (or new app.js) serves existing static files AND mounts an /api router via express.static",
-        "Database is selected by env vars: DATABASE_PROVIDER (mysql default -> Hostinger, or sqlite for local testing) and DATABASE_URL (connection string)",
-        "Prisma schema datasource uses DATABASE_URL; provider switches between mysql and sqlite based on DATABASE_PROVIDER (use a schema-swap setup script or equivalent since Prisma provider must be a literal). Default/production = Hostinger MySQL per the Hostinger guide; local = file:./dev.db SQLite",
-        "Commit .env.example documenting both DATABASE_PROVIDER and DATABASE_URL with the Hostinger MySQL default plus a commented local SQLite override; real .env is gitignored",
-        "npm start boots the server with a working DB connection and fails loudly on bad credentials",
-        "GET /api/health returns { status: 'ok', db: 'connected' }",
-        "Document Hostinger connection steps, the env-var DB switch, and required env vars in a README or notes file",
+        "Add src/admin-routes.js and mount it at /api/admin in src/api.js",
+        "POST /api/admin/users is protected by requireAuth then requireRole('admin')",
+        "Accepts JSON body { name, email, password, role } and validates: name/email/password required, email matches EMAIL_RE, password length >= 6",
+        "role must be one of ['operator','admin']; reject 'customer' and unknown values with 400",
+        "Returns 409 when the email already exists (lowercased, like signup)",
+        "Password stored only as a bcrypt hash via hashPassword; response never includes passwordHash",
+        "On success returns 201 with public user { id, name, email, role }",
+        "Non-admin token returns 403; missing/invalid token returns 401",
+        "Tests pass",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Express 5 + Prisma 6 (pinned; Prisma 7 dropped url=env datasource). server.js serves static + /api; src/db.js Prisma singleton; src/api.js has GET /api/health -> {status:ok,db:connected}. Provider swapped via scripts/db-setup.js (DATABASE_PROVIDER). Verified locally on SQLite: health ok, static served, fails loudly (exit 1) on bad DB. Typecheck passes."
+      "notes": "Added src/admin-routes.js (POST /api/admin/users), mounted at /api/admin in src/api.js. requireAuth + requireRole('admin'); validates name/email/password/role; role restricted to operator|admin; 409 on duplicate (lowercased) email; bcrypt hash via hashPassword; 201 returns public user. Tested DB-free in test/admin-routes.test.js via in-memory db fake + real signed tokens."
     },
     {
       "id": "US-002",
-      "title": "Create the database schema (users, bookings, aircraft, trips) + seed",
-      "description": "As a developer, I need a Prisma schema so all app data persists with the right relationships and seeded sample data.",
+      "title": "Admin-only list-users API",
+      "description": "As an admin, I want to list existing users so the dashboard can show who already has access.",
       "acceptanceCriteria": [
-        "User model: id, name, email (unique), passwordHash, role enum customer|operator|admin, timestamps",
-        "Aircraft model: id, name/tail number, model, status enum available|in_flight|maintenance, capacity",
-        "Booking model: id, customerId FK->User, pickupName/pickupLat/pickupLng, destName/destLat/destLng, service, distanceKm, fareEstimate, status enum requested|assigned|accepted|rejected|enroute|picked_up|flying|arrived|completed|cancelled, timestamps",
-        "Booking has optional operatorId FK->User and aircraftId FK->Aircraft for assignment",
-        "Prisma migration generates and applies cleanly against the env-selected database (SQLite locally, MySQL on Hostinger); avoid DB-specific column types so the schema works on both",
-        "Seed script inserts 1 admin, 2 operators, 2 customers, and 3 aircraft",
+        "GET /api/admin/users protected by requireAuth + requireRole('admin')",
+        "Returns { users: [{ id, name, email, role, createdAt }, ...] } ordered by createdAt (or id) descending",
+        "Response never includes passwordHash",
+        "Optional ?role=operator|admin|customer filters by role when present; invalid values are ignored",
+        "Non-admin returns 403; unauthenticated returns 401",
+        "Tests pass",
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "User/Aircraft/Booking models added to prisma/schema.prisma. role/status are String columns (Prisma enums unsupported on SQLite) with allowed values documented + enforced in app code; no DB-specific types so it works on SQLite + MySQL. Booking has optional operatorId/aircraftId FKs + indexes. prisma/seed.js (idempotent upserts) seeds 1 admin, 2 operators, 2 customers, 3 aircraft, all bcrypt-hashed (demo pw password123). Added db:seed script. Migrations are dialect-specific under the provider swap, so not committed; db:push applies the schema. Verified on SQLite: db:push synced, seed counts correct, re-seed idempotent, typecheck green. Committed schema provider restored to mysql."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-003",
-      "title": "Signup, login, and session token API with bcrypt",
-      "description": "As a developer, I need auth endpoints so users can register and log in securely, with passwords hashed one-way so they can never be stolen in plaintext.",
+      "title": "Backend signup hardening (defense in depth)",
+      "description": "As a security-conscious developer, I want public signup to be incapable of creating elevated accounts even if the client sends a role.",
       "acceptanceCriteria": [
-        "POST /api/auth/signup accepts name, email, password (role defaults to customer) and rejects duplicate email",
-        "Passwords stored only as a bcrypt hash; plaintext is never persisted or returned",
-        "POST /api/auth/login verifies email + password via bcrypt.compare and returns a session token plus user id, name, and role (never the hash)",
-        "Invalid credentials return a generic 401 with no field-level leak",
-        "Auth middleware validates the token on protected routes and exposes the current user + role",
-        "requireRole(role) guard rejects wrong-role requests with 403",
+        "POST /api/auth/signup ignores any role field in the body and always inserts role = 'customer'",
+        "A test asserts posting { role: 'admin' } to /api/auth/signup still yields a customer account",
+        "Existing test/auth.test.js continues to pass",
         "Tests pass",
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "src/auth.js: bcrypt hashPassword/verifyPassword + stateless HMAC-SHA256 signed tokens (signToken/verifyToken, dependency-free via node crypto; secret from AUTH_SECRET with insecure dev fallback + warning; 7-day exp; constant-time sig check). requireAuth middleware validates Bearer token -> req.user={id,name,role}; requireRole(role) -> 403 on mismatch. src/auth-routes.js mounted at /api/auth: POST /signup (name/email/password, role forced to customer, 409 on dup email, emails lowercased, never returns/persists plaintext), POST /login (bcrypt.compare, generic 401 for bad email OR password, returns token+public user no hash). GET /api/me protected by requireAuth. test/auth.test.js: 12 DB-free node:test cases (hashing, token roundtrip/tamper/expiry/garbage, requireAuth/requireRole) all pass via `npm test` (added test script). Verified live on SQLite: signup 201, dup 409, login 200 w/ token, case-insensitive email, bad pw 401, /me with token returns user, /me without token 401. Typecheck green."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-004",
-      "title": "Wire signup + login UI to the auth API",
-      "description": "As a customer, I want to create an account and log in so my bookings are tied to me.",
+      "title": "Admin Dashboard view shell + role routing",
+      "description": "As an admin, I want to land on a dedicated dashboard after login so I have a home base instead of the customer booking view.",
       "acceptanceCriteria": [
-        "The existing login-view supports both login and signup (name/email/password) and calls the real API",
-        "On success the session token is stored client-side and the role-appropriate view loads (customer -> booking view)",
-        "Errors (duplicate email, wrong password) show a clear inline message",
-        "Logout clears the token and returns to login",
+        "Add <div id='admin-view' class='view'> to app.html, structured like operator-view (nav with logo, role badge 'Admin Console', avatar wired to logout())",
+        "routeForRole() gains an admin case that calls showView('admin-view'), sets the avatar initial + welcome line, and triggers loading the user list",
+        "Admins no longer fall back to the booking view",
+        "Customer and operator routing are unchanged",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser using dev-browser skill: logging in as admin@irago.com / iragoadmin@123 lands on the Admin Dashboard"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "app.html login-view wired to the real auth API. Login card -> POST /api/auth/login, register card -> POST /api/auth/signup (both inline in app.html). Added a client AUTH helper (localStorage token+user under irago_token/irago_user), apiFetch wrapper (adds Bearer header, auto-logout on 401), showView/routeForRole (customer -> booking-view + initMap; operator/admin fall through to booking-view until US-008/US-013), onAuthSuccess, logout (clears token, returns to login; wired to nav-avatar click), and restoreSession on DOMContentLoaded (GET /api/me). Inline .auth-error shown for empty fields, bad creds (generic 401 msg), duplicate email (409), <6 char pw, and network errors. Google button is a stub (googleStub) showing 'not available yet'. Enter key submits. Verified: typecheck green; inline JS node --check OK; headless DOM harness against live server passed all 6 flows (empty->error, bad pw->error+stay, good login->token+booking view+avatar 'C'+map init, logout->cleared+login, dup signup->error, /me restore->booking view). No browser MCP available, so visual browser check still pending manual confirmation."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Pickup, destination, and service selection captured for booking",
-      "description": "As a customer, I want to enter pickup and destination and pick a service so the system knows my trip.",
+      "title": "User list on the Admin Dashboard",
+      "description": "As an admin, I want to see existing users so I know who already has access and what role they hold.",
       "acceptanceCriteria": [
-        "Existing map pickup/destination entry and service selector remain functional",
-        "Selected pickup/destination (name + lat/lng), service, and computed distance are captured for booking creation",
-        "Distance is computed (existing client calc is fine) and passed to the fare step",
+        "On entering the Admin Dashboard, the client calls GET /api/admin/users via the shared authed fetch wrapper and renders a list/table with name, email, and a role badge",
+        "Role badges are visually distinct (admin / operator / customer colors), reusing existing badge styling where possible",
+        "Loading, empty, and error states are handled (e.g. 'Could not load users')",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser using dev-browser skill: list shows the seeded admin, operators, and customers"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "Added a structured bookingDraft state object in app.html ({pickup:{name,lat,lng}, dest:{name,lat,lng}, service, distanceKm}) as the single source of truth for the in-progress booking. captureBookingDraft() reads pickupCoord/destCoord + input names + currentService + calcDistance() into it; called from setPickup, setDest, swapLocations, switchService, and searchRides (the fare step now uses draft.distanceKm). bookingDraftReady() gates on pickup+dest+service all set (for US-006). resetBooking() clears the draft. distanceKm stays null until BOTH ends are chosen. Existing map entry, autocomplete, popular-route chips, and service tabs remain functional. SERVICE_LABELS map added for display/persistence. Verified: typecheck green; node --check on inline JS OK; npm test 12/12; headless vm+stub harness covered all 7 flows (empty not ready, pickup-only captured + dist null, dest -> ready + distance, service switch retains distance, swap swaps names/coords, reset clears, searchRides captures). No browser MCP in env, so visual browser check remains manual."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-006",
-      "title": "Fare estimate (mock) and booking confirmation",
-      "description": "As a customer, I want a fare estimate and a confirm step so I can book a flight.",
+      "title": "Add-user form on the Admin Dashboard",
+      "description": "As an admin, I want a form to add an operator or another admin so I can provision team accounts.",
       "acceptanceCriteria": [
-        "Fare estimate shown via a mock pricing function (base + per-km by service) isolated in one place clearly marked as mock-to-be-replaced",
-        "Confirming calls POST /api/bookings, persisting a Booking with status requested tied to the logged-in customer",
-        "Confirmation screen reflects the saved booking (id, route, service, fare)",
-        "A booking cannot be created unless pickup, destination, and service are set",
+        "Admin Dashboard has an 'Add Team Member' form with fields Full Name, Email, Password, and a Role selector limited to Operator and Admin",
+        "Submitting calls POST /api/admin/users using the shared authed fetch wrapper (sends bearer token)",
+        "Client-side validation mirrors the server (all fields required, password >= 6) with inline errors using existing auth-error styling (showAuthError/hideAuthError)",
+        "On success the form clears, a success message shows, and the user list refreshes to include the new account",
+        "Server errors (409 duplicate email, 403) are surfaced as readable messages",
+        "Submit button shows a busy state while the request is in flight (reuse setBusy)",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser using dev-browser skill: add an operator, confirm it appears in the list and can then log in"
       ],
       "priority": 6,
-      "passes": true,
-      "notes": "Mock pricing isolated in src/pricing.js (clearly marked MOCK — TO BE REPLACED): estimateFare(service, distanceKm) = base + perKm by service (taxi/golden/shuttle), rounded to ₹100; also exports haversineKm so the server computes distance authoritatively (never trusts client geometry/money). POST /api/bookings (src/booking-routes.js, mounted in api.js, requireAuth) validates pickup+dest (name+coords) and a valid service, computes distanceKm + fareEstimate server-side, persists Booking status 'requested' tied to req.user.id, returns {booking}. app.html bookRide() is now async: re-captures bookingDraft, gates on bookingDraftReady() (client mirror of server guard), POSTs via apiFetch (no fare sent — server-authoritative), then fillConfirmation(booking) populates the overlay from the SAVED booking (id->IRG-00007, pickup/dest names, SERVICE_LABELS[service], ₹fareEstimate). currentBooking global stores the saved record for US-007 tracking; resetBooking clears it. Inline #booking-error for gate/server/network failures. test/pricing.test.js (8 cases). Verified: typecheck green; npm test 19/19; node --check on inline JS OK; live SQLite API — valid POST 201 (status requested, customerId from token, distanceKm 14.1, fare 8500), missing service/coords 400, no auth 401, bad service 400; headless vm harness — not-ready gated (no POST), ready POSTs + confirmation reflects saved booking + currentBooking set, server 400 -> inline error no overlay. Visual browser check manual (no browser MCP)."
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-007",
-      "title": "Booking status tracking + live tracking view (mock position)",
-      "description": "As a customer, I want to track my booking's status so I know what's happening.",
+      "title": "Auth page clarity - customer-only registration, all-role login",
+      "description": "As a visitor, I want the auth page to make clear that registration is for customers while operators/admins sign in with provisioned accounts, so I don't get confused.",
       "acceptanceCriteria": [
-        "Tracking view loads the booking's real status from GET /api/bookings/:id via polling",
-        "Status steps (confirmed -> enroute -> pickup -> flying -> arrived) reflect the persisted booking status set by the operator",
-        "Aircraft position/ETA on the map is mocked (animated) and clearly marked as placeholder for real GPS",
-        "If no active booking exists, the view shows an appropriate empty state",
+        "The registration card is explicitly framed as customer signup (heading/subtext e.g. 'Create your customer account')",
+        "A short helper line tells operators/admins to sign in with the account provided by their administrator (no public operator/admin registration)",
+        "The login card heading/subtext communicates it serves all roles (single shared login)",
+        "No role selector is added to the public signup form",
+        "Existing customer signup and login flows still work unchanged",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser using dev-browser skill: copy renders correctly and toggling between login/register still works"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": "Added GET /api/bookings/:id (src/booking-routes.js, requireAuth) returning the persisted booking; readable by the owning customer, assigned operator, or admin (403 otherwise, 404 missing, 400 bad id). app.html tracking view rewritten: the time-based simulation is replaced by REAL status polling — startTracking() polls GET /api/bookings/:id every 4s and applyTrackingStatus(status) maps the persisted status to the 5 step dots (confirmed/enroute/pickup/flying/arrived) + progress bar + copy. STATUS_DISPLAY maps all DB statuses (requested/assigned/accepted->confirmed, enroute, picked_up->pickup, flying, arrived/completed->arrived, rejected/cancelled->red dot). Aircraft position + ETA stay a MOCK animation (animateTrackingAircraft eases marker toward status-implied route fraction), clearly marked TO BE REPLACED with real GPS. Empty state (#tracking-empty) shown when no currentBooking. Polling stops at terminal statuses (arrived/completed/cancelled/rejected). endTracking clears both intervals. Verified: typecheck green; npm test 19/19; node --check on inline JS OK; live SQLite API — GET own 200, admin 200, other-customer 403, no-token 401, missing 404, bad-id 400, and operator-set status (DB flying) reflected by GET; vm+stub harness 14/14 (empty state, status->step mapping for requested/enroute/flying/arrived/cancelled, progress %, dot colors, poll picks up new status). Visual browser check manual (no browser MCP)."
-    },
-    {
-      "id": "US-008",
-      "title": "Operator login routes to the operator views",
-      "description": "As an operator, I want to log in and land on my pilot dashboard.",
-      "acceptanceCriteria": [
-        "A user with role operator logging in is shown the operator view (not the customer booking view)",
-        "Operator views live in the same app.html, shown/hidden by role",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "Added a role-gated operator (Pilot Console) landing view in app.html. New `#operator-view` .view (nav + 'Pilot Console' badge + personalized welcome + 'Assigned Trips' section with an empty-state placeholder that US-009 will replace) plus an OPERATOR DASHBOARD CSS block. routeForRole() now switches on role: operator -> showView('operator-view') + sets #op-welcome to 'Welcome back, <name>' + #op-avatar initial; customer/default -> booking-view + initMap (admin still falls through to booking-view until US-013). Operator avatar has its own id (#op-avatar) wired to logout(); booking-view keeps #nav-avatar. Verified: typecheck green; npm test 19/19; node --check on extracted inline JS OK; vm+stub harness 8/8 (operator->operator-view only + personalized welcome + avatar; customer->booking-view + 'C'; admin->booking-view fallback; operator switch hides booking-view); live SQLite API login — olivia@irago.test returns role 'operator' (+token), casey@irago.test returns 'customer'. No browser MCP, so visual browser check remains manual."
-    },
-    {
-      "id": "US-009",
-      "title": "Assigned trip list + trip details",
-      "description": "As an operator, I want to see trips assigned to me and open their details.",
-      "acceptanceCriteria": [
-        "GET /api/operator/trips returns bookings assigned to the logged-in operator",
-        "List shows route, customer, service, status, and assigned aircraft",
-        "Selecting a trip opens a details view with full pickup/destination, distance, fare, and customer info",
-        "Empty state shown when no trips are assigned",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "GET /api/operator/trips added in new src/operator-routes.js (mounted at /api/operator in api.js), guarded by requireAuth + requireRole('operator'). Returns bookings where operatorId === req.user.id, newest first, with customer (id/name/email — NEVER passwordHash, via select) and aircraft (id/name/model/status) included. app.html operator-view rebuilt: op-body now has #op-list-section (welcome + #op-trips list) and a hidden #op-detail-section. loadOperatorTrips() (called from routeForRole operator case) fetches via apiFetch and renderOperatorTrips() paints cards (route, customer, service label, aircraft, status badge) or the empty state; openTripDetails(id) renders the full details (IRG-ref, pickup/dest names+coords, distance, fare, aircraft, customer name+email) from the cached trip and toggles sections; closeTripDetails() returns to the list. Added STATUS_BADGE map, escapeHtml (all DB text escaped before innerHTML), bookingRef/fmtINR helpers + trip-card/details CSS. Verified: typecheck green; npm test 19/19; node --check on inline JS OK; live SQLite API — operator 200 (empty then 1 after assign, customer+aircraft included, no passwordHash), customer 403, no-token 401, other operator sees 0 (scoped by operatorId); vm+stub UI harness 18/18 (empty state, list route/customer/service/aircraft/badges, unassigned-aircraft, openTripDetails fields + section toggle, closeTripDetails, XSS escaping). No browser MCP, so visual browser check remains manual."
-    },
-    {
-      "id": "US-010",
-      "title": "Accept / reject an assigned mission",
-      "description": "As an operator, I want to accept or reject an assigned trip so dispatch knows if I'll fly it.",
-      "acceptanceCriteria": [
-        "Accept sets booking status to accepted; reject sets it to rejected and frees it for reassignment",
-        "Actions call POST /api/operator/trips/:id/accept and /reject with operator role check",
-        "The customer's tracking view and the admin dashboard reflect the change",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 10,
-      "passes": true,
-      "notes": "POST /api/operator/trips/:id/accept and /reject added to src/operator-routes.js (requireAuth + requireRole('operator')). Shared loadOwnTrip() re-checks booking.operatorId === req.user.id on the loaded record (400 bad id, 404 missing/not-yours). accept: only status 'assigned' -> 'accepted' (else 409). reject: only 'assigned' -> 'rejected' AND clears operatorId + aircraftId so dispatch can reassign it (US-015), else 409. Customer tracking already reflects the change (STATUS_DISPLAY maps accepted->confirmed, rejected->red dot; no client change for the tracking view). app.html: openTripDetails now renders Accept mission/Reject buttons (tripActionsHtml, only when status==='assigned') + an inline #op-action-error; acceptTrip/rejectTrip -> actOnTrip(id,action) POSTs via apiFetch, disables buttons, then reloads loadOperatorTrips() and reopens details (rejected trip is gone from the list -> falls back to closeTripDetails). Added .op-actions/.op-btn(--accept/--reject)/.op-action-error CSS. Verified: typecheck green; npm test 19/19; node --check on inline JS OK; live SQLite API 12/12 (accept->200 accepted, re-accept->409, reject->200 rejected+freed+persisted, other operator->404 scoped, customer->403, no token->401, bad id->400, missing->404, customer GET /api/bookings/:id sees accepted); vm+stub UI harness 10/10 (assigned shows both buttons, accept POSTs+reloads+buttons gone, reject POSTs+removed from list+returns to list, accepted shows no buttons). Admin dashboard reflection is deferred to US-014 (admin views not built yet); the persisted status change is what those views will read. Visual browser check manual (no browser MCP)."
-    },
-    {
-      "id": "US-011",
-      "title": "Operator status update actions",
-      "description": "As an operator, I want to push status updates (enroute, picked up, flying, arrived, completed) so the customer and admin see live progress.",
-      "acceptanceCriteria": [
-        "Operator can advance the trip through the status sequence via buttons",
-        "Each update persists via POST /api/operator/trips/:id/status and is reflected in the customer tracking view",
-        "Statuses can only move forward in a sensible order (no skipping backward)",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 11,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-012",
-      "title": "Basic pre-flight checklist (mock)",
-      "description": "As an operator, I want a pre-flight checklist before starting a flight.",
-      "acceptanceCriteria": [
-        "A checklist of items (battery, weather, weight, comms) is shown before moving the trip to flying",
-        "Implementation is mock/UI-only and clearly marked for future real integration",
-        "Cannot mark flying until all items are checked (client-side gate)",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 12,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-013",
-      "title": "Admin login routes to the admin dashboard",
-      "description": "As an admin, I want to log in and land on the dashboard.",
-      "acceptanceCriteria": [
-        "A user with role admin is shown the admin dashboard views, gated by role on both client and API",
-        "Admin views live in the same app.html",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 13,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-014",
-      "title": "Live bookings dashboard + customer/booking list",
-      "description": "As an admin, I want to see all bookings and customers so I can manage operations.",
-      "acceptanceCriteria": [
-        "GET /api/admin/bookings returns all bookings with customer, status, operator, aircraft",
-        "Dashboard shows live bookings (auto-refresh/poll) with status indicators",
-        "A list view shows customers and their bookings, filterable by status",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 14,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-015",
-      "title": "Booking assignment screen (pilot + aircraft)",
-      "description": "As an admin, I want to assign a pilot and aircraft to a booking so the trip can be flown.",
-      "acceptanceCriteria": [
-        "For a requested or rejected booking, admin can pick an available operator and aircraft",
-        "POST /api/admin/bookings/:id/assign sets operatorId + aircraftId and status to assigned",
-        "Assigned trip then appears in that operator's list",
-        "Only available aircraft and operators are selectable",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 15,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-016",
-      "title": "Aircraft / fleet status view + active trip monitoring",
-      "description": "As an admin, I want to see fleet status and active trips so I can monitor operations.",
-      "acceptanceCriteria": [
-        "Fleet view lists aircraft with status available|in_flight|maintenance from the DB",
-        "Active trip monitor shows in-progress bookings with current status and assigned pilot/aircraft",
-        "View reflects status changes pushed by operators",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 16,
-      "passes": false,
-      "notes": ""
-    },
-    {
-      "id": "US-017",
-      "title": "Reporting dashboard",
-      "description": "As an admin, I want a simple reporting view so I can see operational totals.",
-      "acceptanceCriteria": [
-        "Shows summary metrics: total bookings, completed trips, active trips, bookings by status, fleet utilization",
-        "Metrics come from real persisted data via GET /api/admin/reports",
-        "Numbers update on refresh",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 17,
       "passes": false,
       "notes": ""
     }

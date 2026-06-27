@@ -5,6 +5,7 @@ const { ping } = require("./db");
 const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
 const operatorRoutes = require("./operator-routes");
+const adminRoutes = require("./admin-routes");
 const { requireAuth } = require("./auth");
 
 const router = express.Router();
@@ -27,6 +28,9 @@ router.use("/bookings", bookingRoutes);
 
 // Operator: trips assigned to the logged-in pilot.
 router.use("/operator", operatorRoutes);
+
+// Admin: user management (create/list operators and admins). Admin-only.
+router.use("/admin", adminRoutes);
 
 // Current authenticated user — demonstrates the requireAuth guard and is handy
 // for the client to restore a session from a stored token.
