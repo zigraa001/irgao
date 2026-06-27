@@ -1443,6 +1443,50 @@ a { text-decoration: none; color: inherit; }
   white-space: nowrap;
 }
 
+/* Add-user form (US-006) */
+.admin-form-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 22px;
+}
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+.admin-form-select {
+  width: 100%;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.admin-form-select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+  outline: none;
+}
+.admin-add-submit { width: auto; padding: 11px 22px; }
+.admin-add-success {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(16,185,129,0.10);
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #047857;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.admin-add-success.show { display: block; }
+
 /* Trip details (US-009) */
 .op-back {
   background: none;
@@ -1919,6 +1963,35 @@ a { text-decoration: none; color: inherit; }
     <div class="op-welcome" id="admin-welcome">Welcome back, Admin</div>
     <div class="op-welcome-sub">Manage who has access to IraGo.</div>
 
+    <!-- Add-user form (US-006). Provisions operators/admins via POST /api/admin/users. -->
+    <div class="op-section-title">Add Team Member</div>
+    <div class="admin-form-card">
+      <div class="admin-form-grid">
+        <div class="auth-field">
+          <label>Full Name</label>
+          <input id="admin-add-name" type="text" placeholder="Priya Sharma" autocomplete="off">
+        </div>
+        <div class="auth-field">
+          <label>Email</label>
+          <input id="admin-add-email" type="email" placeholder="name@irago.com" autocomplete="off">
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input id="admin-add-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doAddUser()">
+        </div>
+        <div class="auth-field">
+          <label>Role</label>
+          <select id="admin-add-role" class="admin-form-select">
+            <option value="operator">Operator</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <button id="admin-add-submit" class="btn-auth-primary admin-add-submit" onclick="doAddUser()">Add Team Member</button>
+      <div id="admin-add-error" class="auth-error" role="alert"></div>
+      <div id="admin-add-success" class="admin-add-success" role="status"></div>
+    </div>
+
     <div class="op-section-title">Team &amp; Users</div>
     <!-- loadAdminUsers() (US-005) renders the user list here. -->
     <div id="admin-users">
@@ -2269,6 +2342,67 @@ function renderAdminUsers() {
       '</div>'
     );
   }).join('');
+}
+
+// Green success banner for the add-user form (mirrors showAuthError's red state).
+function showAddSuccess(msg) {
+  const el = document.getElementById('admin-add-success');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideAddSuccess() {
+  const el = document.getElementById('admin-add-success');
+  if (el) { el.textContent = ''; el.classList.remove('show'); }
+}
+
+// Provision an operator/admin via POST /api/admin/users (bearer via apiFetch),
+// then clear the form, confirm, and refresh the list. Client validation mirrors
+// the server (all fields required, password >= 6, role in operator|admin).
+async function doAddUser() {
+  const name = document.getElementById('admin-add-name').value.trim();
+  const email = document.getElementById('admin-add-email').value.trim();
+  const password = document.getElementById('admin-add-password').value;
+  const role = document.getElementById('admin-add-role').value;
+  hideAuthError('admin-add-error');
+  hideAddSuccess();
+  if (!name || !email || !password) {
+    return showAuthError('admin-add-error', 'Name, email, and password are required.');
+  }
+  if (password.length < 6) {
+    return showAuthError('admin-add-error', 'Password must be at least 6 characters.');
+  }
+  if (role !== 'operator' && role !== 'admin') {
+    return showAuthError('admin-add-error', 'Choose a role of Operator or Admin.');
+  }
+  setBusy('admin-add-submit', true, 'Adding…', 'Add Team Member');
+  try {
+    const res = await apiFetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      let msg = data.error || 'Could not add the team member.';
+      if (res.status === 409) msg = data.error || 'That email is already in use.';
+      else if (res.status === 403) msg = 'You do not have permission to add users.';
+      return showAuthError('admin-add-error', msg);
+    }
+    // Success: clear the form, confirm, and refresh the list to include the new user.
+    document.getElementById('admin-add-name').value = '';
+    document.getElementById('admin-add-email').value = '';
+    document.getElementById('admin-add-password').value = '';
+    document.getElementById('admin-add-role').value = 'operator';
+    const added = data.user || {};
+    const label = (ROLE_BADGE[added.role] || {}).label || added.role || role;
+    showAddSuccess((added.name || 'The new member') + ' was added as ' + label + '.');
+    await loadAdminUsers();
+  } catch (e) {
+    showAuthError('admin-add-error', 'Could not reach the server. Please try again.');
+  } finally {
+    setBusy('admin-add-submit', false, 'Adding…', 'Add Team Member');
+  }
 }
 
 // ── Operator: assigned trips (US-009) ──

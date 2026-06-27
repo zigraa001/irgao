@@ -101,8 +101,8 @@
         "Verify in browser using dev-browser skill: add an operator, confirm it appears in the list and can then log in"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added an 'Add Team Member' form to the Admin Dashboard in app.html: Full Name, Email, Password inputs (reusing .auth-field) + a Role <select> limited to Operator/Admin, in a .admin-form-card (2-col .admin-form-grid). doAddUser() validates client-side mirroring the server (all required, password>=6, role in operator|admin) via showAuthError/hideAuthError on #admin-add-error, sets busy via setBusy('admin-add-submit'), and POSTs /api/admin/users through apiFetch (Bearer). On success it clears the form, shows a green #admin-add-success banner (new .admin-add-success style + showAddSuccess/hideAddSuccess helpers), and awaits loadAdminUsers() to refresh the list. Server errors surfaced: 409 -> 'That email is already in use.' (or server error), 403 -> permission message, else data.error. Success label uses ROLE_BADGE[role].label. Typecheck clean; 37 tests pass (frontend-only). Browser verification NOT done (no dev-browser/MCP tooling in this env) — needs manual check that adding an operator shows it in the list and it can then log in."
     },
     {
       "id": "US-007",

@@ -63,3 +63,16 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Role badge map (`ROLE_BADGE`) + `roleBadgeHtml()` are now reusable for US-006's form/list; `adminUsers` is the cache to re-render after adding a user (call `loadAdminUsers()` to refresh).
   - Browser verification still NOT possible here (no dev-browser/MCP) — manual check needed that the list shows the seeded admin/operators/customers.
 ---
+
+## Sun Jun 28 - US-006 Add-user form on the Admin Dashboard
+- Added an "Add Team Member" form to `admin-view` in app.html (above the user list): Full Name / Email / Password inputs reusing `.auth-field`, plus a Role `<select id="admin-add-role">` limited to Operator/Admin, laid out in a new `.admin-form-card` with a 2-col `.admin-form-grid`. Submit button `#admin-add-submit` reuses `.btn-auth-primary`.
+- Added `doAddUser()`: client validation mirrors the server (name/email/password required, password >= 6, role in operator|admin) via `showAuthError/hideAuthError('admin-add-error')`; `setBusy('admin-add-submit', …)` for the in-flight state; POSTs `/api/admin/users` through `apiFetch` (Bearer + auto-logout on 401). On success: clears all fields, resets role to operator, shows a green success banner, and `await loadAdminUsers()` to refresh the list (re-renders from the `adminUsers` cache via the US-005 render path).
+- Surfaced server errors: 409 → "That email is already in use." (falls back to server `data.error`), 403 → permission message, otherwise `data.error`.
+- Added a green banner: new `.admin-add-success` CSS (mirrors `.auth-error` but green) + `showAddSuccess/hideAddSuccess()` helpers (parallel to showAuthError/hideAuthError). Success label uses `ROLE_BADGE[role].label`.
+- Typecheck clean; full suite 37 pass (frontend-only, no backend/test change).
+- **Learnings for future iterations:**
+  - Reuse the auth-form helper trio for ANY dashboard form: `showAuthError/hideAuthError(id)` for inline red errors, `setBusy(btnId, busy, busyLabel, idleLabel)` for the submit button. There was no green/success equivalent, so `showAddSuccess/hideAddSuccess` were added — reuse those for future success banners.
+  - The create response shape is `{ user: {id,name,email,role} }` (data.user), matching admin-routes US-001. Posting via `apiFetch` (not raw fetch) is required so the Bearer token is attached; raw fetch would 401.
+  - `ROLE_BADGE` (US-005) doubles as a role label source: `ROLE_BADGE[role].label` gives a human-readable role name.
+  - Browser verification still NOT possible here (no dev-browser/MCP) — manual check needed that adding an operator shows it in the list and the new operator can then log in.
+---
