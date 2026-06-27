@@ -6,9 +6,11 @@
 // literal and cannot read it from an env var. Run `npm run db:setup` after
 // changing DATABASE_PROVIDER.
 //
-// The full data model (users, aircraft, bookings, trips) is added in US-002.
-// AppMeta below is a minimal placeholder so the Prisma client generates for
-// the US-001 backend skeleton and the /api/health connectivity check works.
+// NOTE on enums: Prisma `enum` types are NOT supported on SQLite, and this
+// schema must generate/migrate cleanly on BOTH SQLite (local) and MySQL
+// (Hostinger). So role/status "enums" are plain `String` columns with the
+// allowed values documented in comments and enforced in application code.
+// We also avoid DB-specific column types for the same cross-DB reason.
 
 generator client {
   provider = "prisma-client-js"
@@ -19,8 +21,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model AppMeta {
-  id    Int     @id @default(autoincrement())
-  key   String  @unique
-  value String?
+// A platform user. role is one of: "customer" | "operator" | "admin".
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("customer")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Bookings this user made as a customer.
+  bookings         Booking[] @relation("CustomerBookings")
+  // Bookings assigned to this user as the flying operator.
+  operatorBookings Booking[] @relation("OperatorBookings")
+}
+
+// An aircraft in the fleet. status is one of:
+// "available" | "in_flight" | "maintenance".
+model Aircraft {
+  id         Int      @id @default(autoincrement())
+  name       String // tail number / display name, e.g. "IG-001"
+  model      String
+  status     String   @default("available")
+  capacity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  bookings Booking[]
+}
+
+// A trip booking. status is one of:
+// "requested" | "assigned" | "accepted" | "rejected" | "enroute" |
+// "picked_up" | "flying" | "arrived" | "completed" | "cancelled".
+model Booking {
+  id           Int      @id @default(autoincrement())
+  customerId   Int
+  pickupName   String
+  pickupLat    Float
+  pickupLng    Float
+  destName     String
+  destLat      Float
+  destLng      Float
+  service      String
+  distanceKm   Float
+  fareEstimate Float
+  status       String   @default("requested")
+  operatorId   Int?
+  aircraftId   Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer User      @relation("CustomerBookings", fields: [customerId], references: [id])
+  operator User?     @relation("OperatorBookings", fields: [operatorId], references: [id])
+  aircraft Aircraft? @relation(fields: [aircraftId], references: [id])
+
+  @@index([customerId])
+  @@index([operatorId])
+  @@index([aircraftId])
 }

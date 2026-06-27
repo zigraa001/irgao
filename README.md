@@ -18,9 +18,30 @@ server.js            Express entry point (static + /api)
 src/db.js            Shared Prisma client singleton
 src/api.js           /api router (health, plus future routes)
 prisma/schema.prisma Prisma schema (datasource provider is swapped per env)
+prisma/seed.js       Seeds sample users + aircraft
 scripts/db-setup.js  Swaps the Prisma provider based on DATABASE_PROVIDER
 .env.example         Documented env template (copy to .env)
 ```
+
+## Data model
+
+Defined in `prisma/schema.prisma`:
+
+- **User** — `id, name, email (unique), passwordHash, role, createdAt, updatedAt`.
+  `role` is one of `customer` | `operator` | `admin`.
+- **Aircraft** — `id, name (tail number), model, status, capacity, timestamps`.
+  `status` is one of `available` | `in_flight` | `maintenance`.
+- **Booking** — `id, customerId →User, pickup{Name,Lat,Lng}, dest{Name,Lat,Lng},
+  service, distanceKm, fareEstimate, status, operatorId? →User, aircraftId? →Aircraft,
+  timestamps`. `status` is one of `requested` | `assigned` | `accepted` |
+  `rejected` | `enroute` | `picked_up` | `flying` | `arrived` | `completed` |
+  `cancelled`.
+
+> **Why `String` instead of Prisma `enum`?** Prisma `enum` types are not
+> supported on SQLite, and the schema must work on both SQLite (local) and
+> MySQL (Hostinger). Role/status columns are therefore plain strings whose
+> allowed values are enforced in application code. We also avoid DB-specific
+> column types so a single schema migrates cleanly on both engines.
 
 ## Environment variables
 
@@ -49,8 +70,17 @@ cp .env.example .env
 #   DATABASE_URL="file:./dev.db"
 npm run db:setup     # swap provider to sqlite + generate the Prisma client
 npm run db:push      # create the local dev.db
+npm run db:seed      # seed sample users + aircraft (idempotent)
 npm start            # http://localhost:3000
 ```
+
+Seeded accounts (all share the demo password `password123`):
+
+| Role     | Email               |
+| -------- | ------------------- |
+| admin    | `admin@irago.test`  |
+| operator | `olivia@irago.test`, `owen@irago.test` |
+| customer | `casey@irago.test`, `cleo@irago.test`  |
 
 Verify the API + DB connection:
 
@@ -94,4 +124,10 @@ Following Hostinger's Node.js + MySQL setup:
 | `npm run db:setup`| Swap the Prisma provider per env + `prisma generate`.    |
 | `npm run db:push` | Swap provider + `prisma db push` (no migration history). |
 | `npm run db:migrate` | Swap provider + `prisma migrate dev`.                 |
+| `npm run db:seed` | Seed sample users + aircraft (idempotent).               |
 | `npm run typecheck`  | `tsc --noEmit` over the backend JS.                   |
+
+> **Migrations and the provider swap:** because the datasource provider is
+> swapped per environment, generated migration SQL is dialect-specific (SQLite
+> vs MySQL) and is **not** committed. Use `db:push` to apply the schema to a
+> fresh database on either engine; the schema itself is the source of truth.

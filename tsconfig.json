@@ -11,6 +11,6 @@
     "resolveJsonModule": true,
     "strict": false
   },
-  "include": ["server.js", "src/**/*.js", "scripts/db-setup.js"],
+  "include": ["server.js", "src/**/*.js", "scripts/db-setup.js", "prisma/seed.js"],
   "exclude": ["node_modules"]
 }
