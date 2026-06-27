@@ -52,8 +52,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Signup route already destructured only {name,email,password} and hard-coded role='customer' on INSERT, so it ignores any client-supplied role by construction. Added test/auth-routes.test.js (3 tests via the require.cache db-fake pattern): customer signup happy path, posting {role:'admin'} still yields a customer (checks both response and stored row), and {role:'operator'} likewise. No production code change required. Full suite: 37 pass. Typecheck clean."
     },
     {
       "id": "US-004",

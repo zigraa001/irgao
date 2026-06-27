@@ -21,6 +21,14 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Pre-existing unrelated working-tree changes (scripts/seed.js, scripts/ralph/archive/, tasks/*.md) are harness/env artifacts — keep feature commits focused on src/ + test/ + PRD/progress.
 ---
 
+## Sun Jun 28 - US-003 Backend signup hardening (defense in depth)
+- No production change needed: src/auth-routes.js signup already destructures only `{ name, email, password }` and hard-codes `role = "customer"` in the INSERT, so any client-supplied `role` is ignored by construction.
+- Added test/auth-routes.test.js (3 tests) using the require.cache db-fake pattern (taught it the signup `SELECT id FROM users WHERE email`, `INSERT`, and `SELECT * FROM users WHERE id` queries): customer happy path, `{role:'admin'}` still yields a customer (asserts BOTH response and stored row), and `{role:'operator'}` likewise. Existing test/auth.test.js untouched (utility-only, still passes). Full suite: 37 pass. Typecheck clean.
+- **Learnings for future iterations:**
+  - The signup route is the authoritative role gate: elevated roles come only from src/admin-routes.js. Keep signup's destructure narrow — never spread `req.body` into the INSERT.
+  - The db-fake needs `FROM users WHERE email` to return the FULL row for login (`SELECT *`), separate from the `SELECT id FROM users WHERE email` existence check — order the branches id-first so the existence check matches before the full-row branch.
+---
+
 ## Sun Jun 28 - US-002 Admin-only list-users API
 - Added `GET /api/admin/users` to src/admin-routes.js (requireAuth + requireRole('admin')). Returns `{ users: [{id,name,email,role,createdAt}] }` ordered by `createdAt DESC, id DESC`. Optional `?role=` filter validated against new FILTERABLE_ROLES = [operator,admin,customer] (customer IS allowed for listing, unlike CREATABLE_ROLES for create); invalid/absent role → all users.
 - Selected explicit columns (no `SELECT *`) so passwordHash can never leak. Added `listUser()` shaper alongside `publicUser()`.
