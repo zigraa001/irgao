@@ -45,8 +45,12 @@ function maskedConfig(cfg) {
 // you can override a value (e.g. the password) without editing code.
 // NOTE: the password is intentionally NOT hard-coded here — it must come from
 // the DB_PASSWORD env var so the secret never lives in source control.
+// Default to 127.0.0.1 (not "localhost") to force an IPv4 TCP connection.
+// "localhost" resolves to IPv6 ::1 on Hostinger, and MySQL grants for
+// 'user'@'localhost' / 'user'@'127.0.0.1' do NOT match a '::1' connection —
+// that produced "Access denied for user ...@'::1'" (errno 1045).
 const DB_DEFAULTS = {
-  host: "localhost",
+  host: "127.0.0.1",
   port: 3306,
   user: "u377309478_admin",
   database: "u377309478_irago",
