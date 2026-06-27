@@ -1438,6 +1438,7 @@ a { text-decoration: none; color: inherit; }
         <button class="search-btn search-btn-blue" id="book-btn" style="display:none;" onclick="bookRide()">
           Confirm Booking
         </button>
+        <div class="auth-error" id="booking-error"></div>
       </div>
     </div>
 
@@ -1585,6 +1586,9 @@ let map, pickupMarker, destMarker, routeLine, aircraftMarkers = [];
 let currentService = 'taxi';
 let selectedRide = null;
 let pickupCoord = null, destCoord = null;
+// The persisted booking returned by POST /api/bookings (US-006). Source of
+// truth for the confirmation screen and live tracking (US-007).
+let currentBooking = null;
 
 // ── Booking draft (US-005) ──
 // Single source of truth for the in-progress booking: the selected pickup and
@@ -2278,19 +2282,59 @@ function selectRideCard(el, idx, price, time, co2) {
   document.getElementById('book-btn').className = `search-btn search-btn-${currentService === 'golden' ? 'red' : currentService === 'shuttle' ? 'green' : 'blue'}`;
 }
 
-function bookRide() {
+async function bookRide() {
   if (!selectedRide) return;
+  hideAuthError('booking-error');
 
-  // Fill confirmation
-  document.getElementById('confirm-pickup').textContent = document.getElementById('pickup-input').value;
-  document.getElementById('confirm-dest').textContent = document.getElementById('dest-input').value;
-  document.getElementById('confirm-vehicle').textContent = selectedRide.name;
-  document.getElementById('confirm-time').textContent = selectedRide.time + ' min';
-  document.getElementById('confirm-cost').textContent = '\u20B9' + selectedRide.price.toLocaleString('en-IN');
-  document.getElementById('confirm-carbon').textContent = '-' + selectedRide.co2 + ' kg';
-  document.getElementById('confirm-id').textContent = 'IRG-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + Math.floor(1000 + Math.random() * 9000);
+  // Re-capture and gate: a booking cannot be created unless pickup,
+  // destination, and service are all set (the server enforces this too).
+  const draft = captureBookingDraft();
+  if (!bookingDraftReady()) {
+    showAuthError('booking-error', 'Please set a pickup, destination, and service before booking.');
+    return;
+  }
 
-  document.getElementById('confirm-overlay').classList.add('active');
+  setBusy('book-btn', true, 'Booking\u2026', 'Confirm Booking');
+  try {
+    const res = await apiFetch('/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        pickupName: draft.pickup.name,
+        pickupLat: draft.pickup.lat,
+        pickupLng: draft.pickup.lng,
+        destName: draft.dest.name,
+        destLat: draft.dest.lat,
+        destLng: draft.dest.lng,
+        service: draft.service,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showAuthError('booking-error', data.error || 'Could not create your booking. Please try again.');
+      return;
+    }
+
+    // Confirmation screen reflects the SAVED booking (id, route, service, fare).
+    currentBooking = data.booking;
+    fillConfirmation(currentBooking);
+    document.getElementById('confirm-overlay').classList.add('active');
+  } catch (err) {
+    showAuthError('booking-error', 'Network error \u2014 please check your connection and try again.');
+  } finally {
+    setBusy('book-btn', false, 'Booking\u2026', 'Confirm Booking');
+  }
+}
+
+// Populate the confirmation overlay from a persisted booking record.
+function fillConfirmation(booking) {
+  document.getElementById('confirm-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
+  document.getElementById('confirm-pickup').textContent = booking.pickupName;
+  document.getElementById('confirm-dest').textContent = booking.destName;
+  document.getElementById('confirm-vehicle').textContent =
+    (selectedRide ? selectedRide.name + ' \u00B7 ' : '') + (SERVICE_LABELS[booking.service] || booking.service);
+  document.getElementById('confirm-time').textContent = selectedRide ? selectedRide.time + ' min' : '\u2014';
+  document.getElementById('confirm-cost').textContent = '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
+  document.getElementById('confirm-carbon').textContent = selectedRide ? '-' + selectedRide.co2 + ' kg' : '\u2014';
 }
 
 function closeConfirm() {
@@ -2302,7 +2346,9 @@ function resetBooking() {
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
   document.getElementById('booking-panel').style.display = 'flex';
+  hideAuthError('booking-error');
   selectedRide = null;
+  currentBooking = null;
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
