@@ -1,0 +1,26 @@
+// IraGo Prisma schema
+//
+// The datasource `provider` below is swapped between "mysql" (Hostinger /
+// production, the default) and "sqlite" (local dev/testing) by
+// scripts/db-setup.js, because Prisma requires the provider to be a string
+// literal and cannot read it from an env var. Run `npm run db:setup` after
+// changing DATABASE_PROVIDER.
+//
+// The full data model (users, aircraft, bookings, trips) is added in US-002.
+// AppMeta below is a minimal placeholder so the Prisma client generates for
+// the US-001 backend skeleton and the /api/health connectivity check works.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model AppMeta {
+  id    Int     @id @default(autoincrement())
+  key   String  @unique
+  value String?
+}

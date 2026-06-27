@@ -1,54 +1,47 @@
-const http = require("http");
-const fs = require("fs");
+// IraGo Express server.
+// Serves the existing static site (index.html, app.html, assets, etc.) and
+// mounts the JSON API under /api. The database is selected by env vars
+// (DATABASE_PROVIDER + DATABASE_URL) via Prisma — see README and .env.example.
+require("dotenv").config();
+
 const path = require("path");
+const express = require("express");
+const { prisma } = require("./src/db");
+const apiRouter = require("./src/api");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 
-const mimeTypes = {
-  ".html": "text/html",
-  ".js": "application/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".mp4": "video/mp4",
-  ".webm": "video/webm",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-};
+const app = express();
 
-const server = http.createServer((req, res) => {
-  let url = req.url.split("?")[0];
-  if (url === "/") url = "/index.html";
+app.use(express.json());
 
-  const filePath = path.join(ROOT, url);
+// JSON API.
+app.use("/api", apiRouter);
 
-  // Prevent directory traversal
-  if (!filePath.startsWith(ROOT)) {
-    res.writeHead(403);
-    res.end("Forbidden");
-    return;
+// Static site (express.static guards against directory traversal and serves
+// index.html at "/").
+app.use(express.static(ROOT));
+
+async function start() {
+  try {
+    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log(
+      `Database connected (provider: ${process.env.DATABASE_PROVIDER || "mysql"}).`
+    );
+  } catch (err) {
+    console.error(
+      "FATAL: could not connect to the database. Check DATABASE_PROVIDER, " +
+        "DATABASE_URL, and your credentials."
+    );
+    console.error(err.message);
+    process.exit(1);
   }
 
-  const ext = path.extname(filePath);
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404, { "Content-Type": "text/html" });
-      res.end("<h1>404 Not Found</h1>");
-      return;
-    }
-
-    const contentType = mimeTypes[ext] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": contentType });
-    res.end(data);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+start();
