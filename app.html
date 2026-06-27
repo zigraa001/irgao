@@ -1285,6 +1285,30 @@ a { text-decoration: none; color: inherit; }
   padding: 4px 10px;
   border-radius: var(--radius-full);
 }
+
+/* ═══════════════════════════════════════════
+   ADMIN DASHBOARD
+   ═══════════════════════════════════════════ */
+#admin-view {
+  min-height: 100vh;
+  flex-direction: column;
+  background: var(--gray-50);
+}
+/* Purple badge distinguishes the admin console from the operator (blue) one. */
+.admin-role-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6D28D9;
+  background: #F3E8FF;
+  border: 1px solid #E9D5FF;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+.admin-avatar {
+  background: linear-gradient(135deg, var(--purple), var(--blue-dark));
+}
 .op-body {
   flex: 1;
   width: 100%;
@@ -1832,6 +1856,39 @@ a { text-decoration: none; color: inherit; }
 
 
 <!-- ═══════════════════════════════════════════
+     ADMIN DASHBOARD (US-004 shell; user list US-005, add-user form US-006)
+     ═══════════════════════════════════════════ -->
+<div id="admin-view" class="view">
+  <!-- Nav (mirrors operator-view) -->
+  <nav class="booking-nav">
+    <a href="/" class="booking-nav-logo">
+      <img src="assets/images/image-removebg-preview.png" alt="IraGo" onerror="this.style.display='none'" style="height:30px">
+      <span class="nav-logo-text"><span class="ira">ira</span><span class="go">Go</span></span>
+    </a>
+    <span class="admin-role-badge">Admin Console</span>
+    <div class="nav-profile">
+      <button class="nav-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <div class="nav-avatar admin-avatar" id="admin-avatar" title="Log out" onclick="logout()" style="cursor:pointer">A</div>
+    </div>
+  </nav>
+
+  <!-- Body -->
+  <div class="op-body">
+    <div class="op-welcome" id="admin-welcome">Welcome back, Admin</div>
+    <div class="op-welcome-sub">Manage who has access to IraGo.</div>
+
+    <div class="op-section-title">Team &amp; Users</div>
+    <!-- loadAdminUsers() (US-005) renders the user list here. -->
+    <div id="admin-users">
+      <div class="op-empty">
+        <div class="op-empty-sub">Loading users…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
 <script>
@@ -2072,13 +2129,21 @@ function onAuthSuccess(token, user) {
   routeForRole(user);
 }
 
-// Customers land on the booking view; operators on the pilot console (US-008).
-// The admin dashboard is added later (US-013); until then admins fall back to
-// the booking view.
+// Customers land on the booking view; operators on the pilot console (US-008);
+// admins on the Admin Dashboard (US-004).
 function routeForRole(user) {
   const initial = (user && user.name) ? user.name.charAt(0).toUpperCase() : '';
 
   switch (user && user.role) {
+    case 'admin': {
+      const adminAvatar = document.getElementById('admin-avatar');
+      if (adminAvatar && initial) adminAvatar.textContent = initial;
+      const adminWelcome = document.getElementById('admin-welcome');
+      if (adminWelcome) adminWelcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Admin');
+      showView('admin-view');
+      loadAdminUsers();
+      break;
+    }
     case 'operator': {
       const opAvatar = document.getElementById('op-avatar');
       if (opAvatar && initial) opAvatar.textContent = initial;
@@ -2098,6 +2163,15 @@ function routeForRole(user) {
       break;
     }
   }
+}
+
+// ── Admin: user management (US-005 renders the list, US-006 the add form) ──
+// Placeholder shell hook: the Admin Dashboard calls this on entry. US-005
+// replaces the body with a real GET /api/admin/users fetch + rendered list.
+async function loadAdminUsers() {
+  const host = document.getElementById('admin-users');
+  if (!host) return;
+  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
 }
 
 // ── Operator: assigned trips (US-009) ──

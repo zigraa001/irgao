@@ -10,6 +10,7 @@ Started: Sun Jun 28 00:00:00 UTC 2026
 - Insert pattern: `INSERT ...` returns `{ insertId }`, then re-read with `SELECT * FROM users WHERE id = ?` so the response reflects DB defaults/timestamps.
 - Tests use node's built-in runner (`npm test` = `node --test`), no supertest. They are DB-FREE. To test a route without a real MySQL, inject an in-memory fake into `require.cache[require.resolve('../src/db')]` BEFORE requiring the route module (route modules destructure `{query,queryOne}` at load time), mount on a throwaway express app, and drive with real `fetch`. Auth is real: set process.env.AUTH_SECRET then use signToken to mint tokens. See test/admin-routes.test.js.
 - Typecheck = `npm run typecheck` (tsc --noEmit, allowJs, checkJs:false, strict:false). Keep it green.
+- Frontend is a single self-contained `app.html` (~3000 lines): one inline `<style>`, top-level `.view` divs (login/booking/operator/admin), shown one-at-a-time via `showView(viewId)` (toggles `.active`). After auth, `routeForRole(user)` switches on `user.role` to pick the view, set the avatar initial + welcome line, and kick off that view's data load. Reuse existing `op-*` CSS classes (op-body, op-welcome, op-section-title, op-empty) for new dashboard sections. Shared authed fetch = `apiFetch(path, opts)` (adds Bearer header, auto-logout on 401). Auth-form helpers: `showAuthError/hideAuthError(id)`, `setBusy(btnId,busy,busyLabel,idleLabel)`, `escapeHtml(s)`. Typecheck does NOT cover app.html (it's HTML, not in tsconfig) — verify JS there by reading/running.
 
 ## Sun Jun 28 - US-001 Admin-only create-user API
 - Added src/admin-routes.js: `POST /api/admin/users` guarded by requireAuth + requireRole('admin'). Validates required name/email/password, EMAIL_RE, password>=6, and role in {operator,admin} (rejects 'customer'/unknown with 400). 409 on existing lowercased email. Stores bcrypt hash via hashPassword; returns 201 { user: {id,name,email,role} } (no passwordHash).
@@ -38,3 +39,15 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Filterable vs creatable roles differ on purpose: customers can be LISTED but never CREATED via /api/admin/users.
 ---
 
+
+## Sun Jun 28 - US-004 Admin Dashboard view shell + role routing
+- Added `<div id="admin-view" class="view">` in app.html mirroring operator-view: booking-nav with logo, new purple `.admin-role-badge` reading "Admin Console", and `#admin-avatar` (with `.admin-avatar` gradient) wired to `logout()`. Body reuses op-body/op-welcome/op-section-title; `#admin-users` is the container the user list (US-005) renders into.
+- Extended `routeForRole()` with an `admin` case: sets the avatar initial + `#admin-welcome` line, `showView('admin-view')`, and calls `loadAdminUsers()`. Admins no longer fall through to the booking view. Customer/operator branches untouched.
+- Added a minimal placeholder `loadAdminUsers()` (shows "Loading users…"); US-005 replaces its body with the real GET /api/admin/users fetch + render.
+- Added CSS: `#admin-view` (column flex, gray-50 bg), `.admin-role-badge` (purple), `.admin-avatar` (purple→blue gradient) to visually distinguish admin from operator.
+- Typecheck clean; full suite 37 pass (no backend change, so test count unchanged).
+- **Learnings for future iterations:**
+  - app.html views are pure show/hide; adding a role view = (1) a `.view` div, (2) a `routeForRole` case, (3) a loader fn. No router lib.
+  - Browser verification could NOT be done here (no dev-browser/MCP browser tool configured). US-004/005/006/007 acceptance all ask for it — a human must manually confirm admin@irago.com / iragoadmin@123 lands on the Admin Dashboard.
+  - Avatar element ids differ per view: `#nav-avatar` (booking), `#op-avatar` (operator), `#admin-avatar` (admin). Set the right one in each routeForRole branch.
+---
