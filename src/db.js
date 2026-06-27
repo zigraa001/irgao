@@ -1,10 +1,13 @@
 // IraGo database layer — raw MySQL via the `mysql2` driver.
 //
 // This follows Hostinger's "Connect a MySQL database to a Node.js application"
-// guide: a single reusable connection POOL created from discrete environment
-// variables (DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME). A pool keeps
-// a handful of connections open and reuses them, instead of opening a new TCP
-// connection for every query.
+// guide: a single reusable connection POOL. A pool keeps a handful of
+// connections open and reuses them, instead of opening a new TCP connection for
+// every query.
+//
+// Connection details are hard-coded in DB_DEFAULTS below (Hostinger's panel has
+// no field for the database NAME), with matching DB_* env vars allowed to
+// override any value.
 //
 // Verbose debug logging is on by default so connection/credential problems are
 // easy to diagnose on a fresh Hostinger deploy. Set DB_DEBUG=false to silence
@@ -34,13 +37,25 @@ function maskedConfig(cfg) {
   };
 }
 
-// --- Pool configuration (read straight from the environment) -------------
+// --- Pool configuration --------------------------------------------------
+// Hostinger's deployment panel only exposes a couple of env fields (e.g. host
+// and password) and has no field for the database NAME, so the connection
+// details are hard-coded here as defaults. Any matching env var still wins, so
+// you can override a value (e.g. the password) without editing code.
+const DB_DEFAULTS = {
+  host: "localhost",
+  port: 3306,
+  user: "u377309478_admin",
+  password: "Sher011786",
+  database: "u377309478_irago",
+};
+
 const poolConfig = {
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST || DB_DEFAULTS.host,
+  port: Number(process.env.DB_PORT) || DB_DEFAULTS.port,
+  user: process.env.DB_USER || DB_DEFAULTS.user,
+  password: process.env.DB_PASSWORD || DB_DEFAULTS.password,
+  database: process.env.DB_NAME || DB_DEFAULTS.database,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_POOL_LIMIT) || 10,
   queueLimit: 0,
@@ -48,14 +63,15 @@ const poolConfig = {
   connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS) || 10000,
 };
 
-// Warn loudly at boot if any required variable is missing — this is the #1
-// cause of "it won't connect" on a new deploy.
-const REQUIRED = ["DB_HOST", "DB_USER", "DB_NAME"];
-const missing = REQUIRED.filter((k) => !process.env[k]);
+// Warn loudly at boot if a connection value resolved to empty (e.g. a hard-coded
+// default was cleared) — a missing host/user/database is the #1 cause of
+// "it won't connect" on a new deploy.
+const REQUIRED = ["host", "user", "database"];
+const missing = REQUIRED.filter((k) => !poolConfig[k]);
 if (missing.length) {
   dberr(
-    `WARNING: missing required DB env var(s): ${missing.join(", ")}. ` +
-      "Set them in your .env (see .env.example)."
+    `WARNING: DB connection value(s) empty: ${missing.join(", ")}. ` +
+      "Check the hard-coded DB_DEFAULTS in src/db.js (or the matching DB_* env vars)."
   );
 }
 
