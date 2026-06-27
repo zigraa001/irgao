@@ -1586,6 +1586,46 @@ let currentService = 'taxi';
 let selectedRide = null;
 let pickupCoord = null, destCoord = null;
 
+// ── Booking draft (US-005) ──
+// Single source of truth for the in-progress booking: the selected pickup and
+// destination (name + lat/lng), the chosen service, and the computed distance.
+// Populated whenever pickup, destination, or service changes so the fare step
+// (US-006) and POST /api/bookings consume structured data instead of re-reading
+// the DOM. pickup/dest are null until both a name and coordinates exist.
+let bookingDraft = {
+  pickup: null,      // { name, lat, lng }
+  dest: null,        // { name, lat, lng }
+  service: 'taxi',   // taxi | golden | shuttle
+  distanceKm: null,  // haversine km, set only once both ends are chosen
+};
+
+// Service code -> human label (used for display + persistence).
+const SERVICE_LABELS = { taxi: 'Air Taxi', golden: 'Golden Hour', shuttle: 'Air Shuttle' };
+
+// Re-read the current selections into bookingDraft. Idempotent; safe to call
+// after any change to pickup/destination/service. Returns the draft.
+function captureBookingDraft() {
+  const pickupName = (document.getElementById('pickup-input') || {}).value || '';
+  const destName = (document.getElementById('dest-input') || {}).value || '';
+  bookingDraft.pickup = pickupCoord
+    ? { name: pickupName.trim() || 'Selected pickup', lat: pickupCoord[0], lng: pickupCoord[1] }
+    : null;
+  bookingDraft.dest = destCoord
+    ? { name: destName.trim() || 'Selected destination', lat: destCoord[0], lng: destCoord[1] }
+    : null;
+  bookingDraft.service = currentService;
+  bookingDraft.distanceKm = (pickupCoord && destCoord)
+    ? Math.round(calcDistance() * 10) / 10
+    : null;
+  return bookingDraft;
+}
+
+// True only when pickup, destination, and service are all selected — the
+// minimum required before a fare/booking can be created (US-006 gate).
+function bookingDraftReady() {
+  return !!(bookingDraft.pickup && bookingDraft.dest && bookingDraft.service);
+}
+
 // ── Demo Cities (Indian locations) ──
 const demoLocations = {
   // Delhi NCR
@@ -1906,6 +1946,7 @@ function setPickup(latlng, name) {
   pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
   else map.setView(pickupCoord, 13);
+  captureBookingDraft();
 }
 
 function setDest(latlng, name) {
@@ -1916,6 +1957,7 @@ function setDest(latlng, name) {
   destMarker = createMarker(destCoord, 'dest').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
   else map.setView(destCoord, 13);
+  captureBookingDraft();
 }
 
 function drawRoute() {
@@ -1975,6 +2017,7 @@ function swapLocations() {
   if (pickupCoord) pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
   if (destCoord) destMarker = createMarker(destCoord, 'dest').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
+  captureBookingDraft();
 }
 
 function useCurrentLocation() {
@@ -2035,6 +2078,7 @@ function switchService(service) {
   aircraftMarkers.forEach(m => map.removeLayer(m));
   aircraftMarkers = [];
 
+  captureBookingDraft();
   renderPopularRoutes(service);
 }
 
@@ -2164,7 +2208,10 @@ function searchRides() {
     }
   }
 
-  const dist = calcDistance();
+  // Capture the finalized pickup/destination/service + distance into the
+  // booking draft, then use the draft's computed distance for the fare step.
+  const draft = captureBookingDraft();
+  const dist = draft.distanceKm != null ? draft.distanceKm : calcDistance();
   const rides = rideOptions[currentService];
   const list = document.getElementById('rides-list');
   const area = document.getElementById('rides-area');
@@ -2258,6 +2305,7 @@ function resetBooking() {
   selectedRide = null;
   pickupCoord = null;
   destCoord = null;
+  bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
   document.getElementById('pickup-input').value = '';
   document.getElementById('dest-input').value = '';
   document.getElementById('pickup-input').classList.remove('has-value');
