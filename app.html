@@ -230,6 +230,23 @@ a { text-decoration: none; color: inherit; }
   color: var(--gray-900);
   margin-bottom: 24px;
 }
+.auth-subtext {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-top: -16px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.auth-helper {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
 .auth-field { margin-bottom: 16px; }
 .auth-field label {
   display: block;
@@ -1583,6 +1600,7 @@ a { text-decoration: none; color: inherit; }
     <div class="auth-tagline">India's Premium Air Taxi Platform</div>
     <div class="auth-card" id="login-card">
       <h2>Sign in to your account</h2>
+      <p class="auth-subtext">One login for everyone &mdash; customers, operators, and admins all sign in here.</p>
       <div class="auth-field">
         <label>Email</label>
         <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()">
@@ -1604,7 +1622,9 @@ a { text-decoration: none; color: inherit; }
     </div>
 
     <div class="auth-card" id="register-card" style="display:none">
-      <h2>Create your account</h2>
+      <h2>Create your customer account</h2>
+      <p class="auth-subtext">Sign up to book flights as a customer.</p>
+      <div class="auth-helper">Operator or admin? Registration is for customers only &mdash; sign in with the account provided by your administrator.</div>
       <div class="auth-field">
         <label>Full Name</label>
         <input id="register-name" type="text" placeholder="Priya Sharma" autocomplete="name">

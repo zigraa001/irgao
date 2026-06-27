@@ -64,6 +64,18 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Browser verification still NOT possible here (no dev-browser/MCP) — manual check needed that the list shows the seeded admin/operators/customers.
 ---
 
+## Sun Jun 28 - US-007 Auth page clarity - customer-only registration, all-role login
+- app.html copy-only change (no JS/backend). Login card: added `.auth-subtext` under the h2 communicating a single shared login for all roles. Register card: heading → "Create your customer account", `.auth-subtext` framing it as customer signup, plus a new `.auth-helper` callout telling operators/admins to sign in with the account provided by their administrator (no public operator/admin registration).
+- Added two CSS rules: `.auth-subtext` (muted line under the heading; `margin-top:-16px` to tighten the gap left by `.auth-card h2`'s 24px bottom margin) and `.auth-helper` (gray-50 boxed callout).
+- No role selector added to signup; `doLogin`/`doSignup`/`toggleAuth` JS untouched, so existing customer signup + login + card toggle work unchanged.
+- Typecheck clean; full suite 37 pass (frontend-only, no backend/test change).
+- **Learnings for future iterations:**
+  - `.auth-card h2` has a fixed 24px bottom margin; a subtext line placed right after it needs `margin-top:-16px` to sit close to the heading.
+  - Pure-copy auth changes touch only the two `.auth-card` blocks (#login-card, #register-card) near app.html line ~1584; no JS wiring needed since toggleAuth just show/hides the cards.
+  - Browser verification still NOT possible here (no dev-browser/MCP) — manual check needed that copy renders and the login/register toggle still works.
+- ALL user stories (US-001..US-007) now pass: true.
+---
+
 ## Sun Jun 28 - US-006 Add-user form on the Admin Dashboard
 - Added an "Add Team Member" form to `admin-view` in app.html (above the user list): Full Name / Email / Password inputs reusing `.auth-field`, plus a Role `<select id="admin-add-role">` limited to Operator/Admin, laid out in a new `.admin-form-card` with a 2-col `.admin-form-grid`. Submit button `#admin-add-submit` reuses `.btn-auth-primary`.
 - Added `doAddUser()`: client validation mirrors the server (name/email/password required, password >= 6, role in operator|admin) via `showAuthError/hideAuthError('admin-add-error')`; `setBusy('admin-add-submit', …)` for the in-flight state; POSTs `/api/admin/users` through `apiFetch` (Bearer + auto-logout on 401). On success: clears all fields, resets role to operator, shows a green success banner, and `await loadAdminUsers()` to refresh the list (re-renders from the `adminUsers` cache via the US-005 render path).

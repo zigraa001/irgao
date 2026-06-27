@@ -118,8 +118,8 @@
         "Verify in browser using dev-browser skill: copy renders correctly and toggling between login/register still works"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Auth page copy clarified in app.html. Login card gained an .auth-subtext: 'One login for everyone — customers, operators, and admins all sign in here.' Register card heading changed to 'Create your customer account' with .auth-subtext 'Sign up to book flights as a customer.' and a new .auth-helper callout: 'Operator or admin? Registration is for customers only — sign in with the account provided by your administrator.' Added .auth-subtext + .auth-helper CSS. No role selector added; doLogin/doSignup JS untouched so existing flows work and toggleAuth still swaps cards. Typecheck clean; 37 tests pass (frontend-only). Browser verification NOT done (no dev-browser/MCP tooling) — needs manual check that copy renders and login/register toggle works."
     }
   ]
 }
