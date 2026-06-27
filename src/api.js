@@ -1,7 +1,9 @@
-// IraGo /api router. Future stories mount auth, bookings, operator, and admin
+// IraGo /api router. Future stories mount bookings, operator, and admin
 // routes here.
 const express = require("express");
 const { prisma } = require("./db");
+const authRoutes = require("./auth-routes");
+const { requireAuth } = require("./auth");
 
 const router = express.Router();
 
@@ -13,6 +15,15 @@ router.get("/health", async (req, res) => {
   } catch (err) {
     res.status(503).json({ status: "error", db: "disconnected" });
   }
+});
+
+// Auth: signup + login.
+router.use("/auth", authRoutes);
+
+// Current authenticated user — demonstrates the requireAuth guard and is handy
+// for the client to restore a session from a stored token.
+router.get("/me", requireAuth, (req, res) => {
+  res.json({ user: req.user });
 });
 
 module.exports = router;

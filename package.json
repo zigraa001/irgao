@@ -9,7 +9,8 @@
     "db:push": "node scripts/db-setup.js && prisma db push",
     "db:migrate": "node scripts/db-setup.js && prisma migrate dev",
     "db:seed": "node prisma/seed.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
   },
   "private": true,
   "dependencies": {

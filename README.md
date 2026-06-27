@@ -52,6 +52,7 @@ Copy `.env.example` to `.env` (gitignored) and fill in values.
 | `DATABASE_PROVIDER` | `mysql` (Hostinger / production, **default**) or `sqlite` (local). |
 | `DATABASE_URL`      | Prisma connection string (datasource `url`).                   |
 | `PORT`              | Port the Express server listens on (default `3000`).           |
+| `AUTH_SECRET`       | HMAC secret for signing session tokens. **Set in production**; falls back to an insecure dev secret (with a warning) if unset. |
 
 ### Why the provider swap?
 
@@ -92,6 +93,27 @@ curl http://localhost:3000/api/health
 `npm start` connects to the database on boot and **exits loudly (exit 1)** if
 the connection or credentials are bad.
 
+## Authentication
+
+Passwords are stored **only** as bcrypt hashes — plaintext is never persisted
+or returned. Sessions use a stateless HMAC-signed token (no server-side session
+store) carrying the user id, name, and role, signed with `AUTH_SECRET`.
+
+| Endpoint              | Body                       | Returns                                   |
+| --------------------- | -------------------------- | ----------------------------------------- |
+| `POST /api/auth/signup` | `{ name, email, password }` | `201 { token, user }` — role is always `customer`. `409` on duplicate email. |
+| `POST /api/auth/login`  | `{ email, password }`       | `200 { token, user }`. Wrong email **or** password → generic `401` (no field leak). |
+| `GET /api/me`           | — (Bearer token)            | `200 { user }`. Missing/invalid token → `401`. |
+
+The returned `user` never includes the password hash. Send the token as
+`Authorization: Bearer <token>` on protected routes.
+
+**Guards** (`src/auth.js`): `requireAuth` validates the token and sets
+`req.user = { id, name, role }`; `requireRole(role)` rejects a mismatched role
+with `403` (use it after `requireAuth`).
+
+Run the auth unit tests with `npm test`.
+
 ## Production on Hostinger (MySQL)
 
 Following Hostinger's Node.js + MySQL setup:
@@ -126,6 +148,7 @@ Following Hostinger's Node.js + MySQL setup:
 | `npm run db:migrate` | Swap provider + `prisma migrate dev`.                 |
 | `npm run db:seed` | Seed sample users + aircraft (idempotent).               |
 | `npm run typecheck`  | `tsc --noEmit` over the backend JS.                   |
+| `npm test`        | Run the backend unit tests (node's built-in runner).     |
 
 > **Migrations and the provider swap:** because the datasource provider is
 > swapped per environment, generated migration SQL is dialect-specific (SQLite
