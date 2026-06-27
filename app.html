@@ -1047,6 +1047,14 @@ a { text-decoration: none; color: inherit; }
 }
 .tracking-panel.active { display: block; }
 
+.tracking-empty {
+  padding: 32px 24px;
+  text-align: center;
+}
+.tracking-empty-icon { font-size: 40px; margin-bottom: 8px; }
+.tracking-empty-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+.tracking-empty-sub { font-size: 14px; color: var(--gray-500); margin: 4px 0 16px; }
+
 .tracking-header {
   padding: 18px 22px;
   display: flex;
@@ -1447,6 +1455,14 @@ a { text-decoration: none; color: inherit; }
 
     <!-- Tracking Panel (overlaid on map) -->
     <div class="tracking-panel" id="tracking-panel">
+      <!-- Empty state: shown when there is no active booking to track. -->
+      <div class="tracking-empty" id="tracking-empty" style="display:none;">
+        <div class="tracking-empty-icon">&#9992;&#65039;</div>
+        <div class="tracking-empty-title">No active ride</div>
+        <div class="tracking-empty-sub">Book a flight and your live tracking will appear here.</div>
+        <button class="btn-end-tracking" onclick="endTracking()">Back to booking</button>
+      </div>
+      <div id="tracking-content">
       <div class="tracking-progress">
         <div class="tracking-progress-bar" id="tracking-progress-bar"></div>
       </div>
@@ -1517,6 +1533,7 @@ a { text-decoration: none; color: inherit; }
         </div>
         <div class="tracking-cost" id="tracking-cost">—</div>
         <button class="btn-end-tracking" onclick="endTracking()">End Ride</button>
+      </div>
       </div>
     </div>
   </div>
@@ -2365,138 +2382,181 @@ function resetBooking() {
 }
 
 // ── Live Tracking ──
-let trackingInterval = null;
-let trackingAnim = null;
+// The status STEPS reflect the REAL persisted booking status, polled from
+// GET /api/bookings/:id (the operator advances it via US-010/US-011). The
+// aircraft POSITION + ETA on the map are a MOCK/placeholder animation \u2014
+// TO BE REPLACED with real GPS telemetry from the aircraft.
+let trackingPollInterval = null;   // polls the persisted booking status
+let trackingAnimInterval = null;   // mock aircraft animation (placeholder)
+let trackPathPoints = [];
+let trackCurrentFrac = 0;          // mock marker position along the route (0..1)
+let trackTargetFrac = 0;           // position implied by the current status
+let trackAircraft = null;
+
+// Persisted booking status -> tracking step index (0=confirmed .. 4=arrived)
+// plus the customer-facing copy. The DB statuses requested/assigned/accepted
+// all map to the "Confirmed" step (a pilot isn't yet en route).
+const STATUS_DISPLAY = {
+  requested: { step: 0, status: 'Booking confirmed', sub: 'Waiting for a pilot to be assigned' },
+  assigned:  { step: 0, status: 'Pilot assigned', sub: 'Your pilot will confirm shortly' },
+  accepted:  { step: 0, status: 'Pilot confirmed', sub: 'Preparing for departure' },
+  enroute:   { step: 1, status: 'Pilot en route to pickup', sub: 'Your aircraft is on its way' },
+  picked_up: { step: 2, status: 'Arrived at pickup', sub: 'Your pilot is ready for you' },
+  flying:    { step: 3, status: 'In flight', sub: 'Enjoy the view! Flying to destination' },
+  arrived:   { step: 4, status: 'Arriving now', sub: 'Prepare for landing' },
+  completed: { step: 4, status: 'Ride complete!', sub: 'Thank you for flying with IraGo' },
+  rejected:  { step: 0, status: 'Pilot unavailable', sub: 'Reassigning you to another pilot' },
+  cancelled: { step: 0, status: 'Booking cancelled', sub: 'This trip has been cancelled' },
+};
+// Statuses at which the customer view stops polling.
+const TRACKING_TERMINAL = ['arrived', 'completed', 'cancelled', 'rejected'];
+
+// Show/hide the empty state vs. the live tracking content.
+function showTrackingEmpty(show) {
+  document.getElementById('tracking-empty').style.display = show ? 'block' : 'none';
+  document.getElementById('tracking-content').style.display = show ? 'none' : 'block';
+}
 
 function startTracking() {
   document.getElementById('confirm-overlay').classList.remove('active');
-
-  // Hide the booking panel, show tracking panel
   document.getElementById('booking-panel').style.display = 'none';
-  const panel = document.getElementById('tracking-panel');
-  panel.classList.add('active');
+  document.getElementById('tracking-panel').classList.add('active');
 
-  // Fill tracking info
-  document.getElementById('tracking-pickup').textContent = document.getElementById('confirm-pickup').textContent;
-  document.getElementById('tracking-dest').textContent = document.getElementById('confirm-dest').textContent;
-  document.getElementById('tracking-vehicle-name').textContent = selectedRide.name;
-  document.getElementById('tracking-cost').textContent = '\u20B9' + selectedRide.price.toLocaleString('en-IN');
-  document.getElementById('tracking-dist').textContent = Math.round(calcDistance()) + ' km';
-  document.getElementById('tracking-carbon').textContent = '-' + selectedRide.co2 + ' kg CO\u2082';
+  // Empty state when there's no active booking to track.
+  if (!currentBooking) {
+    showTrackingEmpty(true);
+    return;
+  }
+  showTrackingEmpty(false);
 
-  // Fit map to route
+  // Fill static trip info from the SAVED booking.
+  document.getElementById('tracking-pickup').textContent = currentBooking.pickupName;
+  document.getElementById('tracking-dest').textContent = currentBooking.destName;
+  document.getElementById('tracking-vehicle-name').textContent =
+    selectedRide ? selectedRide.name : (SERVICE_LABELS[currentBooking.service] || currentBooking.service);
+  document.getElementById('tracking-cost').textContent =
+    '\u20B9' + Math.round(currentBooking.fareEstimate).toLocaleString('en-IN');
+  const distKm = currentBooking.distanceKm != null ? currentBooking.distanceKm : calcDistance();
+  document.getElementById('tracking-dist').textContent = Math.round(distKm) + ' km';
+  document.getElementById('tracking-carbon').textContent =
+    selectedRide ? '-' + selectedRide.co2 + ' kg CO\u2082' : '\u2014';
+
+  // Fit map to route.
   if (pickupCoord && destCoord) {
-    const bounds = L.latLngBounds([pickupCoord, destCoord]).pad(0.3);
-    map.fitBounds(bounds);
+    map.fitBounds(L.latLngBounds([pickupCoord, destCoord]).pad(0.3));
   }
 
-  // Animate the aircraft along the route and progress through steps
-  const totalTime = selectedRide.time; // minutes
-  const simDuration = 30000; // simulate in 30 seconds
-  let startTime = Date.now();
-  let currentStep = 0;
-
-  const steps = [
-    { at: 0, id: 'step-enroute', status: 'Pilot en route to pickup', sub: 'Your aircraft is on its way', etaFactor: 1 },
-    { at: 0.2, id: 'step-pickup', status: 'Arrived at pickup', sub: 'Your pilot is waiting for you', etaFactor: 0.8 },
-    { at: 0.35, id: 'step-flying', status: 'In flight', sub: 'Enjoy the view! Flying to destination', etaFactor: 0.5 },
-    { at: 0.9, id: 'step-arrived', status: 'Arriving now', sub: 'Prepare for landing', etaFactor: 0.05 },
-    { at: 1, id: null, status: 'Ride Complete!', sub: 'Thank you for flying with IraGo', etaFactor: 0 },
-  ];
-
-  // Build the flight path points for animation
-  const pathPoints = [];
+  // Build the flight path for the MOCK aircraft animation.
+  trackPathPoints = [];
   if (routeLine) {
-    routeLine.getLatLngs().forEach(ll => pathPoints.push([ll.lat, ll.lng]));
+    routeLine.getLatLngs().forEach(ll => trackPathPoints.push([ll.lat, ll.lng]));
   } else if (pickupCoord && destCoord) {
     for (let t = 0; t <= 1; t += 0.02) {
-      const lat = pickupCoord[0] + (destCoord[0] - pickupCoord[0]) * t;
-      const lng = pickupCoord[1] + (destCoord[1] - pickupCoord[1]) * t;
-      pathPoints.push([lat, lng]);
+      trackPathPoints.push([
+        pickupCoord[0] + (destCoord[0] - pickupCoord[0]) * t,
+        pickupCoord[1] + (destCoord[1] - pickupCoord[1]) * t,
+      ]);
     }
   }
 
-  // Remove old aircraft markers and add a tracking one
+  // Reset + add the MOCK aircraft marker (placeholder for real GPS).
   aircraftMarkers.forEach(m => map.removeLayer(m));
   aircraftMarkers = [];
-  const acIcon = L.divIcon({
-    html: '<div class="marker-aircraft" style="font-size:28px;">&#9992;&#65039;</div>',
-    className: '',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
+  trackCurrentFrac = 0;
+  trackTargetFrac = 0;
+  trackAircraft = null;
+  if (trackPathPoints.length) {
+    const acIcon = L.divIcon({
+      html: '<div class="marker-aircraft" style="font-size:28px;">&#9992;&#65039;</div>',
+      className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+    });
+    trackAircraft = L.marker(trackPathPoints[0] || pickupCoord, { icon: acIcon, zIndexOffset: 1000 }).addTo(map);
+    aircraftMarkers.push(trackAircraft);
+  }
+
+  // Render the status we already have, then poll the API for changes.
+  applyTrackingStatus(currentBooking.status);
+  if (!TRACKING_TERMINAL.includes(currentBooking.status)) {
+    trackingPollInterval = setInterval(pollBookingStatus, 4000);
+  }
+
+  // MOCK animation loop \u2014 eases the placeholder marker toward the position
+  // implied by the current status and updates the (mock) ETA.
+  trackingAnimInterval = setInterval(animateTrackingAircraft, 120);
+}
+
+// Reflect a persisted booking status onto the step UI + progress bar.
+function applyTrackingStatus(status) {
+  const info = STATUS_DISPLAY[status] || STATUS_DISPLAY.requested;
+  document.getElementById('tracking-status').textContent = info.status;
+  document.getElementById('tracking-sub').textContent = info.sub;
+
+  const allSteps = document.querySelectorAll('.tracking-step');
+  const done = status === 'arrived' || status === 'completed';
+  allSteps.forEach((s, idx) => {
+    s.classList.remove('done', 'active');
+    if (idx < info.step) s.classList.add('done');
+    else if (idx === info.step) s.classList.add(done ? 'done' : 'active');
   });
-  const trackAircraft = L.marker(pathPoints[0] || pickupCoord, { icon: acIcon, zIndexOffset: 1000 }).addTo(map);
-  aircraftMarkers.push(trackAircraft);
 
-  trackingInterval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / simDuration, 1);
+  const span = Math.max(1, allSteps.length - 1);
+  document.getElementById('tracking-progress-bar').style.width = ((info.step / span) * 100) + '%';
+  document.getElementById('tracking-dot').style.background =
+    done ? '#22C55E' : (status === 'cancelled' || status === 'rejected' ? '#EF4444' : '');
 
-    // Move aircraft
-    if (pathPoints.length > 1) {
-      const idx = Math.min(Math.floor(progress * (pathPoints.length - 1)), pathPoints.length - 1);
-      trackAircraft.setLatLng(pathPoints[idx]);
-    }
+  // MOCK: drive the placeholder aircraft toward the status-implied position.
+  trackTargetFrac = info.step / span;
+}
 
-    // Update progress bar
-    document.getElementById('tracking-progress-bar').style.width = (progress * 100) + '%';
+// Poll the persisted booking status and re-render. Keeps the last known status
+// on a transient error rather than blanking the view.
+async function pollBookingStatus() {
+  if (!currentBooking) return;
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id);
+    if (!res.ok) return;
+    const data = await res.json().catch(() => ({}));
+    if (!data.booking) return;
+    currentBooking = data.booking;
+    applyTrackingStatus(currentBooking.status);
+    if (TRACKING_TERMINAL.includes(currentBooking.status)) stopTrackingPolling();
+  } catch (err) {
+    /* transient network error \u2014 keep showing the last known status */
+  }
+}
 
-    // Update ETA
-    const etaMin = Math.max(0, Math.round(totalTime * (1 - progress)));
-    document.getElementById('tracking-eta').textContent = etaMin;
+// MOCK aircraft animation \u2014 placeholder for real GPS. Eases the marker toward
+// the position implied by the booking status and shows a nominal ETA.
+function animateTrackingAircraft() {
+  if (!trackAircraft || trackPathPoints.length < 2) return;
+  trackCurrentFrac += (trackTargetFrac - trackCurrentFrac) * 0.08;
+  const idx = Math.min(Math.round(trackCurrentFrac * (trackPathPoints.length - 1)), trackPathPoints.length - 1);
+  trackAircraft.setLatLng(trackPathPoints[idx]);
 
-    // Update steps
-    for (let i = steps.length - 1; i >= 0; i--) {
-      if (progress >= steps[i].at && currentStep < i) {
-        currentStep = i;
-        document.getElementById('tracking-status').textContent = steps[i].status;
-        document.getElementById('tracking-sub').textContent = steps[i].sub;
+  const nominalTotal = selectedRide ? selectedRide.time : 20; // minutes (mock)
+  const remaining = Math.max(0, 1 - trackCurrentFrac);
+  document.getElementById('tracking-eta').textContent = Math.round(nominalTotal * remaining);
+}
 
-        // Update step dots
-        const allSteps = document.querySelectorAll('.tracking-step');
-        allSteps.forEach((s, idx) => {
-          s.classList.remove('done', 'active');
-          if (idx < currentStep + 1) s.classList.add('done');
-          else if (idx === currentStep + 1 && idx < allSteps.length) s.classList.add('active');
-        });
-
-        // Change dot color when arrived
-        if (i >= steps.length - 1) {
-          document.getElementById('tracking-dot').style.background = '#22C55E';
-        }
-        break;
-      }
-    }
-
-    // Ride complete
-    if (progress >= 1) {
-      clearInterval(trackingInterval);
-      trackingInterval = null;
-      document.getElementById('tracking-eta').textContent = '0';
-      document.getElementById('tracking-status').textContent = 'Ride Complete!';
-      document.getElementById('tracking-sub').textContent = 'Thank you for flying with IraGo';
-      document.getElementById('tracking-dot').style.background = '#22C55E';
-
-      // Mark all steps done
-      document.querySelectorAll('.tracking-step').forEach(s => {
-        s.classList.remove('active');
-        s.classList.add('done');
-      });
-    }
-  }, 200);
+function stopTrackingPolling() {
+  if (trackingPollInterval) { clearInterval(trackingPollInterval); trackingPollInterval = null; }
 }
 
 function endTracking() {
-  if (trackingInterval) { clearInterval(trackingInterval); trackingInterval = null; }
+  stopTrackingPolling();
+  if (trackingAnimInterval) { clearInterval(trackingAnimInterval); trackingAnimInterval = null; }
+  trackAircraft = null;
   document.getElementById('tracking-panel').classList.remove('active');
   document.getElementById('booking-panel').style.display = 'flex';
+  showTrackingEmpty(false);
 
-  // Reset step states
+  // Reset step states for the next ride.
   document.querySelectorAll('.tracking-step').forEach(s => s.classList.remove('done', 'active'));
   document.getElementById('step-confirmed').classList.add('done');
   document.getElementById('step-enroute').classList.add('active');
   document.getElementById('tracking-progress-bar').style.width = '0%';
   document.getElementById('tracking-dot').style.background = '';
+  document.getElementById('tracking-eta').textContent = '--';
 
   resetBooking();
 }

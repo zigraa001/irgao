@@ -72,4 +72,31 @@ router.post("/", requireAuth, async (req, res) => {
   res.status(201).json({ booking });
 });
 
+// GET /api/bookings/:id — fetch a single booking for status tracking (US-007).
+// Returns the persisted booking (including its current status, which the
+// operator advances). Readable by the owning customer, the assigned operator,
+// or an admin; anyone else gets 403.
+router.get("/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) {
+    return res.status(404).json({ error: "Booking not found" });
+  }
+
+  const u = req.user;
+  const allowed =
+    u.role === "admin" ||
+    booking.customerId === u.id ||
+    booking.operatorId === u.id;
+  if (!allowed) {
+    return res.status(403).json({ error: "Not allowed to view this booking" });
+  }
+
+  res.json({ booking });
+});
+
 module.exports = router;
