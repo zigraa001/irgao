@@ -7,7 +7,8 @@
 //
 // Connection details are hard-coded in DB_DEFAULTS below (Hostinger's panel has
 // no field for the database NAME), with matching DB_* env vars allowed to
-// override any value.
+// override any value. The PASSWORD is the exception: it is never hard-coded and
+// must be supplied via the DB_PASSWORD env var so the secret stays out of git.
 //
 // Verbose debug logging is on by default so connection/credential problems are
 // easy to diagnose on a fresh Hostinger deploy. Set DB_DEBUG=false to silence
@@ -42,11 +43,12 @@ function maskedConfig(cfg) {
 // and password) and has no field for the database NAME, so the connection
 // details are hard-coded here as defaults. Any matching env var still wins, so
 // you can override a value (e.g. the password) without editing code.
+// NOTE: the password is intentionally NOT hard-coded here — it must come from
+// the DB_PASSWORD env var so the secret never lives in source control.
 const DB_DEFAULTS = {
   host: "localhost",
   port: 3306,
   user: "u377309478_admin",
-  password: "Sher011786",
   database: "u377309478_irago",
 };
 
@@ -54,7 +56,7 @@ const poolConfig = {
   host: process.env.DB_HOST || DB_DEFAULTS.host,
   port: Number(process.env.DB_PORT) || DB_DEFAULTS.port,
   user: process.env.DB_USER || DB_DEFAULTS.user,
-  password: process.env.DB_PASSWORD || DB_DEFAULTS.password,
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || DB_DEFAULTS.database,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_POOL_LIMIT) || 10,
@@ -66,12 +68,13 @@ const poolConfig = {
 // Warn loudly at boot if a connection value resolved to empty (e.g. a hard-coded
 // default was cleared) — a missing host/user/database is the #1 cause of
 // "it won't connect" on a new deploy.
-const REQUIRED = ["host", "user", "database"];
+const REQUIRED = ["host", "user", "password", "database"];
 const missing = REQUIRED.filter((k) => !poolConfig[k]);
 if (missing.length) {
   dberr(
     `WARNING: DB connection value(s) empty: ${missing.join(", ")}. ` +
-      "Check the hard-coded DB_DEFAULTS in src/db.js (or the matching DB_* env vars)."
+      "Host/user/database come from DB_DEFAULTS in src/db.js; the PASSWORD must " +
+      "be set via the DB_PASSWORD env var."
   );
 }
 
