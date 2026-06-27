@@ -15,11 +15,23 @@ const { initSchema } = require("../src/schema");
 
 const DEMO_PASSWORD = "password123";
 
+// Primary admin credentials come from the environment so they never live in
+// source control. Falls back to a local default email, and to DEMO_PASSWORD
+// (with a warning) when ADMIN_PASSWORD is unset.
+const ADMIN_USER = process.env.ADMIN_USER || "admin@irago.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEMO_PASSWORD;
+
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn(
+    `WARNING: ADMIN_PASSWORD is not set — seeding ${ADMIN_USER} with the shared demo password.`
+  );
+}
+
 // Users may set their own password; anyone without `password` falls back to the
 // shared DEMO_PASSWORD. The primary admin gets real credentials so the live site
 // can be administered immediately after seeding.
 const USERS = [
-  { name: "Admin", email: "admin@irago.com", role: "admin", password: "iragoadmin@123" },
+  { name: "Admin", email: ADMIN_USER, role: "admin", password: ADMIN_PASSWORD },
   { name: "Olivia Operator", email: "olivia@irago.test", role: "operator" },
   { name: "Owen Operator", email: "owen@irago.test", role: "operator" },
   { name: "Casey Customer", email: "casey@irago.test", role: "customer" },
@@ -69,7 +81,7 @@ async function main() {
   const userCount = (await queryOne("SELECT COUNT(*) AS n FROM users")).n;
   const aircraftCount = (await queryOne("SELECT COUNT(*) AS n FROM aircraft")).n;
   console.log(`Seed complete: ${userCount} users, ${aircraftCount} aircraft.`);
-  console.log(`Admin login: admin@irago.com / iragoadmin@123`);
+  console.log(`Admin login: ${ADMIN_USER} (password from ADMIN_PASSWORD env)`);
   console.log(`Demo password for the other seeded users: "${DEMO_PASSWORD}"`);
 }
 
