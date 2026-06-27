@@ -23,24 +23,41 @@ app.use("/api", apiRouter);
 // index.html at "/").
 app.use(express.static(ROOT));
 
-async function start() {
+// Tracks whether the initial DB connection succeeded so other parts of the
+// app (e.g. a health check) can report a degraded state instead of guessing.
+let dbConnected = false;
+
+async function connectDatabase() {
+  // The DB connection is wrapped in try/catch so a database outage or bad
+  // credentials degrade the service instead of crashing the whole process —
+  // the static site and any DB-independent routes keep working.
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
+    dbConnected = true;
     console.log(
       `Database connected (provider: ${process.env.DATABASE_PROVIDER || "mysql"}).`
     );
   } catch (err) {
+    dbConnected = false;
     console.error(
-      "FATAL: could not connect to the database. Check DATABASE_PROVIDER, " +
-        "DATABASE_URL, and your credentials."
+      "WARNING: could not connect to the database. The server will keep " +
+        "running, but database-backed routes will fail until the connection " +
+        "is restored. Check DATABASE_PROVIDER, DATABASE_URL, and your credentials."
     );
     console.error(err.message);
-    process.exit(1);
   }
+}
+
+async function start() {
+  await connectDatabase();
 
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(
+      `Server running on port ${PORT} (database: ${
+        dbConnected ? "connected" : "unavailable"
+      }).`
+    );
   });
 }
 
