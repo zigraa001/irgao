@@ -1400,6 +1400,48 @@ a { text-decoration: none; color: inherit; }
 .op-badge--red   { color: var(--red-dark);   background: var(--red-50);   border: 1px solid var(--red-light); }
 .op-badge--amber { color: #B45309;           background: #FFFBEB;         border: 1px solid #FDE68A; }
 .op-badge--gray  { color: var(--gray-600);   background: var(--gray-100);  border: 1px solid var(--gray-200); }
+.op-badge--purple{ color: #6D28D9;           background: #F3E8FF;         border: 1px solid #E9D5FF; }
+
+/* Admin user list (US-005) */
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+}
+.admin-user-id {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--purple), var(--blue-dark));
+}
+.admin-user-main { flex: 1; min-width: 0; }
+.admin-user-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-user-email {
+  font-size: 13px;
+  color: var(--gray-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Trip details (US-009) */
 .op-back {
@@ -2166,12 +2208,67 @@ function routeForRole(user) {
 }
 
 // ── Admin: user management (US-005 renders the list, US-006 the add form) ──
-// Placeholder shell hook: the Admin Dashboard calls this on entry. US-005
-// replaces the body with a real GET /api/admin/users fetch + rendered list.
+// Users cached so US-006 can refresh the list after adding a member.
+let adminUsers = [];
+
+// Role -> { label, cls } for the role badge. Visually distinct per role,
+// reusing the op-status-badge + op-badge--* styling (purple=admin from the
+// Admin Console badge, blue=operator, gray=customer).
+const ROLE_BADGE = {
+  admin:    { label: 'Admin',    cls: 'op-badge--purple' },
+  operator: { label: 'Operator', cls: 'op-badge--blue' },
+  customer: { label: 'Customer', cls: 'op-badge--gray' },
+};
+
+function roleBadgeHtml(role) {
+  const b = ROLE_BADGE[role] || { label: role || 'Unknown', cls: 'op-badge--gray' };
+  return '<span class="op-status-badge ' + b.cls + '">' + escapeHtml(b.label) + '</span>';
+}
+
+// Fetch all users (admin only) and render the list, with loading/empty/error states.
 async function loadAdminUsers() {
   const host = document.getElementById('admin-users');
   if (!host) return;
   host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
+  try {
+    const res = await apiFetch('/api/admin/users');
+    if (!res.ok) throw new Error('load failed');
+    const data = await res.json();
+    adminUsers = Array.isArray(data.users) ? data.users : [];
+  } catch (e) {
+    adminUsers = [];
+    host.innerHTML = '<div class="op-empty"><div class="op-empty-title">Could not load users</div>' +
+      '<div class="op-empty-sub">Please try again in a moment.</div></div>';
+    return;
+  }
+  renderAdminUsers();
+}
+
+function renderAdminUsers() {
+  const host = document.getElementById('admin-users');
+  if (!host) return;
+  if (!adminUsers.length) {
+    host.innerHTML =
+      '<div class="op-empty">' +
+      '<div class="op-empty-icon">👥</div>' +
+      '<div class="op-empty-title">No users yet</div>' +
+      '<div class="op-empty-sub">Team members you add will appear here.</div>' +
+      '</div>';
+    return;
+  }
+  host.innerHTML = adminUsers.map(function (u) {
+    const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
+    return (
+      '<div class="admin-user-card">' +
+        '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
+        '<div class="admin-user-main">' +
+          '<div class="admin-user-name">' + escapeHtml(u.name || '—') + '</div>' +
+          '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
+        '</div>' +
+        roleBadgeHtml(u.role) +
+      '</div>'
+    );
+  }).join('');
 }
 
 // ── Operator: assigned trips (US-009) ──

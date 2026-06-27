@@ -51,3 +51,15 @@ Started: Sun Jun 28 00:00:00 UTC 2026
   - Browser verification could NOT be done here (no dev-browser/MCP browser tool configured). US-004/005/006/007 acceptance all ask for it — a human must manually confirm admin@irago.com / iragoadmin@123 lands on the Admin Dashboard.
   - Avatar element ids differ per view: `#nav-avatar` (booking), `#op-avatar` (operator), `#admin-avatar` (admin). Set the right one in each routeForRole branch.
 ---
+
+## Sun Jun 28 - US-005 User list on the Admin Dashboard
+- Replaced the placeholder `loadAdminUsers()` in app.html with a real `GET /api/admin/users` fetch via `apiFetch` (shared authed wrapper: Bearer header + auto-logout on 401). Caches into module-level `adminUsers` (US-006 will refresh this after add), then `renderAdminUsers()` draws the list.
+- Each user renders as a `.admin-user-card`: gradient initial avatar + name + email + role badge. Role badges reuse `op-status-badge` styling via a `ROLE_BADGE` map (admin=purple/new `.op-badge--purple`, operator=blue, customer=gray) — visually distinct. All DB text goes through `escapeHtml`.
+- Loading ("Loading users…"), empty ("No users yet"), and error ("Could not load users") states all handled, mirroring `loadOperatorTrips`/`renderOperatorTrips`.
+- Added CSS: `.op-badge--purple` (alongside the other op-badge variants) and `.admin-user-*` card styles.
+- Typecheck clean; full suite 37 pass (frontend-only, no backend/test change).
+- **Learnings for future iterations:**
+  - Pattern for a new dashboard list = loader fn (fetch via apiFetch, cache to a module var, handle error) + render fn (empty-state vs `.map().join('')` of cards). Mirror `loadOperatorTrips`/`renderOperatorTrips`.
+  - Role badge map (`ROLE_BADGE`) + `roleBadgeHtml()` are now reusable for US-006's form/list; `adminUsers` is the cache to re-render after adding a user (call `loadAdminUsers()` to refresh).
+  - Browser verification still NOT possible here (no dev-browser/MCP) — manual check needed that the list shows the seeded admin/operators/customers.
+---

@@ -83,8 +83,8 @@
         "Verify in browser using dev-browser skill: list shows the seeded admin, operators, and customers"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Replaced placeholder loadAdminUsers() in app.html with a real GET /api/admin/users fetch via apiFetch (Bearer + auto-logout on 401). Caches into adminUsers (so US-006 can refresh) and renders via renderAdminUsers(): each user a .admin-user-card with gradient initial avatar, name, email, and a role badge. Role badges reuse op-status-badge styling with distinct colors via ROLE_BADGE map: admin=purple (new .op-badge--purple), operator=blue, customer=gray. Loading ('Loading users…'), empty ('No users yet'), and error ('Could not load users') states handled. All text escaped via escapeHtml. Added .op-badge--purple + .admin-user-* CSS. Typecheck clean; 37 tests pass (no backend change). Browser verification NOT done (no dev-browser/MCP tooling) — needs manual check that the list shows seeded admin/operators/customers."
     },
     {
       "id": "US-006",
