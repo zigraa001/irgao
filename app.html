@@ -1322,6 +1322,105 @@ a { text-decoration: none; color: inherit; }
 .op-empty-icon { font-size: 40px; margin-bottom: 8px; }
 .op-empty-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
 .op-empty-sub { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
+
+/* Assigned-trip list (US-009) */
+.op-trip-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.op-trip-card:hover {
+  border-color: var(--blue-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.op-trip-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.op-trip-route {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.4;
+}
+.op-trip-route .arrow { color: var(--gray-400); margin: 0 6px; font-weight: 400; }
+.op-trip-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--gray-500);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.op-trip-meta b { color: var(--gray-700); font-weight: 600; }
+.op-status-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.op-badge--blue  { color: var(--blue-dark);  background: var(--blue-50);  border: 1px solid var(--blue-light); }
+.op-badge--green { color: var(--green-dark); background: var(--green-50); border: 1px solid var(--green-light); }
+.op-badge--red   { color: var(--red-dark);   background: var(--red-50);   border: 1px solid var(--red-light); }
+.op-badge--amber { color: #B45309;           background: #FFFBEB;         border: 1px solid #FDE68A; }
+.op-badge--gray  { color: var(--gray-600);   background: var(--gray-100);  border: 1px solid var(--gray-200); }
+
+/* Trip details (US-009) */
+.op-back {
+  background: none;
+  border: none;
+  color: var(--blue-dark);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 16px;
+}
+.op-back:hover { text-decoration: underline; }
+.op-detail-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.op-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.op-detail-id { font-size: 18px; font-weight: 800; color: var(--gray-900); }
+.op-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+.op-detail-block { grid-column: 1 / -1; }
+.op-detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-400);
+  margin-bottom: 4px;
+}
+.op-detail-value { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+.op-detail-sub { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.op-detail-divider { grid-column: 1 / -1; border-top: 1px solid var(--gray-100); margin: 4px 0; }
 </style>
 </head>
 <body>
@@ -1672,15 +1771,26 @@ a { text-decoration: none; color: inherit; }
 
   <!-- Body -->
   <div class="op-body">
-    <div class="op-welcome" id="op-welcome">Welcome back, Pilot</div>
-    <div class="op-welcome-sub">Your assigned missions appear here.</div>
+    <!-- Trip list -->
+    <div id="op-list-section">
+      <div class="op-welcome" id="op-welcome">Welcome back, Pilot</div>
+      <div class="op-welcome-sub">Your assigned missions appear here.</div>
 
-    <div class="op-section-title">Assigned Trips</div>
-    <!-- US-009 replaces this empty state with the real assigned-trip list. -->
-    <div class="op-empty" id="op-empty">
-      <div class="op-empty-icon">🛩️</div>
-      <div class="op-empty-title">No trips assigned yet</div>
-      <div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>
+      <div class="op-section-title">Assigned Trips</div>
+      <!-- loadOperatorTrips() (US-009) renders the cards or the empty state here. -->
+      <div id="op-trips">
+        <div class="op-empty" id="op-empty">
+          <div class="op-empty-icon">🛩️</div>
+          <div class="op-empty-title">No trips assigned yet</div>
+          <div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trip details (shown by openTripDetails) -->
+    <div id="op-detail-section" style="display:none">
+      <button class="op-back" onclick="closeTripDetails()">&larr; Back to trips</button>
+      <div id="op-detail-body"></div>
     </div>
   </div>
 </div>
@@ -1940,6 +2050,8 @@ function routeForRole(user) {
       const welcome = document.getElementById('op-welcome');
       if (welcome) welcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Pilot');
       showView('operator-view');
+      closeTripDetails();
+      loadOperatorTrips();
       break;
     }
     case 'customer':
@@ -1951,6 +2063,162 @@ function routeForRole(user) {
       break;
     }
   }
+}
+
+// ── Operator: assigned trips (US-009) ──
+// Trips assigned to the logged-in operator, fetched from GET /api/operator/trips
+// and cached so the details view can render without another round-trip.
+let operatorTrips = [];
+
+// Status -> { label, cls } for the operator-facing status badge. Covers every
+// status an assigned trip can be in (a booking only reaches an operator once
+// dispatch has set operatorId, i.e. status "assigned" onward).
+const STATUS_BADGE = {
+  requested: { label: 'Requested', cls: 'op-badge--gray' },
+  assigned:  { label: 'Assigned',  cls: 'op-badge--blue' },
+  accepted:  { label: 'Accepted',  cls: 'op-badge--green' },
+  rejected:  { label: 'Rejected',  cls: 'op-badge--red' },
+  enroute:   { label: 'En route',  cls: 'op-badge--amber' },
+  picked_up: { label: 'Picked up', cls: 'op-badge--amber' },
+  flying:    { label: 'Flying',    cls: 'op-badge--amber' },
+  arrived:   { label: 'Arrived',   cls: 'op-badge--green' },
+  completed: { label: 'Completed', cls: 'op-badge--gray' },
+  cancelled: { label: 'Cancelled', cls: 'op-badge--red' },
+};
+
+function statusBadgeHtml(status) {
+  const b = STATUS_BADGE[status] || { label: status || 'Unknown', cls: 'op-badge--gray' };
+  return '<span class="op-status-badge ' + b.cls + '">' + escapeHtml(b.label) + '</span>';
+}
+
+// Minimal HTML escaping for any DB-sourced text rendered via innerHTML.
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function bookingRef(id) { return 'IRG-' + String(id).padStart(5, '0'); }
+function fmtINR(n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); }
+
+// Fetch the operator's assigned trips and render the list (or the empty state).
+async function loadOperatorTrips() {
+  const host = document.getElementById('op-trips');
+  if (!host) return;
+  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading your trips…</div></div>';
+  try {
+    const res = await apiFetch('/api/operator/trips');
+    if (!res.ok) throw new Error('load failed');
+    const data = await res.json();
+    operatorTrips = Array.isArray(data.trips) ? data.trips : [];
+  } catch (e) {
+    operatorTrips = [];
+    host.innerHTML = '<div class="op-empty"><div class="op-empty-title">Could not load trips</div>' +
+      '<div class="op-empty-sub">Please try again in a moment.</div></div>';
+    return;
+  }
+  renderOperatorTrips();
+}
+
+function renderOperatorTrips() {
+  const host = document.getElementById('op-trips');
+  if (!host) return;
+  if (!operatorTrips.length) {
+    host.innerHTML =
+      '<div class="op-empty" id="op-empty">' +
+      '<div class="op-empty-icon">🛩️</div>' +
+      '<div class="op-empty-title">No trips assigned yet</div>' +
+      '<div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>' +
+      '</div>';
+    return;
+  }
+  host.innerHTML = operatorTrips.map(function (t) {
+    const customer = (t.customer && t.customer.name) || 'Customer';
+    const service = SERVICE_LABELS[t.service] || t.service;
+    const aircraft = t.aircraft ? (t.aircraft.name + ' · ' + t.aircraft.model) : 'Unassigned';
+    return (
+      '<div class="op-trip-card" onclick="openTripDetails(' + t.id + ')">' +
+        '<div class="op-trip-top">' +
+          '<div class="op-trip-route">' +
+            escapeHtml(t.pickupName) + '<span class="arrow">&rarr;</span>' + escapeHtml(t.destName) +
+          '</div>' +
+          statusBadgeHtml(t.status) +
+        '</div>' +
+        '<div class="op-trip-meta">' +
+          '<span><b>' + escapeHtml(customer) + '</b></span>' +
+          '<span>' + escapeHtml(service) + '</span>' +
+          '<span>✈️ ' + escapeHtml(aircraft) + '</span>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+// Open the details view for a cached trip.
+function openTripDetails(id) {
+  const t = operatorTrips.find(function (x) { return x.id === id; });
+  if (!t) return;
+  const customer = t.customer || {};
+  const service = SERVICE_LABELS[t.service] || t.service;
+  const aircraft = t.aircraft ? (t.aircraft.name + ' · ' + t.aircraft.model) : 'Not yet assigned';
+  const dist = (t.distanceKm != null ? Math.round(t.distanceKm * 10) / 10 : '—') + ' km';
+
+  document.getElementById('op-detail-body').innerHTML =
+    '<div class="op-detail-card">' +
+      '<div class="op-detail-head">' +
+        '<div class="op-detail-id">' + bookingRef(t.id) + '</div>' +
+        statusBadgeHtml(t.status) +
+      '</div>' +
+      '<div class="op-detail-grid">' +
+        '<div class="op-detail-block">' +
+          '<div class="op-detail-label">Pickup</div>' +
+          '<div class="op-detail-value">' + escapeHtml(t.pickupName) + '</div>' +
+          '<div class="op-detail-sub">' + t.pickupLat.toFixed(4) + ', ' + t.pickupLng.toFixed(4) + '</div>' +
+        '</div>' +
+        '<div class="op-detail-block">' +
+          '<div class="op-detail-label">Destination</div>' +
+          '<div class="op-detail-value">' + escapeHtml(t.destName) + '</div>' +
+          '<div class="op-detail-sub">' + t.destLat.toFixed(4) + ', ' + t.destLng.toFixed(4) + '</div>' +
+        '</div>' +
+        '<div class="op-detail-divider"></div>' +
+        '<div>' +
+          '<div class="op-detail-label">Service</div>' +
+          '<div class="op-detail-value">' + escapeHtml(service) + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="op-detail-label">Distance</div>' +
+          '<div class="op-detail-value">' + dist + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="op-detail-label">Fare estimate</div>' +
+          '<div class="op-detail-value">' + fmtINR(t.fareEstimate) + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="op-detail-label">Aircraft</div>' +
+          '<div class="op-detail-value">' + escapeHtml(aircraft) + '</div>' +
+        '</div>' +
+        '<div class="op-detail-divider"></div>' +
+        '<div>' +
+          '<div class="op-detail-label">Customer</div>' +
+          '<div class="op-detail-value">' + escapeHtml(customer.name || '—') + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="op-detail-label">Contact</div>' +
+          '<div class="op-detail-value">' + escapeHtml(customer.email || '—') + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('op-list-section').style.display = 'none';
+  document.getElementById('op-detail-section').style.display = 'block';
+}
+
+// Return from the details view to the trip list.
+function closeTripDetails() {
+  const detail = document.getElementById('op-detail-section');
+  const list = document.getElementById('op-list-section');
+  if (detail) detail.style.display = 'none';
+  if (list) list.style.display = 'block';
 }
 
 // Show one top-level .view and hide the rest.

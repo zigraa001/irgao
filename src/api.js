@@ -4,6 +4,7 @@ const express = require("express");
 const { prisma } = require("./db");
 const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
+const operatorRoutes = require("./operator-routes");
 const { requireAuth } = require("./auth");
 
 const router = express.Router();
@@ -23,6 +24,9 @@ router.use("/auth", authRoutes);
 
 // Bookings: customer trip creation.
 router.use("/bookings", bookingRoutes);
+
+// Operator: trips assigned to the logged-in pilot.
+router.use("/operator", operatorRoutes);
 
 // Current authenticated user — demonstrates the requireAuth guard and is handy
 // for the client to restore a session from a stored token.
