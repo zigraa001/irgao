@@ -4,7 +4,23 @@
   "description": "IraGo Solutions - AI-powered air mobility platform",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:setup": "node scripts/db-setup.js && prisma generate",
+    "db:push": "node scripts/db-setup.js && prisma db push",
+    "db:migrate": "node scripts/db-setup.js && prisma migrate dev",
+    "db:seed": "node prisma/seed.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3",
+    "typescript": "^6.0.3"
+  }
 }
