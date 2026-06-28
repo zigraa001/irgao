@@ -1,0 +1,25 @@
+# Local MySQL for IraGo dev — used by scripts/local/mysql-up.sh
+# Data persists in Docker volume `irago_local_mysql_data`.
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: irago-mysql-local
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: irago
+      MYSQL_USER: irago
+      MYSQL_PASSWORD: irago_local
+    volumes:
+      - irago_local_mysql_data:/var/lib/mysql
+      - ./sql/docker-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-hirago", "-pirago_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  irago_local_mysql_data:

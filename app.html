@@ -298,6 +298,182 @@ a { text-decoration: none; color: inherit; }
   line-height: 1.4;
 }
 .auth-error.show { display: block; }
+.auth-success {
+  display: none;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #166534;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.auth-success.show { display: block; }
+.auth-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.auth-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-400);
+}
+.auth-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gray-300);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  background: #fff;
+}
+.auth-step.active { color: var(--gray-800); }
+.auth-step.active .auth-step-num {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+.auth-step.done { color: var(--gray-600); }
+.auth-step.done .auth-step-num {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: #fff;
+}
+.auth-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--gray-200);
+  min-width: 24px;
+}
+.auth-step-line.done { background: #22c55e; }
+.auth-flow-hint {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  background: var(--blue-50);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.register-otp-panel {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--gray-200);
+}
+.otp-meta { margin-bottom: 16px; }
+.otp-meta-line { margin: 0 0 6px; }
+.otp-email-line {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-800);
+  word-break: break-all;
+  line-height: 1.4;
+}
+.otp-expiry-timer { font-weight: 700; color: var(--gray-800); }
+.otp-expiry-timer.expired { color: #B91C1C; }
+.otp-timer-strip {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.otp-timer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.otp-timer-label { color: var(--gray-500); flex-shrink: 0; }
+.otp-timer-value {
+  font-weight: 700;
+  color: var(--gray-800);
+  text-align: right;
+}
+.otp-timer-value.expired { color: #B91C1C; }
+.otp-timer-value.ready { color: var(--blue-dark); }
+.otp-resend-block {
+  margin-top: 12px;
+  text-align: center;
+}
+.otp-resend-block button {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.otp-resend-block button:disabled {
+  color: var(--gray-400);
+  cursor: default;
+}
+.otp-resend-block button:not(:disabled):hover { text-decoration: underline; }
+.auth-email-otp-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.auth-email-otp-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.auth-email-otp-row input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--gray-800);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-email-otp-row input::placeholder { color: var(--gray-400); }
+.auth-email-otp-row input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+  outline: none;
+}
+.btn-send-otp {
+  flex-shrink: 0;
+  align-self: stretch;
+  background: #22c55e;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-send-otp:hover { background: #16a34a; }
+.btn-send-otp:active { transform: scale(0.98); }
+.btn-send-otp:disabled { opacity: 0.65; cursor: default; transform: none; }
 
 .auth-divider {
   display: flex;
@@ -359,7 +535,8 @@ a { text-decoration: none; color: inherit; }
   justify-content: space-between;
   padding: 0 20px;
   flex-shrink: 0;
-  z-index: 1000;
+  position: relative;
+  z-index: 5000;
 }
 .booking-nav-logo {
   display: flex;
@@ -400,7 +577,38 @@ a { text-decoration: none; color: inherit; }
 .nav-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+.nav-text-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200);
+  background: #fff;
+  color: var(--gray-700);
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.nav-text-btn:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  color: var(--gray-900);
+}
+.nav-logout-link {
+  color: #B91C1C;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.nav-logout-link:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #991B1B;
+  border-color: rgba(239, 68, 68, 0.5);
 }
 .nav-bell {
   width: 36px; height: 36px;
@@ -423,6 +631,246 @@ a { text-decoration: none; color: inherit; }
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.nav-avatar:hover { box-shadow: 0 0 0 3px var(--blue-glow); }
+.nav-profile-avatar { cursor: pointer; }
+.nav-avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px var(--blue-glow); }
+.nav-profile-menu { position: relative; }
+.nav-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1200;
+  overflow: hidden;
+}
+.nav-profile-dropdown-head {
+  padding: 14px 16px 12px;
+  background: var(--gray-50);
+}
+.nav-profile-dropdown-name {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.3;
+}
+.nav-profile-dropdown-email {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--gray-500);
+  word-break: break-all;
+  line-height: 1.4;
+}
+.nav-profile-dropdown-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--blue-50);
+  color: var(--blue-dark);
+}
+.nav-profile-dropdown-role.role-operator {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+}
+.nav-profile-dropdown-role.role-admin {
+  background: rgba(168, 85, 247, 0.12);
+  color: #7e22ce;
+}
+.nav-profile-dropdown-divider {
+  height: 1px;
+  background: var(--gray-100);
+}
+.nav-profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nav-profile-dropdown-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--gray-400); }
+.nav-profile-dropdown-item:hover { background: var(--gray-50); }
+.nav-profile-dropdown-logout { color: #B91C1C; }
+.nav-profile-dropdown-logout svg { color: #B91C1C; }
+.nav-profile-dropdown-logout:hover { background: rgba(239, 68, 68, 0.08); }
+
+.profile-account-section { margin-top: 0; }
+.profile-account-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.profile-account-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.profile-account-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-account-avatar.admin-avatar {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+.profile-account-info { min-width: 0; flex: 1; }
+.profile-account-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 2px;
+  line-height: 1.3;
+}
+.profile-account-email {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin: 0;
+  word-break: break-all;
+  line-height: 1.4;
+}
+.profile-account-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.profile-account-detail {
+  font-size: 12px;
+  color: var(--gray-600);
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+.profile-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.btn-profile-outline,
+.btn-profile-logout {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.btn-profile-outline {
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  color: var(--gray-700);
+}
+.btn-profile-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.btn-profile-logout {
+  background: #fff;
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: #B91C1C;
+}
+.btn-profile-logout:hover { background: rgba(239, 68, 68, 0.08); }
+
+.profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.profile-modal.open { display: flex; }
+.profile-modal[hidden] { display: none !important; }
+.profile-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+.profile-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+}
+.profile-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--gray-100);
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--gray-500);
+  cursor: pointer;
+}
+.profile-modal-close:hover { background: var(--gray-200); color: var(--gray-800); }
+.profile-modal-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.profile-change-block { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--gray-100); }
+.profile-change-block h4 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-800);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.profile-admin-note {
+  font-size: 12px;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  line-height: 1.5;
+  margin-top: 12px;
 }
 
 /* Map + Panel layout */
@@ -1503,6 +1951,88 @@ a { text-decoration: none; color: inherit; }
   line-height: 1.4;
 }
 .admin-add-success.show { display: block; }
+.customer-role-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #047857;
+  background: #D1FAE5;
+  border: 1px solid #A7F3D0;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+.dashboard-intro {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-top: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.dashboard-intro p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+.dashboard-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.dashboard-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+.admin-user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.admin-user-note {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-style: italic;
+  white-space: nowrap;
+}
+.admin-btn-sm {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  color: var(--gray-700);
+  cursor: pointer;
+}
+.admin-btn-sm:hover { background: var(--gray-50); }
+.admin-btn-sm.primary {
+  border-color: var(--blue-light);
+  color: var(--blue-dark);
+  background: var(--blue-50);
+}
+.auth-forgot-link {
+  text-align: right;
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+.auth-forgot-link button {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+.auth-forgot-link button:hover { text-decoration: underline; }
 
 /* Trip details (US-009) */
 .op-back {
@@ -1598,9 +2128,12 @@ a { text-decoration: none; color: inherit; }
       <div class="logo-sub">eVTOL AIR TAXI AGGREGATOR</div>
     </div>
     <div class="auth-tagline">India's Premium Air Taxi Platform</div>
+
     <div class="auth-card" id="login-card">
-      <h2>Sign in to your account</h2>
-      <p class="auth-subtext">One login for everyone &mdash; customers, operators, and admins all sign in here.</p>
+      <h2 id="login-card-title">Passenger sign in</h2>
+      <p class="auth-subtext" id="login-card-sub">Book Air Taxi, Golden Hour, and Air Shuttle rides.</p>
+      <div class="auth-helper" id="login-role-hint">New passenger? Use <strong>Register</strong> below to create an account with email verification.</div>
+      <div id="login-success" class="auth-success" role="status"></div>
       <div class="auth-field">
         <label>Email</label>
         <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()">
@@ -1611,42 +2144,166 @@ a { text-decoration: none; color: inherit; }
       </div>
       <button id="login-submit" class="btn-auth-primary" onclick="doLogin()">Sign In</button>
       <div id="login-error" class="auth-error" role="alert"></div>
+      <div class="auth-switch" id="login-forgot-row" style="margin-top:10px;">
+        <button type="button" onclick="showForgotCard()">Forgot password?</button>
+      </div>
       <div class="auth-divider">or</div>
       <button class="btn-google" onclick="googleStub('login-error')">
         <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Continue with Google
       </button>
-      <div class="auth-switch">
-        Don't have an account? <button onclick="toggleAuth()">Register</button>
+      <div class="auth-switch" id="login-register-row">
+        <span id="login-register-label">Don't have an account?</span>
+        <button type="button" id="login-register-btn" onclick="goToSignupPortal()">Register</button>
       </div>
     </div>
 
-    <div class="auth-card" id="register-card" style="display:none">
-      <h2>Create your customer account</h2>
-      <p class="auth-subtext">Sign up to book flights as a customer.</p>
-      <div class="auth-helper">Operator or admin? Registration is for customers only &mdash; sign in with the account provided by your administrator.</div>
-      <div class="auth-field">
+    <div class="auth-card" id="register-passenger-card" style="display:none">
+      <div class="auth-steps" id="register-passenger-steps">
+        <span class="auth-step active"><span class="auth-step-num">1</span> Your details</span>
+        <span class="auth-step-line"></span>
+        <span class="auth-step"><span class="auth-step-num">2</span> Verify email</span>
+      </div>
+      <h2>Create passenger account</h2>
+      <p class="auth-subtext">Step 1 — enter your details, then we&rsquo;ll email you a code.</p>
+      <p class="auth-flow-hint">Tap <strong>Send OTP</strong> when ready. The next screen is where you enter the 6-digit code and finish creating your account.</p>
+      <div class="auth-field register-passenger-signup-field">
         <label>Full Name</label>
-        <input id="register-name" type="text" placeholder="Priya Sharma" autocomplete="name">
+        <input id="register-passenger-name" type="text" placeholder="Priya Sharma" autocomplete="name">
+      </div>
+      <div class="auth-field register-passenger-signup-field">
+        <label>Password</label>
+        <input id="register-passenger-password" type="password" placeholder="Min 6 chars" autocomplete="new-password">
+      </div>
+      <div class="auth-field auth-email-otp-field register-passenger-signup-field">
+        <label for="register-passenger-email">Email Address</label>
+        <div class="auth-email-otp-row">
+          <input id="register-passenger-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doRoleSignup('passenger')">
+          <button id="register-passenger-submit" type="button" class="btn-send-otp" onclick="doRoleSignup('passenger')">Send OTP</button>
+        </div>
+      </div>
+      <div id="register-passenger-error" class="auth-error" role="alert"></div>
+      <div class="auth-switch" style="margin-top:14px;">
+        Already have an account? <button type="button" onclick="goToLoginPortal()">Sign in</button>
+      </div>
+    </div>
+
+    <div class="auth-card" id="register-operator-card" style="display:none">
+      <div class="auth-steps" id="register-operator-steps">
+        <span class="auth-step active"><span class="auth-step-num">1</span> Your details</span>
+        <span class="auth-step-line"></span>
+        <span class="auth-step"><span class="auth-step-num">2</span> Verify email</span>
+      </div>
+      <h2>Create operator account</h2>
+      <p class="auth-subtext">Step 1 — enter your details, then we&rsquo;ll email you a code.</p>
+      <p class="auth-flow-hint">Tap <strong>Send OTP</strong> when ready. The next screen is where you enter the 6-digit code and finish creating your account.</p>
+      <div class="auth-field register-operator-signup-field">
+        <label>Full Name</label>
+        <input id="register-operator-name" type="text" placeholder="Arjun Mehta" autocomplete="name">
+      </div>
+      <div class="auth-field register-operator-signup-field">
+        <label>Password</label>
+        <input id="register-operator-password" type="password" placeholder="Min 6 chars" autocomplete="new-password">
+      </div>
+      <div class="auth-field auth-email-otp-field register-operator-signup-field">
+        <label for="register-operator-email">Email Address</label>
+        <div class="auth-email-otp-row">
+          <input id="register-operator-email" type="email" placeholder="pilot@irago.com" autocomplete="email" onkeydown="if(event.key==='Enter')doRoleSignup('operator')">
+          <button id="register-operator-submit" type="button" class="btn-send-otp" onclick="doRoleSignup('operator')">Send OTP</button>
+        </div>
+      </div>
+      <div id="register-operator-error" class="auth-error" role="alert"></div>
+      <div class="auth-switch" style="margin-top:14px;">
+        Already have an account? <button type="button" onclick="goToLoginPortal()">Sign in</button>
+      </div>
+    </div>
+
+    <div class="auth-card" id="otp-card" style="display:none">
+      <div class="auth-steps" id="otp-card-steps">
+        <span class="auth-step done"><span class="auth-step-num">1</span> Your details</span>
+        <span class="auth-step-line done"></span>
+        <span class="auth-step active"><span class="auth-step-num">2</span> Verify email</span>
+      </div>
+      <h2 id="otp-card-title">Verify your email</h2>
+      <p class="auth-subtext" id="otp-card-sub">Step 2 — enter the code from your email to create your account.</p>
+      <div class="otp-meta">
+        <p class="auth-subtext otp-meta-line">We sent a 6-digit code to:</p>
+        <p class="otp-email-line" id="otp-email-display"></p>
+      </div>
+      <div class="otp-timer-strip">
+        <div class="otp-timer-row">
+          <span class="otp-timer-label">Code valid for</span>
+          <span id="otp-expiry-timer" class="otp-timer-value otp-expiry-timer">1:00</span>
+        </div>
+        <div class="otp-timer-row">
+          <span class="otp-timer-label">New code in</span>
+          <span id="otp-resend-timer" class="otp-timer-value">5:00</span>
+        </div>
       </div>
       <div class="auth-field">
-        <label>Email</label>
-        <input id="register-email" type="email" placeholder="you@example.com" autocomplete="email">
+        <label>Verification code</label>
+        <input id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')doVerifySignup()">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="auth-field">
-          <label>Phone</label>
-          <input id="register-phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel">
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input id="register-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
-        </div>
+      <button id="otp-submit" class="btn-auth-primary" onclick="doVerifySignup()">Verify &amp; Create Account</button>
+      <div id="otp-error" class="auth-error" role="alert"></div>
+      <div class="otp-resend-block">
+        <button id="otp-resend-btn" type="button" onclick="resendOtp()" disabled>Send new code</button>
       </div>
-      <button id="register-submit" class="btn-auth-primary" onclick="doSignup()">Create Account</button>
-      <div id="register-error" class="auth-error" role="alert"></div>
       <div class="auth-switch" style="margin-top:14px;">
-        Already have an account? <button onclick="toggleAuth()">Sign in</button>
+        <button type="button" onclick="backToRegisterFromOtp()">&larr; Back to details</button>
+      </div>
+      <div class="auth-switch" style="margin-top:8px;">
+        <button type="button" onclick="goToLoginPortal()">Back to sign in</button>
+      </div>
+    </div>
+
+    <div class="auth-card" id="forgot-card" style="display:none">
+      <h2>Reset your password</h2>
+      <p class="auth-subtext">Enter your email and we&rsquo;ll send a verification code.</p>
+      <div class="auth-field auth-email-otp-field">
+        <label for="forgot-email">Email Address</label>
+        <div class="auth-email-otp-row">
+          <input id="forgot-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
+          <button id="forgot-submit" type="button" class="btn-send-otp" onclick="doForgotPassword()">Send OTP</button>
+        </div>
+      </div>
+      <div id="forgot-error" class="auth-error" role="alert"></div>
+      <div class="auth-switch" style="margin-top:14px;">
+        <button type="button" onclick="goToLoginPortal()">Back to sign in</button>
+      </div>
+    </div>
+
+    <div class="auth-card" id="reset-card" style="display:none">
+      <h2>Reset password</h2>
+      <div class="otp-meta">
+        <p class="auth-subtext otp-meta-line">Code sent to:</p>
+        <p class="otp-email-line" id="reset-email-display"></p>
+      </div>
+      <div class="otp-timer-strip">
+        <div class="otp-timer-row">
+          <span class="otp-timer-label">Code valid for</span>
+          <span id="reset-expiry-timer" class="otp-timer-value otp-expiry-timer">1:00</span>
+        </div>
+        <div class="otp-timer-row">
+          <span class="otp-timer-label">New code in</span>
+          <span id="reset-resend-timer" class="otp-timer-value">5:00</span>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Verification code</label>
+        <input id="reset-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+      </div>
+      <div class="auth-field">
+        <label>New password</label>
+        <input id="reset-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+      </div>
+      <button id="reset-submit" class="btn-auth-primary" onclick="doResetPassword()">Reset password</button>
+      <div id="reset-error" class="auth-error" role="alert"></div>
+      <div class="otp-resend-block">
+        <button id="reset-resend-btn" type="button" onclick="resendOtp('reset_password')" disabled>Send new code</button>
+      </div>
+      <div class="auth-switch" style="margin-top:8px;">
+        <button type="button" onclick="goToLoginPortal()">Back to sign in</button>
       </div>
     </div>
   </div>
@@ -1706,9 +2363,13 @@ a { text-decoration: none; color: inherit; }
       </button>
     </div>
 
+    <span class="customer-role-badge">Passenger Dashboard</span>
+
     <div class="nav-profile">
-      <button class="nav-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
-      <div class="nav-avatar" id="nav-avatar" title="Log out" onclick="logout()" style="cursor:pointer">G</div>
+      <button type="button" class="nav-bell" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
+      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
+      <div class="nav-avatar nav-profile-avatar" id="nav-avatar" title="Your account">G</div>
     </div>
   </nav>
 
@@ -1719,6 +2380,14 @@ a { text-decoration: none; color: inherit; }
 
       <!-- LOCATION INPUTS -->
       <div class="panel-section" id="panel-locations">
+        <div class="dashboard-intro">
+          <p>Move faster when every minute matters. Choose Air Taxi for urgent travel, Golden Hour for medical emergencies, or Air Shuttle for city-to-city routes.</p>
+          <div class="dashboard-pills">
+            <span class="dashboard-pill">Real-time rides</span>
+            <span class="dashboard-pill">Carbon savings</span>
+            <span class="dashboard-pill">Instant booking</span>
+          </div>
+        </div>
         <div id="service-banner-area"></div>
         <div class="location-inputs" style="margin-top:10px;">
           <div class="loc-input-group" style="margin-bottom:12px; position:relative;">
@@ -1768,6 +2437,27 @@ a { text-decoration: none; color: inherit; }
           Confirm Booking
         </button>
         <div class="auth-error" id="booking-error"></div>
+      </div>
+
+      <div class="panel-section profile-account-section">
+        <div class="op-section-title">My Profile</div>
+        <div class="profile-account-card">
+          <div class="profile-account-row">
+            <div class="profile-account-avatar profile-display-avatar">G</div>
+            <div class="profile-account-info">
+              <p class="profile-account-name profile-display-name">Guest</p>
+              <p class="profile-account-email profile-display-email">—</p>
+            </div>
+          </div>
+          <div class="profile-account-meta">
+            <span class="profile-account-detail profile-display-role">Passenger</span>
+            <span class="profile-account-detail profile-display-verified">Email verified</span>
+          </div>
+          <div class="profile-account-actions">
+            <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+            <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1929,8 +2619,10 @@ a { text-decoration: none; color: inherit; }
     </a>
     <span class="op-role-badge">Pilot Console</span>
     <div class="nav-profile">
-      <button class="nav-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
-      <div class="nav-avatar" id="op-avatar" title="Log out" onclick="logout()" style="cursor:pointer">O</div>
+      <button type="button" class="nav-bell" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
+      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
+      <div class="nav-avatar nav-profile-avatar" id="op-avatar" title="Your account">O</div>
     </div>
   </nav>
 
@@ -1939,7 +2631,32 @@ a { text-decoration: none; color: inherit; }
     <!-- Trip list -->
     <div id="op-list-section">
       <div class="op-welcome" id="op-welcome">Welcome back, Pilot</div>
-      <div class="op-welcome-sub">Your assigned missions appear here.</div>
+      <div class="op-welcome-sub">Flight rider dashboard — accept missions, track fleet in real time, and manage trip status.</div>
+      <div class="profile-account-card" style="margin-bottom:20px;">
+        <div class="profile-account-row">
+          <div class="profile-account-avatar profile-display-avatar">O</div>
+          <div class="profile-account-info">
+            <p class="profile-account-name profile-display-name">Guest</p>
+            <p class="profile-account-email profile-display-email">—</p>
+          </div>
+        </div>
+        <div class="profile-account-meta">
+          <span class="profile-account-detail profile-display-role">Operator</span>
+          <span class="profile-account-detail profile-display-verified">Email verified</span>
+        </div>
+        <div class="profile-account-actions">
+          <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+          <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+        </div>
+      </div>
+      <div class="dashboard-intro">
+        <p>IraGo&rsquo;s AI scheduler assigns priority-rated bookings to your fleet. Monitor assigned trips, view telemetry, and coordinate with dispatch from here.</p>
+        <div class="dashboard-pills">
+          <span class="dashboard-pill">Live assignments</span>
+          <span class="dashboard-pill">Fleet telemetry</span>
+          <span class="dashboard-pill">Trip management</span>
+        </div>
+      </div>
 
       <div class="op-section-title">Assigned Trips</div>
       <!-- loadOperatorTrips() (US-009) renders the cards or the empty state here. -->
@@ -1973,15 +2690,43 @@ a { text-decoration: none; color: inherit; }
     </a>
     <span class="admin-role-badge">Admin Console</span>
     <div class="nav-profile">
-      <button class="nav-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
-      <div class="nav-avatar admin-avatar" id="admin-avatar" title="Log out" onclick="logout()" style="cursor:pointer">A</div>
+      <button type="button" class="nav-bell" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
+      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
+      <div class="nav-avatar admin-avatar nav-profile-avatar" id="admin-avatar" title="Your account">A</div>
     </div>
   </nav>
 
   <!-- Body -->
   <div class="op-body">
     <div class="op-welcome" id="admin-welcome">Welcome back, Admin</div>
-    <div class="op-welcome-sub">Manage who has access to IraGo.</div>
+    <div class="op-welcome-sub">Platform admin — manage team access, reset passwords, and oversee operations.</div>
+    <div class="profile-account-card" style="margin-bottom:20px;">
+      <div class="profile-account-row">
+        <div class="profile-account-avatar admin-avatar profile-display-avatar">A</div>
+        <div class="profile-account-info">
+          <p class="profile-account-name profile-display-name">Guest</p>
+          <p class="profile-account-email profile-display-email">—</p>
+        </div>
+      </div>
+      <div class="profile-account-meta">
+        <span class="profile-account-detail profile-display-role">Admin</span>
+        <span class="profile-account-detail profile-display-verified">Email verified</span>
+      </div>
+      <div class="profile-account-actions">
+        <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+        <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+      </div>
+    </div>
+    <div class="dashboard-intro">
+      <p>Run IraGo&rsquo;s orchestration layer: provision pilots and admins, reset credentials, and coordinate fleet operations, pricing, and coupons.</p>
+      <div class="dashboard-pills">
+        <span class="dashboard-pill">User management</span>
+        <span class="dashboard-pill">Password reset</span>
+        <span class="dashboard-pill">Fleet oversight</span>
+        <span class="dashboard-pill">Dynamic pricing</span>
+      </div>
+    </div>
 
     <!-- Add-user form (US-006). Provisions operators/admins via POST /api/admin/users. -->
     <div class="op-section-title">Add Team Member</div>
@@ -2003,7 +2748,6 @@ a { text-decoration: none; color: inherit; }
           <label>Role</label>
           <select id="admin-add-role" class="admin-form-select">
             <option value="operator">Operator</option>
-            <option value="admin">Admin</option>
           </select>
         </div>
       </div>
@@ -2018,6 +2762,47 @@ a { text-decoration: none; color: inherit; }
       <div class="op-empty">
         <div class="op-empty-sub">Loading users…</div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Profile modal (all roles) -->
+<div id="profile-modal" class="profile-modal" aria-hidden="true">
+  <div class="profile-modal-backdrop js-close-profile"></div>
+  <div class="profile-modal-card" role="dialog" aria-labelledby="profile-modal-title">
+    <button type="button" class="profile-modal-close js-close-profile" aria-label="Close">&times;</button>
+    <h3 class="profile-modal-title" id="profile-modal-title">My profile</h3>
+    <div class="profile-account-card" style="margin-bottom:0;">
+      <div class="profile-account-row">
+        <div class="profile-account-avatar profile-modal-avatar profile-display-avatar">G</div>
+        <div class="profile-account-info">
+          <p class="profile-account-name profile-display-name">Guest</p>
+          <p class="profile-account-email profile-display-email">—</p>
+        </div>
+      </div>
+      <div class="profile-account-meta">
+        <span class="profile-account-detail profile-display-role">Passenger</span>
+        <span class="profile-account-detail profile-display-verified">Email verified</span>
+      </div>
+    </div>
+    <div class="profile-change-block" id="profile-change-block">
+      <h4>Change password</h4>
+      <div class="auth-field">
+        <label>Current password</label>
+        <input id="profile-current-password" type="password" autocomplete="current-password">
+      </div>
+      <div class="auth-field">
+        <label>New password</label>
+        <input id="profile-new-password" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()">
+      </div>
+      <button type="button" id="profile-change-submit" class="btn-auth-primary" onclick="doChangePassword()">Update password</button>
+      <div id="profile-change-error" class="auth-error" role="alert"></div>
+      <div id="profile-change-success" class="admin-add-success" role="status" style="display:none;margin-top:10px;"></div>
+    </div>
+    <p class="profile-admin-note" id="profile-admin-note" style="display:none;">Admin password is managed via <code>.env</code> only. Update <code>ADMIN_PASSWORD</code> and run <code>npm run admin:bootstrap</code>.</p>
+    <div class="profile-account-actions" style="margin-top:18px;">
+      <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
     </div>
   </div>
 </div>
@@ -2129,57 +2914,355 @@ const demoLocations = {
 };
 
 // ── Auth ──
-// Client-side session store + API helpers. The auth API (US-003) returns
-// { token, user:{id,name,email,role} } on signup/login; GET /api/me restores a
-// session from a stored Bearer token. The token and public user are kept in
-// localStorage so a refresh stays logged in.
+// Session JWT lives in an HttpOnly cookie (set by the server). The client only
+// stores the public user profile in sessionStorage for display. All API calls
+// use credentials: 'include' so the cookie is sent automatically.
 const AUTH = {
-  tokenKey: 'irago_token',
   userKey: 'irago_user',
-  get token() { return localStorage.getItem(this.tokenKey); },
   get user() {
-    try { return JSON.parse(localStorage.getItem(this.userKey) || 'null'); }
+    try { return JSON.parse(sessionStorage.getItem(this.userKey) || 'null'); }
     catch (e) { return null; }
   },
-  save(token, user) {
-    localStorage.setItem(this.tokenKey, token);
-    localStorage.setItem(this.userKey, JSON.stringify(user));
+  save(user) {
+    sessionStorage.setItem(this.userKey, JSON.stringify(user));
   },
   clear() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    sessionStorage.removeItem(this.userKey);
   },
   headers() {
-    const h = { 'Content-Type': 'application/json' };
-    if (this.token) h['Authorization'] = 'Bearer ' + this.token;
-    return h;
+    return { 'Content-Type': 'application/json' };
+  },
+  fetchOpts(opts = {}) {
+    return { credentials: 'include', ...opts };
   }
 };
 
-// Shared fetch wrapper so future stories (bookings/operator/admin) get the auth
-// header + JSON handling for free. Auto-logs out on a 401 (expired/invalid token).
+// Pending OTP flows (email + role + expiry/resend timers).
+const pendingOtp = { email: '', purpose: '', role: 'passenger', resendTimerId: null, expiryTimerId: null };
+let authRole = 'passenger';
+
+const SIGNUP_CONFIG = {
+  passenger: {
+    purpose: 'signup_passenger',
+    requestPath: '/api/auth/passenger/signup-request',
+    verifyPath: '/api/auth/passenger/verify-signup',
+    loginPath: '/api/auth/passenger/login',
+    loginUrl: '/app.html',
+    signupUrl: '/app.html?register=1',
+    cardId: 'register-passenger-card',
+    errorId: 'register-passenger-error',
+    submitId: 'register-passenger-submit',
+    submitLabel: 'Send OTP',
+    otpTitle: 'Verify passenger account',
+    loginTitle: 'Passenger sign in',
+    loginSub: 'Book Air Taxi, Golden Hour, and Air Shuttle rides.',
+    loginHint: 'New passenger? Create an account below.',
+    registerBtn: 'Create passenger account',
+  },
+  operator: {
+    purpose: 'signup_operator',
+    requestPath: '/api/auth/operator/signup-request',
+    verifyPath: '/api/auth/operator/verify-signup',
+    loginPath: '/api/auth/operator/login',
+    loginUrl: '/login/operator',
+    signupUrl: '/signup/operator',
+    cardId: 'register-operator-card',
+    errorId: 'register-operator-error',
+    submitId: 'register-operator-submit',
+    submitLabel: 'Send OTP',
+    otpTitle: 'Verify operator account',
+    loginTitle: 'Operator sign in',
+    loginSub: 'Flight rider / pilot console — assigned missions and fleet trips.',
+    loginHint: 'New operator? Create your operator account below.',
+    registerBtn: 'Create operator account',
+  },
+  admin: {
+    loginPath: '/api/auth/admin/login',
+    loginUrl: '/login/admin',
+    loginTitle: 'Admin sign in',
+    loginSub: 'Platform admin — team management and fleet oversight.',
+    loginHint: 'Admin accounts are created from .env only (ADMIN_USER + ADMIN_PASSWORD, then npm run admin:bootstrap). No signup or password reset.',
+    loginOnly: true,
+  },
+};
+
+function parsePortalFromLocation() {
+  const path = window.location.pathname;
+  if (path.endsWith('app.html') || path === '/app') {
+    const params = new URLSearchParams(window.location.search);
+    return { mode: params.has('register') ? 'signup' : 'login', role: 'passenger' };
+  }
+  const m = path.match(/^\/(login|signup)\/(operator|admin)\/?$/);
+  if (m) return { mode: m[1], role: m[2] };
+  return { mode: 'login', role: 'passenger' };
+}
+
+function portalForDbRole(role) {
+  if (role === 'customer') return 'passenger';
+  if (role === 'operator' || role === 'admin') return role;
+  return 'passenger';
+}
+
+function applyPortalLabels(role) {
+  authRole = role;
+  const cfg = SIGNUP_CONFIG[role] || SIGNUP_CONFIG.passenger;
+  const title = document.getElementById('login-card-title');
+  const sub = document.getElementById('login-card-sub');
+  const hint = document.getElementById('login-role-hint');
+  const regBtn = document.getElementById('login-register-btn');
+  const regRow = document.getElementById('login-register-row');
+  const forgotRow = document.getElementById('login-forgot-row');
+  const loginOnly = Boolean(cfg.loginOnly);
+  if (title) title.textContent = cfg.loginTitle;
+  if (sub) sub.textContent = cfg.loginSub;
+  if (hint) hint.textContent = cfg.loginHint;
+  if (regBtn && cfg.registerBtn) regBtn.textContent = cfg.registerBtn;
+  if (regRow) regRow.style.display = loginOnly ? 'none' : '';
+  if (forgotRow) forgotRow.style.display = loginOnly ? 'none' : '';
+  document.title = cfg.loginTitle + ' — IraGo';
+}
+
+function goToLoginPortal() {
+  const cfg = SIGNUP_CONFIG[authRole] || SIGNUP_CONFIG.passenger;
+  window.location.href = cfg.loginUrl;
+}
+
+function goToSignupPortal() {
+  const cfg = SIGNUP_CONFIG[authRole] || SIGNUP_CONFIG.passenger;
+  if (cfg.loginOnly) return;
+  window.location.href = cfg.signupUrl;
+}
+
+function initAuthPortal() {
+  const portal = parsePortalFromLocation();
+  authRole = portal.role;
+  if (portal.role === 'admin' && portal.mode === 'signup') {
+    window.location.replace('/login/admin');
+    return;
+  }
+  applyPortalLabels(portal.role);
+  showView('login-view');
+  if (portal.mode === 'signup') showRoleRegister();
+  else showLoginCard();
+}
+
+function setAuthRole(role) { applyPortalLabels(role); }
+
+function showRoleRegister() {
+  applyPortalLabels(authRole);
+  hideAllAuthCards();
+  const cfg = SIGNUP_CONFIG[authRole] || SIGNUP_CONFIG.passenger;
+  resetRegisterOtpStep(authRole);
+  const card = document.getElementById(cfg.cardId);
+  if (card) card.style.display = 'block';
+  hideAuthError(cfg.errorId);
+  document.title = 'Create account — IraGo';
+}
+
+function setRegisterSignupFieldsVisible(role, visible) {
+  document.querySelectorAll('.register-' + role + '-signup-field').forEach(function (el) {
+    el.style.display = visible ? '' : 'none';
+  });
+}
+
+function resetRegisterStep(role) {
+  setRegisterSignupFieldsVisible(role, true);
+  hideAuthError('register-' + role + '-error');
+  setRegisterStepIndicator(role, 1);
+}
+
+function setRegisterStepIndicator(role, step) {
+  const root = document.getElementById('register-' + role + '-steps');
+  if (!root) return;
+  const steps = root.querySelectorAll('.auth-step');
+  const line = root.querySelector('.auth-step-line');
+  steps.forEach(function (el, idx) {
+    el.classList.remove('active', 'done');
+    if (idx + 1 < step) el.classList.add('done');
+    if (idx + 1 === step) el.classList.add('active');
+  });
+  if (line) line.classList.toggle('done', step > 1);
+}
+
+function backToRegisterFromOtp() {
+  const role = pendingOtp.role || authRole || 'passenger';
+  const cfg = SIGNUP_CONFIG[role] || SIGNUP_CONFIG.passenger;
+  clearOtpTimers();
+  hideAllAuthCards();
+  const card = document.getElementById(cfg.cardId);
+  if (card) card.style.display = 'block';
+  resetRegisterStep(role);
+  hideAuthError('otp-error');
+}
+
+function resetRegisterOtpStep(role) {
+  resetRegisterStep(role);
+}
+
+function otpUiPrefix() {
+  if (pendingOtp.purpose === 'reset_password') return 'reset';
+  return 'otp';
+}
+
+function showPassengerRegister() { window.location.href = '/app.html?register=1'; }
+
+function hideAllAuthCards() {
+  ['login-card', 'register-passenger-card', 'register-operator-card', 'otp-card', 'forgot-card', 'reset-card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  ['login-error', 'register-passenger-error', 'register-operator-error', 'otp-error', 'forgot-error', 'reset-error'].forEach(hideAuthError);
+}
+
+function showLoginCard() {
+  hideAllAuthCards();
+  document.getElementById('login-card').style.display = 'block';
+  applyPortalLabels(authRole || 'passenger');
+  clearOtpTimers();
+  hideLoginSuccess();
+}
+
+function showOtpCard(email, role, timing) {
+  hideAllAuthCards();
+  const cfg = SIGNUP_CONFIG[role] || SIGNUP_CONFIG.passenger;
+  pendingOtp.email = email;
+  pendingOtp.role = role;
+  pendingOtp.purpose = cfg.purpose;
+  const titleEl = document.getElementById('otp-card-title');
+  const subEl = document.getElementById('otp-card-sub');
+  if (titleEl) titleEl.textContent = cfg.otpTitle;
+  if (subEl) subEl.textContent = 'Step 2 — enter the code from your email to create your account.';
+  document.getElementById('otp-email-display').textContent = email;
+  document.getElementById('otp-code').value = '';
+  hideAuthError('otp-error');
+  document.getElementById('otp-card').style.display = 'block';
+  startOtpTimers('otp', timing);
+  const otpInput = document.getElementById('otp-code');
+  if (otpInput) otpInput.focus();
+}
+
+function showForgotCard() {
+  hideAllAuthCards();
+  document.getElementById('forgot-card').style.display = 'block';
+  hideAuthError('forgot-error');
+}
+
+function showResetCard(email, timing) {
+  hideAllAuthCards();
+  pendingOtp.email = email;
+  pendingOtp.purpose = 'reset_password';
+  document.getElementById('reset-email-display').textContent = email;
+  document.getElementById('reset-otp').value = '';
+  document.getElementById('reset-password').value = '';
+  hideAuthError('reset-error');
+  document.getElementById('reset-card').style.display = 'block';
+  startOtpTimers('reset', timing);
+}
+
+function formatOtpCountdown(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  if (s >= 60) {
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ':' + String(r).padStart(2, '0');
+  }
+  return s + 's';
+}
+
+function normalizeOtpTiming(timing) {
+  if (typeof timing === 'number') {
+    return { resendCooldownSeconds: timing, expiresInSeconds: 60 };
+  }
+  return {
+    expiresInSeconds: Number(timing && timing.expiresInSeconds) || 60,
+    resendCooldownSeconds: Number(timing && timing.resendCooldownSeconds) || 300,
+  };
+}
+
+function clearResendTimer() {
+  if (pendingOtp.resendTimerId) {
+    clearInterval(pendingOtp.resendTimerId);
+    pendingOtp.resendTimerId = null;
+  }
+}
+
+function clearExpiryTimer() {
+  if (pendingOtp.expiryTimerId) {
+    clearInterval(pendingOtp.expiryTimerId);
+    pendingOtp.expiryTimerId = null;
+  }
+}
+
+function clearOtpTimers() {
+  clearResendTimer();
+  clearExpiryTimer();
+}
+
+function startExpiryTimer(prefix, seconds) {
+  clearExpiryTimer();
+  const el = document.getElementById(prefix + '-expiry-timer');
+  if (!el) return;
+  let remaining = seconds;
+  const tick = () => {
+    if (remaining <= 0) {
+      el.textContent = 'Expired';
+      el.classList.add('expired');
+      clearExpiryTimer();
+      return;
+    }
+    el.textContent = formatOtpCountdown(remaining);
+    el.classList.remove('expired');
+    remaining -= 1;
+  };
+  tick();
+  pendingOtp.expiryTimerId = setInterval(tick, 1000);
+}
+
+function startResendTimer(prefix, seconds) {
+  clearResendTimer();
+  const btn = document.getElementById(prefix + '-resend-btn');
+  const timerEl = document.getElementById(prefix + '-resend-timer');
+  if (!btn || !timerEl) return;
+  let remaining = seconds;
+  btn.disabled = true;
+  timerEl.classList.remove('ready');
+  timerEl.textContent = formatOtpCountdown(remaining);
+  pendingOtp.resendTimerId = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearResendTimer();
+      btn.disabled = false;
+      timerEl.textContent = 'Ready';
+      timerEl.classList.add('ready');
+      return;
+    }
+    timerEl.textContent = formatOtpCountdown(remaining);
+  }, 1000);
+}
+
+function startOtpTimers(prefix, timing) {
+  const t = normalizeOtpTiming(timing);
+  startExpiryTimer(prefix, t.expiresInSeconds);
+  startResendTimer(prefix, t.resendCooldownSeconds);
+}
+
+// Shared fetch wrapper — sends the HttpOnly session cookie automatically.
 async function apiFetch(path, opts = {}) {
-  const res = await fetch(path, { ...opts, headers: { ...AUTH.headers(), ...(opts.headers || {}) } });
-  if (res.status === 401 && AUTH.token && path !== '/api/auth/login') {
+  const res = await fetch(path, AUTH.fetchOpts({
+    ...opts,
+    headers: { ...AUTH.headers(), ...(opts.headers || {}) }
+  }));
+  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
     AUTH.clear();
     showView('login-view');
+    const portal = authRole || 'passenger';
+    window.location.href = portal === 'passenger' ? '/app.html' : '/login/' + portal;
+    return res;
   }
   return res;
 }
 
-function toggleAuth() {
-  const login = document.getElementById('login-card');
-  const register = document.getElementById('register-card');
-  hideAuthError('login-error');
-  hideAuthError('register-error');
-  if (login.style.display === 'none') {
-    login.style.display = 'block';
-    register.style.display = 'none';
-  } else {
-    login.style.display = 'none';
-    register.style.display = 'block';
-  }
-}
+function toggleAuth() { goToSignupPortal(); }
 
 function showAuthError(id, msg) {
   const el = document.getElementById(id);
@@ -2189,6 +3272,34 @@ function showAuthError(id, msg) {
 function hideAuthError(id) {
   const el = document.getElementById(id);
   if (el) { el.textContent = ''; el.classList.remove('show'); }
+}
+function showLoginSuccess(msg) {
+  const el = document.getElementById('login-success');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideLoginSuccess() {
+  const el = document.getElementById('login-success');
+  if (el) { el.textContent = ''; el.classList.remove('show'); }
+}
+function completePasswordReset(email) {
+  clearOtpTimers();
+  pendingOtp.email = '';
+  pendingOtp.purpose = '';
+  AUTH.clear();
+  fetch('/api/auth/logout', AUTH.fetchOpts({ method: 'POST' })).catch(function () {});
+  showView('login-view');
+  showLoginCard();
+  hideAuthError('login-error');
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  if (emailInput && email) emailInput.value = email;
+  if (passInput) {
+    passInput.value = '';
+    passInput.focus();
+  }
+  showLoginSuccess('Your password has been saved. Sign in with your new password.');
 }
 function setBusy(btnId, busy, busyLabel, idleLabel) {
   const btn = document.getElementById(btnId);
@@ -2203,24 +3314,29 @@ function googleStub(errId) {
 }
 
 async function doLogin() {
+  const cfg = SIGNUP_CONFIG[authRole] || SIGNUP_CONFIG.passenger;
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   hideAuthError('login-error');
+  hideLoginSuccess();
   if (!email || !password) {
     return showAuthError('login-error', 'Enter your email and password.');
   }
   setBusy('login-submit', true, 'Signing in…', 'Sign In');
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(cfg.loginPath, AUTH.fetchOpts({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    });
+    }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 403 && data.code === 'WRONG_PORTAL' && data.portal) {
+        return showAuthError('login-error', 'Wrong portal. Sign in at /login/' + data.portal);
+      }
       return showAuthError('login-error', data.error || 'Invalid email or password.');
     }
-    onAuthSuccess(data.token, data.user);
+    onAuthSuccess(data.user);
   } catch (e) {
     showAuthError('login-error', 'Could not reach the server. Please try again.');
   } finally {
@@ -2228,51 +3344,174 @@ async function doLogin() {
   }
 }
 
-async function doSignup() {
-  const name = document.getElementById('register-name').value.trim();
-  const email = document.getElementById('register-email').value.trim();
-  const password = document.getElementById('register-password').value;
-  hideAuthError('register-error');
+async function doRoleSignup(role) {
+  const cfg = SIGNUP_CONFIG[role];
+  if (!cfg || cfg.loginOnly) return;
+  const name = document.getElementById('register-' + role + '-name').value.trim();
+  const email = document.getElementById('register-' + role + '-email').value.trim();
+  const password = document.getElementById('register-' + role + '-password').value;
+  hideAuthError(cfg.errorId);
   if (!name || !email || !password) {
-    return showAuthError('register-error', 'Name, email, and password are required.');
+    return showAuthError(cfg.errorId, 'Name, email, and password are required.');
   }
   if (password.length < 6) {
-    return showAuthError('register-error', 'Password must be at least 6 characters.');
+    return showAuthError(cfg.errorId, 'Password must be at least 6 characters.');
   }
-  setBusy('register-submit', true, 'Creating account…', 'Create Account');
+  const body = { name, email, password };
+  setBusy(cfg.submitId, true, 'Sending…', 'Send OTP');
   try {
-    const res = await fetch('/api/auth/signup', {
+    const res = await fetch(cfg.requestPath, AUTH.fetchOpts({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
+      body: JSON.stringify(body)
+    }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      return showAuthError('register-error', data.error || 'Could not create your account.');
+      const msg = data.retryAfterSeconds
+        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not start registration.');
+      return showAuthError(cfg.errorId, msg);
     }
-    onAuthSuccess(data.token, data.user);
+    showOtpCard(data.email || email, role, data);
   } catch (e) {
-    showAuthError('register-error', 'Could not reach the server. Please try again.');
+    showAuthError(cfg.errorId, 'Could not reach the server. Please try again.');
   } finally {
-    setBusy('register-submit', false, 'Creating account…', 'Create Account');
+    setBusy(cfg.submitId, false, 'Sending…', 'Send OTP');
   }
 }
 
-// Persist the session and route to the role-appropriate view.
-function onAuthSuccess(token, user) {
-  AUTH.save(token, user);
+async function doVerifySignup() {
+  const otp = document.getElementById('otp-code').value.trim();
+  hideAuthError('otp-error');
+  const cfg = SIGNUP_CONFIG[pendingOtp.role] || SIGNUP_CONFIG.passenger;
+  if (!pendingOtp.email || !otp) {
+    return showAuthError('otp-error', 'Enter the 6-digit code from your email.');
+  }
+  setBusy('otp-submit', true, 'Verifying…', 'Verify & Create Account');
+  try {
+    const res = await fetch(cfg.verifyPath, AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingOtp.email, otp })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('otp-error', data.error || 'Invalid or expired code.');
+    }
+    onAuthSuccess(data.user);
+  } catch (e) {
+    showAuthError('otp-error', 'Could not reach the server. Please try again.');
+  } finally {
+    setBusy('otp-submit', false, 'Verifying…', 'Verify & Create Account');
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  hideAuthError('forgot-error');
+  if (!email) {
+    return showAuthError('forgot-error', 'Enter your email address.');
+  }
+  setBusy('forgot-submit', true, 'Sending…', 'Send OTP');
+  try {
+    const res = await fetch('/api/auth/forgot-password', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data.retryAfterSeconds
+        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not send reset code.');
+      return showAuthError('forgot-error', msg);
+    }
+    showResetCard(email.toLowerCase(), data);
+    hideAuthError('forgot-error');
+    document.getElementById('forgot-email').value = '';
+  } catch (e) {
+    showAuthError('forgot-error', 'Could not reach the server. Please try again.');
+  } finally {
+    setBusy('forgot-submit', false, 'Sending…', 'Send OTP');
+  }
+}
+
+async function doResetPassword() {
+  const otp = document.getElementById('reset-otp').value.trim();
+  const newPassword = document.getElementById('reset-password').value;
+  hideAuthError('reset-error');
+  if (!pendingOtp.email || !otp || !newPassword) {
+    return showAuthError('reset-error', 'Enter the code and a new password.');
+  }
+  if (newPassword.length < 6) {
+    return showAuthError('reset-error', 'Password must be at least 6 characters.');
+  }
+  setBusy('reset-submit', true, 'Resetting…', 'Reset password');
+  try {
+    const res = await fetch('/api/auth/reset-password', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingOtp.email, otp, newPassword })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('reset-error', data.error || 'Could not reset password.');
+    }
+    completePasswordReset(pendingOtp.email || data.email || '');
+  } catch (e) {
+    showAuthError('reset-error', 'Could not reach the server. Please try again.');
+  } finally {
+    setBusy('reset-submit', false, 'Resetting…', 'Reset password');
+  }
+}
+
+async function resendOtp(forcedPurpose) {
+  const purpose = forcedPurpose || pendingOtp.purpose;
+  const prefix = otpUiPrefix();
+  hideAuthError(prefix === 'reset' ? 'reset-error' : 'otp-error');
+  if (!pendingOtp.email || !purpose) return;
+  const errId = prefix === 'reset' ? 'reset-error' : 'otp-error';
+  const btn = document.getElementById(prefix + '-resend-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/auth/resend-otp', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingOtp.email, purpose })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showAuthError(errId, data.error || 'Could not resend code.');
+      if (data.retryAfterSeconds) {
+        startOtpTimers(prefix, {
+          expiresInSeconds: data.expiresInSeconds || 60,
+          resendCooldownSeconds: data.retryAfterSeconds,
+        });
+      } else if (btn) btn.disabled = false;
+      return;
+    }
+    startOtpTimers(prefix, data);
+  } catch (e) {
+    showAuthError(errId, 'Could not reach the server.');
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Persist the session profile and route to the role-appropriate dashboard.
+function onAuthSuccess(user) {
+  AUTH.save(user);
+  syncProfileUI(user);
   routeForRole(user);
 }
 
 // Customers land on the booking view; operators on the pilot console (US-008);
 // admins on the Admin Dashboard (US-004).
 function routeForRole(user) {
-  const initial = (user && user.name) ? user.name.charAt(0).toUpperCase() : '';
+  syncProfileUI(user);
+  bindProfileActions();
 
   switch (user && user.role) {
     case 'admin': {
-      const adminAvatar = document.getElementById('admin-avatar');
-      if (adminAvatar && initial) adminAvatar.textContent = initial;
       const adminWelcome = document.getElementById('admin-welcome');
       if (adminWelcome) adminWelcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Admin');
       showView('admin-view');
@@ -2280,8 +3519,6 @@ function routeForRole(user) {
       break;
     }
     case 'operator': {
-      const opAvatar = document.getElementById('op-avatar');
-      if (opAvatar && initial) opAvatar.textContent = initial;
       const welcome = document.getElementById('op-welcome');
       if (welcome) welcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Pilot');
       showView('operator-view');
@@ -2291,8 +3528,6 @@ function routeForRole(user) {
     }
     case 'customer':
     default: {
-      const avatar = document.getElementById('nav-avatar');
-      if (avatar && initial) avatar.textContent = initial;
       showView('booking-view');
       initMap();
       break;
@@ -2310,8 +3545,159 @@ let adminUsers = [];
 const ROLE_BADGE = {
   admin:    { label: 'Admin',    cls: 'op-badge--purple' },
   operator: { label: 'Operator', cls: 'op-badge--blue' },
-  customer: { label: 'Customer', cls: 'op-badge--gray' },
+  customer: { label: 'Passenger', cls: 'op-badge--gray' },
 };
+
+const ROLE_PROFILE = {
+  admin:    { label: 'Admin',     dropdownClass: 'role-admin' },
+  operator: { label: 'Operator',  dropdownClass: 'role-operator' },
+  customer: { label: 'Passenger', dropdownClass: '' },
+};
+
+function profileInitial(user) {
+  return (user && user.name) ? user.name.charAt(0).toUpperCase() : '?';
+}
+
+function syncProfileUI(user) {
+  if (!user) return;
+  const initial = profileInitial(user);
+  const roleMeta = ROLE_PROFILE[user.role] || { label: user.role || 'User', dropdownClass: '' };
+
+  document.querySelectorAll('.nav-profile-avatar').forEach(function (el) {
+    el.textContent = initial;
+    el.classList.toggle('admin-avatar', user.role === 'admin');
+  });
+  document.querySelectorAll('.profile-display-avatar').forEach(function (el) {
+    el.textContent = initial;
+    el.classList.toggle('admin-avatar', user.role === 'admin');
+  });
+  document.querySelectorAll('.profile-display-name').forEach(function (el) {
+    el.textContent = user.name || 'User';
+  });
+  document.querySelectorAll('.profile-display-email').forEach(function (el) {
+    el.textContent = user.email || '—';
+  });
+  document.querySelectorAll('.profile-display-role').forEach(function (el) {
+    el.textContent = roleMeta.label;
+  });
+  document.querySelectorAll('.profile-display-verified').forEach(function (el) {
+    el.textContent = user.emailVerified ? 'Email verified' : 'Email not verified';
+  });
+
+  const changeBlock = document.getElementById('profile-change-block');
+  const adminNote = document.getElementById('profile-admin-note');
+  const isAdmin = user.role === 'admin';
+  if (changeBlock) changeBlock.style.display = isAdmin ? 'none' : '';
+  if (adminNote) adminNote.style.display = isAdmin ? '' : 'none';
+}
+
+function bindProfileActions() {
+  document.querySelectorAll('.js-open-profile').forEach(function (btn) {
+    if (btn.dataset.profileOpenBound) return;
+    btn.dataset.profileOpenBound = '1';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      openProfileModal();
+    });
+  });
+  document.querySelectorAll('.js-close-profile').forEach(function (btn) {
+    if (btn.dataset.profileCloseBound) return;
+    btn.dataset.profileCloseBound = '1';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      closeProfileModal();
+    });
+  });
+  document.querySelectorAll('.nav-profile-avatar').forEach(function (avatar) {
+    if (avatar.dataset.profileAvatarBound) return;
+    avatar.dataset.profileAvatarBound = '1';
+    avatar.style.cursor = 'pointer';
+    avatar.addEventListener('click', function () { openProfileModal(); });
+  });
+  if (!window._profileEscapeBound) {
+    window._profileEscapeBound = true;
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeProfileModal();
+    });
+  }
+}
+
+function openProfileModal() {
+  const user = AUTH.user();
+  if (user) syncProfileUI(user);
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+  hideAuthError('profile-change-error');
+  const success = document.getElementById('profile-change-success');
+  if (success) { success.style.display = 'none'; success.textContent = ''; }
+  const cur = document.getElementById('profile-current-password');
+  const neu = document.getElementById('profile-new-password');
+  if (cur) cur.value = '';
+  if (neu) neu.value = '';
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+async function doChangePassword() {
+  const user = AUTH.user();
+  if (!user || user.role === 'admin') return;
+  const currentPassword = document.getElementById('profile-current-password').value;
+  const newPassword = document.getElementById('profile-new-password').value;
+  hideAuthError('profile-change-error');
+  const success = document.getElementById('profile-change-success');
+  if (success) { success.style.display = 'none'; success.textContent = ''; }
+  if (!currentPassword || !newPassword) {
+    return showAuthError('profile-change-error', 'Enter your current and new password.');
+  }
+  if (newPassword.length < 6) {
+    return showAuthError('profile-change-error', 'New password must be at least 6 characters.');
+  }
+  setBusy('profile-change-submit', true, 'Updating…', 'Update password');
+  try {
+    const res = await fetch('/api/auth/change-password', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('profile-change-error', data.error || 'Could not update password.');
+    }
+    if (data.user) {
+      AUTH.save(data.user);
+      syncProfileUI(data.user);
+    }
+    document.getElementById('profile-current-password').value = '';
+    document.getElementById('profile-new-password').value = '';
+    if (success) {
+      success.textContent = 'Password updated successfully.';
+      success.style.display = 'block';
+    }
+  } catch (e) {
+    showAuthError('profile-change-error', 'Could not reach the server.');
+  } finally {
+    setBusy('profile-change-submit', false, 'Updating…', 'Update password');
+  }
+}
+
+function loginUrlForRole(role) {
+  if (role === 'operator') return '/login/operator';
+  if (role === 'admin') return '/login/admin';
+  return '/app.html';
+}
+
+function loginUrlForUser(user) {
+  return loginUrlForRole(portalForDbRole(user && user.role));
+}
 
 function roleBadgeHtml(role) {
   const b = ROLE_BADGE[role] || { label: role || 'Unknown', cls: 'op-badge--gray' };
@@ -2325,8 +3711,18 @@ async function loadAdminUsers() {
   host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
   try {
     const res = await apiFetch('/api/admin/users');
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 403 && data.code === 'TAILSCALE_REQUIRED') {
+      adminUsers = [];
+      host.innerHTML =
+        '<div class="op-empty">' +
+        '<div class="op-empty-icon">🔒</div>' +
+        '<div class="op-empty-title">Tailscale required</div>' +
+        '<div class="op-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
+        '</div>';
+      return;
+    }
     if (!res.ok) throw new Error('load failed');
-    const data = await res.json();
     adminUsers = Array.isArray(data.users) ? data.users : [];
   } catch (e) {
     adminUsers = [];
@@ -2351,6 +3747,13 @@ function renderAdminUsers() {
   }
   host.innerHTML = adminUsers.map(function (u) {
     const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
+    const actions =
+      u.role === 'admin'
+        ? '<span class="admin-user-note">Password via .env bootstrap</span>'
+        : '<div class="admin-user-actions">' +
+          '<button type="button" class="admin-btn-sm primary" data-user-id="' + u.id + '" onclick="adminResetPassword(' + u.id + ')">Reset password</button>' +
+          '<button type="button" class="admin-btn-sm" data-user-id="' + u.id + '" onclick="adminSendResetOtp(' + u.id + ')">Email OTP</button>' +
+          '</div>';
     return (
       '<div class="admin-user-card">' +
         '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
@@ -2359,9 +3762,58 @@ function renderAdminUsers() {
           '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
         '</div>' +
         roleBadgeHtml(u.role) +
+        actions +
       '</div>'
     );
   }).join('');
+}
+
+async function adminResetPassword(userId) {
+  const user = adminUsers.find(function (u) { return u.id === userId; });
+  const email = user ? user.email : 'this user';
+  const newPassword = window.prompt('Set a new password for ' + email + ' (min 6 characters):');
+  if (!newPassword) return;
+  if (newPassword.length < 6) {
+    alert('Password must be at least 6 characters.');
+    return;
+  }
+  try {
+    const res = await apiFetch('/api/admin/users/' + userId + '/password', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPassword })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Could not reset password.');
+      return;
+    }
+    showAddSuccess(data.message || 'Password updated.');
+  } catch (e) {
+    alert('Could not reach the server.');
+  }
+}
+
+async function adminSendResetOtp(userId) {
+  const user = adminUsers.find(function (u) { return u.id === userId; });
+  const email = user ? user.email : '';
+  try {
+    const res = await apiFetch('/api/admin/users/' + userId + '/send-reset-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data.retryAfterSeconds
+        ? (data.error || 'Could not send OTP.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not send OTP.');
+      alert(msg);
+      return;
+    }
+    showAddSuccess(data.message || ('Reset code sent to ' + email + '.'));
+  } catch (e) {
+    alert('Could not reach the server.');
+  }
 }
 
 // Green success banner for the add-user form (mirrors showAuthError's red state).
@@ -2392,8 +3844,8 @@ async function doAddUser() {
   if (password.length < 6) {
     return showAuthError('admin-add-error', 'Password must be at least 6 characters.');
   }
-  if (role !== 'operator' && role !== 'admin') {
-    return showAuthError('admin-add-error', 'Choose a role of Operator or Admin.');
+  if (role !== 'operator') {
+    return showAuthError('admin-add-error', 'Only operators can be added here. Admins are created via .env bootstrap.');
   }
   setBusy('admin-add-submit', true, 'Adding…', 'Add Team Member');
   try {
@@ -2638,28 +4090,48 @@ function showView(viewId) {
 
 function logout() {
   AUTH.clear();
-  // Reset the login form back to its default state.
-  const lp = document.getElementById('login-password');
-  if (lp) lp.value = '';
-  hideAuthError('login-error');
-  showView('login-view');
+  window.location.href = '/logout';
 }
 
-// On load, restore a session if a valid token is stored.
+// On load, restore session from HttpOnly cookie via /api/me.
 async function restoreSession() {
-  if (!AUTH.token) return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('logout') === '1') {
+    AUTH.clear();
+    showView('login-view');
+    showLoginCard();
+    if (window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    return;
+  }
   try {
-    const res = await fetch('/api/me', { headers: AUTH.headers() });
-    if (!res.ok) { AUTH.clear(); return; }
+    const res = await fetch('/api/me', AUTH.fetchOpts());
+    if (!res.ok) {
+      AUTH.clear();
+      showView('login-view');
+      return;
+    }
     const data = await res.json();
-    // /api/me returns {id,name,role}; merge any stored fields (e.g. email).
-    routeForRole({ ...(AUTH.user || {}), ...data.user });
+    if (data.user) {
+      AUTH.save(data.user);
+      routeForRole(data.user);
+    }
   } catch (e) {
     // Offline or server down — stay on the login screen.
+    showView('login-view');
   }
 }
 
-document.addEventListener('DOMContentLoaded', restoreSession);
+document.addEventListener('DOMContentLoaded', function () {
+  initAuthPortal();
+  bindProfileActions();
+  restoreSession();
+});
+
+window.logout = logout;
+window.openProfileModal = openProfileModal;
+window.closeProfileModal = closeProfileModal;
 
 // ── Map Init ──
 function initMap() {

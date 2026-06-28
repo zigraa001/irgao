@@ -1,12 +1,13 @@
 // IraGo /api router. Future stories mount bookings, operator, and admin
 // routes here.
 const express = require("express");
-const { ping } = require("./db");
+const { ping, queryOne } = require("./db");
 const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
 const operatorRoutes = require("./operator-routes");
 const adminRoutes = require("./admin-routes");
 const { requireAuth } = require("./auth");
+const { requireTailscale } = require("./tailscale");
 
 const router = express.Router();
 
@@ -29,13 +30,27 @@ router.use("/bookings", bookingRoutes);
 // Operator: trips assigned to the logged-in pilot.
 router.use("/operator", operatorRoutes);
 
-// Admin: user management (create/list operators and admins). Admin-only.
-router.use("/admin", adminRoutes);
+// Admin: user management — Tailscale-gated when ADMIN_REQUIRE_TAILSCALE=true.
+router.use("/admin", requireTailscale, adminRoutes);
 
-// Current authenticated user — demonstrates the requireAuth guard and is handy
-// for the client to restore a session from a stored token.
-router.get("/me", requireAuth, (req, res) => {
-  res.json({ user: req.user });
+// Current authenticated user — reads from cookie/Bearer token and returns profile.
+router.get("/me", requireAuth, async (req, res) => {
+  const user = await queryOne(
+    "SELECT id, name, email, role, emailVerified FROM users WHERE id = ?",
+    [req.user.id]
+  );
+  if (!user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  res.json({
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      emailVerified: Boolean(user.emailVerified),
+    },
+  });
 });
 
 module.exports = router;

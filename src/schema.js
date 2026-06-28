@@ -50,14 +50,43 @@ const STATEMENTS = [
     INDEX idx_bookings_operator (operatorId),
     INDEX idx_bookings_aircraft (aircraftId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS otp_requests (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    email      VARCHAR(255) NOT NULL,
+    purpose    VARCHAR(32)  NOT NULL,
+    codeHash   VARCHAR(255) NOT NULL,
+    payload    JSON         NULL,
+    attempts   INT          NOT NULL DEFAULT 0,
+    expiresAt  DATETIME     NOT NULL,
+    consumedAt DATETIME     NULL,
+    createdAt  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_otp_email_created (email, createdAt),
+    INDEX idx_otp_email_purpose (email, purpose, consumedAt)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ];
+
+// Add a column to an existing table when missing (no migration tool).
+async function ensureColumn(table, column, definition) {
+  const rows = await query(`SHOW COLUMNS FROM \`${table}\` LIKE ?`, [column]);
+  if (rows.length === 0) {
+    await query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`);
+    dbg(`initSchema: added ${table}.${column}`);
+  }
+}
 
 // Create all tables if they don't already exist. Safe to run on every boot.
 async function initSchema() {
-  dbg("initSchema: ensuring tables exist (users, aircraft, bookings) ...");
+  dbg("initSchema: ensuring tables exist (users, aircraft, bookings, otp_requests) ...");
   for (const sql of STATEMENTS) {
     await query(sql);
   }
+  // Existing seeded accounts are treated as verified; new signups require OTP.
+  await ensureColumn(
+    "users",
+    "emailVerified",
+    "emailVerified TINYINT(1) NOT NULL DEFAULT 1"
+  );
   dbg("initSchema: done");
 }
 

@@ -93,6 +93,14 @@ let baseUrl;
 test.before(async () => {
   await new Promise((resolve) => server.listen(0, resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
+  fakeDb._users.push({
+    id: 1000,
+    name: "Env Admin",
+    email: "admin@irago.com",
+    passwordHash: "hash",
+    role: "admin",
+    createdAt: "2029-12-31 23:59:59",
+  });
 });
 test.after(() => server.close());
 
@@ -199,13 +207,12 @@ test("admin can create an operator; response omits passwordHash", async () => {
   assert.notEqual(stored.passwordHash, "secret1");
 });
 
-test("admin can create another admin", async () => {
-  const { status, json } = await post(
+test("admin cannot create another admin via API", async () => {
+  const { status } = await post(
     { name: "Andy", email: "andy@irago.com", password: "secret1", role: "admin" },
     adminToken()
   );
-  assert.equal(status, 201);
-  assert.equal(json.user.role, "admin");
+  assert.equal(status, 400);
 });
 
 test("duplicate email (case-insensitive) returns 409", async () => {
@@ -261,4 +268,58 @@ test("GET /api/admin/users with an invalid role returns all users", async () => 
   const bogus = await get("?role=superadmin", adminToken());
   assert.equal(bogus.status, 200);
   assert.equal(bogus.json.users.length, all.json.users.length);
+});
+
+// --- Admin password reset -----------------------------------------------------
+
+async function patchPassword(userId, body, token) {
+  const headers = { "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/admin/users/${userId}/password`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+test("admin can reset operator password", async () => {
+  const created = await post(
+    { name: "ResetMe", email: "reset@x.com", password: "oldpass1", role: "operator" },
+    adminToken()
+  );
+  assert.equal(created.status, 201);
+  const userId = created.json.user.id;
+
+  const { status, json } = await patchPassword(
+    userId,
+    { newPassword: "newpass2" },
+    adminToken()
+  );
+  assert.equal(status, 200);
+  assert.match(json.message, /reset@x.com/);
+});
+
+test("admin password cannot be reset via API", async () => {
+  const { status, json } = await patchPassword(
+    1000,
+    { newPassword: "newpass2" },
+    adminToken()
+  );
+  assert.equal(status, 403);
+  assert.equal(json.code, "ADMIN_ENV_ONLY");
+});
+
+test("POST /api/admin/users rejects admin role", async () => {
+  const res = await post(
+    { name: "Bad", email: "badadmin@x.com", password: "secret1", role: "admin" },
+    adminToken()
+  );
+  assert.equal(res.status, 400);
+});
+
+test("PATCH password without admin token returns 401", async () => {
+  const { status } = await patchPassword(1, { newPassword: "newpass2" });
+  assert.equal(status, 401);
 });

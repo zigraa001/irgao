@@ -5,17 +5,33 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "env:gen": "node scripts/gen-env.js",
     "db:init": "node scripts/db-init.js",
     "db:seed": "node scripts/seed.js",
+    "admin:bootstrap": "node scripts/bootstrap-admin.js",
+    "smtp:verify": "node scripts/verify-smtp.js",
+    "local:setup": "bash scripts/local/setup.sh",
+    "local:mysql-up": "bash scripts/local/mysql-up.sh",
+    "local:mysql-down": "bash scripts/local/mysql-down.sh",
+    "local:init": "bash scripts/local/init-db.sh",
+    "local:seed": "bash scripts/local/seed.sh",
+    "local:bootstrap": "bash scripts/local/bootstrap-admin.sh",
+    "local:reset": "bash scripts/local/reset-db.sh",
+    "local:start": "bash scripts/local/start.sh",
+    "local:start-tailscale": "bash scripts/local/start-tailscale.sh",
+    "local:tailscale": "bash scripts/local/tailscale-serve.sh",
+    "local:tailscale-stop": "bash scripts/local/tailscale-stop.sh",
     "typecheck": "tsc --noEmit",
     "test": "node --test"
   },
   "private": true,
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mysql2": "^3.22.5"
+    "mysql2": "^3.22.5",
+    "nodemailer": "^9.0.1"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

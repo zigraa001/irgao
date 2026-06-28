@@ -14,6 +14,8 @@ const {
   verifyToken,
   requireAuth,
   requireRole,
+  extractToken,
+  COOKIE_NAME,
   TOKEN_TTL_SECONDS,
 } = require("../src/auth");
 
@@ -117,6 +119,24 @@ test("requireAuth accepts a valid token and sets req.user", () => {
   });
   assert.equal(nextCalled, true);
   assert.equal(res.statusCode, 200);
+  assert.deepEqual(req.user, { id: 42, name: "Ada Lovelace", role: "customer" });
+});
+
+test("extractToken reads token from HttpOnly cookie header", () => {
+  const token = signToken(sampleUser);
+  const req = { headers: { cookie: `${COOKIE_NAME}=${encodeURIComponent(token)}` } };
+  assert.equal(extractToken(req), token);
+});
+
+test("requireAuth accepts token from cookie", () => {
+  const token = signToken(sampleUser);
+  const req = { headers: { cookie: `${COOKIE_NAME}=${token}` } };
+  const res = mockRes();
+  let nextCalled = false;
+  requireAuth(req, res, () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, true);
   assert.deepEqual(req.user, { id: 42, name: "Ada Lovelace", role: "customer" });
 });
 

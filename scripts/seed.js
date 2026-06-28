@@ -1,42 +1,14 @@
 #!/usr/bin/env node
-// Seeds sample data: 1 admin, 2 operators, 2 customers, and 3 aircraft.
+// Seeds operational sample data only — aircraft fleet for bookings.
 //
-// Idempotent: users are upserted by their unique email (INSERT ... ON DUPLICATE
-// KEY UPDATE) and aircraft are upserted by name (looked up first, since name is
-// not a unique column), so running `npm run db:seed` repeatedly won't create
-// duplicates.
+// Users are NOT seeded. All accounts come from the auth flow:
+//   • Customers — OTP signup (POST /api/auth/signup-request + verify-signup)
+//   • Operators/admins — admin dashboard or `npm run admin:bootstrap` for the first admin
 //
-// All seed users share the same demo password ("password123"), stored only as
-// a bcrypt hash — never in plaintext.
+// Idempotent: aircraft upserted by name.
 require("dotenv").config();
-const bcrypt = require("bcrypt");
 const { query, queryOne, pool } = require("../src/db");
 const { initSchema } = require("../src/schema");
-
-const DEMO_PASSWORD = "password123";
-
-// Primary admin credentials come from the environment so they never live in
-// source control. Falls back to a local default email, and to DEMO_PASSWORD
-// (with a warning) when ADMIN_PASSWORD is unset.
-const ADMIN_USER = process.env.ADMIN_USER || "admin@irago.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEMO_PASSWORD;
-
-if (!process.env.ADMIN_PASSWORD) {
-  console.warn(
-    `WARNING: ADMIN_PASSWORD is not set — seeding ${ADMIN_USER} with the shared demo password.`
-  );
-}
-
-// Users may set their own password; anyone without `password` falls back to the
-// shared DEMO_PASSWORD. The primary admin gets real credentials so the live site
-// can be administered immediately after seeding.
-const USERS = [
-  { name: "Admin", email: ADMIN_USER, role: "admin", password: ADMIN_PASSWORD },
-  { name: "Olivia Operator", email: "olivia@irago.test", role: "operator" },
-  { name: "Owen Operator", email: "owen@irago.test", role: "operator" },
-  { name: "Casey Customer", email: "casey@irago.test", role: "customer" },
-  { name: "Cleo Customer", email: "cleo@irago.test", role: "customer" },
-];
 
 const AIRCRAFT = [
   { name: "IG-001", model: "eVTOL Falcon X", status: "available", capacity: 4 },
@@ -45,21 +17,7 @@ const AIRCRAFT = [
 ];
 
 async function main() {
-  // Make sure the tables exist before seeding (so a fresh DB can be seeded
-  // without a separate init step).
   await initSchema();
-
-  for (const u of USERS) {
-    const passwordHash = await bcrypt.hash(u.password || DEMO_PASSWORD, 10);
-    // On conflict (existing email) refresh name + role AND the password hash, so
-    // re-seeding can also reset credentials (e.g. the admin password).
-    await query(
-      `INSERT INTO users (name, email, passwordHash, role)
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE name = VALUES(name), role = VALUES(role), passwordHash = VALUES(passwordHash)`,
-      [u.name, u.email, passwordHash, u.role]
-    );
-  }
 
   for (const a of AIRCRAFT) {
     const existing = await queryOne("SELECT id FROM aircraft WHERE name = ?", [
@@ -78,11 +36,11 @@ async function main() {
     }
   }
 
-  const userCount = (await queryOne("SELECT COUNT(*) AS n FROM users")).n;
   const aircraftCount = (await queryOne("SELECT COUNT(*) AS n FROM aircraft")).n;
-  console.log(`Seed complete: ${userCount} users, ${aircraftCount} aircraft.`);
-  console.log(`Admin login: ${ADMIN_USER} (password from ADMIN_PASSWORD env)`);
-  console.log(`Demo password for the other seeded users: "${DEMO_PASSWORD}"`);
+  const userCount = (await queryOne("SELECT COUNT(*) AS n FROM users")).n;
+  console.log(`Seed complete: ${aircraftCount} aircraft (${userCount} users — auth-only, not seeded).`);
+  console.log("First admin: npm run admin:bootstrap  (requires ADMIN_PASSWORD in .env)");
+  console.log("Customers: register via /app.html with OTP verification.");
 }
 
 main()

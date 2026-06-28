@@ -7,19 +7,46 @@ require("dotenv").config();
 
 const path = require("path");
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const { ping, maskedConfig, pool } = require("./src/db");
+const { validateEmailConfig } = require("./src/email");
 const { initSchema } = require("./src/schema");
 const apiRouter = require("./src/api");
+const { clearAuthCookie } = require("./src/auth");
+const { cleanupExpiredOtps } = require("./src/otp");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 
 const app = express();
 
+if (String(process.env.TRUST_PROXY || "").toLowerCase() === "true") {
+  app.set("trust proxy", 1);
+}
+
 app.use(express.json());
+app.use(cookieParser());
 
 // JSON API.
 app.use("/api", apiRouter);
+
+// Role-specific auth portals. Passenger uses /app.html; operator & admin have their own URLs.
+const APP_HTML = path.join(ROOT, "app.html");
+app.get("/login/passenger", (_req, res) => res.redirect(302, "/app.html"));
+app.get("/signup/passenger", (_req, res) => res.redirect(302, "/app.html?register=1"));
+for (const role of ["operator"]) {
+  app.get(`/login/${role}`, (_req, res) => res.sendFile(APP_HTML));
+  app.get(`/signup/${role}`, (_req, res) => res.sendFile(APP_HTML));
+}
+app.get("/login/admin", (_req, res) => res.sendFile(APP_HTML));
+app.get("/signup/admin", (_req, res) => res.redirect(302, "/login/admin"));
+app.get("/login", (_req, res) => res.redirect(302, "/app.html"));
+
+// One-click browser logout (clears session cookie, then login screen).
+app.get("/logout", (_req, res) => {
+  clearAuthCookie(res);
+  res.redirect(302, "/app.html?logout=1");
+});
 
 // Static site (express.static guards against directory traversal and serves
 // index.html at "/").
@@ -48,8 +75,11 @@ async function connectDatabase() {
   try {
     await ping();
     await initSchema();
+    const purged = await cleanupExpiredOtps();
     dbConnected = true;
-    console.log("[startup] database connected and schema ensured.");
+    console.log(
+      `[startup] database connected and schema ensured (purged ${purged} stale OTP row(s)).`
+    );
   } catch (err) {
     dbConnected = false;
     console.error(
@@ -68,6 +98,7 @@ async function connectDatabase() {
 }
 
 async function start() {
+  validateEmailConfig();
   await connectDatabase();
 
   app.listen(PORT, () => {
