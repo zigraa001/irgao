@@ -31,45 +31,53 @@ function createSignupHandlers(config, authResponse) {
   const { purpose, role, label, beforeRequest } = config;
 
   async function signupRequest(req, res) {
-    const validated = validateSignupBody(req.body);
-    if (validated.error) {
-      return res.status(400).json({ error: validated.error });
-    }
+    try {
+      const validated = validateSignupBody(req.body);
+      if (validated.error) {
+        return res.status(400).json({ error: validated.error });
+      }
 
-    if (beforeRequest) {
-      const block = await beforeRequest(req, validated);
-      if (block) return res.status(block.status).json(block.body);
-    }
+      if (beforeRequest) {
+        const block = await beforeRequest(req, validated);
+        if (block) return res.status(block.status).json(block.body);
+      }
 
-    const existing = await emailTaken(validated.email);
-    if (existing) {
-      return res
-        .status(409)
-        .json({ error: "An account with that email already exists" });
-    }
+      const existing = await emailTaken(validated.email);
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: "An account with that email already exists" });
+      }
 
-    const passwordHash = await hashPassword(validated.password);
-    const result = await createAndSendOtp(validated.email, purpose, {
-      name: validated.name,
-      passwordHash,
-      role,
-    });
+      const passwordHash = await hashPassword(validated.password);
+      const result = await createAndSendOtp(validated.email, purpose, {
+        name: validated.name,
+        passwordHash,
+        role,
+      });
 
-    if (!result.ok) {
-      return res.status(result.status).json({
-        error: result.error,
-        code: result.code,
-        retryAfterSeconds: result.retryAfterSeconds,
+      if (!result.ok) {
+        return res.status(result.status).json({
+          error: result.error,
+          code: result.code,
+          retryAfterSeconds: result.retryAfterSeconds,
+        });
+      }
+
+      return res.json({
+        message: `${label} verification code sent to your email.`,
+        email: validated.email,
+        role,
+        expiresInSeconds: result.expiresInSeconds,
+        resendCooldownSeconds: result.resendCooldownSeconds,
+      });
+    } catch (err) {
+      console.error(`[signup] ${purpose} signup-request failed: ${err.message}`);
+      return res.status(500).json({
+        error: "Could not start registration. Please try again.",
+        code: "SIGNUP_REQUEST_FAILED",
       });
     }
-
-    return res.json({
-      message: `${label} verification code sent to your email.`,
-      email: validated.email,
-      role,
-      expiresInSeconds: result.expiresInSeconds,
-      resendCooldownSeconds: result.resendCooldownSeconds,
-    });
   }
 
   async function verifySignup(req, res) {

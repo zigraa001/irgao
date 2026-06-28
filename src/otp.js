@@ -141,53 +141,70 @@ async function checkSendLimits(email, purpose) {
 // Invalidate any previous unconsumed OTP for this email+purpose, then store bcrypt hash only.
 async function createAndSendOtp(email, purpose, payload = null) {
   if (!PURPOSES.includes(purpose)) {
-    throw new Error(`Invalid OTP purpose: ${purpose}`);
-  }
-
-  const limits = await checkSendLimits(email, purpose);
-  if (!limits.ok) return limits;
-
-  await cleanupExpiredOtps();
-
-  const normalized = String(email).toLowerCase();
-  const code = generateCode();
-  const codeHash = await hashCode(code);
-  const payloadStored = serializePayload(payload);
-
-  await query(
-    `UPDATE otp_requests SET consumedAt = NOW()
-     WHERE email = ? AND purpose = ? AND consumedAt IS NULL`,
-    [normalized, purpose]
-  );
-
-  const insertResult = await query(
-    `INSERT INTO otp_requests (email, purpose, codeHash, payload, expiresAt)
-     VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
-    [normalized, purpose, codeHash, payloadStored, OTP_EXPIRY_SECONDS]
-  );
-
-  try {
-    await sendOtpEmail(normalized, code, purpose);
-  } catch (err) {
-    if (insertResult?.insertId) {
-      await query(`UPDATE otp_requests SET consumedAt = NOW() WHERE id = ?`, [
-        insertResult.insertId,
-      ]);
-    }
     return {
       ok: false,
-      status: 503,
-      error:
-        "Could not send verification email. Check SMTP settings or contact support.",
-      code: err.code || "EMAIL_SEND_FAILED",
+      status: 400,
+      error: "Invalid verification request.",
+      code: "INVALID_OTP_PURPOSE",
     };
   }
 
-  return {
-    ok: true,
-    expiresInSeconds: OTP_EXPIRY_SECONDS,
-    resendCooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
-  };
+  try {
+    const limits = await checkSendLimits(email, purpose);
+    if (!limits.ok) return limits;
+
+    await cleanupExpiredOtps();
+
+    const normalized = String(email).toLowerCase();
+    const code = generateCode();
+    const codeHash = await hashCode(code);
+    const payloadStored = serializePayload(payload);
+
+    await query(
+      `UPDATE otp_requests SET consumedAt = NOW()
+       WHERE email = ? AND purpose = ? AND consumedAt IS NULL`,
+      [normalized, purpose]
+    );
+
+    const insertResult = await query(
+      `INSERT INTO otp_requests (email, purpose, codeHash, payload, expiresAt)
+       VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
+      [normalized, purpose, codeHash, payloadStored, OTP_EXPIRY_SECONDS]
+    );
+
+    try {
+      await sendOtpEmail(normalized, code, purpose);
+    } catch (err) {
+      if (insertResult?.insertId) {
+        await query(`UPDATE otp_requests SET consumedAt = NOW() WHERE id = ?`, [
+          insertResult.insertId,
+        ]);
+      }
+      return {
+        ok: false,
+        status: 503,
+        error:
+          "Could not send verification email. Check SMTP settings or contact support.",
+        code: err.code || "EMAIL_SEND_FAILED",
+      };
+    }
+
+    return {
+      ok: true,
+      expiresInSeconds: OTP_EXPIRY_SECONDS,
+      resendCooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+    };
+  } catch (err) {
+    console.error(
+      `[otp] createAndSendOtp failed (${purpose}): ${err.code || ""} ${err.message}`
+    );
+    return {
+      ok: false,
+      status: 500,
+      error: "Could not send verification code. Please try again in a moment.",
+      code: "OTP_SEND_FAILED",
+    };
+  }
 }
 
 // Find the latest active (unconsumed, unexpired) OTP row for email+purpose.

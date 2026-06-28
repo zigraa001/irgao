@@ -56,7 +56,7 @@ const STATEMENTS = [
     email      VARCHAR(255) NOT NULL,
     purpose    VARCHAR(32)  NOT NULL,
     codeHash   VARCHAR(255) NOT NULL,
-    payload    JSON         NULL,
+    payload    LONGTEXT     NULL,
     attempts   INT          NOT NULL DEFAULT 0,
     expiresAt  DATETIME     NOT NULL,
     consumedAt DATETIME     NULL,
@@ -75,12 +75,34 @@ async function ensureColumn(table, column, definition) {
   }
 }
 
+// Ensure otp_requests has every column the OTP module expects (handles partial
+// or legacy tables that predate the current schema).
+async function ensureOtpRequestsSchema() {
+  const tables = await query(`SHOW TABLES LIKE 'otp_requests'`);
+  if (tables.length === 0) return;
+
+  const columns = [
+    ["email", "email VARCHAR(255) NOT NULL DEFAULT ''"],
+    ["purpose", "purpose VARCHAR(32) NOT NULL DEFAULT ''"],
+    ["codeHash", "codeHash VARCHAR(255) NOT NULL DEFAULT ''"],
+    ["payload", "payload LONGTEXT NULL"],
+    ["attempts", "attempts INT NOT NULL DEFAULT 0"],
+    ["expiresAt", "expiresAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"],
+    ["consumedAt", "consumedAt DATETIME NULL"],
+    ["createdAt", "createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"],
+  ];
+  for (const [name, definition] of columns) {
+    await ensureColumn("otp_requests", name, definition);
+  }
+}
+
 // Create all tables if they don't already exist. Safe to run on every boot.
 async function initSchema() {
   dbg("initSchema: ensuring tables exist (users, aircraft, bookings, otp_requests) ...");
   for (const sql of STATEMENTS) {
     await query(sql);
   }
+  await ensureOtpRequestsSchema();
   // Existing seeded accounts are treated as verified; new signups require OTP.
   await ensureColumn(
     "users",

@@ -15,7 +15,17 @@ const router = express.Router();
 router.get("/health", async (req, res) => {
   try {
     await ping();
-    res.json({ status: "ok", db: "connected" });
+    const otpCol = await queryOne(
+      "SHOW COLUMNS FROM otp_requests LIKE 'codeHash'"
+    );
+    if (!otpCol) {
+      return res.status(503).json({
+        status: "error",
+        db: "connected",
+        schema: "otp_requests missing codeHash column — restart app to migrate",
+      });
+    }
+    res.json({ status: "ok", db: "connected", schema: "ready" });
   } catch (err) {
     res.status(503).json({ status: "error", db: "disconnected", message: err.message });
   }
