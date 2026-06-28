@@ -379,34 +379,12 @@ a { text-decoration: none; color: inherit; }
   word-break: break-all;
   line-height: 1.4;
 }
-.otp-expiry-timer { font-weight: 700; color: var(--gray-800); }
-.otp-expiry-timer.expired { color: #B91C1C; }
-.otp-timer-strip {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.otp-timer-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+.otp-resend-hint {
   font-size: 13px;
-  line-height: 1.3;
+  color: var(--gray-500);
+  margin: 0 0 14px;
+  line-height: 1.45;
 }
-.otp-timer-label { color: var(--gray-500); flex-shrink: 0; }
-.otp-timer-value {
-  font-weight: 700;
-  color: var(--gray-800);
-  text-align: right;
-}
-.otp-timer-value.expired { color: #B91C1C; }
-.otp-timer-value.ready { color: var(--blue-dark); }
 .otp-resend-block {
   margin-top: 12px;
   text-align: center;
@@ -2230,24 +2208,15 @@ a { text-decoration: none; color: inherit; }
         <p class="auth-subtext otp-meta-line">We sent a 6-digit code to:</p>
         <p class="otp-email-line" id="otp-email-display"></p>
       </div>
-      <div class="otp-timer-strip">
-        <div class="otp-timer-row">
-          <span class="otp-timer-label">Code valid for</span>
-          <span id="otp-expiry-timer" class="otp-timer-value otp-expiry-timer">1:00</span>
-        </div>
-        <div class="otp-timer-row">
-          <span class="otp-timer-label">New code in</span>
-          <span id="otp-resend-timer" class="otp-timer-value">5:00</span>
-        </div>
-      </div>
       <div class="auth-field">
         <label>Verification code</label>
         <input id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')doVerifySignup()">
       </div>
       <button id="otp-submit" class="btn-auth-primary" onclick="doVerifySignup()">Verify &amp; Create Account</button>
       <div id="otp-error" class="auth-error" role="alert"></div>
+      <p id="otp-resend-hint" class="otp-resend-hint">Didn&rsquo;t receive the code? Resend in 30s</p>
       <div class="otp-resend-block">
-        <button id="otp-resend-btn" type="button" onclick="resendOtp()" disabled>Send new code</button>
+        <button id="otp-resend-btn" type="button" onclick="resendOtp()" disabled style="display:none">Resend code</button>
       </div>
       <div class="auth-switch" style="margin-top:14px;">
         <button type="button" onclick="backToRegisterFromOtp()">&larr; Back to details</button>
@@ -2279,16 +2248,6 @@ a { text-decoration: none; color: inherit; }
         <p class="auth-subtext otp-meta-line">Code sent to:</p>
         <p class="otp-email-line" id="reset-email-display"></p>
       </div>
-      <div class="otp-timer-strip">
-        <div class="otp-timer-row">
-          <span class="otp-timer-label">Code valid for</span>
-          <span id="reset-expiry-timer" class="otp-timer-value otp-expiry-timer">1:00</span>
-        </div>
-        <div class="otp-timer-row">
-          <span class="otp-timer-label">New code in</span>
-          <span id="reset-resend-timer" class="otp-timer-value">5:00</span>
-        </div>
-      </div>
       <div class="auth-field">
         <label>Verification code</label>
         <input id="reset-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code">
@@ -2299,8 +2258,9 @@ a { text-decoration: none; color: inherit; }
       </div>
       <button id="reset-submit" class="btn-auth-primary" onclick="doResetPassword()">Reset password</button>
       <div id="reset-error" class="auth-error" role="alert"></div>
+      <p id="reset-resend-hint" class="otp-resend-hint">Didn&rsquo;t receive the code? Resend in 30s</p>
       <div class="otp-resend-block">
-        <button id="reset-resend-btn" type="button" onclick="resendOtp('reset_password')" disabled>Send new code</button>
+        <button id="reset-resend-btn" type="button" onclick="resendOtp('reset_password')" disabled style="display:none">Resend code</button>
       </div>
       <div class="auth-switch" style="margin-top:8px;">
         <button type="button" onclick="goToLoginPortal()">Back to sign in</button>
@@ -2938,7 +2898,7 @@ const AUTH = {
 };
 
 // Pending OTP flows (email + role + expiry/resend timers).
-const pendingOtp = { email: '', purpose: '', role: 'passenger', resendTimerId: null, expiryTimerId: null };
+const pendingOtp = { email: '', purpose: '', role: 'passenger', resendTimerId: null };
 let authRole = 'passenger';
 
 const SIGNUP_CONFIG = {
@@ -3159,23 +3119,12 @@ function showResetCard(email, timing) {
   startOtpTimers('reset', timing);
 }
 
-function formatOtpCountdown(seconds) {
-  const s = Math.max(0, Math.floor(seconds));
-  if (s >= 60) {
-    const m = Math.floor(s / 60);
-    const r = s % 60;
-    return m + ':' + String(r).padStart(2, '0');
-  }
-  return s + 's';
-}
-
 function normalizeOtpTiming(timing) {
   if (typeof timing === 'number') {
-    return { resendCooldownSeconds: timing, expiresInSeconds: 60 };
+    return { resendCooldownSeconds: timing };
   }
   return {
-    expiresInSeconds: Number(timing && timing.expiresInSeconds) || 60,
-    resendCooldownSeconds: Number(timing && timing.resendCooldownSeconds) || 300,
+    resendCooldownSeconds: Number(timing && timing.resendCooldownSeconds) || 30,
   };
 }
 
@@ -3186,63 +3135,44 @@ function clearResendTimer() {
   }
 }
 
-function clearExpiryTimer() {
-  if (pendingOtp.expiryTimerId) {
-    clearInterval(pendingOtp.expiryTimerId);
-    pendingOtp.expiryTimerId = null;
-  }
-}
-
 function clearOtpTimers() {
   clearResendTimer();
-  clearExpiryTimer();
 }
 
-function startExpiryTimer(prefix, seconds) {
-  clearExpiryTimer();
-  const el = document.getElementById(prefix + '-expiry-timer');
-  if (!el) return;
-  let remaining = seconds;
-  const tick = () => {
-    if (remaining <= 0) {
-      el.textContent = 'Expired';
-      el.classList.add('expired');
-      clearExpiryTimer();
-      return;
-    }
-    el.textContent = formatOtpCountdown(remaining);
-    el.classList.remove('expired');
-    remaining -= 1;
-  };
-  tick();
-  pendingOtp.expiryTimerId = setInterval(tick, 1000);
+function formatResendCountdown(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  return s + 's';
 }
 
 function startResendTimer(prefix, seconds) {
   clearResendTimer();
   const btn = document.getElementById(prefix + '-resend-btn');
-  const timerEl = document.getElementById(prefix + '-resend-timer');
-  if (!btn || !timerEl) return;
+  const hintEl = document.getElementById(prefix + '-resend-hint');
+  if (!hintEl) return;
   let remaining = seconds;
-  btn.disabled = true;
-  timerEl.classList.remove('ready');
-  timerEl.textContent = formatOtpCountdown(remaining);
-  pendingOtp.resendTimerId = setInterval(() => {
-    remaining -= 1;
+  if (btn) {
+    btn.disabled = true;
+    btn.style.display = 'none';
+  }
+  const tick = () => {
     if (remaining <= 0) {
       clearResendTimer();
-      btn.disabled = false;
-      timerEl.textContent = 'Ready';
-      timerEl.classList.add('ready');
+      hintEl.textContent = "Didn't receive the code?";
+      if (btn) {
+        btn.disabled = false;
+        btn.style.display = '';
+      }
       return;
     }
-    timerEl.textContent = formatOtpCountdown(remaining);
-  }, 1000);
+    hintEl.textContent = "Didn't receive the code? Resend in " + formatResendCountdown(remaining);
+    remaining -= 1;
+  };
+  tick();
+  pendingOtp.resendTimerId = setInterval(tick, 1000);
 }
 
 function startOtpTimers(prefix, timing) {
   const t = normalizeOtpTiming(timing);
-  startExpiryTimer(prefix, t.expiresInSeconds);
   startResendTimer(prefix, t.resendCooldownSeconds);
 }
 
@@ -3483,10 +3413,7 @@ async function resendOtp(forcedPurpose) {
     if (!res.ok) {
       showAuthError(errId, data.error || 'Could not resend code.');
       if (data.retryAfterSeconds) {
-        startOtpTimers(prefix, {
-          expiresInSeconds: data.expiresInSeconds || 60,
-          resendCooldownSeconds: data.retryAfterSeconds,
-        });
+        startOtpTimers(prefix, { resendCooldownSeconds: data.retryAfterSeconds });
       } else if (btn) btn.disabled = false;
       return;
     }

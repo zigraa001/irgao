@@ -40,8 +40,8 @@ Signup payloads (name, password hash, role) are **AES-256-GCM encrypted** in `ot
 
 | Limit | Value | Env var |
 |-------|-------|---------|
-| OTP validity | **1 minute** | hard-coded in `src/otp-limits.js` |
-| Resend cooldown | **5 minutes** | hard-coded in `src/otp-limits.js` |
+| OTP validity | **5 minutes** (server only, not shown in UI) | hard-coded in `src/otp-limits.js` |
+| Resend cooldown | **30 seconds** | hard-coded in `src/otp-limits.js` |
 | Daily cap per email | **20 OTPs** | hard-coded in `src/otp-limits.js` |
 | Max wrong guesses | 5 | hard-coded in `src/otp-limits.js` |
 
