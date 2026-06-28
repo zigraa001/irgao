@@ -2,6 +2,7 @@
 //
 // OTP codes are NEVER logged. SMTP_USER + SMTP_PASS are required for any OTP flow.
 const { createSmtpTransport } = require("./smtp-transport");
+const { OTP_EXPIRY_SECONDS } = require("./otp-limits");
 
 class EmailDeliveryError extends Error {
   constructor(message, code) {
@@ -47,16 +48,9 @@ function fromAddress() {
 function validateEmailConfig() {
   if (isConfigured()) return true;
 
-  const message =
-    "[startup] SMTP_USER and SMTP_PASS are required. OTP emails are never logged to the console.";
-
-  if (process.env.NODE_ENV === "production") {
-    console.error(message);
-    process.exit(1);
-  }
-
   console.warn(
-    message + " Signup and password reset will return errors until SMTP is configured."
+    "[startup] SMTP_USER and SMTP_PASS are not set. OTP emails are never logged to the console. " +
+      "Signup and password reset will return 503 until SMTP is configured in the server environment."
   );
   return false;
 }
@@ -85,7 +79,7 @@ async function sendOtpEmail(to, code, purpose) {
     },
   };
   const copy = labels[purpose] || labels.signup;
-  const expirySeconds = Number(process.env.OTP_EXPIRY_SECONDS) || 60;
+  const expirySeconds = OTP_EXPIRY_SECONDS;
   const sentAt = new Date();
   const expiresAt = new Date(sentAt.getTime() + expirySeconds * 1000);
   const timeFmt = new Intl.DateTimeFormat("en-IN", {

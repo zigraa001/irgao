@@ -41,8 +41,8 @@ const {
   OTP_MAX_VERIFY_ATTEMPTS,
 } = require("../src/otp");
 
-test("OTP_MAX_VERIFY_ATTEMPTS defaults to 3", () => {
-  assert.equal(OTP_MAX_VERIFY_ATTEMPTS, 3);
+test("OTP_MAX_VERIFY_ATTEMPTS is 5", () => {
+  assert.equal(OTP_MAX_VERIFY_ATTEMPTS, 5);
 });
 
 test("signup payload is encrypted at rest, not plaintext JSON", () => {

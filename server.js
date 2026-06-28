@@ -98,14 +98,24 @@ async function connectDatabase() {
 }
 
 async function start() {
-  validateEmailConfig();
+  const smtpReady = validateEmailConfig();
+  if (!process.env.DB_PASSWORD) {
+    console.warn(
+      "[startup] DB_PASSWORD is not set — database routes will fail until it is configured."
+    );
+  }
+  if (!process.env.AUTH_SECRET) {
+    console.warn(
+      "[startup] AUTH_SECRET is not set — using an insecure dev fallback (set AUTH_SECRET in production)."
+    );
+  }
   await connectDatabase();
 
   app.listen(PORT, () => {
     console.log(
       `[startup] Server running on port ${PORT} (database: ${
         dbConnected ? "connected" : "unavailable"
-      }).`
+      }, smtp: ${smtpReady ? "configured" : "missing"}).`
     );
   });
 }

@@ -1,0 +1,12 @@
+// OTP rate limits (fixed — not configurable via env).
+const OTP_EXPIRY_SECONDS = 60;
+const OTP_RESEND_COOLDOWN_SECONDS = 300;
+const OTP_DAILY_LIMIT = 20;
+const OTP_MAX_VERIFY_ATTEMPTS = 5;
+
+module.exports = {
+  OTP_EXPIRY_SECONDS,
+  OTP_RESEND_COOLDOWN_SECONDS,
+  OTP_DAILY_LIMIT,
+  OTP_MAX_VERIFY_ATTEMPTS,
+};

@@ -1,22 +1,15 @@
 // IraGo OTP generation, storage, verification, and rate limiting.
-//
-// Limits (override via env — see .env.example):
-//   OTP_EXPIRY_SECONDS          = 60   (code valid for 1 minute)
-//   OTP_RESEND_COOLDOWN_SECONDS = 300  (wait 5 minutes before resend)
-//   OTP_DAILY_LIMIT             = 20   (max sends per email per 24 h)
-//   OTP_MAX_VERIFY_ATTEMPTS     = 3    (wrong guesses before code is voided)
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { query, queryOne } = require("./db");
 const { sendOtpEmail } = require("./email");
 const { deriveOtpPayloadKey } = require("./auth");
-
-const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_SECONDS) || 60;
-const OTP_RESEND_COOLDOWN_SECONDS =
-  Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 300;
-const OTP_DAILY_LIMIT = Number(process.env.OTP_DAILY_LIMIT) || 20;
-const OTP_MAX_VERIFY_ATTEMPTS =
-  Number(process.env.OTP_MAX_VERIFY_ATTEMPTS) || 3;
+const {
+  OTP_EXPIRY_SECONDS,
+  OTP_RESEND_COOLDOWN_SECONDS,
+  OTP_DAILY_LIMIT,
+  OTP_MAX_VERIFY_ATTEMPTS,
+} = require("./otp-limits");
 
 const PURPOSES = [
   "signup",
