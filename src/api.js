@@ -16,13 +16,33 @@ router.get("/health", async (req, res) => {
   try {
     await ping();
     const otpCol = await queryOne(
-      "SHOW COLUMNS FROM otp_requests LIKE 'codeHash'"
+      "SHOW COLUMNS FROM otp_requests WHERE Field = 'codeHash'"
+    );
+    const payloadCol = await queryOne(
+      "SHOW COLUMNS FROM otp_requests WHERE Field = 'payload'"
+    );
+    const legacyCode = await queryOne(
+      "SHOW COLUMNS FROM otp_requests WHERE Field = 'code'"
     );
     if (!otpCol) {
       return res.status(503).json({
         status: "error",
         db: "connected",
         schema: "otp_requests missing codeHash column — restart app to migrate",
+      });
+    }
+    if (legacyCode) {
+      return res.status(503).json({
+        status: "error",
+        db: "connected",
+        schema: "otp_requests has legacy code column — restart app to migrate",
+      });
+    }
+    if (payloadCol?.Type && String(payloadCol.Type).toLowerCase().includes("json")) {
+      return res.status(503).json({
+        status: "error",
+        db: "connected",
+        schema: "otp_requests.payload still JSON — restart app to migrate",
       });
     }
     res.json({ status: "ok", db: "connected", schema: "ready" });

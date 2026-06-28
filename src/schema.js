@@ -75,11 +75,19 @@ async function ensureColumn(table, column, definition) {
   }
 }
 
+async function columnInfo(table, column) {
+  return queryOne(`SHOW COLUMNS FROM \`${table}\` WHERE Field = ?`, [column]);
+}
+
+async function tableExists(table) {
+  const rows = await query(`SHOW TABLES LIKE ?`, [table]);
+  return rows.length > 0;
+}
+
 // Ensure otp_requests has every column the OTP module expects (handles partial
 // or legacy tables that predate the current schema).
 async function ensureOtpRequestsSchema() {
-  const tables = await query(`SHOW TABLES LIKE 'otp_requests'`);
-  if (tables.length === 0) return;
+  if (!(await tableExists("otp_requests"))) return;
 
   const columns = [
     ["email", "email VARCHAR(255) NOT NULL DEFAULT ''"],
@@ -93,6 +101,21 @@ async function ensureOtpRequestsSchema() {
   ];
   for (const [name, definition] of columns) {
     await ensureColumn("otp_requests", name, definition);
+  }
+
+  // Dev builds stored plaintext OTP in a legacy `code` column — drop it so INSERT
+  // into codeHash-only rows succeeds.
+  const legacyCode = await columnInfo("otp_requests", "code");
+  if (legacyCode) {
+    await query("ALTER TABLE `otp_requests` DROP COLUMN `code`");
+    dbg("initSchema: dropped legacy otp_requests.code");
+  }
+
+  // Encrypted payloads are plain strings; JSON columns reject enc:v1:... values.
+  const payloadCol = await columnInfo("otp_requests", "payload");
+  if (payloadCol?.Type && String(payloadCol.Type).toLowerCase().includes("json")) {
+    await query("ALTER TABLE `otp_requests` MODIFY payload LONGTEXT NULL");
+    dbg("initSchema: migrated otp_requests.payload JSON -> LONGTEXT");
   }
 }
 
