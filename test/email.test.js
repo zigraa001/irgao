@@ -33,3 +33,26 @@ test("sendOtpEmail throws when SMTP is not configured (no console OTP)", async (
     delete require.cache[require.resolve("../src/email")];
   }
 });
+
+test("fromAddress always uses SMTP_USER as envelope address for Hostinger", () => {
+  const prevUser = process.env.SMTP_USER;
+  const prevFrom = process.env.SMTP_FROM;
+  process.env.SMTP_USER = "info@irago.in";
+  process.env.SMTP_FROM = "IraGo info@irago.in";
+
+  delete require.cache[require.resolve("../src/email")];
+  const { fromAddress } = require("../src/email");
+
+  try {
+    assert.deepEqual(fromAddress(), {
+      name: "IraGo",
+      address: "info@irago.in",
+    });
+  } finally {
+    if (prevUser !== undefined) process.env.SMTP_USER = prevUser;
+    else delete process.env.SMTP_USER;
+    if (prevFrom !== undefined) process.env.SMTP_FROM = prevFrom;
+    else delete process.env.SMTP_FROM;
+    delete require.cache[require.resolve("../src/email")];
+  }
+});

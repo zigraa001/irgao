@@ -38,11 +38,36 @@ function getTransporter() {
   return _transporter;
 }
 
+function stripQuotes(value) {
+  const s = String(value || "").trim();
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    return s.slice(1, -1).trim();
+  }
+  return s;
+}
+
+// Hostinger requires the From address to match SMTP_USER exactly.
 function fromAddress() {
-  return (
-    process.env.SMTP_FROM ||
-    `IraGo <${process.env.SMTP_USER || "noreply@irago.com"}>`
-  );
+  const user = stripQuotes(process.env.SMTP_USER);
+  if (!user) {
+    return stripQuotes(process.env.SMTP_FROM) || "IraGo <noreply@irago.com>";
+  }
+
+  let displayName = "IraGo";
+  const raw = stripQuotes(process.env.SMTP_FROM);
+  if (raw) {
+    const bracketed = raw.match(/^(.+?)\s*<([^>]+)>\s*$/);
+    if (bracketed) {
+      displayName = bracketed[1].trim();
+    } else if (!raw.includes("@")) {
+      displayName = raw;
+    }
+  }
+
+  return { name: displayName, address: user };
 }
 
 function validateEmailConfig() {
@@ -141,6 +166,7 @@ module.exports = {
   isConfigured,
   getTransporter,
   validateEmailConfig,
+  fromAddress,
   maskEmail,
   EmailDeliveryError,
 };
