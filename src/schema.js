@@ -66,6 +66,8 @@ const STATEMENTS = [
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ];
 
+const OTP_REQUESTS_DDL = STATEMENTS[3];
+
 // Add a column to an existing table when missing (no migration tool).
 async function ensureColumn(table, column, definition) {
   const rows = await query(`SHOW COLUMNS FROM \`${table}\` LIKE ?`, [column]);
@@ -115,14 +117,49 @@ async function ensureOtpRequestsSchema() {
     }
   }
 
-  // Encrypted payloads are plain strings; JSON columns reject enc:v1:... values.
-  const payloadCol = await columnInfo("otp_requests", "payload");
-  if (payloadCol?.Type && String(payloadCol.Type).toLowerCase().includes("json")) {
+  // Encrypted payloads are plain strings — always use LONGTEXT (JSON CHECK constraints
+  // on Hostinger reject enc:v1:... even after a superficial type migration).
+  try {
     await query("ALTER TABLE `otp_requests` MODIFY payload LONGTEXT NULL");
-    dbg("initSchema: migrated otp_requests.payload JSON -> LONGTEXT");
+    dbg("initSchema: normalized otp_requests.payload -> LONGTEXT");
+  } catch (err) {
+    dbg(`initSchema: payload MODIFY note: ${err.message}`);
   }
 
-  await probeOtpWrite();
+  await dropOtpCheckConstraints();
+
+  try {
+    await probeOtpWrite();
+  } catch (err) {
+    console.error(
+      `[startup] otp_requests probe failed (${err.code || "error"}): ${err.message} — recreating table`
+    );
+    await recreateOtpRequestsTable();
+    await probeOtpWrite();
+  }
+}
+
+async function dropOtpCheckConstraints() {
+  try {
+    const rows = await query(
+      `SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'otp_requests'
+         AND CONSTRAINT_TYPE = 'CHECK'`
+    );
+    for (const row of rows) {
+      const name = row.CONSTRAINT_NAME;
+      await query(`ALTER TABLE \`otp_requests\` DROP CHECK \`${name}\``);
+      dbg(`initSchema: dropped CHECK constraint ${name}`);
+    }
+  } catch (err) {
+    dbg(`initSchema: CHECK constraint cleanup skipped: ${err.message}`);
+  }
+}
+
+async function recreateOtpRequestsTable() {
+  dbg("initSchema: DROP + CREATE otp_requests");
+  await query("DROP TABLE IF EXISTS `otp_requests`");
+  await query(OTP_REQUESTS_DDL);
 }
 
 // Verify INSERT works (catches legacy NOT NULL columns migration missed).
