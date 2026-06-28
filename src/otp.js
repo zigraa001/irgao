@@ -167,8 +167,8 @@ async function createAndSendOtp(email, purpose, payload = null) {
     );
 
     const insertResult = await query(
-      `INSERT INTO otp_requests (email, purpose, codeHash, payload, expiresAt)
-       VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
+      `INSERT INTO otp_requests (email, purpose, codeHash, payload, attempts, expiresAt)
+       VALUES (?, ?, ?, ?, 0, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
       [normalized, purpose, codeHash, payloadStored, OTP_EXPIRY_SECONDS]
     );
 

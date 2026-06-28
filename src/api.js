@@ -2,6 +2,7 @@
 // routes here.
 const express = require("express");
 const { ping, queryOne } = require("./db");
+const { probeOtpWrite } = require("./schema");
 const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
 const operatorRoutes = require("./operator-routes");
@@ -43,6 +44,17 @@ router.get("/health", async (req, res) => {
         status: "error",
         db: "connected",
         schema: "otp_requests.payload still JSON — restart app to migrate",
+      });
+    }
+    try {
+      await probeOtpWrite();
+    } catch (err) {
+      return res.status(503).json({
+        status: "error",
+        db: "connected",
+        schema: "otp_requests write probe failed — restart app to migrate",
+        message: err.message,
+        code: err.code,
       });
     }
     res.json({ status: "ok", db: "connected", schema: "ready" });

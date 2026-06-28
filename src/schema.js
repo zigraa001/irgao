@@ -76,7 +76,10 @@ async function ensureColumn(table, column, definition) {
 }
 
 async function columnInfo(table, column) {
-  return queryOne(`SHOW COLUMNS FROM \`${table}\` WHERE Field = ?`, [column]);
+  const rows = await query(`SHOW COLUMNS FROM \`${table}\` WHERE Field = ?`, [
+    column,
+  ]);
+  return rows[0] || null;
 }
 
 async function tableExists(table) {
@@ -103,12 +106,13 @@ async function ensureOtpRequestsSchema() {
     await ensureColumn("otp_requests", name, definition);
   }
 
-  // Dev builds stored plaintext OTP in a legacy `code` column — drop it so INSERT
-  // into codeHash-only rows succeeds.
-  const legacyCode = await columnInfo("otp_requests", "code");
-  if (legacyCode) {
-    await query("ALTER TABLE `otp_requests` DROP COLUMN `code`");
-    dbg("initSchema: dropped legacy otp_requests.code");
+  const legacyColumns = ["code", "screenOtp", "devOtp", "plainCode"];
+  for (const legacy of legacyColumns) {
+    const col = await columnInfo("otp_requests", legacy);
+    if (col) {
+      await query(`ALTER TABLE \`otp_requests\` DROP COLUMN \`${legacy}\``);
+      dbg(`initSchema: dropped legacy otp_requests.${legacy}`);
+    }
   }
 
   // Encrypted payloads are plain strings; JSON columns reject enc:v1:... values.
@@ -117,6 +121,20 @@ async function ensureOtpRequestsSchema() {
     await query("ALTER TABLE `otp_requests` MODIFY payload LONGTEXT NULL");
     dbg("initSchema: migrated otp_requests.payload JSON -> LONGTEXT");
   }
+
+  await probeOtpWrite();
+}
+
+// Verify INSERT works (catches legacy NOT NULL columns migration missed).
+async function probeOtpWrite() {
+  const probeEmail = "__health_probe__@invalid.test";
+  await query(
+    `INSERT INTO otp_requests (email, purpose, codeHash, payload, attempts, expiresAt)
+     VALUES (?, ?, ?, ?, 0, DATE_ADD(NOW(), INTERVAL 60 SECOND))`,
+    [probeEmail, "signup_passenger", "$2b$10$probe", "enc:v1:probe"]
+  );
+  await query(`DELETE FROM otp_requests WHERE email = ?`, [probeEmail]);
+  dbg("initSchema: otp_requests write probe OK");
 }
 
 // Create all tables if they don't already exist. Safe to run on every boot.
@@ -135,4 +153,4 @@ async function initSchema() {
   dbg("initSchema: done");
 }
 
-module.exports = { initSchema };
+module.exports = { initSchema, probeOtpWrite };
