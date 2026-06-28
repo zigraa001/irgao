@@ -2,22 +2,16 @@
 //
 // Every endpoint here is admin-only: requireAuth proves a valid session, then
 // requireRole("admin") proves the caller is an administrator. These routes let
-// an admin provision elevated accounts (operators/admins) — something public
-// signup must never be able to do (see auth-routes.js, which always forces
-// role = "customer").
+// an admin provision operator accounts — admin accounts come from env bootstrap only.
 const express = require("express");
 const { query, queryOne } = require("./db");
 const { hashPassword, requireAuth, requireRole } = require("./auth");
 
 const router = express.Router();
 
-// Same minimal email sanity check public signup uses — kept in sync on purpose.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Roles an admin is allowed to create here. "customer" is intentionally
-// excluded: customers self-register via public signup, and this endpoint exists
-// only to mint elevated accounts.
-const CREATABLE_ROLES = ["operator", "admin"];
+const CREATABLE_ROLES = ["operator"];
 
 // Roles that may be used to filter the list endpoint. Customers are valid here
 // (an admin may want to see who has self-registered), unlike CREATABLE_ROLES.
@@ -39,9 +33,7 @@ function listUser(user) {
   };
 }
 
-// POST /api/admin/users — create an operator or admin account.
-// Body: { name, email, password, role }. Admin-only; the role is validated
-// against CREATABLE_ROLES so this endpoint can never create a customer.
+// POST /api/admin/users — create an operator account (admins: npm run admin:bootstrap).
 router.post(
   "/users",
   requireAuth,
@@ -65,7 +57,7 @@ router.post(
     if (!CREATABLE_ROLES.includes(role)) {
       return res
         .status(400)
-        .json({ error: "role must be one of operator, admin" });
+        .json({ error: "role must be operator (admins are created via .env bootstrap only)" });
     }
 
     const normalizedEmail = String(email).toLowerCase();
@@ -118,6 +110,100 @@ router.get(
     }
 
     res.json({ users: rows.map(listUser) });
+  }
+);
+
+// PATCH /api/admin/users/:id/password — reset any user's password (admin-only).
+// Body: { newPassword }. Works for customers, operators, and admins — including
+// the admin's own account when they know the target user id.
+router.patch(
+  "/users/:id/password",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const userId = Number(req.params.id);
+    const { newPassword } = req.body || {};
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+    if (!newPassword || String(newPassword).length < 6) {
+      return res
+        .status(400)
+        .json({ error: "newPassword must be at least 6 characters" });
+    }
+
+    const target = await queryOne("SELECT id, email, role FROM users WHERE id = ?", [
+      userId,
+    ]);
+    if (!target) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (target.role === "admin") {
+      return res.status(403).json({
+        error:
+          "Admin password is managed via .env only. Update ADMIN_PASSWORD and run npm run admin:bootstrap.",
+        code: "ADMIN_ENV_ONLY",
+      });
+    }
+
+    const passwordHash = await hashPassword(String(newPassword));
+    await query("UPDATE users SET passwordHash = ? WHERE id = ?", [
+      passwordHash,
+      userId,
+    ]);
+
+    res.json({
+      message: `Password updated for ${target.email}.`,
+      user: { id: target.id, email: target.email, role: target.role },
+    });
+  }
+);
+
+// POST /api/admin/users/:id/send-reset-otp — email an OTP reset link/code to a user.
+router.post(
+  "/users/:id/send-reset-otp",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+
+    const target = await queryOne(
+      "SELECT id, email, role FROM users WHERE id = ?",
+      [userId]
+    );
+    if (!target) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (target.role === "admin") {
+      return res.status(403).json({
+        error: "Admin accounts do not use OTP password reset.",
+        code: "ADMIN_ENV_ONLY",
+      });
+    }
+
+    const { createAndSendOtp } = require("./otp");
+    const result = await createAndSendOtp(
+      target.email,
+      "reset_password",
+      {}
+    );
+
+    if (!result.ok) {
+      return res.status(result.status).json({
+        error: result.error,
+        code: result.code,
+        retryAfterSeconds: result.retryAfterSeconds,
+      });
+    }
+
+    res.json({
+      message: `Reset code sent to ${target.email}.`,
+      expiresInSeconds: result.expiresInSeconds,
+    });
   }
 );
 

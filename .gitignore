@@ -2,6 +2,7 @@ node_modules/
 
 # Local env + secrets
 .env
+local/.env.local
 
 # Local SQLite database files
 *.db
