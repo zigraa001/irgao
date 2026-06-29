@@ -3,6 +3,8 @@ node_modules/
 # Local env + secrets
 .env
 local/.env.local
+.push-token
+.push-token.env
 
 # Local SQLite database files
 *.db
