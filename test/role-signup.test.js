@@ -101,12 +101,16 @@ test.before(async () => {
 });
 test.after(() => server.close());
 
-async function roleSignup(role, email) {
-  const req = await fetch(`${baseUrl}/api/auth/${role}/signup-request`, {
+async function roleSignupRequest(role, email) {
+  return fetch(`${baseUrl}/api/auth/${role}/signup-request`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ name: "Test", email, password: "secret1" }),
   });
+}
+
+async function roleSignup(role, email) {
+  const req = await roleSignupRequest(role, email);
   assert.equal(req.status, 200);
   const otpRow = fakeDb._otps.find((o) => o.email === email.toLowerCase());
   const bcrypt = require("bcrypt");
@@ -120,7 +124,19 @@ async function roleSignup(role, email) {
   return verify.json();
 }
 
-test("operator signup creates operator role", async () => {
-  const data = await roleSignup("operator", "op@irago.com");
-  assert.equal(data.user.role, "operator");
+test("operator self-signup is closed (admin-provisioned only)", async () => {
+  const res = await roleSignupRequest("operator", "op@irago.com");
+  assert.equal(res.status, 403);
+  const body = await res.json();
+  assert.equal(body.code, "ADMIN_PROVISIONED_ONLY");
+});
+
+test("admin self-signup is closed (admin-provisioned only)", async () => {
+  const res = await roleSignupRequest("admin", "adm@irago.com");
+  assert.equal(res.status, 403);
+});
+
+test("passenger signup still creates a customer", async () => {
+  const data = await roleSignup("passenger", "pax@irago.com");
+  assert.equal(data.user.role, "customer");
 });

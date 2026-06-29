@@ -37,3 +37,4 @@ if [[ -f "$LOCAL_ROOT/.env" ]]; then
 fi
 
 export DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME DB_DEBUG PORT
+export ZONES_DB_NAME="${ZONES_DB_NAME:-irago_zones}"

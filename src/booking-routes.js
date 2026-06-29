@@ -8,6 +8,8 @@ const express = require("express");
 const { query, queryOne } = require("./db");
 const { requireAuth } = require("./auth");
 const { SERVICES, haversineKm, estimateFare } = require("./pricing");
+const { estimateCarbonSavedKg } = require("./carbon");
+const { startDispatch } = require("./dispatch");
 
 const router = express.Router();
 
@@ -52,12 +54,13 @@ router.post("/", requireAuth, async (req, res) => {
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
   const fareEstimate = estimateFare(service, distanceKm);
+  const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
   const result = await query(
     `INSERT INTO bookings
        (customerId, pickupName, pickupLat, pickupLng, destName, destLat, destLng,
-        service, distanceKm, fareEstimate, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        service, distanceKm, fareEstimate, carbonSavedKg, paymentStatus, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
     [
       req.user.id,
       pickupName,
@@ -69,6 +72,7 @@ router.post("/", requireAuth, async (req, res) => {
       service,
       distanceKm,
       fareEstimate,
+      carbonSavedKg,
       "requested",
     ]
   );
@@ -107,6 +111,35 @@ router.get("/:id", requireAuth, async (req, res) => {
   }
 
   res.json({ booking });
+});
+
+// POST /api/bookings/:id/pay — dummy payment; starts auto-dispatch to nearest pilot.
+router.post("/:id/pay", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (booking.customerId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  if (booking.paymentStatus === "paid") {
+    return res.json({ booking, message: "Already paid" });
+  }
+
+  await query(
+    "UPDATE bookings SET paymentStatus = 'paid' WHERE id = ?",
+    [id]
+  );
+  const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  await startDispatch(id);
+  const fresh = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  res.json({
+    booking: fresh,
+    message: "Payment successful. Finding a nearby pilot…",
+    carbonSavedKg: updated.carbonSavedKg,
+  });
 });
 
 module.exports = router;

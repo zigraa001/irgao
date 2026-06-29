@@ -42,9 +42,21 @@ test("signToken + verifyToken round-trips the user claims", () => {
   const token = signToken(sampleUser);
   const payload = verifyToken(token);
   assert.ok(payload);
-  assert.equal(payload.sub, 42);
+  assert.equal(payload.sub, "42");
   assert.equal(payload.name, "Ada Lovelace");
   assert.equal(payload.role, "customer");
+});
+
+test("signToken produces a standard JWT with HS256 header", () => {
+  const token = signToken(sampleUser);
+  const [headerB64] = token.split(".");
+  const header = JSON.parse(
+    Buffer.from(headerB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
+      "utf8"
+    )
+  );
+  assert.equal(header.alg, "HS256");
+  assert.equal(header.typ, "JWT");
 });
 
 test("verifyToken rejects a tampered signature", () => {
@@ -56,15 +68,15 @@ test("verifyToken rejects a tampered signature", () => {
 
 test("verifyToken rejects a tampered payload", () => {
   const token = signToken(sampleUser);
-  const [, sig] = token.split(".");
+  const parts = token.split(".");
   const evilBody = Buffer.from(
-    JSON.stringify({ sub: 1, role: "admin", exp: 9999999999 })
+    JSON.stringify({ sub: "1", role: "admin", exp: 9999999999 })
   )
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-  assert.equal(verifyToken(`${evilBody}.${sig}`), null);
+  assert.equal(verifyToken(`${parts[0]}.${evilBody}.${parts[2]}`), null);
 });
 
 test("verifyToken rejects an expired token", () => {

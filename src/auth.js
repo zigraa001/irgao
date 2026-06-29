@@ -1,21 +1,28 @@
 // IraGo authentication utilities.
 //
 // Passwords are stored ONLY as bcrypt hashes (one-way) — plaintext is never
-// persisted or returned. Sessions use a stateless HMAC-signed token so we need
-// no extra dependency and no server-side session store: the token carries the
-// user id, role, and name, signed with AUTH_SECRET so it cannot be forged.
+// persisted or returned. Sessions use standard JWTs (HS256) signed with
+// AUTH_SECRET; no server-side session store is required.
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const BCRYPT_ROUNDS = 10;
 // Session token lifetime (seconds). Override with AUTH_COOKIE_TTL_SECONDS.
 const TOKEN_TTL_SECONDS =
   Number(process.env.AUTH_COOKIE_TTL_SECONDS) || 7 * 24 * 60 * 60;
 const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "irago_session";
+const JWT_ISSUER = process.env.AUTH_JWT_ISSUER || "irago";
+const JWT_AUDIENCE = process.env.AUTH_JWT_AUDIENCE || "irago-app";
+const JWT_ALGORITHM = "HS256";
 
 // Allowed user roles. role validation lives in app code because the DB stores
 // role as a plain VARCHAR rather than a DB-level enum.
 const ROLES = ["customer", "operator", "admin"];
+
+// SQL fragment: only rows that have not been soft-deleted.
+const USER_NOT_DELETED = "deletedAt IS NULL";
+const USER_NOT_BANNED = "bannedAt IS NULL";
 
 // The signing secret. In production AUTH_SECRET MUST be set; locally we fall
 // back to a fixed dev secret (and warn) so the app still boots.
@@ -46,24 +53,13 @@ function deriveOtpPayloadKey() {
   return _otpPayloadKey;
 }
 
-function base64url(buf) {
-  return Buffer.from(buf)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-function base64urlDecode(str) {
-  const pad = str.length % 4 === 0 ? "" : "=".repeat(4 - (str.length % 4));
-  return Buffer.from(
-    str.replace(/-/g, "+").replace(/_/g, "/") + pad,
-    "base64"
-  );
-}
-
-function hmac(data) {
-  return crypto.createHmac("sha256", getSecret()).update(data).digest();
+function jwtVerifyOptions(nowSeconds = Math.floor(Date.now() / 1000)) {
+  return {
+    algorithms: [JWT_ALGORITHM],
+    issuer: JWT_ISSUER,
+    audience: JWT_AUDIENCE,
+    clockTimestamp: nowSeconds,
+  };
 }
 
 // Hash a plaintext password with bcrypt. Returns the hash string.
@@ -77,53 +73,35 @@ async function verifyPassword(plain, hash) {
   return bcrypt.compare(plain, hash);
 }
 
-// Create a signed session token for a user. `nowSeconds` is injectable for
-// tests; it defaults to the current time.
+// Create a signed JWT for a user. `nowSeconds` is injectable for tests.
 function signToken(user, nowSeconds = Math.floor(Date.now() / 1000)) {
-  const payload = {
-    sub: user.id,
-    name: user.name,
-    role: user.role,
-    iat: nowSeconds,
-    exp: nowSeconds + TOKEN_TTL_SECONDS,
-  };
-  const body = base64url(JSON.stringify(payload));
-  const sig = base64url(hmac(body));
-  return `${body}.${sig}`;
+  return jwt.sign(
+    {
+      sub: String(user.id),
+      name: user.name,
+      role: user.role,
+      iat: nowSeconds,
+      exp: nowSeconds + TOKEN_TTL_SECONDS,
+    },
+    getSecret(),
+    {
+      algorithm: JWT_ALGORITHM,
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+      noTimestamp: true,
+    }
+  );
 }
 
 // Verify and decode a session token. Returns the payload on success, or null
 // if the token is malformed, tampered with, or expired.
 function verifyToken(token, nowSeconds = Math.floor(Date.now() / 1000)) {
-  if (typeof token !== "string" || !token.includes(".")) return null;
-  const [body, sig] = token.split(".");
-  if (!body || !sig) return null;
-
-  const expected = hmac(body);
-  let provided;
+  if (typeof token !== "string" || !token.trim()) return null;
   try {
-    provided = base64urlDecode(sig);
+    return jwt.verify(token, getSecret(), jwtVerifyOptions(nowSeconds));
   } catch {
     return null;
   }
-  // Constant-time comparison; lengths must match first or timingSafeEqual throws.
-  if (
-    provided.length !== expected.length ||
-    !crypto.timingSafeEqual(provided, expected)
-  ) {
-    return null;
-  }
-
-  let payload;
-  try {
-    payload = JSON.parse(base64urlDecode(body).toString("utf8"));
-  } catch {
-    return null;
-  }
-  if (!payload || typeof payload.exp !== "number" || payload.exp < nowSeconds) {
-    return null;
-  }
-  return payload;
 }
 
 // Parse the Cookie header into a plain object.
@@ -200,7 +178,11 @@ function requireAuth(req, res, next) {
   if (!payload) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  req.user = { id: payload.sub, name: payload.name, role: payload.role };
+  const id = Number(payload.sub);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  req.user = { id, name: payload.name, role: payload.role };
   next();
 }
 
@@ -222,6 +204,11 @@ module.exports = {
   ROLES,
   TOKEN_TTL_SECONDS,
   COOKIE_NAME,
+  JWT_ISSUER,
+  JWT_AUDIENCE,
+  JWT_ALGORITHM,
+  USER_NOT_DELETED,
+  USER_NOT_BANNED,
   deriveOtpPayloadKey,
   hashPassword,
   verifyPassword,

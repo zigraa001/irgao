@@ -187,6 +187,32 @@ async function initSchema() {
     "emailVerified",
     "emailVerified TINYINT(1) NOT NULL DEFAULT 1"
   );
+  await ensureColumn("users", "deletedAt", "deletedAt DATETIME NULL");
+  await ensureColumn("users", "bannedAt", "bannedAt DATETIME NULL");
+  await ensureColumn("users", "gpsLat", "gpsLat DOUBLE NULL");
+  await ensureColumn("users", "gpsLng", "gpsLng DOUBLE NULL");
+  await ensureColumn("users", "gpsUpdatedAt", "gpsUpdatedAt DATETIME NULL");
+  // Admin-provisioned accounts (operator/admin created via the admin console)
+  // are created with a temporary password and this flag set to 1, forcing the
+  // user to choose their own password on first login.
+  await ensureColumn(
+    "users",
+    "mustResetPassword",
+    "mustResetPassword TINYINT(1) NOT NULL DEFAULT 0"
+  );
+  await ensureColumn("bookings", "paymentStatus", "paymentStatus VARCHAR(32) NOT NULL DEFAULT 'pending'");
+  await ensureColumn("bookings", "carbonSavedKg", "carbonSavedKg DOUBLE NULL");
+  await ensureColumn("bookings", "pendingOperatorId", "pendingOperatorId INT NULL");
+  await query(`CREATE TABLE IF NOT EXISTS dispatch_offers (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    bookingId  INT          NOT NULL,
+    operatorId INT          NOT NULL,
+    status     VARCHAR(32)  NOT NULL DEFAULT 'pending',
+    expiresAt  DATETIME     NOT NULL,
+    createdAt  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_dispatch_booking (bookingId),
+    INDEX idx_dispatch_operator (operatorId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   dbg("initSchema: done");
 }
 

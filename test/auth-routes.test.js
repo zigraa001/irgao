@@ -104,13 +104,46 @@ const fakeDb = (() => {
       return { affectedRows: 1 };
     }
     if (s.startsWith("SELECT id FROM users WHERE email")) {
-      return users.filter((u) => u.email === params[0]).map((u) => ({ id: u.id }));
+      return users.filter((u) => u.email === params[0] && !u.deletedAt).map((u) => ({ id: u.id }));
     }
     if (s.includes("FROM users WHERE email")) {
-      return users.filter((u) => u.email === params[0]).map((u) => ({ ...u }));
+      return users
+        .filter((u) => u.email === params[0] && (!s.includes("deletedAt IS NULL") || !u.deletedAt))
+        .map((u) => ({ ...u }));
     }
     if (s.includes("FROM users WHERE id")) {
-      return users.filter((u) => u.id === params[0]).map((u) => ({ ...u }));
+      return users
+        .filter(
+          (u) =>
+            u.id === params[0] && (!s.includes("deletedAt IS NULL") || !u.deletedAt)
+        )
+        .map((u) => ({ ...u }));
+    }
+    if (s.includes("UPDATE users SET deletedAt")) {
+      const [email, name, passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) {
+        row.deletedAt = new Date();
+        row.email = email;
+        row.name = name;
+        row.passwordHash = passwordHash;
+      }
+      return { affectedRows: 1 };
+    }
+    if (s.includes("UPDATE users SET passwordHash") && s.includes("mustResetPassword = 0")) {
+      const [passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) { row.passwordHash = passwordHash; row.mustResetPassword = 0; }
+      return { affectedRows: 1 };
+    }
+    if (s.includes("UPDATE users SET passwordHash")) {
+      const [passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) row.passwordHash = passwordHash;
+      return { affectedRows: 1 };
+    }
+    if (s.includes("FROM bookings")) {
+      return [];
     }
     return [];
   }
@@ -195,7 +228,7 @@ test("signup-request + verify-signup creates customer with cookie", async () => 
   assert.equal(verify.status, 201);
   const body = await verify.json();
   assert.equal(body.user.role, "customer");
-  assert.equal(body.token, undefined);
+  assert.ok(typeof body.token === "string" && body.token.length > 10);
   const setCookie = verify.headers.get("set-cookie");
   assert.ok(setCookie && setCookie.includes("irago_session"));
 });
@@ -223,4 +256,164 @@ test("signup rejects role injection via passenger verify-signup", async () => {
     body: JSON.stringify({ email: "mallory@irago.com", otp: "654321" }),
   });
   assert.equal(verify.status, 400);
+});
+
+const { hashPassword, signToken, COOKIE_NAME } = require("../src/auth");
+
+test("delete-account soft-deletes customer after password confirmation", async () => {
+  const passwordHash = await hashPassword("secret1");
+  fakeDb._users.push({
+    id: 50,
+    name: "Delete Me",
+    email: "delete@irago.com",
+    passwordHash,
+    role: "customer",
+    emailVerified: 1,
+    deletedAt: null,
+  });
+  const token = signToken({ id: 50, name: "Delete Me", role: "customer" });
+
+  const res = await fetch(`${baseUrl}/api/auth/delete-account`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      cookie: `${COOKIE_NAME}=${token}`,
+    },
+    body: JSON.stringify({ password: "secret1" }),
+  });
+  assert.equal(res.status, 200);
+  const row = fakeDb._users.find((u) => u.id === 50);
+  assert.ok(row.deletedAt);
+  assert.match(row.email, /^deleted\.50\./);
+  assert.equal(row.name, "Deleted user");
+});
+
+test("delete-account rejects wrong password", async () => {
+  const passwordHash = await hashPassword("secret1");
+  fakeDb._users.push({
+    id: 51,
+    name: "Keep Me",
+    email: "keep@irago.com",
+    passwordHash,
+    role: "customer",
+    emailVerified: 1,
+    deletedAt: null,
+  });
+  const token = signToken({ id: 51, name: "Keep Me", role: "customer" });
+
+  const res = await fetch(`${baseUrl}/api/auth/delete-account`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      cookie: `${COOKIE_NAME}=${token}`,
+    },
+    body: JSON.stringify({ password: "wrong" }),
+  });
+  assert.equal(res.status, 401);
+});
+
+// ── Forced password reset (admin-provisioned accounts) ───────────────────────
+test("login surfaces mustResetPassword for an admin-provisioned operator", async () => {
+  const passwordHash = await hashPassword("temppass1");
+  fakeDb._users.push({
+    id: 70,
+    name: "Provisioned Op",
+    email: "prop@irago.com",
+    passwordHash,
+    role: "operator",
+    emailVerified: 1,
+    deletedAt: null,
+    bannedAt: null,
+    mustResetPassword: 1,
+  });
+
+  const res = await fetch(`${baseUrl}/api/auth/operator/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: "prop@irago.com", password: "temppass1" }),
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.user.role, "operator");
+  assert.equal(data.user.mustResetPassword, true);
+});
+
+test("change-password clears mustResetPassword for a provisioned operator", async () => {
+  const passwordHash = await hashPassword("temppass1");
+  fakeDb._users.push({
+    id: 73,
+    name: "Provisioned Op 2",
+    email: "prop2@irago.com",
+    passwordHash,
+    role: "operator",
+    emailVerified: 1,
+    deletedAt: null,
+    bannedAt: null,
+    mustResetPassword: 1,
+  });
+  const login = await fetch(`${baseUrl}/api/auth/operator/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email: "prop2@irago.com", password: "temppass1" }),
+  });
+  const { token } = await login.json();
+
+  const res = await fetch(`${baseUrl}/api/auth/change-password`, {
+    method: "POST",
+    headers: { "content-type": "application/json", cookie: `${COOKIE_NAME}=${token}` },
+    body: JSON.stringify({ currentPassword: "temppass1", newPassword: "newpass2" }),
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.user.mustResetPassword, false);
+  const row = fakeDb._users.find((u) => u.id === 73);
+  assert.equal(row.mustResetPassword, 0);
+});
+
+test("change-password is blocked for an env-bootstrap admin (mustResetPassword = 0)", async () => {
+  const passwordHash = await hashPassword("envpass1");
+  fakeDb._users.push({
+    id: 71,
+    name: "Env Admin",
+    email: "envadmin@irago.com",
+    passwordHash,
+    role: "admin",
+    emailVerified: 1,
+    deletedAt: null,
+    bannedAt: null,
+    mustResetPassword: 0,
+  });
+  const token = signToken({ id: 71, name: "Env Admin", role: "admin" });
+  const res = await fetch(`${baseUrl}/api/auth/change-password`, {
+    method: "POST",
+    headers: { "content-type": "application/json", cookie: `${COOKIE_NAME}=${token}` },
+    body: JSON.stringify({ currentPassword: "envpass1", newPassword: "newpass2" }),
+  });
+  assert.equal(res.status, 403);
+  const body = await res.json();
+  assert.equal(body.code, "ADMIN_ENV_ONLY");
+});
+
+test("change-password is allowed for a console-created admin (mustResetPassword = 1)", async () => {
+  const passwordHash = await hashPassword("temppass1");
+  fakeDb._users.push({
+    id: 72,
+    name: "Console Admin",
+    email: "cadmin@irago.com",
+    passwordHash,
+    role: "admin",
+    emailVerified: 1,
+    deletedAt: null,
+    bannedAt: null,
+    mustResetPassword: 1,
+  });
+  const token = signToken({ id: 72, name: "Console Admin", role: "admin" });
+  const res = await fetch(`${baseUrl}/api/auth/change-password`, {
+    method: "POST",
+    headers: { "content-type": "application/json", cookie: `${COOKIE_NAME}=${token}` },
+    body: JSON.stringify({ currentPassword: "temppass1", newPassword: "newpass2" }),
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.user.mustResetPassword, false);
 });

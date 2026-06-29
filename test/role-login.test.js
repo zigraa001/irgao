@@ -30,7 +30,12 @@ const fakeDb = (() => {
   async function query(sql, params = []) {
     const s = sql.replace(/\s+/g, " ").trim();
     if (s.includes("FROM users WHERE email")) {
-      return users.filter((u) => u.email === params[0]).map((u) => ({ ...u }));
+      return users
+        .filter(
+          (u) =>
+            u.email === params[0] && (!s.includes("deletedAt IS NULL") || !u.deletedAt)
+        )
+        .map((u) => ({ ...u }));
     }
     return [];
   }
@@ -93,4 +98,12 @@ test("operator login accepts operator role", async () => {
   const { status, body } = await login("/api/auth/operator/login", "o@irago.com");
   assert.equal(status, 200);
   assert.equal(body.user.role, "operator");
+});
+
+test("banned user cannot log in", async () => {
+  fakeDb._users[0].bannedAt = new Date();
+  const { status, body } = await login("/api/auth/passenger/login", "p@irago.com");
+  assert.equal(status, 403);
+  assert.equal(body.code, "ACCOUNT_BANNED");
+  fakeDb._users[0].bannedAt = null;
 });

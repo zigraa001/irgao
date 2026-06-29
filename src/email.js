@@ -146,13 +146,17 @@ async function sendOtpEmail(to, code, purpose) {
   }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: fromAddress(),
       to,
       subject: copy.subject,
       text,
       html,
     });
+    console.log(
+      `[email] OTP sent to ${maskEmail(to)} (${purpose})` +
+        (info.messageId ? ` id=${info.messageId}` : "")
+    );
   } catch (err) {
     console.error(
       `[email] SMTP send failed for ${maskEmail(to)} (${purpose}): ${err.message}`

@@ -11,6 +11,7 @@
 //   POST /api/auth/operator/login   → operator only
 //   POST /api/auth/admin/login      → admin only
 const express = require("express");
+const crypto = require("crypto");
 const { query, queryOne } = require("./db");
 const {
   hashPassword,
@@ -19,6 +20,7 @@ const {
   setAuthCookie,
   clearAuthCookie,
   requireAuth,
+  USER_NOT_DELETED,
 } = require("./auth");
 const {
   createAndSendOtp,
@@ -41,13 +43,14 @@ function publicUser(user) {
     email: user.email,
     role: user.role,
     emailVerified: Boolean(user.emailVerified),
+    mustResetPassword: Boolean(user.mustResetPassword),
   };
 }
 
 function authResponse(res, status, user) {
   const token = signToken(user);
   setAuthCookie(res, token);
-  return res.status(status).json({ user: publicUser(user) });
+  return res.status(status).json({ user: publicUser(user), token });
 }
 
 function genericOtpSent(res, timing) {
@@ -75,29 +78,40 @@ const passengerHandlers = mountRoleSignup(
   { purpose: "signup_passenger", role: "customer", label: "Passenger" },
   authResponse
 );
-const operatorHandlers = mountRoleSignup(
-  express.Router(),
-  { purpose: "signup_operator", role: "operator", label: "Operator" },
-  authResponse
-);
 
 router.post("/passenger/signup-request", passengerHandlers.signupRequest);
 router.post("/passenger/verify-signup", passengerHandlers.verifySignup);
-router.post("/operator/signup-request", operatorHandlers.signupRequest);
-router.post("/operator/verify-signup", operatorHandlers.verifySignup);
+
+// Operator & admin accounts are admin-provisioned only — a logged-in admin
+// creates them (with a temp password the new user must reset on first login).
+// Public self-signup for these roles is closed.
+router.post("/operator/signup-request", (_req, res) => {
+  res.status(403).json({
+    error:
+      "Operator accounts are created by an admin only. Ask an administrator to provision your account.",
+    code: "ADMIN_PROVISIONED_ONLY",
+  });
+});
+router.post("/operator/verify-signup", (_req, res) => {
+  res.status(403).json({
+    error:
+      "Operator accounts are created by an admin only. Ask an administrator to provision your account.",
+    code: "ADMIN_PROVISIONED_ONLY",
+  });
+});
 
 router.post("/admin/signup-request", (_req, res) => {
   res.status(403).json({
     error:
-      "Admin accounts are provisioned from .env only. Run: npm run admin:bootstrap",
-    code: "ADMIN_ENV_ONLY",
+      "Admin accounts are provisioned by an admin only. Run: npm run admin:bootstrap for the first admin.",
+    code: "ADMIN_PROVISIONED_ONLY",
   });
 });
 router.post("/admin/verify-signup", (_req, res) => {
   res.status(403).json({
     error:
-      "Admin accounts are provisioned from .env only. Run: npm run admin:bootstrap",
-    code: "ADMIN_ENV_ONLY",
+      "Admin accounts are provisioned by an admin only. Run: npm run admin:bootstrap for the first admin.",
+    code: "ADMIN_PROVISIONED_ONLY",
   });
 });
 
@@ -194,9 +208,13 @@ router.post("/change-password", requireAuth, async (req, res) => {
       .status(400)
       .json({ error: "newPassword must be at least 6 characters" });
   }
-  const user = await queryOne("SELECT * FROM users WHERE id = ?", [req.user.id]);
+  const user = await queryOne("SELECT * FROM users WHERE id = ? AND " + USER_NOT_DELETED, [
+    req.user.id,
+  ]);
   if (!user) return res.status(401).json({ error: "Authentication required" });
-  if (user.role === "admin") {
+  // Env-bootstrap admins (mustResetPassword = 0) keep their password in .env.
+  // Console-created admins (mustResetPassword = 1) MAY change theirs.
+  if (user.role === "admin" && !user.mustResetPassword) {
     return res.status(403).json({
       error:
         "Admin password is managed via .env only. Update ADMIN_PASSWORD and run npm run admin:bootstrap.",
@@ -206,12 +224,83 @@ router.post("/change-password", requireAuth, async (req, res) => {
   const ok = await verifyPassword(String(currentPassword), user.passwordHash);
   if (!ok) return res.status(401).json({ error: "Current password is incorrect" });
   const passwordHash = await hashPassword(String(newPassword));
-  await query("UPDATE users SET passwordHash = ? WHERE id = ?", [
-    passwordHash,
-    user.id,
-  ]);
+  await query(
+    "UPDATE users SET passwordHash = ?, mustResetPassword = 0 WHERE id = ?",
+    [passwordHash, user.id]
+  );
   const updated = await queryOne("SELECT * FROM users WHERE id = ?", [user.id]);
   return authResponse(res, 200, updated);
+});
+
+// POST /api/auth/delete-account — soft-delete the logged-in account (customer/operator).
+// Body: { password }. Admin accounts cannot be deleted online.
+router.post("/delete-account", requireAuth, async (req, res) => {
+  const { password } = req.body || {};
+  if (!password) {
+    return res.status(400).json({ error: "password is required" });
+  }
+
+  const user = await queryOne("SELECT * FROM users WHERE id = ? AND " + USER_NOT_DELETED, [
+    req.user.id,
+  ]);
+  if (!user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (user.role === "admin") {
+    return res.status(403).json({
+      error: "Admin accounts cannot be deleted online.",
+      code: "ADMIN_ENV_ONLY",
+    });
+  }
+
+  const ok = await verifyPassword(String(password), user.passwordHash);
+  if (!ok) {
+    return res.status(401).json({ error: "Password is incorrect" });
+  }
+
+  const activeBooking = await queryOne(
+    `SELECT id FROM bookings
+     WHERE customerId = ? AND status NOT IN ('completed', 'cancelled', 'rejected')
+     LIMIT 1`,
+    [user.id]
+  );
+  if (activeBooking) {
+    return res.status(409).json({
+      error:
+        "You have an active booking. Cancel or complete it before deleting your account.",
+      code: "ACTIVE_BOOKING",
+    });
+  }
+
+  const operatorBooking = await queryOne(
+    `SELECT id FROM bookings
+     WHERE operatorId = ? AND status NOT IN ('completed', 'cancelled', 'rejected')
+     LIMIT 1`,
+    [user.id]
+  );
+  if (operatorBooking) {
+    return res.status(409).json({
+      error:
+        "You have an assigned trip in progress. Finish or hand off the trip before deleting your account.",
+      code: "ACTIVE_TRIP",
+    });
+  }
+
+  const tombstoneEmail =
+    "deleted." + user.id + "." + Date.now() + "@irago.invalid";
+  const unusableHash = await hashPassword(crypto.randomBytes(32).toString("hex"));
+
+  await query(
+    `UPDATE users
+     SET deletedAt = NOW(), email = ?, name = ?, passwordHash = ?
+     WHERE id = ?`,
+    [tombstoneEmail, "Deleted user", unusableHash, user.id]
+  );
+
+  clearAuthCookie(res);
+  return res.json({
+    message: "Your account has been deleted.",
+  });
 });
 
 router.post("/forgot-password", async (req, res) => {
@@ -221,20 +310,39 @@ router.post("/forgot-password", async (req, res) => {
     return res.status(400).json({ error: "A valid email is required" });
   }
   const normalizedEmail = String(email).toLowerCase();
-  const user = await queryOne("SELECT id, role FROM users WHERE email = ?", [
+  const user = await queryOne("SELECT id, role FROM users WHERE email = ? AND deletedAt IS NULL", [
     normalizedEmail,
   ]);
-  if (user && user.role !== "admin") {
-    const result = await createAndSendOtp(normalizedEmail, "reset_password", {});
-    if (!result.ok) {
-      return res.status(result.status).json({
-        error: result.error,
-        code: result.code,
-        retryAfterSeconds: result.retryAfterSeconds,
-      });
-    }
+
+  // No account — tell the user clearly so they know to register first.
+  if (!user) {
+    return res.status(404).json({
+      error: "No account found with this email. Please register first.",
+      code: "ACCOUNT_NOT_FOUND",
+    });
   }
-  return genericOtpSent(res);
+
+  // Admin passwords are managed via .env only.
+  if (user.role === "admin") {
+    return res.status(403).json({
+      error: "Admin password is managed via .env only. Update ADMIN_PASSWORD and run npm run admin:bootstrap.",
+      code: "ADMIN_ENV_ONLY",
+    });
+  }
+
+  const result = await createAndSendOtp(normalizedEmail, "reset_password", {});
+  if (!result.ok) {
+    return res.status(result.status).json({
+      error: result.error,
+      code: result.code,
+      retryAfterSeconds: result.retryAfterSeconds,
+    });
+  }
+  return res.json({
+    message: "A verification code has been sent to your email.",
+    expiresInSeconds: result.expiresInSeconds,
+    resendCooldownSeconds: result.resendCooldownSeconds,
+  });
 });
 
 router.post("/reset-password", async (req, res) => {

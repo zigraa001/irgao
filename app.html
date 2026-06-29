@@ -788,34 +788,60 @@ a { text-decoration: none; color: inherit; }
   inset: 0;
   z-index: 10000;
   display: none;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: 20px;
+  padding: 0;
+}
+@media (min-width: 600px) {
+  .profile-modal { align-items: center; padding: 20px; }
 }
 .profile-modal.open { display: flex; }
 .profile-modal[hidden] { display: none !important; }
 .profile-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.50);
+  backdrop-filter: blur(2px);
 }
 .profile-modal-card {
   position: relative;
   width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
+  max-width: 100%;
+  max-height: 92vh;
   overflow-y: auto;
   background: #fff;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 22px;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(15,23,42,0.18);
+  padding: 20px 18px 32px;
+  -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 600px) {
+  .profile-modal-card {
+    max-width: 440px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 24px;
+  }
+}
+/* Drag handle for mobile sheet */
+.profile-modal-card::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: 99px;
+  margin: 0 auto 16px;
+}
+@media (min-width: 600px) {
+  .profile-modal-card::before { display: none; }
 }
 .profile-modal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
+  top: 16px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
   border: none;
   background: var(--gray-100);
   border-radius: 50%;
@@ -823,6 +849,10 @@ a { text-decoration: none; color: inherit; }
   line-height: 1;
   color: var(--gray-500);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
 }
 .profile-modal-close:hover { background: var(--gray-200); color: var(--gray-800); }
 .profile-modal-title {
@@ -830,7 +860,137 @@ a { text-decoration: none; color: inherit; }
   font-size: 18px;
   font-weight: 700;
   color: var(--gray-900);
+  padding-right: 40px;
 }
+
+/* ── Profile dashboard (total overview) ─────────────────────────────── */
+.profile-dashboard { margin-top: 18px; }
+.profile-dashboard-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.profile-dashboard-title .pd-refresh {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-50);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.profile-dashboard-title .pd-refresh:hover { background: var(--blue-light); }
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 420px) {
+  .profile-stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.pd-stat {
+  background: linear-gradient(180deg, #fff 0%, var(--blue-50) 140%);
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 12px 12px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 78px;
+}
+.pd-stat--green { background: linear-gradient(180deg, #fff 0%, var(--green-50) 140%); border-color: rgba(16,185,129,0.18); }
+.pd-stat--amber { background: linear-gradient(180deg, #fff 0, #FEF3C7 140%); border-color: rgba(245,158,11,0.20); }
+.pd-stat--red   { background: linear-gradient(180deg, #fff 0, var(--red-50) 140%); border-color: rgba(239,68,68,0.18); }
+.pd-stat--purple{ background: linear-gradient(180deg, #fff 0, #F3E8FF 140%); border-color: rgba(139,92,246,0.20); }
+.pd-stat-emoji { font-size: 15px; line-height: 1; }
+.pd-stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.pd-stat-value small { font-size: 12px; font-weight: 700; color: var(--gray-500); margin-left: 2px; }
+.pd-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  line-height: 1.25;
+}
+.pd-breakdown {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.pd-breakdown-card {
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 12px;
+}
+.pd-breakdown-card h5 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pd-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.pd-bar-row:last-child { margin-bottom: 0; }
+.pd-bar-label { width: 78px; color: var(--gray-700); font-weight: 600; text-transform: capitalize; }
+.pd-bar-track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 99px; overflow: hidden; }
+.pd-bar-fill { height: 100%; background: var(--blue); border-radius: 99px; }
+.pd-bar-val { width: 42px; text-align: right; color: var(--gray-600); font-variant-numeric: tabular-nums; font-weight: 600; }
+.pd-recent {
+  margin-top: 14px;
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.pd-recent h5 {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-100);
+}
+.pd-recent-empty { padding: 14px 12px; font-size: 13px; color: var(--gray-500); }
+.pd-recent-row {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gray-50);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pd-recent-row:last-child { border-bottom: none; }
+.pd-recent-route { font-weight: 600; color: var(--gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-recent-meta { font-size: 11px; color: var(--gray-500); display: flex; gap: 8px; flex-wrap: wrap; }
+.pd-recent-meta .pd-status {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.pd-status--completed { color: var(--green-dark); }
+.pd-status--requested, .pd-status--dispatching, .pd-status--enroute, .pd-status--flying { color: var(--blue-dark); }
+.pd-status--cancelled, .pd-status--rejected { color: var(--red-dark); }
+.pd-loading { padding: 18px; text-align: center; color: var(--gray-500); font-size: 13px; }
+.pd-error { padding: 12px; text-align: center; color: var(--red-dark); font-size: 13px; background: var(--red-50); border-radius: 12px; }
+
 .profile-change-block { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--gray-100); }
 .profile-change-block h4 {
   margin: 0 0 12px;
@@ -850,6 +1010,39 @@ a { text-decoration: none; color: inherit; }
   line-height: 1.5;
   margin-top: 12px;
 }
+.profile-delete-block {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--gray-100);
+}
+.profile-delete-block h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #B91C1C;
+  margin-bottom: 8px;
+}
+.profile-delete-warning {
+  font-size: 12px;
+  color: var(--gray-500);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.btn-profile-delete {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #FECACA;
+  background: #FEF2F2;
+  color: #B91C1C;
+  cursor: pointer;
+}
+.btn-profile-delete:hover { background: #FEE2E2; }
+.loc-gps-btn.gps-loading svg {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-profile-delete:disabled { opacity: 0.6; cursor: default; }
 
 /* Map + Panel layout */
 .booking-body {
@@ -858,9 +1051,12 @@ a { text-decoration: none; color: inherit; }
   position: relative;
   overflow: hidden;
 }
-#map {
+#map, #op-combined-map {
   flex: 1;
   z-index: 1;
+  min-height: 0;
+  min-width: 0;
+  background: var(--gray-100);
 }
 
 /* Left Panel */
@@ -1378,11 +1574,13 @@ a { text-decoration: none; color: inherit; }
    ═══════════════════════════════════════════ */
 @media (max-width: 900px) {
   .login-right { display: none; }
-  .booking-panel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; max-height: 55vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); }
+  .booking-panel, .op-panel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; max-height: 55vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 600; }
   .service-tabs { display: none; }
+  .op-map-badge { left: 12px; top: 12px; }
+  .op-map-legend { font-size: 10px; bottom: auto; top: 12px; right: 12px; left: auto; max-width: 200px; }
 }
 @media (max-width: 600px) {
-  .booking-panel { max-height: 65vh; }
+  .booking-panel, .op-panel { max-height: 65vh; }
   .booking-nav { padding: 0 12px; }
 }
 
@@ -1710,12 +1908,95 @@ a { text-decoration: none; color: inherit; }
 .tracking-step.active .tracking-step-label { color: var(--blue); }
 
 /* ═══════════════════════════════════════════
-   OPERATOR (PILOT) DASHBOARD
+   OPERATOR COMBINED MAP (full-screen like passenger)
    ═══════════════════════════════════════════ */
 #operator-view {
-  min-height: 100vh;
+  height: 100vh;
   flex-direction: column;
+  overflow: hidden;
   background: var(--gray-50);
+}
+.op-map-badge {
+  position: absolute;
+  top: 12px;
+  left: 432px;
+  z-index: 1000;
+  background: rgba(37, 99, 235, 0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.op-map-badge .op-gps-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 1.5s infinite;
+}
+.op-map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 432px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+.booking-map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 500;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 7px 11px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  max-width: 320px;
+}
+@media (max-width: 720px) {
+  .booking-map-legend { font-size: 10px; gap: 8px; max-width: 220px; }
+}
+.op-panel {
+  width: 420px;
+}
+.op-panel .op-welcome {
+  font-size: 20px;
+  margin: 0;
+}
+.op-panel .op-welcome-sub {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+.op-panel .admin-zone-altitude {
+  max-height: 200px;
+  margin-top: 0;
 }
 .op-role-badge {
   font-size: 11px;
@@ -1856,7 +2137,27 @@ a { text-decoration: none; color: inherit; }
   padding: 14px 18px;
   box-shadow: var(--shadow-sm);
   margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
+.admin-user-card:hover {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-md);
+}
+.admin-user-card:active { transform: translateY(1px); }
+.admin-user-card:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.admin-user-chevron {
+  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--gray-300);
+  font-weight: 700;
+  margin-left: 4px;
+}
+.admin-user-card:hover .admin-user-chevron { color: var(--blue); }
 .admin-user-id {
   flex-shrink: 0;
   width: 40px;
@@ -1997,6 +2298,291 @@ a { text-decoration: none; color: inherit; }
   color: var(--blue-dark);
   background: var(--blue-50);
 }
+.admin-btn-sm.danger {
+  border-color: #FECACA;
+  color: #B91C1C;
+  background: #FEF2F2;
+}
+.admin-user-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-tab {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.admin-tab.active {
+  background: var(--blue-50);
+  border-color: var(--blue-light);
+  color: var(--blue-dark);
+}
+.admin-users-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-bottom: 10px;
+}
+.admin-users-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.admin-pager-btns { display: flex; gap: 8px; }
+.admin-load-more {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  cursor: pointer;
+}
+.admin-load-more:disabled { opacity: 0.5; cursor: default; }
+.op-badge--red {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+/* Payment overlay reuses confirm-overlay layout */
+.payment-card .confirm-header { padding-bottom: 12px; }
+.payment-fields { padding: 0 28px 8px; display: flex; flex-direction: column; gap: 12px; }
+.payment-fields input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+.payment-note { font-size: 12px; color: var(--gray-500); padding: 0 28px 12px; text-align: center; }
+.payment-error { padding: 0 28px; }
+
+/* Operator dispatch offer modal */
+.dispatch-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.dispatch-overlay.active { display: flex; }
+.dispatch-card {
+  background: #fff;
+  border-radius: var(--radius-2xl);
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: confirmIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dispatch-head {
+  background: linear-gradient(135deg, #1E40AF, #3B82F6);
+  color: #fff;
+  padding: 20px 22px;
+  text-align: center;
+}
+.dispatch-head h3 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.dispatch-timer { font-size: 13px; opacity: 0.9; }
+.dispatch-body { padding: 18px 22px; font-size: 14px; }
+.dispatch-route { font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+.dispatch-meta { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+.dispatch-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 22px 20px;
+}
+
+/* Admin live operations — map + lists */
+.admin-live-map {
+  height: 380px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  background: var(--gray-100);
+  margin-bottom: 14px;
+}
+.admin-live-map-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+.admin-live-map-wrap .admin-live-map { margin-bottom: 0; }
+.admin-live-map-fs {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1200;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  background: #fff;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-live-map-fs:hover { background: var(--blue-50); color: var(--blue-dark); }
+.admin-live-map-fs svg { width: 18px; height: 18px; display: block; }
+.admin-live-map-fs .fs-collapse { display: none; }
+.admin-live-map-wrap.fs {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  margin: 0;
+  background: #fff;
+}
+.admin-live-map-wrap.fs .admin-live-map {
+  height: 100vh;
+  width: 100vw;
+  border-radius: 0;
+  border: none;
+}
+.admin-live-map-wrap.fs .admin-live-map-fs .fs-expand { display: none; }
+.admin-live-map-wrap.fs .admin-live-map-fs .fs-collapse { display: block; }
+body.admin-map-fs { overflow: hidden; }
+.admin-live-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) { .admin-live-layout { grid-template-columns: 1fr; } }
+.admin-live-panel {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+.admin-live-panel h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--gray-800);
+}
+.admin-flight-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.admin-flight-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.admin-flight-route { font-weight: 700; color: var(--gray-900); }
+.admin-flight-meta { color: var(--gray-600); font-size: 12px; line-height: 1.45; }
+.admin-live-list { max-height: 420px; overflow-y: auto; }
+.admin-fleet-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 12px;
+}
+.admin-fleet-row:last-child { border-bottom: none; }
+
+.nearby-taxi-marker {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+.admin-zones-layout {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) {
+  .admin-zones-layout { grid-template-columns: 1fr; }
+}
+.admin-zone-map {
+  height: 320px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  background: var(--gray-100);
+}
+.admin-zone-altitude {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  font-size: 11px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.admin-zone-altitude h4 {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--gray-700);
+}
+.zone-alt-row {
+  display: grid;
+  grid-template-columns: 1fr 48px 52px;
+  gap: 6px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.zone-alt-label {
+  font-size: 10px;
+  color: var(--gray-600);
+  line-height: 1.3;
+}
+.zone-alt-bar-track {
+  position: relative;
+  height: 100px;
+  background: linear-gradient(to top, #E5E7EB 0%, #F9FAFB 100%);
+  border-radius: 4px;
+  border: 1px solid var(--gray-200);
+}
+.zone-alt-bar {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 3px;
+  border: 1px solid;
+  opacity: 0.85;
+}
+.zone-alt-range {
+  font-size: 9px;
+  color: var(--gray-500);
+  text-align: right;
+}
+.zone-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--gray-600);
+  margin-top: 8px;
+}
+.zone-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.zone-legend .zl-corridor::before { background: #3B82F6; }
+.zone-legend .zl-restricted::before { background: #F59E0B; }
+.zone-legend .zl-nofly::before { background: #EF4444; }
 .auth-forgot-link {
   text-align: right;
   margin-top: -4px;
@@ -2091,6 +2677,191 @@ a { text-decoration: none; color: inherit; }
   border-radius: var(--radius-md);
 }
 .op-action-error.show { display: block; }
+
+/* ===== Admin drawer-based panel ===== */
+.admin-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  align-items: start;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 20px 60px;
+  gap: 24px;
+}
+.admin-drawer {
+  position: sticky;
+  top: 78px;
+  align-self: start;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 12px;
+}
+.admin-drawer-toggle {
+  display: none;
+  width: 100%;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  color: var(--gray-700);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.admin-drawer-toggle svg { width: 20px; height: 20px; display: block; margin: 0 auto; }
+.admin-drawer-nav { display: flex; flex-direction: column; gap: 4px; }
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.admin-nav-item:hover { background: var(--gray-50); color: var(--gray-900); }
+.admin-nav-item.active {
+  background: var(--blue-50);
+  color: var(--blue-dark);
+  border-color: var(--blue-light);
+}
+.admin-nav-icon { font-size: 16px; line-height: 1; }
+.admin-main { min-width: 0; }
+.admin-section { animation: adminFade 0.18s ease; }
+@keyframes adminFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.admin-platform-stats { min-height: 60px; }
+
+/* User-detail slide-in drawer */
+.admin-user-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 10500;
+  visibility: hidden;
+}
+.admin-user-drawer.open { visibility: visible; }
+.admin-user-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.admin-user-drawer.open .admin-user-drawer-backdrop { opacity: 1; }
+.admin-user-drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+.admin-user-drawer.open .admin-user-drawer-panel { transform: translateX(0); }
+.admin-user-drawer-head {
+  position: relative;
+  padding: 22px 22px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(135deg, var(--blue-50), #fff);
+}
+.admin-user-drawer-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--gray-700);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-user-drawer-close:hover { background: var(--gray-200); }
+.admin-user-drawer-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--purple), var(--blue-dark));
+  margin-bottom: 10px;
+}
+.admin-user-drawer-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-900);
+  word-break: break-word;
+}
+.admin-user-drawer-email {
+  font-size: 13px;
+  color: var(--gray-500);
+  word-break: break-all;
+  margin-top: 2px;
+}
+.admin-user-drawer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.admin-user-drawer-actions {
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+.admin-user-drawer-body {
+  padding: 18px 22px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+.admin-ud-gps {
+  font-size: 12px;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  margin-bottom: 14px;
+}
+.op-badge--amber { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.op-badge--blue { background: var(--blue-light); color: var(--blue-dark); border: 1px solid var(--blue-light); }
+
+@media (max-width: 900px) {
+  .admin-shell { grid-template-columns: 1fr; padding: 12px 14px 60px; gap: 14px; }
+  .admin-drawer {
+    position: relative;
+    top: auto;
+    padding: 8px;
+  }
+  .admin-drawer-toggle { display: block; }
+  .admin-drawer-nav {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .admin-drawer.open .admin-drawer-nav { display: flex; }
+  .admin-user-drawer-panel { max-width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -2423,6 +3194,11 @@ a { text-decoration: none; color: inherit; }
 
     <!-- Map -->
     <div id="map"></div>
+    <div class="booking-map-legend" id="booking-map-legend">
+      <span style="color:#D97706">&#9644; Restricted</span>
+      <span style="color:#DC2626">&#9644; No-fly</span>
+      <span id="booking-map-legend-count" style="margin-left:auto;color:var(--gray-500)"></span>
+    </div>
 
     <!-- Tracking Panel (overlaid on map) -->
     <div class="tracking-panel" id="tracking-panel">
@@ -2512,6 +3288,41 @@ a { text-decoration: none; color: inherit; }
 
 
 <!-- ════════════════════════════════════════════
+     PAYMENT OVERLAY (dummy gateway)
+     ════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="payment-overlay">
+  <div class="confirm-card payment-card">
+    <div class="confirm-header">
+      <h2>Complete payment</h2>
+      <p>Secure checkout — demo only, no real charge</p>
+      <div class="confirm-id" id="payment-booking-id">IRG-00000</div>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-details" style="margin-bottom:12px;">
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">Amount due</div>
+          <div class="confirm-detail-val" id="payment-amount">—</div>
+        </div>
+        <div class="confirm-detail">
+          <div class="confirm-detail-label">CO&#8322; you save</div>
+          <div class="confirm-detail-val green" id="payment-carbon">—</div>
+        </div>
+      </div>
+      <div class="payment-fields">
+        <input type="text" id="payment-card" placeholder="Card number (demo)" value="4242 4242 4242 4242" autocomplete="off">
+        <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="passenger@upi" autocomplete="off">
+      </div>
+      <p class="payment-note">Tap Pay to confirm your ride and notify nearby pilots.</p>
+      <div class="auth-error payment-error" id="payment-error" role="alert"></div>
+    </div>
+    <div class="confirm-footer">
+      <button class="btn-confirm btn-confirm-primary" id="payment-pay-btn" onclick="payForBooking()">Pay now</button>
+      <button class="btn-confirm btn-confirm-ghost" onclick="closePayment()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
      3. BOOKING CONFIRMATION OVERLAY
      ════════════════════════════════════════════ -->
 <div class="confirm-overlay" id="confirm-overlay">
@@ -2566,6 +3377,37 @@ a { text-decoration: none; color: inherit; }
 
 
 <!-- ════════════════════════════════════════════
+     FORCED PASSWORD RESET OVERLAY
+     Shown on first login for admin-provisioned accounts (mustResetPassword=1)
+     until the user chooses their own password.
+     ════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="must-reset-overlay">
+  <div class="confirm-card">
+    <div class="confirm-header">
+      <div class="confirm-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>Set your password</h2>
+      <p>Your account was created with a temporary password. Choose a new one to continue.</p>
+      <div class="confirm-id" id="must-reset-email">—</div>
+    </div>
+    <div class="confirm-body">
+      <div class="payment-fields">
+        <input type="password" id="must-reset-current" placeholder="Temporary password" autocomplete="current-password" onkeydown="if(event.key==='Enter')document.getElementById('must-reset-new').focus()">
+        <input type="password" id="must-reset-new" placeholder="New password (min 6 chars)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doForcedReset()">
+      </div>
+      <p class="payment-note">You won't be able to use the app until your password is changed.</p>
+      <div class="auth-error payment-error" id="must-reset-error" role="alert"></div>
+    </div>
+    <div class="confirm-footer">
+      <button class="btn-confirm btn-confirm-primary" id="must-reset-submit" onclick="doForcedReset()">Update &amp; continue</button>
+      <button class="btn-confirm btn-confirm-ghost" onclick="logoutForcedReset()">Log out</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
      4. OPERATOR (PILOT) DASHBOARD
      Role-gated landing view for operators. The assigned-trip list,
      accept/reject, and status actions are added in US-009 / US-010 / US-011.
@@ -2586,55 +3428,94 @@ a { text-decoration: none; color: inherit; }
     </div>
   </nav>
 
-  <!-- Body -->
-  <div class="op-body">
-    <!-- Trip list -->
-    <div id="op-list-section">
-      <div class="op-welcome" id="op-welcome">Welcome back, Pilot</div>
-      <div class="op-welcome-sub">Flight rider dashboard — accept missions, track fleet in real time, and manage trip status.</div>
-      <div class="profile-account-card" style="margin-bottom:20px;">
-        <div class="profile-account-row">
-          <div class="profile-account-avatar profile-display-avatar">O</div>
-          <div class="profile-account-info">
-            <p class="profile-account-name profile-display-name">Guest</p>
-            <p class="profile-account-email profile-display-email">—</p>
+  <div class="booking-body">
+    <!-- Left panel (same layout as passenger booking) -->
+    <div class="booking-panel op-panel" id="op-panel">
+      <div id="op-list-section">
+        <div class="panel-section">
+          <div class="op-welcome" id="op-welcome">Welcome back, Pilot</div>
+          <div class="op-welcome-sub">Accept missions, manage trips, and track your live position on the map.</div>
+        </div>
+
+        <div class="panel-section profile-account-section" style="padding-top:0;">
+          <div class="profile-account-card" style="margin-bottom:0;">
+            <div class="profile-account-row">
+              <div class="profile-account-avatar profile-display-avatar">O</div>
+              <div class="profile-account-info">
+                <p class="profile-account-name profile-display-name">Guest</p>
+                <p class="profile-account-email profile-display-email">—</p>
+              </div>
+            </div>
+            <div class="profile-account-meta">
+              <span class="profile-account-detail profile-display-role">Operator</span>
+              <span class="profile-account-detail profile-display-verified">Email verified</span>
+            </div>
+            <div class="profile-account-actions">
+              <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+              <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+            </div>
           </div>
         </div>
-        <div class="profile-account-meta">
-          <span class="profile-account-detail profile-display-role">Operator</span>
-          <span class="profile-account-detail profile-display-verified">Email verified</span>
+
+        <div class="panel-section">
+          <div class="op-section-title" style="margin-top:0;">Assigned trips</div>
+          <div id="op-trips">
+            <div class="op-empty" id="op-empty">
+              <div class="op-empty-icon">🛩️</div>
+              <div class="op-empty-title">No trips assigned yet</div>
+              <div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>
+            </div>
+          </div>
         </div>
-        <div class="profile-account-actions">
-          <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
-          <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
-        </div>
-      </div>
-      <div class="dashboard-intro">
-        <p>IraGo&rsquo;s AI scheduler assigns priority-rated bookings to your fleet. Monitor assigned trips, view telemetry, and coordinate with dispatch from here.</p>
-        <div class="dashboard-pills">
-          <span class="dashboard-pill">Live assignments</span>
-          <span class="dashboard-pill">Fleet telemetry</span>
-          <span class="dashboard-pill">Trip management</span>
+
+        <div class="panel-section">
+          <div class="op-section-title" style="margin-top:0;">Altitude bands</div>
+          <div id="operator-zone-altitude" class="admin-zone-altitude">
+            <h4>Altitude (3D)</h4>
+            <div class="op-empty-sub">Loading zones…</div>
+          </div>
         </div>
       </div>
 
-      <div class="op-section-title">Assigned Trips</div>
-      <!-- loadOperatorTrips() (US-009) renders the cards or the empty state here. -->
-      <div id="op-trips">
-        <div class="op-empty" id="op-empty">
-          <div class="op-empty-icon">🛩️</div>
-          <div class="op-empty-title">No trips assigned yet</div>
-          <div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>
+      <div id="op-detail-section" style="display:none">
+        <div class="panel-section" style="padding-bottom:0;">
+          <button class="op-back" onclick="closeTripDetails()">&larr; Back to trips</button>
         </div>
+        <div id="op-detail-body"></div>
       </div>
     </div>
 
-    <!-- Trip details (shown by openTripDetails) -->
-    <div id="op-detail-section" style="display:none">
-      <button class="op-back" onclick="closeTripDetails()">&larr; Back to trips</button>
-      <div id="op-detail-body"></div>
+    <!-- Full-screen map (same layout as passenger #map) -->
+    <div id="op-combined-map"></div>
+    <div class="op-map-badge" id="op-zone-badge">
+      <span class="op-gps-dot"></span>
+      <span id="op-zone-badge-label">Live GPS · loading airspace…</span>
+    </div>
+    <div class="op-map-legend">
+      <span style="color:#D97706">▬ Restricted</span>
+      <span style="color:#DC2626">▬ No-fly</span>
+      <span style="color:#16A34A">✈ You</span>
+      <span id="op-map-legend-count" style="margin-left:auto;color:var(--gray-500)"></span>
     </div>
   </div>
+
+  <!-- Dispatch offer modal (SSE) -->
+  <div class="dispatch-overlay" id="dispatch-overlay" aria-hidden="true">
+      <div class="dispatch-card" role="dialog" aria-labelledby="dispatch-title">
+        <div class="dispatch-head">
+          <h3 id="dispatch-title">New mission offer</h3>
+          <div class="dispatch-timer" id="dispatch-timer">Respond within 30s</div>
+        </div>
+        <div class="dispatch-body">
+          <div class="dispatch-route" id="dispatch-route">—</div>
+          <div class="dispatch-meta" id="dispatch-meta"></div>
+        </div>
+        <div class="dispatch-actions">
+          <button type="button" class="op-btn op-btn--reject" id="dispatch-reject-btn">Reject</button>
+          <button type="button" class="op-btn op-btn--accept" id="dispatch-accept-btn">Accept</button>
+        </div>
+      </div>
+    </div>
 </div>
 
 
@@ -2658,72 +3539,164 @@ a { text-decoration: none; color: inherit; }
   </nav>
 
   <!-- Body -->
-  <div class="op-body">
-    <div class="op-welcome" id="admin-welcome">Welcome back, Admin</div>
-    <div class="op-welcome-sub">Platform admin — manage team access, reset passwords, and oversee operations.</div>
-    <div class="profile-account-card" style="margin-bottom:20px;">
-      <div class="profile-account-row">
-        <div class="profile-account-avatar admin-avatar profile-display-avatar">A</div>
-        <div class="profile-account-info">
-          <p class="profile-account-name profile-display-name">Guest</p>
-          <p class="profile-account-email profile-display-email">—</p>
-        </div>
-      </div>
-      <div class="profile-account-meta">
-        <span class="profile-account-detail profile-display-role">Admin</span>
-        <span class="profile-account-detail profile-display-verified">Email verified</span>
-      </div>
-      <div class="profile-account-actions">
-        <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
-        <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
-      </div>
-    </div>
-    <div class="dashboard-intro">
-      <p>Run IraGo&rsquo;s orchestration layer: provision pilots and admins, reset credentials, and coordinate fleet operations, pricing, and coupons.</p>
-      <div class="dashboard-pills">
-        <span class="dashboard-pill">User management</span>
-        <span class="dashboard-pill">Password reset</span>
-        <span class="dashboard-pill">Fleet oversight</span>
-        <span class="dashboard-pill">Dynamic pricing</span>
-      </div>
-    </div>
+  <div class="admin-shell">
+    <!-- Drawer rail (left) -->
+    <aside class="admin-drawer" id="admin-drawer">
+      <button type="button" class="admin-drawer-toggle" id="admin-drawer-toggle" onclick="toggleAdminDrawer()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <nav class="admin-drawer-nav">
+        <button type="button" class="admin-nav-item active" data-admin-section="dashboard" onclick="showAdminSection('dashboard')">
+          <span class="admin-nav-icon">📊</span><span class="admin-nav-label">Dashboard</span>
+        </button>
+        <button type="button" class="admin-nav-item" data-admin-section="users" onclick="showAdminSection('users')">
+          <span class="admin-nav-icon">👥</span><span class="admin-nav-label">Active Users</span>
+        </button>
+        <button type="button" class="admin-nav-item" data-admin-section="live" onclick="showAdminSection('live')">
+          <span class="admin-nav-icon">✈️</span><span class="admin-nav-label">Operators Live Map</span>
+        </button>
+        <button type="button" class="admin-nav-item" data-admin-section="add" onclick="showAdminSection('add')">
+          <span class="admin-nav-icon">➕</span><span class="admin-nav-label">Add Member</span>
+        </button>
+      </nav>
+    </aside>
 
-    <!-- Add-user form (US-006). Provisions operators/admins via POST /api/admin/users. -->
-    <div class="op-section-title">Add Team Member</div>
-    <div class="admin-form-card">
-      <div class="admin-form-grid">
-        <div class="auth-field">
-          <label>Full Name</label>
-          <input id="admin-add-name" type="text" placeholder="Priya Sharma" autocomplete="off">
+    <!-- Main content -->
+    <main class="admin-main">
+      <!-- Dashboard section -->
+      <section class="admin-section" id="admin-section-dashboard">
+        <div class="op-welcome" id="admin-welcome">Welcome back, Admin</div>
+        <div class="op-welcome-sub">Platform admin — manage team access, reset passwords, and oversee operations.</div>
+        <div class="profile-account-card" style="margin-bottom:20px;">
+          <div class="profile-account-row">
+            <div class="profile-account-avatar admin-avatar profile-display-avatar">A</div>
+            <div class="profile-account-info">
+              <p class="profile-account-name profile-display-name">Guest</p>
+              <p class="profile-account-email profile-display-email">—</p>
+            </div>
+          </div>
+          <div class="profile-account-meta">
+            <span class="profile-account-detail profile-display-role">Admin</span>
+            <span class="profile-account-detail profile-display-verified">Email verified</span>
+          </div>
+          <div class="profile-account-actions">
+            <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+            <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+          </div>
         </div>
-        <div class="auth-field">
-          <label>Email</label>
-          <input id="admin-add-email" type="email" placeholder="name@irago.com" autocomplete="off">
+        <div class="dashboard-intro">
+          <p>Run IraGo&rsquo;s orchestration layer: provision pilots and admins, reset credentials, and coordinate fleet operations, pricing, and coupons.</p>
+          <div class="dashboard-pills">
+            <span class="dashboard-pill">User management</span>
+            <span class="dashboard-pill">Password reset</span>
+            <span class="dashboard-pill">Fleet oversight</span>
+            <span class="dashboard-pill">Dynamic pricing</span>
+          </div>
         </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input id="admin-add-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doAddUser()">
-        </div>
-        <div class="auth-field">
-          <label>Role</label>
-          <select id="admin-add-role" class="admin-form-select">
-            <option value="operator">Operator</option>
-          </select>
-        </div>
-      </div>
-      <button id="admin-add-submit" class="btn-auth-primary admin-add-submit" onclick="doAddUser()">Add Team Member</button>
-      <div id="admin-add-error" class="auth-error" role="alert"></div>
-      <div id="admin-add-success" class="admin-add-success" role="status"></div>
-    </div>
+        <div class="op-section-title">Platform overview</div>
+        <div id="admin-platform-stats" class="admin-platform-stats"><div class="pd-loading">Loading platform stats…</div></div>
+      </section>
 
-    <div class="op-section-title">Team &amp; Users</div>
-    <!-- loadAdminUsers() (US-005) renders the user list here. -->
-    <div id="admin-users">
-      <div class="op-empty">
-        <div class="op-empty-sub">Loading users…</div>
-      </div>
-    </div>
+      <!-- Active Users section -->
+      <section class="admin-section" id="admin-section-users" hidden>
+        <div class="op-section-title">Active Users</div>
+        <div id="admin-users-panel">
+          <div class="admin-user-tabs">
+            <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
+            <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Operators</button>
+          </div>
+          <div id="admin-users-meta" class="admin-users-meta"></div>
+          <div id="admin-users-list">
+            <div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>
+          </div>
+          <div id="admin-users-pager" class="admin-users-pager"></div>
+        </div>
+        <p class="admin-users-meta" style="margin-top:14px">Tap any user to open their profile, trips and fare breakdown.</p>
+      </section>
+
+      <!-- Operators Live Map section -->
+      <section class="admin-section" id="admin-section-live" hidden>
+        <div class="op-section-title">Operators Live Map</div>
+        <p class="admin-users-meta" style="margin-top:-6px;">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
+        <div id="admin-live-meta" class="admin-users-meta"></div>
+        <div id="admin-live-map-wrap" class="admin-live-map-wrap">
+          <div id="admin-live-map" class="admin-live-map"></div>
+          <button type="button" id="admin-live-map-fs" class="admin-live-map-fs" onclick="toggleAdminMapFullscreen()" aria-label="Toggle fullscreen map" title="Fullscreen">
+            <svg class="fs-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            <svg class="fs-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+          </button>
+        </div>
+        <div class="admin-live-layout">
+          <div class="admin-live-panel">
+            <h4>In transit &amp; dispatching</h4>
+            <div id="admin-live-list" class="admin-live-list">
+              <div class="op-empty"><div class="op-empty-sub">Loading live flights…</div></div>
+            </div>
+          </div>
+          <div class="admin-live-panel">
+            <h4>All pilots (GPS)</h4>
+            <div id="admin-fleet-list" class="admin-live-list">
+              <div class="op-empty"><div class="op-empty-sub">Loading fleet…</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add Member section -->
+      <section class="admin-section" id="admin-section-add" hidden>
+        <div class="op-section-title">Add Team Member</div>
+        <div class="admin-form-card">
+          <div class="admin-form-grid">
+            <div class="auth-field">
+              <label>Full Name</label>
+              <input id="admin-add-name" type="text" placeholder="Priya Sharma" autocomplete="off">
+            </div>
+            <div class="auth-field">
+              <label>Email</label>
+              <input id="admin-add-email" type="email" placeholder="name@irago.com" autocomplete="off">
+            </div>
+            <div class="auth-field">
+              <label>Password</label>
+              <input id="admin-add-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doAddUser()">
+            </div>
+            <div class="auth-field">
+              <label>Role</label>
+              <select id="admin-add-role" class="admin-form-select">
+                <option value="operator">Operator</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <p class="admin-add-note" style="font-size:12px;color:var(--gray-500);margin:6px 0 12px">
+            A temporary password is set here — the new member must change it on first login.
+          </p>
+          <button id="admin-add-submit" class="btn-auth-primary admin-add-submit" onclick="doAddUser()">Add Team Member</button>
+          <div id="admin-add-error" class="auth-error" role="alert"></div>
+          <div id="admin-add-success" class="admin-add-success" role="status"></div>
+        </div>
+      </section>
+    </main>
   </div>
+</div>
+
+<!-- Admin user-detail drawer (slide-in from right) -->
+<div id="admin-user-drawer" class="admin-user-drawer" aria-hidden="true">
+  <div class="admin-user-drawer-backdrop" onclick="closeAdminUserDrawer()"></div>
+  <aside class="admin-user-drawer-panel" role="dialog" aria-label="User details">
+    <header class="admin-user-drawer-head">
+      <button type="button" class="admin-user-drawer-close" onclick="closeAdminUserDrawer()" aria-label="Close">&times;</button>
+      <div class="admin-user-drawer-avatar" id="admin-ud-avatar">?</div>
+      <div class="admin-user-drawer-titles">
+        <div class="admin-user-drawer-name" id="admin-ud-name">—</div>
+        <div class="admin-user-drawer-email" id="admin-ud-email">—</div>
+        <div class="admin-user-drawer-tags" id="admin-ud-tags"></div>
+      </div>
+    </header>
+    <div class="admin-user-drawer-actions" id="admin-ud-actions"></div>
+    <div class="admin-user-drawer-body" id="admin-user-drawer-body">
+      <div class="pd-loading">Select a user to view details.</div>
+    </div>
+  </aside>
 </div>
 
 
@@ -2746,6 +3719,13 @@ a { text-decoration: none; color: inherit; }
         <span class="profile-account-detail profile-display-verified">Email verified</span>
       </div>
     </div>
+    <div class="profile-dashboard" id="profile-dashboard">
+      <div class="profile-dashboard-title">
+        <span>Profile dashboard</span>
+        <button type="button" class="pd-refresh" id="pd-refresh-btn">Refresh</button>
+      </div>
+      <div id="profile-dashboard-body"><div class="pd-loading">Loading your dashboard…</div></div>
+    </div>
     <div class="profile-change-block" id="profile-change-block">
       <h4>Change password</h4>
       <div class="auth-field">
@@ -2761,6 +3741,16 @@ a { text-decoration: none; color: inherit; }
       <div id="profile-change-success" class="admin-add-success" role="status" style="display:none;margin-top:10px;"></div>
     </div>
     <p class="profile-admin-note" id="profile-admin-note" style="display:none;">Admin password is managed via <code>.env</code> only. Update <code>ADMIN_PASSWORD</code> and run <code>npm run admin:bootstrap</code>.</p>
+    <div class="profile-delete-block" id="profile-delete-block">
+      <h4>Delete account</h4>
+      <p class="profile-delete-warning">Permanently delete your IraGo account and free your email for a new signup. Booking records may be kept for compliance.</p>
+      <div class="auth-field">
+        <label>Confirm with your password</label>
+        <input id="profile-delete-password" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doDeleteAccount()">
+      </div>
+      <button type="button" id="profile-delete-submit" class="btn-profile-delete" onclick="doDeleteAccount()">Delete my account</button>
+      <div id="profile-delete-error" class="auth-error" role="alert"></div>
+    </div>
     <div class="profile-account-actions" style="margin-top:18px;">
       <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
     </div>
@@ -2874,23 +3864,31 @@ const demoLocations = {
 };
 
 // ── Auth ──
-// Session JWT lives in an HttpOnly cookie (set by the server). The client only
-// stores the public user profile in sessionStorage for display. All API calls
-// use credentials: 'include' so the cookie is sent automatically.
+// JWT is stored in an HttpOnly cookie (primary) and sessionStorage Bearer backup
+// so reload survives cookie quirks on localhost. User profile is cached for fast UI.
 const AUTH = {
   userKey: 'irago_user',
+  tokenKey: 'irago_token',
   get user() {
     try { return JSON.parse(sessionStorage.getItem(this.userKey) || 'null'); }
     catch (e) { return null; }
   },
-  save(user) {
+  get token() {
+    return sessionStorage.getItem(this.tokenKey) || '';
+  },
+  save(user, token) {
     sessionStorage.setItem(this.userKey, JSON.stringify(user));
+    if (token) sessionStorage.setItem(this.tokenKey, token);
   },
   clear() {
     sessionStorage.removeItem(this.userKey);
+    sessionStorage.removeItem(this.tokenKey);
   },
   headers() {
-    return { 'Content-Type': 'application/json' };
+    const h = { 'Content-Type': 'application/json' };
+    const t = this.token;
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
   },
   fetchOpts(opts = {}) {
     return { credentials: 'include', ...opts };
@@ -2925,7 +3923,7 @@ const SIGNUP_CONFIG = {
     verifyPath: '/api/auth/operator/verify-signup',
     loginPath: '/api/auth/operator/login',
     loginUrl: '/login/operator',
-    signupUrl: '/signup/operator',
+    signupUrl: '/login/operator',
     cardId: 'register-operator-card',
     errorId: 'register-operator-error',
     submitId: 'register-operator-submit',
@@ -2933,15 +3931,16 @@ const SIGNUP_CONFIG = {
     otpTitle: 'Verify operator account',
     loginTitle: 'Operator sign in',
     loginSub: 'Flight rider / pilot console — assigned missions and fleet trips.',
-    loginHint: 'New operator? Create your operator account below.',
-    registerBtn: 'Create operator account',
+    loginHint: 'Operator accounts are created by an admin only. Contact your administrator to be provisioned.',
+    // Public self-signup is closed — only admins create operator accounts.
+    signupDisabled: true,
   },
   admin: {
     loginPath: '/api/auth/admin/login',
     loginUrl: '/login/admin',
     loginTitle: 'Admin sign in',
     loginSub: 'Platform admin — team management and fleet oversight.',
-    loginHint: 'Admin accounts are created from .env only (ADMIN_USER + ADMIN_PASSWORD, then npm run admin:bootstrap). No signup or password reset.',
+    loginHint: 'Admin accounts are created by an admin only (the first admin via .env + npm run admin:bootstrap). No public signup.',
     loginOnly: true,
   },
 };
@@ -2973,11 +3972,12 @@ function applyPortalLabels(role) {
   const regRow = document.getElementById('login-register-row');
   const forgotRow = document.getElementById('login-forgot-row');
   const loginOnly = Boolean(cfg.loginOnly);
+  const signupDisabled = Boolean(cfg.signupDisabled);
   if (title) title.textContent = cfg.loginTitle;
   if (sub) sub.textContent = cfg.loginSub;
   if (hint) hint.textContent = cfg.loginHint;
   if (regBtn && cfg.registerBtn) regBtn.textContent = cfg.registerBtn;
-  if (regRow) regRow.style.display = loginOnly ? 'none' : '';
+  if (regRow) regRow.style.display = loginOnly || signupDisabled ? 'none' : '';
   if (forgotRow) forgotRow.style.display = loginOnly ? 'none' : '';
   document.title = cfg.loginTitle + ' — IraGo';
 }
@@ -2989,7 +3989,7 @@ function goToLoginPortal() {
 
 function goToSignupPortal() {
   const cfg = SIGNUP_CONFIG[authRole] || SIGNUP_CONFIG.passenger;
-  if (cfg.loginOnly) return;
+  if (cfg.loginOnly || cfg.signupDisabled) return;
   window.location.href = cfg.signupUrl;
 }
 
@@ -3000,10 +4000,17 @@ function initAuthPortal() {
     window.location.replace('/login/admin');
     return;
   }
+  // Operator self-signup is closed — redirect any /signup/operator to login.
+  if (portal.role === 'operator' && portal.mode === 'signup') {
+    window.location.replace('/login/operator');
+    return;
+  }
   applyPortalLabels(portal.role);
-  showView('login-view');
-  if (portal.mode === 'signup') showRoleRegister();
-  else showLoginCard();
+  if (!AUTH.user) {
+    showView('login-view');
+    if (portal.mode === 'signup') showRoleRegister();
+    else showLoginCard();
+  }
 }
 
 function setAuthRole(role) { applyPortalLabels(role); }
@@ -3080,6 +4087,13 @@ function showLoginCard() {
   applyPortalLabels(authRole || 'passenger');
   clearOtpTimers();
   hideLoginSuccess();
+}
+
+function authFetchErrorMessage(res) {
+  if (res && res.status === 404) {
+    return 'Wrong server — open http://localhost:3002/app.html (port 3000 is a different app). Run: npm run local:start';
+  }
+  return 'Could not reach the server. Run npm run local:start then open http://localhost:3002/app.html';
 }
 
 function showOtpCard(email, role, timing) {
@@ -3176,7 +4190,7 @@ function startOtpTimers(prefix, timing) {
   startResendTimer(prefix, t.resendCooldownSeconds);
 }
 
-// Shared fetch wrapper — sends the HttpOnly session cookie automatically.
+// Shared fetch wrapper — cookie + Bearer; logout only on real 401.
 async function apiFetch(path, opts = {}) {
   const res = await fetch(path, AUTH.fetchOpts({
     ...opts,
@@ -3185,9 +4199,7 @@ async function apiFetch(path, opts = {}) {
   if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
     AUTH.clear();
     showView('login-view');
-    const portal = authRole || 'passenger';
-    window.location.href = portal === 'passenger' ? '/app.html' : '/login/' + portal;
-    return res;
+    showLoginCard();
   }
   return res;
 }
@@ -3266,7 +4278,7 @@ async function doLogin() {
       }
       return showAuthError('login-error', data.error || 'Invalid email or password.');
     }
-    onAuthSuccess(data.user);
+    onAuthSuccess(data.user, data.token);
   } catch (e) {
     showAuthError('login-error', 'Could not reach the server. Please try again.');
   } finally {
@@ -3276,7 +4288,7 @@ async function doLogin() {
 
 async function doRoleSignup(role) {
   const cfg = SIGNUP_CONFIG[role];
-  if (!cfg || cfg.loginOnly) return;
+  if (!cfg || cfg.loginOnly || cfg.signupDisabled) return;
   const name = document.getElementById('register-' + role + '-name').value.trim();
   const email = document.getElementById('register-' + role + '-email').value.trim();
   const password = document.getElementById('register-' + role + '-password').value;
@@ -3297,6 +4309,9 @@ async function doRoleSignup(role) {
     }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 404) {
+        return showAuthError(cfg.errorId, authFetchErrorMessage(res));
+      }
       const msg = data.retryAfterSeconds
         ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
         : (data.error || 'Could not start registration.');
@@ -3304,7 +4319,7 @@ async function doRoleSignup(role) {
     }
     showOtpCard(data.email || email, role, data);
   } catch (e) {
-    showAuthError(cfg.errorId, 'Could not reach the server. Please try again.');
+    showAuthError(cfg.errorId, authFetchErrorMessage());
   } finally {
     setBusy(cfg.submitId, false, 'Sending…', 'Send OTP');
   }
@@ -3328,7 +4343,7 @@ async function doVerifySignup() {
     if (!res.ok) {
       return showAuthError('otp-error', data.error || 'Invalid or expired code.');
     }
-    onAuthSuccess(data.user);
+    onAuthSuccess(data.user, data.token);
   } catch (e) {
     showAuthError('otp-error', 'Could not reach the server. Please try again.');
   } finally {
@@ -3351,6 +4366,9 @@ async function doForgotPassword() {
     }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 404) {
+        return showAuthError('forgot-error', authFetchErrorMessage(res));
+      }
       const msg = data.retryAfterSeconds
         ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
         : (data.error || 'Could not send reset code.');
@@ -3360,7 +4378,7 @@ async function doForgotPassword() {
     hideAuthError('forgot-error');
     document.getElementById('forgot-email').value = '';
   } catch (e) {
-    showAuthError('forgot-error', 'Could not reach the server. Please try again.');
+    showAuthError('forgot-error', authFetchErrorMessage());
   } finally {
     setBusy('forgot-submit', false, 'Sending…', 'Send OTP');
   }
@@ -3424,11 +4442,71 @@ async function resendOtp(forcedPurpose) {
   }
 }
 
-// Persist the session profile and route to the role-appropriate dashboard.
-function onAuthSuccess(user) {
-  AUTH.save(user);
+// Persist the session profile + JWT backup, then route to the role dashboard.
+function onAuthSuccess(user, token) {
+  AUTH.save(user, token);
   syncProfileUI(user);
+  // Admin-provisioned accounts must choose their own password on first login
+  // before they can use the app.
+  if (user && user.mustResetPassword) {
+    showForcedResetOverlay(user);
+    return;
+  }
   routeForRole(user);
+}
+
+function showForcedResetOverlay(user) {
+  const emailEl = document.getElementById('must-reset-email');
+  if (emailEl) emailEl.textContent = user ? (user.email || '') : '';
+  const err = document.getElementById('must-reset-error');
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+  document.getElementById('must-reset-current').value = '';
+  document.getElementById('must-reset-new').value = '';
+  document.getElementById('must-reset-overlay').classList.add('active');
+}
+
+async function doForcedReset() {
+  const user = AUTH.user;
+  if (!user) return;
+  const currentPassword = document.getElementById('must-reset-current').value;
+  const newPassword = document.getElementById('must-reset-new').value;
+  const err = document.getElementById('must-reset-error');
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+  if (!currentPassword || !newPassword) {
+    return showAuthError('must-reset-error', 'Enter your temporary password and a new password.');
+  }
+  if (newPassword.length < 6) {
+    return showAuthError('must-reset-error', 'New password must be at least 6 characters.');
+  }
+  setBusy('must-reset-submit', true, 'Updating…', 'Update & continue');
+  try {
+    const res = await fetch('/api/auth/change-password', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('must-reset-error', data.error || 'Could not update password.');
+    }
+    if (data.user) {
+      AUTH.save(data.user, AUTH.token);
+      syncProfileUI(data.user);
+    }
+    document.getElementById('must-reset-overlay').classList.remove('active');
+    routeForRole(data.user || user);
+  } catch (e) {
+    showAuthError('must-reset-error', 'Network error — please try again.');
+  } finally {
+    setBusy('must-reset-submit', false, 'Updating…', 'Update & continue');
+  }
+}
+
+function logoutForcedReset() {
+  AUTH.clear();
+  document.getElementById('must-reset-overlay').classList.remove('active');
+  showView('login-view');
+  showLoginCard();
 }
 
 // Customers land on the booking view; operators on the pilot console (US-008);
@@ -3442,29 +4520,100 @@ function routeForRole(user) {
       const adminWelcome = document.getElementById('admin-welcome');
       if (adminWelcome) adminWelcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Admin');
       showView('admin-view');
-      loadAdminUsers();
+      showAdminSection('dashboard');
       break;
     }
     case 'operator': {
       const welcome = document.getElementById('op-welcome');
       if (welcome) welcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Pilot');
+      flightZoneFetchCache.clear();
       showView('operator-view');
       closeTripDetails();
       loadOperatorTrips();
+      initOpSelfMap();
+      setTimeout(function () { if (opSelfMap) opSelfMap.invalidateSize(); }, 400);
+      startOperatorGpsHeartbeat();
+      connectOperatorDispatchStream();
+      connectOperatorWebSocket();
       break;
     }
     case 'customer':
     default: {
       showView('booking-view');
       initMap();
+      startNearbyTaxisPoll();
+      // Auto-request GPS for pickup after map renders (non-blocking, silent on denial)
+      setTimeout(function () {
+        if (!pickupCoord && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async function (pos) {
+              if (pickupCoord) return;
+              const lat = pos.coords.latitude, lng = pos.coords.longitude;
+              let name = 'My Location';
+              try {
+                const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng, { headers: { 'Accept-Language': 'en' } });
+                const d = await r.json();
+                if (d && d.display_name) {
+                  const a = d.address || {};
+                  name = a.suburb || a.neighbourhood || a.village || a.town || a.city || d.display_name.split(',')[0];
+                  name = (name + ', ' + (a.city || a.town || a.county || '')).trim().replace(/,\s*$/, '');
+                }
+              } catch (e) {}
+              if (!pickupCoord) { setPickup([lat, lng], name); map.setView([lat, lng], 14); }
+            },
+            function () { /* silently ignore if user denies */ },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+          );
+        }
+      }, 800);
       break;
     }
   }
 }
 
-// ── Admin: user management (US-005 renders the list, US-006 the add form) ──
-// Users cached so US-006 can refresh the list after adding a member.
+// ── Admin: paginated user management (6 per fetch, 50 per page) ──
+const ADMIN_PAGE_SIZE = 50;
+const ADMIN_FETCH_SIZE = 6;
+let adminUserTab = 'customer';
+let adminUserPage = 0;
 let adminUsers = [];
+let adminUsersTotal = 0;
+let adminUsersLoading = false;
+let adminUsersLoaded = false;
+let adminLiveInited = false;
+let adminCurrentSection = 'dashboard';
+let adminUserDrawerUser = null;
+
+// Flight zones for map overlays
+let adminZoneMap = null;
+let adminZoneLayers = [];
+let adminLiveMap = null;
+let adminLivePollInterval = null;
+let operatorZoneLayers = [];
+let bookingZoneLayers = [];
+let flightZoneFetchCache = new Map();
+let mapZoneRefreshTimers = new WeakMap();
+let nearbyTaxiMarkers = [];
+let nearbyTaxisPollInterval = null;
+let demoTaxiMeta = [];
+let opSelfMap = null;
+let opSelfMarker = null;
+let operatorWs = null;
+let demoTaxiAnimInterval = null;
+let animatedMarkers = new Map();
+let markerAnimFrameId = null;
+let operatorGpsInterval = null;
+let operatorDispatchSource = null;
+let activeDispatchOffer = null;
+let dispatchCountdownTimer = null;
+
+const ZONE_STYLES = {
+  flight_corridor: { color: '#1D4ED8', fillColor: '#3B82F6', fillOpacity: 0.32, weight: 3, dashArray: '12 8' },
+  restricted: { color: '#B45309', fillColor: '#F59E0B', fillOpacity: 0.55, weight: 4 },
+  no_fly: { color: '#B91C1C', fillColor: '#EF4444', fillOpacity: 0.62, weight: 4 },
+};
+
+const ZONE_DRAW_ORDER = { flight_corridor: 0, restricted: 1, no_fly: 2 };
 
 // Role -> { label, cls } for the role badge. Visually distinct per role,
 // reusing the op-status-badge + op-badge--* styling (purple=admin from the
@@ -3512,10 +4661,158 @@ function syncProfileUI(user) {
   });
 
   const changeBlock = document.getElementById('profile-change-block');
+  const deleteBlock = document.getElementById('profile-delete-block');
   const adminNote = document.getElementById('profile-admin-note');
   const isAdmin = user.role === 'admin';
   if (changeBlock) changeBlock.style.display = isAdmin ? 'none' : '';
+  if (deleteBlock) deleteBlock.style.display = isAdmin ? 'none' : '';
   if (adminNote) adminNote.style.display = isAdmin ? '' : 'none';
+}
+
+// ── Profile dashboard (total overview) ────────────────────────────────
+// Pulls role-scoped aggregates from /api/me/stats and renders stat cards +
+// a service/status breakdown + recent trips inside the profile modal.
+const INR = function (n) {
+  return '\u20B9' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+};
+const KM = function (n) {
+  const v = Number(n) || 0;
+  return (Math.round(v * 10) / 10).toLocaleString('en-IN') + ' km';
+};
+const CO2 = function (n) {
+  const v = Number(n) || 0;
+  return (Math.round(v * 10) / 10).toLocaleString('en-IN') + ' kg';
+};
+
+function pdStat(emoji, value, label, variant) {
+  const cls = 'pd-stat' + (variant ? ' pd-stat--' + variant : '');
+  return (
+    '<div class="' + cls + '">' +
+      '<div class="pd-stat-emoji">' + emoji + '</div>' +
+      '<div class="pd-stat-value">' + value + '</div>' +
+      '<div class="pd-stat-label">' + escapeHtml(label) + '</div>' +
+    '</div>'
+  );
+}
+
+function pdBreakdown(title, map, totalLabel) {
+  const keys = Object.keys(map);
+  if (!keys.length) return '';
+  const max = Math.max.apply(null, keys.map(function (k) { return map[k]; })) || 1;
+  const rows = keys.map(function (k) {
+    const v = map[k];
+    const pct = Math.max((v / max) * 100, 4);
+    return (
+      '<div class="pd-bar-row">' +
+        '<span class="pd-bar-label">' + escapeHtml(k) + '</span>' +
+        '<span class="pd-bar-track"><span class="pd-bar-fill" style="width:' + pct + '%"></span></span>' +
+        '<span class="pd-bar-val">' + v + '</span>' +
+      '</div>'
+    );
+  }).join('');
+  return (
+    '<div class="pd-breakdown-card"><h5>' + escapeHtml(title) + '</h5>' + rows + '</div>'
+  );
+}
+
+function pdRecent(recent) {
+  if (!recent || !recent.length) {
+    return '<div class="pd-recent"><h5>Recent trips</h5><div class="pd-recent-empty">No trips yet — your first booking will appear here.</div></div>';
+  }
+  const rows = recent.map(function (r) {
+    const statusCls = 'pd-status--' + (r.status || '').replace(/_/g, '');
+    return (
+      '<div class="pd-recent-row">' +
+        '<div class="pd-recent-route">' + escapeHtml(r.route) + '</div>' +
+        '<div class="pd-recent-meta">' +
+          '<span class="pd-status ' + statusCls + '">' + escapeHtml(r.status || '—') + '</span>' +
+          '<span>' + escapeHtml(r.service || '') + '</span>' +
+          (r.distanceKm != null ? '<span>' + KM(r.distanceKm) + '</span>' : '') +
+          (r.fareEstimate != null ? '<span>' + INR(r.fareEstimate) + '</span>' : '') +
+          (r.carbonSavedKg ? '<span>CO\u2082 ' + CO2(r.carbonSavedKg) + '</span>' : '') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+  return '<div class="pd-recent"><h5>Recent trips</h5>' + rows + '</div>';
+}
+
+function renderProfileDashboard(stats) {
+  const body = document.getElementById('profile-dashboard-body');
+  if (!body) return;
+  body.innerHTML = statsDashboardHtml(stats);
+}
+
+// Reusable: returns the dashboard HTML string for a stats payload. Used both by
+// the self profile modal and the admin user-detail drawer.
+function statsDashboardHtml(stats) {
+  if (!stats) return '<div class="pd-error">Could not load dashboard.</div>';
+  if (stats.scope === 'admin') {
+    const t = stats.totals || {};
+    html =
+      '<div class="profile-stats-grid">' +
+        pdStat('\uD83D\uDC65', t.totalUsers || 0, 'Total users') +
+        pdStat('\u2708\uFE0F', t.totalBookings || 0, 'Total bookings') +
+        pdStat('\uD83D\uDEE9\uFE0F', t.live || 0, 'Live flights', 'amber') +
+        pdStat('\u2705', t.completed || 0, 'Completed', 'green') +
+        pdStat('\uD83D\uDCB0', INR(t.revenueINR), 'Revenue') +
+        pdStat('\uD83C\uDF31', CO2(t.carbonSavedKg), 'CO\u2082 saved', 'green') +
+        pdStat('\uD83D\uDEEB', t.availableAircraft || 0, 'Aircraft available') +
+        pdStat('\uD83D\uDCC5', t.cancelled || 0, 'Cancelled', 'red') +
+        pdStat('\uD83D\uDCCF', KM(t.distanceKm), 'Distance flown') +
+      '</div>' +
+      (t.users ? '<div class="pd-breakdown">' + pdBreakdown('Users by role', t.users) + '</div>' : '');
+  } else if (stats.scope === 'operator') {
+    const t = stats.totals || {};
+    html =
+      '<div class="profile-stats-grid">' +
+        pdStat('\u2708\uFE0F', t.assigned || 0, 'Missions assigned') +
+        pdStat('\u2705', t.completed || 0, 'Completed', 'green') +
+        pdStat('\uD83D\uDD7A\uFE0F', t.inProgress || 0, 'In progress', 'amber') +
+        pdStat('\uD83D\uDCCF', KM(t.distanceFlownKm), 'Distance flown') +
+        pdStat('\uD83D\uDCB0', INR(t.earningsINR), 'Earnings (60%)', 'green') +
+        pdStat('\uD83C\uDF31', CO2(t.carbonSavedKg), 'CO\u2082 saved', 'green') +
+      '</div>' +
+      '<div class="pd-breakdown">' +
+        (pdBreakdown('By service', stats.byService || {}) +
+         pdBreakdown('By status', stats.byStatus || {})) +
+      '</div>' +
+      pdRecent(stats.recent);
+  } else {
+    const t = stats.totals || {};
+    html =
+      '<div class="profile-stats-grid">' +
+        pdStat('\u2708\uFE0F', t.trips || 0, 'Total trips') +
+        pdStat('\u2705', t.completed || 0, 'Completed', 'green') +
+        pdStat('\uD83D\uDD7A\uFE0F', t.inProgress || 0, 'In progress', 'amber') +
+        pdStat('\uD83D\uDCCF', KM(t.distanceKm), 'Distance flown') +
+        pdStat('\uD83D\uDCB0', INR(t.spentINR), 'Total spent') +
+        pdStat('\uD83C\uDF31', CO2(t.carbonSavedKg), 'CO\u2082 saved', 'green') +
+      '</div>' +
+      '<div class="pd-breakdown">' +
+        (pdBreakdown('By service', stats.byService || {}) +
+         pdBreakdown('By status', stats.byStatus || {})) +
+      '</div>' +
+      pdRecent(stats.recent);
+  }
+  return html;
+}
+
+async function loadProfileDashboard() {
+  const body = document.getElementById('profile-dashboard-body');
+  if (!body) return;
+  body.innerHTML = '<div class="pd-loading">Loading your dashboard…</div>';
+  try {
+    const res = await apiFetch('/api/me/stats');
+    const data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.stats) {
+      renderProfileDashboard(data.stats);
+    } else {
+      renderProfileDashboard(null);
+    }
+  } catch (e) {
+    renderProfileDashboard(null);
+  }
 }
 
 function bindProfileActions() {
@@ -3550,7 +4847,7 @@ function bindProfileActions() {
 }
 
 function openProfileModal() {
-  const user = AUTH.user();
+  const user = AUTH.user;
   if (user) syncProfileUI(user);
   const modal = document.getElementById('profile-modal');
   if (!modal) return;
@@ -3559,11 +4856,20 @@ function openProfileModal() {
   if (success) { success.style.display = 'none'; success.textContent = ''; }
   const cur = document.getElementById('profile-current-password');
   const neu = document.getElementById('profile-new-password');
+  const del = document.getElementById('profile-delete-password');
   if (cur) cur.value = '';
   if (neu) neu.value = '';
+  if (del) del.value = '';
+  hideAuthError('profile-delete-error');
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+  const refresh = document.getElementById('pd-refresh-btn');
+  if (refresh && !refresh.dataset.pdBound) {
+    refresh.dataset.pdBound = '1';
+    refresh.addEventListener('click', loadProfileDashboard);
+  }
+  loadProfileDashboard();
 }
 
 function closeProfileModal() {
@@ -3575,7 +4881,7 @@ function closeProfileModal() {
 }
 
 async function doChangePassword() {
-  const user = AUTH.user();
+  const user = AUTH.user;
   if (!user || user.role === 'admin') return;
   const currentPassword = document.getElementById('profile-current-password').value;
   const newPassword = document.getElementById('profile-new-password').value;
@@ -3600,7 +4906,7 @@ async function doChangePassword() {
       return showAuthError('profile-change-error', data.error || 'Could not update password.');
     }
     if (data.user) {
-      AUTH.save(data.user);
+      AUTH.save(data.user, AUTH.token);
       syncProfileUI(data.user);
     }
     document.getElementById('profile-current-password').value = '';
@@ -3613,6 +4919,38 @@ async function doChangePassword() {
     showAuthError('profile-change-error', 'Could not reach the server.');
   } finally {
     setBusy('profile-change-submit', false, 'Updating…', 'Update password');
+  }
+}
+
+async function doDeleteAccount() {
+  const user = AUTH.user;
+  if (!user || user.role === 'admin') return;
+  const password = document.getElementById('profile-delete-password').value;
+  hideAuthError('profile-delete-error');
+  if (!password) {
+    return showAuthError('profile-delete-error', 'Enter your password to confirm deletion.');
+  }
+  if (!window.confirm('Delete your IraGo account? This cannot be undone.')) return;
+  setBusy('profile-delete-submit', true, 'Deleting…', 'Delete my account');
+  try {
+    const res = await fetch('/api/auth/delete-account', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('profile-delete-error', data.error || 'Could not delete account.');
+    }
+    closeProfileModal();
+    AUTH.clear();
+    showView('login-view');
+    const portal = loginUrlForRole(user.role);
+    window.location.href = portal + (portal.indexOf('?') >= 0 ? '&' : '?') + 'deleted=1';
+  } catch (e) {
+    showAuthError('profile-delete-error', 'Could not reach the server.');
+  } finally {
+    setBusy('profile-delete-submit', false, 'Deleting…', 'Delete my account');
   }
 }
 
@@ -3631,72 +4969,390 @@ function roleBadgeHtml(role) {
   return '<span class="op-status-badge ' + b.cls + '">' + escapeHtml(b.label) + '</span>';
 }
 
-// Fetch all users (admin only) and render the list, with loading/empty/error states.
-async function loadAdminUsers() {
-  const host = document.getElementById('admin-users');
+// --- Admin drawer-based panel: section switching + user-detail drawer ---
+function showAdminSection(name) {
+  const section = document.getElementById('admin-section-' + name);
+  if (!section) return;
+  document.querySelectorAll('.admin-section').forEach(function (s) { s.hidden = true; });
+  section.hidden = false;
+  document.querySelectorAll('.admin-nav-item').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-admin-section') === name);
+  });
+  adminCurrentSection = name;
+  // Collapse the rail on mobile after picking a section.
+  const drawer = document.getElementById('admin-drawer');
+  if (drawer && window.innerWidth <= 900) drawer.classList.remove('open');
+
+  // Stop the live-flights poll when leaving the live section (saves compute).
+  if (name !== 'live' && adminLivePollInterval) {
+    clearInterval(adminLivePollInterval);
+    adminLivePollInterval = null;
+  }
+
+  if (name === 'users' && !adminUsersLoaded) {
+    adminUsersLoaded = true;
+    loadAdminUsers();
+  }
+  if (name === 'live') {
+    initAdminLiveFlights();
+    setTimeout(function () { if (adminLiveMap) adminLiveMap.invalidateSize(); }, 250);
+  }
+  if (name === 'dashboard') {
+    loadAdminPlatformStats();
+  }
+}
+
+function toggleAdminDrawer() {
+  const drawer = document.getElementById('admin-drawer');
+  if (drawer) drawer.classList.toggle('open');
+}
+
+async function loadAdminPlatformStats() {
+  const host = document.getElementById('admin-platform-stats');
   if (!host) return;
-  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
+  host.innerHTML = '<div class="pd-loading">Loading platform stats…</div>';
   try {
-    const res = await apiFetch('/api/admin/users');
-    const data = await res.json().catch(() => ({}));
+    const res = await apiFetch('/api/me/stats');
+    const data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.stats) {
+      host.innerHTML = statsDashboardHtml(data.stats);
+    } else {
+      host.innerHTML = '<div class="pd-error">Could not load platform stats.</div>';
+    }
+  } catch (e) {
+    host.innerHTML = '<div class="pd-error">Could not reach the server.</div>';
+  }
+}
+
+function adminRoleLabel(role) {
+  if (role === 'operator') return 'Operator';
+  if (role === 'admin') return 'Admin';
+  return 'Passenger';
+}
+
+function openAdminUserDrawer(userId) {
+  const drawer = document.getElementById('admin-user-drawer');
+  if (!drawer) return;
+  drawer.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('admin-drawer-open');
+  loadAdminUserDetail(userId);
+}
+
+function closeAdminUserDrawer() {
+  const drawer = document.getElementById('admin-user-drawer');
+  if (!drawer) return;
+  drawer.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('admin-drawer-open');
+  adminUserDrawerUser = null;
+}
+
+async function loadAdminUserDetail(userId) {
+  const body = document.getElementById('admin-user-drawer-body');
+  const actionsHost = document.getElementById('admin-ud-actions');
+  const avatarEl = document.getElementById('admin-ud-avatar');
+  const nameEl = document.getElementById('admin-ud-name');
+  const emailEl = document.getElementById('admin-ud-email');
+  const tagsEl = document.getElementById('admin-ud-tags');
+  if (body) body.innerHTML = '<div class="pd-loading">Loading user…</div>';
+  if (actionsHost) actionsHost.innerHTML = '';
+  if (avatarEl) avatarEl.textContent = '?';
+  if (nameEl) nameEl.textContent = '—';
+  if (emailEl) emailEl.textContent = '—';
+  if (tagsEl) tagsEl.innerHTML = '';
+
+  try {
+    const [profileRes, statsRes] = await Promise.all([
+      apiFetch('/api/admin/users/' + userId),
+      apiFetch('/api/admin/users/' + userId + '/stats'),
+    ]);
+    const profile = await profileRes.json().catch(function () { return {}; });
+    if (!profileRes.ok || !profile.user) {
+      if (body) body.innerHTML = '<div class="pd-error">' + escapeHtml(profile.error || 'Could not load user.') + '</div>';
+      return;
+    }
+    const u = profile.user;
+    adminUserDrawerUser = u;
+    const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl) nameEl.textContent = u.name || '—';
+    if (emailEl) emailEl.textContent = u.email || '';
+    const tags = [];
+    tags.push(roleBadgeHtml(u.role));
+    if (u.banned) tags.push('<span class="op-status-badge op-badge--red">Banned</span>');
+    if (u.mustResetPassword) tags.push('<span class="op-status-badge op-badge--amber">Must reset password</span>');
+    if (u.emailVerified) tags.push('<span class="op-status-badge op-badge--green">Email verified</span>');
+    if (u.gps) tags.push('<span class="op-status-badge op-badge--blue">GPS live</span>');
+    if (tagsEl) tagsEl.innerHTML = tags.join(' ');
+
+    // Action buttons (mirror the row actions; not shown for env-bootstrap admins).
+    if (actionsHost) {
+      if (u.role === 'admin' && !u.mustResetPassword) {
+        actionsHost.innerHTML = '<span class="admin-user-note">Env-bootstrap admin — managed via .env</span>';
+      } else {
+        const btns = [];
+        btns.push('<button type="button" class="admin-btn-sm primary" onclick="adminResetPassword(' + u.id + ')">Reset password</button>');
+        if (u.role !== 'admin') {
+          btns.push('<button type="button" class="admin-btn-sm" onclick="adminSendResetOtp(' + u.id + ')">Email OTP</button>');
+          btns.push('<button type="button" class="admin-btn-sm" onclick="adminBanUser(' + u.id + ',' + (!u.banned) + ')">' + (u.banned ? 'Unban' : 'Ban') + '</button>');
+          btns.push('<button type="button" class="admin-btn-sm danger" onclick="adminDeleteUser(' + u.id + ')">Delete</button>');
+        }
+        actionsHost.innerHTML = '<div class="admin-user-actions">' + btns.join('') + '</div>';
+      }
+    }
+
+    const stats = await statsRes.json().catch(function () { return {}; });
+    if (body) {
+      let html = statsDashboardHtml(statsRes.ok && stats.stats ? stats.stats : null);
+      if (u.gps) {
+        html =
+          '<div class="admin-ud-gps">Last GPS: ' +
+          Number(u.gps.lat).toFixed(4) + ', ' + Number(u.gps.lng).toFixed(4) +
+          (u.gps.updatedAt ? ' · ' + escapeHtml(String(u.gps.updatedAt)) : '') +
+          '</div>' + html;
+      }
+      body.innerHTML = html;
+    }
+  } catch (e) {
+    if (body) body.innerHTML = '<div class="pd-error">Could not reach the server.</div>';
+  }
+}
+
+// Fetch users in chunks of 6 (up to 50 per page tab).
+async function loadAdminUsers() {
+  adminUserTab = adminUserTab || 'customer';
+  adminUserPage = 0;
+  adminUsers = [];
+  adminUsersTotal = 0;
+  await loadAdminUsersChunk(true);
+}
+
+function switchAdminUserTab(tab) {
+  if (tab !== 'customer' && tab !== 'operator') return;
+  adminUserTab = tab;
+  adminUserPage = 0;
+  adminUsers = [];
+  adminUsersTotal = 0;
+  document.querySelectorAll('.admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.id === 'admin-tab-' + tab);
+  });
+  loadAdminUsersChunk(true);
+}
+
+function adminPageCount() {
+  return Math.max(1, Math.ceil(adminUsersTotal / ADMIN_PAGE_SIZE));
+}
+
+function adminPageStartOffset() {
+  return adminUserPage * ADMIN_PAGE_SIZE;
+}
+
+function adminPageCanLoadMore() {
+  const pageStart = adminPageStartOffset();
+  const pageCap = pageStart + ADMIN_PAGE_SIZE;
+  const nextFetch = pageStart + adminUsers.length;
+  return nextFetch < pageCap && nextFetch < adminUsersTotal;
+}
+
+async function loadAdminUsersChunk(showInitialLoading) {
+  const listHost = document.getElementById('admin-users-list');
+  if (!listHost || adminUsersLoading) return;
+
+  if (showInitialLoading && adminUsers.length === 0) {
+    listHost.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
+  }
+
+  const fetchOffset = adminPageStartOffset() + adminUsers.length;
+  if (adminUsers.length >= ADMIN_PAGE_SIZE) {
+    renderAdminUsers();
+    return;
+  }
+  if (adminUsersTotal > 0 && fetchOffset >= adminUsersTotal) {
+    renderAdminUsers();
+    return;
+  }
+  if (adminUsersTotal > 0 && fetchOffset >= adminPageStartOffset() + ADMIN_PAGE_SIZE) {
+    renderAdminUsers();
+    return;
+  }
+
+  adminUsersLoading = true;
+  try {
+    const res = await apiFetch(
+      '/api/admin/users?role=' + encodeURIComponent(adminUserTab) +
+      '&limit=' + ADMIN_FETCH_SIZE + '&offset=' + fetchOffset
+    );
+    const data = await res.json().catch(function () { return {}; });
     if (res.status === 403 && data.code === 'TAILSCALE_REQUIRED') {
       adminUsers = [];
-      host.innerHTML =
+      adminUsersTotal = 0;
+      listHost.innerHTML =
         '<div class="op-empty">' +
         '<div class="op-empty-icon">🔒</div>' +
         '<div class="op-empty-title">Tailscale required</div>' +
         '<div class="op-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
         '</div>';
+      document.getElementById('admin-users-pager').innerHTML = '';
+      document.getElementById('admin-users-meta').textContent = '';
       return;
     }
     if (!res.ok) throw new Error('load failed');
-    adminUsers = Array.isArray(data.users) ? data.users : [];
+    const batch = Array.isArray(data.users) ? data.users : [];
+    adminUsers = adminUsers.concat(batch);
+    adminUsersTotal = typeof data.total === 'number' ? data.total : adminUsers.length;
   } catch (e) {
     adminUsers = [];
-    host.innerHTML = '<div class="op-empty"><div class="op-empty-title">Could not load users</div>' +
+    adminUsersTotal = 0;
+    listHost.innerHTML =
+      '<div class="op-empty"><div class="op-empty-title">Could not load users</div>' +
       '<div class="op-empty-sub">Please try again in a moment.</div></div>';
+    document.getElementById('admin-users-pager').innerHTML = '';
     return;
+  } finally {
+    adminUsersLoading = false;
   }
   renderAdminUsers();
 }
 
+function adminUsersPrevPage() {
+  if (adminUserPage <= 0) return;
+  adminUserPage--;
+  adminUsers = [];
+  loadAdminUsersChunk(true);
+}
+
+function adminUsersNextPage() {
+  if (adminUserPage >= adminPageCount() - 1) return;
+  adminUserPage++;
+  adminUsers = [];
+  loadAdminUsersChunk(true);
+}
+
 function renderAdminUsers() {
-  const host = document.getElementById('admin-users');
-  if (!host) return;
+  const listHost = document.getElementById('admin-users-list');
+  const metaHost = document.getElementById('admin-users-meta');
+  const pagerHost = document.getElementById('admin-users-pager');
+  if (!listHost) return;
+
+  const pageStart = adminPageStartOffset();
+  const showingEnd = Math.min(pageStart + adminUsers.length, adminUsersTotal);
+
+  if (metaHost) {
+    metaHost.textContent = adminUsersTotal
+      ? 'Showing ' + (adminUsers.length ? (pageStart + 1) : 0) + '–' + showingEnd + ' of ' + adminUsersTotal +
+        ' · Page ' + (adminUserPage + 1) + ' of ' + adminPageCount() + ' · loads 6 at a time'
+      : '';
+  }
+
   if (!adminUsers.length) {
-    host.innerHTML =
+    listHost.innerHTML =
       '<div class="op-empty">' +
       '<div class="op-empty-icon">👥</div>' +
-      '<div class="op-empty-title">No users yet</div>' +
-      '<div class="op-empty-sub">Team members you add will appear here.</div>' +
+      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' yet</div>' +
+      '<div class="op-empty-sub">Accounts will appear here when they register or are added.</div>' +
       '</div>';
-    return;
-  }
-  host.innerHTML = adminUsers.map(function (u) {
-    const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
-    const actions =
-      u.role === 'admin'
-        ? '<span class="admin-user-note">Password via .env bootstrap</span>'
-        : '<div class="admin-user-actions">' +
-          '<button type="button" class="admin-btn-sm primary" data-user-id="' + u.id + '" onclick="adminResetPassword(' + u.id + ')">Reset password</button>' +
-          '<button type="button" class="admin-btn-sm" data-user-id="' + u.id + '" onclick="adminSendResetOtp(' + u.id + ')">Email OTP</button>' +
+  } else {
+    listHost.innerHTML = adminUsers.map(function (u) {
+      const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
+      const bannedBadge = u.banned
+        ? ' <span class="op-status-badge op-badge--red">Banned</span>'
+        : '';
+      let actions;
+      if (u.role === 'admin') {
+        actions = '<span class="admin-user-note">Password via .env bootstrap</span>';
+      } else {
+        actions =
+          '<div class="admin-user-actions">' +
+          '<button type="button" class="admin-btn-sm primary" onclick="event.stopPropagation();adminResetPassword(' + u.id + ')">Reset password</button>' +
+          '<button type="button" class="admin-btn-sm" onclick="event.stopPropagation();adminSendResetOtp(' + u.id + ')">Email OTP</button>' +
+          '<button type="button" class="admin-btn-sm" onclick="event.stopPropagation();adminBanUser(' + u.id + ',' + (!u.banned) + ')">' +
+            (u.banned ? 'Unban' : 'Ban') + '</button>' +
+          '<button type="button" class="admin-btn-sm danger" onclick="event.stopPropagation();adminDeleteUser(' + u.id + ')">Delete</button>' +
           '</div>';
-    return (
-      '<div class="admin-user-card">' +
-        '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
-        '<div class="admin-user-main">' +
-          '<div class="admin-user-name">' + escapeHtml(u.name || '—') + '</div>' +
-          '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
-        '</div>' +
-        roleBadgeHtml(u.role) +
-        actions +
-      '</div>'
-    );
-  }).join('');
+      }
+      const chevron = '<span class="admin-user-chevron" aria-hidden="true">›</span>';
+      return (
+        '<div class="admin-user-card" role="button" tabindex="0" onclick="openAdminUserDrawer(' + u.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openAdminUserDrawer(' + u.id + ')}">' +
+          '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
+          '<div class="admin-user-main">' +
+            '<div class="admin-user-name">' + escapeHtml(u.name || '—') + bannedBadge + '</div>' +
+            '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
+          '</div>' +
+          roleBadgeHtml(u.role) +
+          actions +
+          chevron +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  if (pagerHost) {
+    const loadMore = adminPageCanLoadMore();
+    pagerHost.innerHTML =
+      '<div class="admin-pager-btns">' +
+        '<button type="button" class="admin-load-more" onclick="adminUsersPrevPage()" ' +
+          (adminUserPage <= 0 ? 'disabled' : '') + '>← Prev page</button>' +
+        '<button type="button" class="admin-load-more" onclick="adminUsersNextPage()" ' +
+          (adminUserPage >= adminPageCount() - 1 ? 'disabled' : '') + '>Next page →</button>' +
+      '</div>' +
+      (loadMore
+        ? '<button type="button" class="admin-load-more" onclick="loadAdminUsersChunk(false)">Load 6 more on this page</button>'
+        : '<span class="admin-users-meta" style="margin:0;">All loaded for this page</span>');
+  }
+}
+
+function adminFindUser(userId) {
+  return adminUsers.find(function (u) { return u.id === userId; })
+    || (adminUserDrawerUser && adminUserDrawerUser.id === userId ? adminUserDrawerUser : null);
+}
+
+async function adminBanUser(userId, banned) {
+  const user = adminFindUser(userId);
+  const label = banned ? 'Ban' : 'Unban';
+  if (!window.confirm(label + ' ' + (user ? user.email : 'this user') + '?')) return;
+  try {
+    const res = await apiFetch('/api/admin/users/' + userId + '/ban', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ banned: !!banned })
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      alert(data.error || 'Could not update ban status.');
+      return;
+    }
+    showAddSuccess(data.message || 'Updated.');
+    adminUsers = [];
+    await loadAdminUsersChunk(true);
+    if (adminUserDrawerUser && adminUserDrawerUser.id === userId) loadAdminUserDetail(userId);
+  } catch (e) {
+    alert('Could not reach the server.');
+  }
+}
+
+async function adminDeleteUser(userId) {
+  const user = adminFindUser(userId);
+  if (!window.confirm('Delete account for ' + (user ? user.email : 'this user') + '? This cannot be undone.')) return;
+  try {
+    const res = await apiFetch('/api/admin/users/' + userId, { method: 'DELETE' });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      alert(data.error || 'Could not delete account.');
+      return;
+    }
+    showAddSuccess(data.message || 'Account deleted.');
+    if (adminUserDrawerUser && adminUserDrawerUser.id === userId) closeAdminUserDrawer();
+    adminUsers = [];
+    adminUsersTotal = Math.max(0, adminUsersTotal - 1);
+    await loadAdminUsersChunk(true);
+  } catch (e) {
+    alert('Could not reach the server.');
+  }
 }
 
 async function adminResetPassword(userId) {
-  const user = adminUsers.find(function (u) { return u.id === userId; });
+  const user = adminFindUser(userId);
   const email = user ? user.email : 'this user';
   const newPassword = window.prompt('Set a new password for ' + email + ' (min 6 characters):');
   if (!newPassword) return;
@@ -3716,13 +5372,14 @@ async function adminResetPassword(userId) {
       return;
     }
     showAddSuccess(data.message || 'Password updated.');
+    if (adminUserDrawerUser && adminUserDrawerUser.id === userId) loadAdminUserDetail(userId);
   } catch (e) {
     alert('Could not reach the server.');
   }
 }
 
 async function adminSendResetOtp(userId) {
-  const user = adminUsers.find(function (u) { return u.id === userId; });
+  const user = adminFindUser(userId);
   const email = user ? user.email : '';
   try {
     const res = await apiFetch('/api/admin/users/' + userId + '/send-reset-otp', {
@@ -3771,8 +5428,8 @@ async function doAddUser() {
   if (password.length < 6) {
     return showAuthError('admin-add-error', 'Password must be at least 6 characters.');
   }
-  if (role !== 'operator') {
-    return showAuthError('admin-add-error', 'Only operators can be added here. Admins are created via .env bootstrap.');
+  if (role !== 'operator' && role !== 'admin') {
+    return showAuthError('admin-add-error', 'Role must be operator or admin.');
   }
   setBusy('admin-add-submit', true, 'Adding…', 'Add Team Member');
   try {
@@ -3795,7 +5452,10 @@ async function doAddUser() {
     document.getElementById('admin-add-role').value = 'operator';
     const added = data.user || {};
     const label = (ROLE_BADGE[added.role] || {}).label || added.role || role;
-    showAddSuccess((added.name || 'The new member') + ' was added as ' + label + '.');
+    showAddSuccess(
+      (added.name || 'The new member') + ' was added as ' + label +
+      '. Share the temp password — they must change it on first login.'
+    );
     await loadAdminUsers();
   } catch (e) {
     showAuthError('admin-add-error', 'Could not reach the server. Please try again.');
@@ -3817,6 +5477,7 @@ const STATUS_BADGE = {
   assigned:  { label: 'Assigned',  cls: 'op-badge--blue' },
   accepted:  { label: 'Accepted',  cls: 'op-badge--green' },
   rejected:  { label: 'Rejected',  cls: 'op-badge--red' },
+  dispatching: { label: 'Dispatching', cls: 'op-badge--amber' },
   enroute:   { label: 'En route',  cls: 'op-badge--amber' },
   picked_up: { label: 'Picked up', cls: 'op-badge--amber' },
   flying:    { label: 'Flying',    cls: 'op-badge--amber' },
@@ -3893,16 +5554,38 @@ function renderOperatorTrips() {
   }).join('');
 }
 
-// Open the details view for a cached trip.
-function openTripDetails(id) {
-  const t = operatorTrips.find(function (x) { return x.id === id; });
-  if (!t) return;
+function renderTripDetailsBody(t, fuelPlan) {
   const customer = t.customer || {};
   const service = SERVICE_LABELS[t.service] || t.service;
   const aircraft = t.aircraft ? (t.aircraft.name + ' · ' + t.aircraft.model) : 'Not yet assigned';
   const dist = (t.distanceKm != null ? Math.round(t.distanceKm * 10) / 10 : '—') + ' km';
+  let fuelBlock = '<div class="op-detail-divider"></div><div class="op-detail-block">' +
+    '<div class="op-detail-label">Fuel plan</div>' +
+    '<div class="op-detail-sub">Computing least-fuel route…</div></div>';
+  if (fuelPlan) {
+    if (!fuelPlan.feasible) {
+      fuelBlock =
+        '<div class="op-detail-divider"></div>' +
+        '<div class="op-detail-block">' +
+          '<div class="op-detail-label">Fuel plan</div>' +
+          '<div class="op-detail-value" style="color:#B91C1C">Route blocked</div>' +
+          '<div class="op-detail-sub">' + escapeHtml((fuelPlan.violations || []).join('; ') || 'Airspace restriction') + '</div>' +
+        '</div>';
+    } else {
+      fuelBlock =
+        '<div class="op-detail-divider"></div>' +
+        '<div class="op-detail-block">' +
+          '<div class="op-detail-label">Least-fuel plan</div>' +
+          '<div class="op-detail-value">' + fuelPlan.fuelKg + ' kg (' + fuelPlan.fuelLiters + ' L)</div>' +
+          '<div class="op-detail-sub">Cruise ' + fuelPlan.cruiseAltitudeM + ' m AGL' +
+            (fuelPlan.corridor ? ' · ' + escapeHtml(fuelPlan.corridor) : '') +
+            (fuelPlan.warnings && fuelPlan.warnings.length ? '<br>⚠ ' + escapeHtml(fuelPlan.warnings.join('; ')) : '') +
+          '</div>' +
+        '</div>';
+    }
+  }
 
-  document.getElementById('op-detail-body').innerHTML =
+  return (
     '<div class="op-detail-card">' +
       '<div class="op-detail-head">' +
         '<div class="op-detail-id">' + bookingRef(t.id) + '</div>' +
@@ -3936,6 +5619,7 @@ function openTripDetails(id) {
           '<div class="op-detail-label">Aircraft</div>' +
           '<div class="op-detail-value">' + escapeHtml(aircraft) + '</div>' +
         '</div>' +
+        fuelBlock +
         '<div class="op-detail-divider"></div>' +
         '<div>' +
           '<div class="op-detail-label">Customer</div>' +
@@ -3947,15 +5631,44 @@ function openTripDetails(id) {
         '</div>' +
       '</div>' +
       tripActionsHtml(t) +
-    '</div>';
-
-  document.getElementById('op-list-section').style.display = 'none';
-  document.getElementById('op-detail-section').style.display = 'block';
+    '</div>'
+  );
 }
 
-// Accept / reject controls (US-010). Only an assigned trip can be acted on;
-// once accepted or rejected the buttons disappear (the status badge tells the
-// story). #op-action-error surfaces a failed action inline.
+async function openTripDetails(id) {
+  const t = operatorTrips.find(function (x) { return x.id === id; });
+  if (!t) return;
+
+  document.getElementById('op-detail-body').innerHTML = renderTripDetailsBody(t, null);
+  document.getElementById('op-list-section').style.display = 'none';
+  document.getElementById('op-detail-section').style.display = 'block';
+
+  let fuelPlan = null;
+  try {
+    const res = await apiFetch('/api/route/fuel-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pickupLat: t.pickupLat,
+        pickupLng: t.pickupLng,
+        destLat: t.destLat,
+        destLng: t.destLng,
+        service: t.service
+      })
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (data.plan) fuelPlan = data.plan;
+  } catch (e) { /* fuel block stays loading/fallback */ }
+
+  if (operatorTrips.some(function (x) { return x.id === id; })) {
+    document.getElementById('op-detail-body').innerHTML = renderTripDetailsBody(t, fuelPlan);
+  }
+}
+
+// Accept / reject / progress controls. Only an assigned trip can be accepted
+// or rejected; once accepted, the pilot advances the ride through the Uber-style
+// lifecycle: en route → at pickup → take off → complete. #op-action-error
+// surfaces a failed action inline.
 function tripActionsHtml(t) {
   let html = '<div class="op-action-error" id="op-action-error"></div>';
   if (t.status === 'assigned') {
@@ -3964,9 +5677,31 @@ function tripActionsHtml(t) {
         '<button class="op-btn op-btn--reject" onclick="rejectTrip(' + t.id + ')">Reject</button>' +
         '<button class="op-btn op-btn--accept" onclick="acceptTrip(' + t.id + ')">Accept mission</button>' +
       '</div>';
+  } else if (t.status === 'accepted') {
+    html +=
+      '<div class="op-actions">' +
+        '<button class="op-btn op-btn--accept" onclick="advanceTrip(' + t.id + ', \'enroute\')">Start \u2192 Pickup</button>' +
+      '</div>';
+  } else if (t.status === 'enroute') {
+    html +=
+      '<div class="op-actions">' +
+        '<button class="op-btn op-btn--accept" onclick="advanceTrip(' + t.id + ', \'pickup\')">Mark arrived at pickup</button>' +
+      '</div>';
+  } else if (t.status === 'picked_up') {
+    html +=
+      '<div class="op-actions">' +
+        '<button class="op-btn op-btn--accept" onclick="advanceTrip(' + t.id + ', \'takeoff\')">Take off</button>' +
+      '</div>';
+  } else if (t.status === 'flying') {
+    html +=
+      '<div class="op-actions">' +
+        '<button class="op-btn op-btn--accept" onclick="advanceTrip(' + t.id + ', \'complete\')">Complete trip</button>' +
+      '</div>';
   }
   return html;
 }
+
+function advanceTrip(id, action) { return actOnTrip(id, action); }
 
 // POST an accept/reject action, then refresh the trip list from the server so
 // the customer tracking view and admin dashboard stay in sync with the change.
@@ -4008,6 +5743,284 @@ function closeTripDetails() {
   if (list) list.style.display = 'block';
 }
 
+// ── Operator GPS + dispatch SSE ──
+function playDispatchTing() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    o.connect(g);
+    g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    o.start();
+    o.stop(ctx.currentTime + 0.45);
+  } catch (e) { /* audio optional */ }
+}
+
+
+
+function reportOperatorLocation(lat, lng) {
+  apiFetch('/api/operator/location', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lat: lat, lng: lng })
+  }).catch(function () {});
+}
+
+function startOperatorGpsHeartbeat() {
+  if (operatorGpsInterval) clearInterval(operatorGpsInterval);
+  function tick() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        reportOperatorLocation(lat, lng);
+        updateOpSelfMap(lat, lng);
+      },
+      function () {},
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+    );
+  }
+  tick();
+  operatorGpsInterval = setInterval(tick, 5000);
+}
+
+function connectOperatorDispatchStream() {
+  if (operatorDispatchSource) {
+    operatorDispatchSource.close();
+    operatorDispatchSource = null;
+  }
+  if (typeof EventSource === 'undefined') return;
+  const es = new EventSource('/api/operator/dispatch/stream');
+  operatorDispatchSource = es;
+  es.addEventListener('dispatch_offer', function (ev) {
+    try {
+      const payload = JSON.parse(ev.data || '{}');
+      if (payload.playSound) playDispatchTing();
+      showDispatchOffer(payload);
+    } catch (e) { /* ignore */ }
+  });
+  es.addEventListener('dispatch_cancelled', function () {
+    hideDispatchOffer();
+  });
+  es.onerror = function () { /* browser reconnects */ };
+}
+
+// WebSocket companion channel (real-time duplex alongside SSE).
+function connectOperatorWebSocket() {
+  if (operatorWs && operatorWs.readyState === WebSocket.OPEN) return;
+  const user = AUTH.user;
+  if (!user || user.role !== 'operator') return;
+  const token = AUTH.token;
+  if (!token) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  // Auth is verified server-side via the JWT in ?token= — we no longer send a
+  // client-supplied operatorId (that let any socket impersonate any pilot).
+  const ws = new WebSocket(proto + '//' + location.host + '/ws/operator?token=' + encodeURIComponent(token));
+  operatorWs = ws;
+  ws.onmessage = function (ev) {
+    try {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'auth_denied') { /* server rejected the token */ return; }
+      if (msg.type === 'dispatch_offer') {
+        if (msg.playSound) playDispatchTing();
+        // Only show if SSE hasn't already shown it.
+        if (!activeDispatchOffer || activeDispatchOffer.offerId !== msg.offerId) {
+          showDispatchOffer(msg);
+        }
+      } else if (msg.type === 'dispatch_cancelled') {
+        hideDispatchOffer();
+      }
+    } catch (e) { /* ignore */ }
+  };
+  ws.onclose = function () {
+    // Auto-reconnect after 5s.
+    setTimeout(connectOperatorWebSocket, 5000);
+  };
+  ws.onerror = function () { /* errors handled via onclose */ };
+}
+
+async function initOpSelfMap() {
+  const el = document.getElementById('op-combined-map');
+  if (!el) return;
+  const zoneOpts = { showAltitude: true, altitudeHostId: 'operator-zone-altitude' };
+  if (!opSelfMap) {
+    opSelfMap = L.map('op-combined-map', { zoomControl: true, attributionControl: false })
+      .setView([22.5, 79.0], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
+    }).addTo(opSelfMap);
+    bindMapZoneLoader(opSelfMap, operatorZoneLayers, zoneOpts);
+    opSelfMap.whenReady(function () {
+      scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, zoneOpts, 80);
+    });
+  }
+  scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, zoneOpts, 300);
+  scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, zoneOpts, 1000);
+}
+
+function scheduleMapZoneRefresh(targetMap, layerStore, options, delayMs) {
+  setTimeout(function () {
+    if (!targetMap) return;
+    targetMap.invalidateSize();
+    refreshMapZones(targetMap, layerStore, options);
+  }, delayMs);
+}
+
+// Called after each GPS tick — moves the pilot marker on the combined map.
+function updateOpSelfMap(lat, lng) {
+  if (!opSelfMap) return;
+  const iconHtml = '<div style="font-size:26px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))">🛩️</div>';
+  if (!opSelfMarker) {
+    const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+    opSelfMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 })
+      .bindPopup('<b>Your location</b><br>Live GPS · every 5s')
+      .addTo(opSelfMap);
+    opSelfMap.setView([lat, lng], Math.max(opSelfMap.getZoom(), 12));
+    refreshMapZones(opSelfMap, operatorZoneLayers, {
+      showAltitude: true,
+      altitudeHostId: 'operator-zone-altitude',
+    });
+  } else {
+    opSelfMarker.setLatLng([lat, lng]);
+  }
+}
+
+function showDispatchOffer(payload) {
+  activeDispatchOffer = payload;
+  const b = payload.booking || {};
+  document.getElementById('dispatch-route').textContent =
+    (b.pickupName || 'Pickup') + ' → ' + (b.destName || 'Destination');
+  document.getElementById('dispatch-meta').innerHTML =
+    'Fare ' + fmtINR(b.fareEstimate) + ' · ' + (b.distanceKm != null ? b.distanceKm + ' km' : '—') +
+    '<br>You are ~' + (payload.operatorDistanceKm != null ? payload.operatorDistanceKm : '?') + ' km from pickup';
+  const secs = payload.expiresInSeconds || 30;
+  document.getElementById('dispatch-timer').textContent = 'Respond within ' + secs + 's';
+  document.getElementById('dispatch-overlay').classList.add('active');
+  if (dispatchCountdownTimer) clearInterval(dispatchCountdownTimer);
+  let left = secs;
+  dispatchCountdownTimer = setInterval(function () {
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(dispatchCountdownTimer);
+      dispatchCountdownTimer = null;
+      hideDispatchOffer();
+      return;
+    }
+    document.getElementById('dispatch-timer').textContent = 'Respond within ' + left + 's';
+  }, 1000);
+}
+
+function hideDispatchOffer() {
+  document.getElementById('dispatch-overlay').classList.remove('active');
+  activeDispatchOffer = null;
+  if (dispatchCountdownTimer) {
+    clearInterval(dispatchCountdownTimer);
+    dispatchCountdownTimer = null;
+  }
+}
+
+async function respondDispatchOffer(accept) {
+  if (!activeDispatchOffer || !activeDispatchOffer.offerId) return;
+  const id = activeDispatchOffer.offerId;
+  const path = '/api/operator/dispatch/offers/' + id + '/' + (accept ? 'accept' : 'reject');
+  document.getElementById('dispatch-accept-btn').disabled = true;
+  document.getElementById('dispatch-reject-btn').disabled = true;
+  try {
+    const res = await apiFetch(path, { method: 'POST' });
+    hideDispatchOffer();
+    if (accept && res.ok) {
+      const data = await res.json().catch(function () { return {}; });
+      await loadOperatorTrips();
+      // Open the newly-assigned trip so the pilot sees the progress controls.
+      if (data.booking && data.booking.id) openTripDetails(data.booking.id);
+    }
+  } catch (e) {
+    hideDispatchOffer();
+  } finally {
+    document.getElementById('dispatch-accept-btn').disabled = false;
+    document.getElementById('dispatch-reject-btn').disabled = false;
+  }
+}
+
+
+function startNearbyTaxisPoll() {
+  if (nearbyTaxisPollInterval) clearInterval(nearbyTaxisPollInterval);
+  nearbyTaxisPollInterval = setInterval(refreshNearbyTaxis, 5000);
+  refreshNearbyTaxis();
+}
+
+function stopNearbyTaxisPoll() {
+  if (nearbyTaxisPollInterval) { clearInterval(nearbyTaxisPollInterval); nearbyTaxisPollInterval = null; }
+  clearAnimatedMarkersByPrefix('real-', map);
+}
+
+async function refreshNearbyTaxis() {
+  if (!map || !pickupCoord) return;
+  if (pickupCoord && destCoord) {
+    if (!demoTaxiMeta.length) renderDemoTaxisOnMap();
+    if (!demoTaxiAnimInterval) startDemoTaxiDrift();
+  }
+  try {
+    const res = await apiFetch(
+      '/api/tracking/nearby?lat=' +
+        encodeURIComponent(pickupCoord[0]) +
+        '&lng=' +
+        encodeURIComponent(pickupCoord[1])
+    );
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) return;
+    clearAnimatedMarkersByPrefix('real-', map);
+    (data.taxis || []).forEach(function (t) {
+      setAnimatedMapMarker(
+        'real-' + t.operatorId,
+        map,
+        t.lat,
+        t.lng,
+        '<div class="nearby-taxi-marker" title="Live">✈️</div>',
+        '<b>' + escapeHtml(t.operatorName || 'Pilot') + '</b><br>' + escapeHtml(t.tripStatus || 'in transit') +
+          '<br>~' + t.distanceKm + ' km'
+      );
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function pollOperatorGpsForRide() {
+  if (!currentBooking || !currentBooking.id || !map) return;
+  try {
+    const res = await apiFetch('/api/tracking/my-ride/' + currentBooking.id);
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.operator || data.operator.lat == null) return;
+    trackOperatorGps = { lat: data.operator.lat, lng: data.operator.lng };
+    if (trackAircraft) {
+      map.removeLayer(trackAircraft);
+      const idx = aircraftMarkers.indexOf(trackAircraft);
+      if (idx >= 0) aircraftMarkers.splice(idx, 1);
+      trackAircraft = null;
+    }
+    setAnimatedMapMarker(
+      'track-operator',
+      map,
+      data.operator.lat,
+      data.operator.lng,
+      '<div class="marker-aircraft" style="font-size:28px;">&#9992;&#65039;</div>',
+      '<b>' + escapeHtml(data.operator.name || 'Your pilot') + '</b><br>Live GPS'
+    );
+    if (data.operator.distanceKm != null) {
+      document.getElementById('tracking-eta').textContent = Math.max(
+        1,
+        Math.round(data.operator.distanceKm * 3)
+      );
+    }
+  } catch (e) { /* ignore */ }
+}
+
 // Show one top-level .view and hide the rest.
 function showView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -4020,7 +6033,7 @@ function logout() {
   window.location.href = '/logout';
 }
 
-// On load, restore session from HttpOnly cookie via /api/me.
+// On load, restore session via /api/me (cookie + Bearer). Keeps dashboard on reload.
 async function restoreSession() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('logout') === '1') {
@@ -4032,21 +6045,39 @@ async function restoreSession() {
     }
     return;
   }
+
+  const cached = AUTH.user;
+  if (cached && cached.mustResetPassword) {
+    showForcedResetOverlay(cached);
+  } else if (cached) {
+    routeForRole(cached);
+  }
+
   try {
-    const res = await fetch('/api/me', AUTH.fetchOpts());
-    if (!res.ok) {
+    const res = await fetch('/api/me', AUTH.fetchOpts({ headers: AUTH.headers() }));
+    if (res.status === 401) {
       AUTH.clear();
       showView('login-view');
+      showLoginCard();
+      return;
+    }
+    if (!res.ok) {
+      if (!cached) showView('login-view');
       return;
     }
     const data = await res.json();
     if (data.user) {
-      AUTH.save(data.user);
-      routeForRole(data.user);
+      AUTH.save(data.user, AUTH.token);
+      if (data.user.mustResetPassword) {
+        showForcedResetOverlay(data.user);
+      } else {
+        routeForRole(data.user);
+      }
+    } else if (!cached) {
+      showView('login-view');
     }
   } catch (e) {
-    // Offline or server down — stay on the login screen.
-    showView('login-view');
+    if (!cached) showView('login-view');
   }
 }
 
@@ -4054,6 +6085,10 @@ document.addEventListener('DOMContentLoaded', function () {
   initAuthPortal();
   bindProfileActions();
   restoreSession();
+  const acc = document.getElementById('dispatch-accept-btn');
+  const rej = document.getElementById('dispatch-reject-btn');
+  if (acc) acc.addEventListener('click', function () { respondDispatchOffer(true); });
+  if (rej) rej.addEventListener('click', function () { respondDispatchOffer(false); });
 });
 
 window.logout = logout;
@@ -4086,6 +6121,369 @@ function initMap() {
 
   // Render initial popular routes
   renderPopularRoutes('taxi');
+  bindMapZoneLoader(map, bookingZoneLayers, { showAltitude: false });
+  setTimeout(function () {
+    refreshMapZones(map, bookingZoneLayers, { showAltitude: false });
+  }, 600);
+}
+
+function paddedBoundsFromMap(targetMap, padRatio) {
+  if (padRatio == null) padRatio = 0.12;
+  const b = targetMap.getBounds();
+  const sw = b.getSouthWest();
+  const ne = b.getNorthEast();
+  const latPad = (ne.lat - sw.lat) * padRatio;
+  const lngPad = (ne.lng - sw.lng) * padRatio;
+  return {
+    swLat: sw.lat - latPad,
+    swLng: sw.lng - lngPad,
+    neLat: ne.lat + latPad,
+    neLng: ne.lng + lngPad,
+  };
+}
+
+function boundsQueryString(bounds) {
+  return (
+    'swLat=' + encodeURIComponent(bounds.swLat) +
+    '&swLng=' + encodeURIComponent(bounds.swLng) +
+    '&neLat=' + encodeURIComponent(bounds.neLat) +
+    '&neLng=' + encodeURIComponent(bounds.neLng)
+  );
+}
+
+async function fetchFlightZonesForBounds(bounds) {
+  const u = AUTH.user;
+  const role = (u && u.role) || 'customer';
+  const key =
+    role + '|' +
+    bounds.swLat.toFixed(3) + ',' + bounds.swLng.toFixed(3) + ',' +
+    bounds.neLat.toFixed(3) + ',' + bounds.neLng.toFixed(3);
+  if (flightZoneFetchCache.has(key)) return flightZoneFetchCache.get(key);
+  try {
+    const res = await apiFetch('/api/zones?' + boundsQueryString(bounds));
+    const data = await res.json().catch(function () { return {}; });
+    const zones = res.ok && Array.isArray(data.zones) ? data.zones : [];
+    if (res.ok) flightZoneFetchCache.set(key, zones);
+    if (flightZoneFetchCache.size > 32) {
+      const oldest = flightZoneFetchCache.keys().next().value;
+      flightZoneFetchCache.delete(oldest);
+    }
+    return zones;
+  } catch (e) {
+    return [];
+  }
+}
+
+function styleForZone(z, targetMap) {
+  const base = ZONE_STYLES[z.zoneType] || ZONE_STYLES.restricted;
+  const zoom = targetMap.getZoom();
+  if (z.zoneType === 'flight_corridor') {
+    return {
+      color: base.color,
+      fillColor: base.fillColor,
+      fillOpacity: zoom < 7 ? 0.5 : zoom < 10 ? 0.4 : 0.32,
+      weight: zoom < 7 ? 5 : zoom < 10 ? 4 : 3,
+      dashArray: base.dashArray || '12 8',
+      opacity: 1,
+    };
+  }
+  if (z.zoneType === 'restricted') {
+    return Object.assign({}, base, {
+      fillOpacity: zoom < 8 ? 0.62 : 0.52,
+      weight: zoom < 8 ? 5 : 4,
+      opacity: 1,
+    });
+  }
+  return Object.assign({}, base, { opacity: 1 });
+}
+
+function countZonesByType(zones) {
+  const counts = { flight_corridor: 0, restricted: 0, no_fly: 0 };
+  zones.forEach(function (z) {
+    if (counts[z.zoneType] != null) counts[z.zoneType] += 1;
+  });
+  return counts;
+}
+
+function updateOperatorZoneBadge(zones) {
+  const label = document.getElementById('op-zone-badge-label');
+  const legendCount = document.getElementById('op-map-legend-count');
+  const c = countZonesByType(zones);
+  const parts = [];
+  if (c.flight_corridor) parts.push(c.flight_corridor + ' corridor' + (c.flight_corridor === 1 ? '' : 's'));
+  if (c.restricted) parts.push(c.restricted + ' restricted');
+  if (c.no_fly) parts.push(c.no_fly + ' no-fly');
+  const summary = parts.length ? parts.join(' · ') : 'no airspace in view — zoom or pan';
+  if (label) label.textContent = 'Live GPS · ' + summary;
+  if (legendCount) legendCount.textContent = zones.length ? zones.length + ' zone(s) loaded' : '';
+}
+
+async function refreshMapZones(targetMap, layerStore, options) {
+  if (!targetMap) return;
+  options = options || {};
+  const bounds = paddedBoundsFromMap(targetMap);
+  const zones = await fetchFlightZonesForBounds(bounds);
+  drawZonesOnMap(targetMap, zones, layerStore, options.showAltitude !== false);
+  if (options.altitudeHostId) {
+    renderZoneAltitudeStack(zones, options.altitudeHostId);
+  }
+  if (targetMap === opSelfMap) {
+    updateOperatorZoneBadge(zones);
+  } else if (targetMap === map) {
+    const countEl = document.getElementById('booking-map-legend-count');
+    if (countEl) {
+      const c = countZonesByType(zones);
+      const parts = [];
+      if (c.flight_corridor) parts.push(c.flight_corridor + ' corridor' + (c.flight_corridor === 1 ? '' : 's'));
+      if (c.restricted) parts.push(c.restricted + ' restricted');
+      if (c.no_fly) parts.push(c.no_fly + ' no-fly');
+      countEl.textContent = parts.length ? parts.join(' · ') : '';
+    }
+  }
+}
+
+function bindMapZoneLoader(targetMap, layerStore, options) {
+  if (!targetMap || targetMap._zonesLoaderBound) return;
+  targetMap._zonesLoaderBound = true;
+  function onMapViewChange() {
+    let timer = mapZoneRefreshTimers.get(targetMap);
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      refreshMapZones(targetMap, layerStore, options);
+    }, 200);
+    mapZoneRefreshTimers.set(targetMap, timer);
+  }
+  targetMap.on('moveend zoomend', onMapViewChange);
+  window.addEventListener('resize', function () {
+    if (!targetMap || !targetMap.getContainer || !targetMap.getContainer()) return;
+    scheduleMapZoneRefresh(targetMap, layerStore, options, 150);
+  });
+}
+
+function geoJsonToLeafletLatLngs(geometry) {
+  if (!geometry || geometry.type !== 'Polygon' || !geometry.coordinates || !geometry.coordinates[0]) {
+    return null;
+  }
+  return geometry.coordinates[0].map(function (c) { return [c[1], c[0]]; });
+}
+
+function zonePopupHtml(z, showAltitude) {
+  let html =
+    '<strong>' + escapeHtml(z.name) + '</strong><br>' +
+    'Type: ' + escapeHtml((z.zoneType || '').replace(/_/g, ' '));
+  if (showAltitude && z.minAltitudeM != null && z.maxAltitudeM != null) {
+    html += '<br>Altitude: ' + z.minAltitudeM + '–' + z.maxAltitudeM + ' m AGL';
+  }
+  return html;
+}
+
+// Hard cap on polygons drawn per viewport. The backend already caps the rows
+// returned; this guards the Leaflet render path when a low-zoom pan still
+// intersects many zones (e.g. half of India). Safety-critical types
+// (no_fly > restricted > corridor) are kept first when trimming.
+const MAX_ZONES_DRAWN = 120;
+// Skip zones whose bbox projects to less than this many CSS pixels — they are
+// sub-pixel and invisible anyway, so drawing them is pure compute waste.
+const MIN_ZONE_PX = 2;
+
+function zonePixelSize(targetMap, z) {
+  if (z.minLat == null || z.maxLat == null || z.minLng == null || z.maxLng == null) {
+    return null;
+  }
+  const sw = targetMap.latLngToContainerPoint(L.latLng(z.minLat, z.minLng));
+  const ne = targetMap.latLngToContainerPoint(L.latLng(z.maxLat, z.maxLng));
+  return { w: Math.abs(ne.x - sw.x), h: Math.abs(ne.y - sw.y) };
+}
+
+function drawZonesOnMap(targetMap, zones, layerStore, showAltitude) {
+  if (!targetMap) return;
+  const withAlt = showAltitude !== false;
+  layerStore.forEach(function (layer) { targetMap.removeLayer(layer); });
+  layerStore.length = 0;
+
+  // Cull sub-pixel zones first (saves the most Leaflet work at low zoom),
+  // then cap the remainder keeping the most safety-relevant types on top.
+  const visible = zones.filter(function (z) {
+    const px = zonePixelSize(targetMap, z);
+    if (!px) return true; // no bbox → keep, let geometry path decide
+    return px.w >= MIN_ZONE_PX || px.h >= MIN_ZONE_PX;
+  });
+
+  const sorted = visible.slice().sort(function (a, b) {
+    return (ZONE_DRAW_ORDER[a.zoneType] || 0) - (ZONE_DRAW_ORDER[b.zoneType] || 0);
+  });
+
+  // If still over the cap, drop from the bottom of the draw order (corridors
+  // first) since no_fly/restricted are smaller and safety-critical.
+  const toDraw = sorted.length > MAX_ZONES_DRAWN ? sorted.slice(0, MAX_ZONES_DRAWN) : sorted;
+
+  toDraw.forEach(function (z) {
+    const latlngs = geoJsonToLeafletLatLngs(z.geometry);
+    if (!latlngs) return;
+    const style = styleForZone(z, targetMap);
+    const poly = L.polygon(latlngs, style).addTo(targetMap);
+    poly.bindPopup(zonePopupHtml(z, withAlt));
+    layerStore.push(poly);
+  });
+  layerStore.forEach(function (layer) {
+    if (layer.bringToFront) layer.bringToFront();
+  });
+}
+
+function renderZoneAltitudeStack(zones, hostId) {
+  const host = document.getElementById(hostId);
+  if (!host) return;
+  if (!zones.length) {
+    host.innerHTML = '<h4>Altitude (3D)</h4><div class="op-empty-sub">No zones configured.</div>';
+    return;
+  }
+  const maxAlt = Math.max.apply(null, zones.map(function (z) { return z.maxAltitudeM; }).concat([500]));
+  host.innerHTML =
+    '<h4>Altitude (3D)</h4>' +
+    zones.map(function (z) {
+      const pctBase = (z.minAltitudeM / maxAlt) * 100;
+      const pctH = Math.max(((z.maxAltitudeM - z.minAltitudeM) / maxAlt) * 100, 4);
+      const style = ZONE_STYLES[z.zoneType] || ZONE_STYLES.restricted;
+      return '<div class="zone-alt-row">' +
+        '<div class="zone-alt-label">' + escapeHtml(z.name) + '</div>' +
+        '<div class="zone-alt-bar-track">' +
+          '<div class="zone-alt-bar" style="bottom:' + pctBase + '%;height:' + pctH + '%;background:' + style.fillColor + ';border-color:' + style.color + '"></div>' +
+        '</div>' +
+        '<div class="zone-alt-range">' + z.minAltitudeM + '–' + z.maxAltitudeM + ' m</div>' +
+      '</div>';
+    }).join('');
+}
+
+async function initAdminLiveFlights() {
+  const el = document.getElementById('admin-live-map');
+  if (el && !adminLiveMap) {
+    adminLiveMap = L.map('admin-live-map', { zoomControl: true }).setView([22.5, 79.0], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 18,
+    }).addTo(adminLiveMap);
+  }
+  await refreshAdminLiveFlights();
+  if (adminLivePollInterval) clearInterval(adminLivePollInterval);
+  adminLivePollInterval = setInterval(refreshAdminLiveFlights, 5000);
+  setTimeout(function () {
+    if (adminLiveMap) adminLiveMap.invalidateSize();
+  }, 200);
+}
+
+function toggleAdminMapFullscreen() {
+  const wrap = document.getElementById('admin-live-map-wrap');
+  if (!wrap) return;
+  const isFs = wrap.classList.toggle('fs');
+  document.body.classList.toggle('admin-map-fs', isFs);
+  const btn = document.getElementById('admin-live-map-fs');
+  if (btn) btn.title = isFs ? 'Exit fullscreen' : 'Fullscreen';
+  // Leaflet needs a re-layout after the container resizes.
+  setTimeout(function () { if (adminLiveMap) adminLiveMap.invalidateSize(); }, 60);
+  setTimeout(function () { if (adminLiveMap) adminLiveMap.invalidateSize(); }, 320);
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    const wrap = document.getElementById('admin-live-map-wrap');
+    if (wrap && wrap.classList.contains('fs')) toggleAdminMapFullscreen();
+  }
+});
+
+async function refreshAdminLiveFlights() {
+  const listEl = document.getElementById('admin-live-list');
+  const fleetEl = document.getElementById('admin-fleet-list');
+  const metaEl = document.getElementById('admin-live-meta');
+  if (!listEl) return;
+  try {
+    const res = await apiFetch('/api/admin/live-flights');
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error('load failed');
+    const flights = Array.isArray(data.flights) ? data.flights : [];
+    const fleet = Array.isArray(data.fleet) ? data.fleet : [];
+    const dispatching = Array.isArray(data.dispatching) ? data.dispatching : [];
+    if (metaEl) {
+      metaEl.textContent =
+        flights.length + ' active flight(s) · ' +
+        fleet.length + ' pilot(s) reporting GPS · ' +
+        dispatching.length + ' dispatching · updates every 5s';
+    }
+    if (!flights.length) {
+      listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No flights in transit right now.</div></div>';
+    } else {
+      listEl.innerHTML = flights.map(function (f) {
+        const op = f.operator;
+        const gps = op && op.lat != null
+          ? op.lat.toFixed(4) + ', ' + op.lng.toFixed(4)
+          : 'GPS pending';
+        return (
+          '<div class="admin-flight-card">' +
+            '<div class="admin-flight-top">' +
+              '<div class="admin-flight-route">' + escapeHtml(f.pickup.name) + ' → ' + escapeHtml(f.dest.name) + '</div>' +
+              statusBadgeHtml(f.status) +
+            '</div>' +
+            '<div class="admin-flight-meta">' +
+              'IRG-' + String(f.id).padStart(5, '0') + ' · ' + escapeHtml(f.customer.name) +
+              '<br>Pilot: ' + escapeHtml(op ? op.name : 'Unassigned') + ' · ' + gps +
+              '<br>' + escapeHtml(f.service) + ' · ' + (f.distanceKm != null ? f.distanceKm + ' km' : '—') +
+              (f.carbonSavedKg != null ? ' · CO₂ saved ' + f.carbonSavedKg + ' kg' : '') +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    if (fleetEl) {
+      if (!fleet.length) {
+        fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No pilots reporting GPS yet.</div></div>';
+      } else {
+        fleetEl.innerHTML = fleet.map(function (p) {
+          const gps = p.lat != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : '—';
+          const status = p.inTransit
+            ? statusBadgeHtml(p.tripStatus || 'flying')
+            : '<span class="op-status-badge op-badge--green">Available</span>';
+          return (
+            '<div class="admin-fleet-row">' +
+              '<div><b>' + escapeHtml(p.name) + '</b><br>' + gps + '</div>' +
+              '<div>' + status + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+    }
+    if (adminLiveMap) {
+      const activePilotKeys = new Set();
+      const points = [];
+      fleet.forEach(function (p) {
+        if (p.lat == null) return;
+        const key = 'admin-pilot-' + p.operatorId;
+        activePilotKeys.add(key);
+        const icon = p.inTransit
+          ? '<div class="nearby-taxi-marker">✈️</div>'
+          : '<div class="nearby-taxi-marker">🛬</div>';
+        const label =
+          escapeHtml(p.name) +
+          (p.inTransit ? ' · in transit' : ' · available') +
+          '<br>~' + (p.lat.toFixed(4) + ', ' + p.lng.toFixed(4));
+        setAnimatedMapMarker(key, adminLiveMap, p.lat, p.lng, icon, label);
+        points.push([p.lat, p.lng]);
+      });
+      animatedMarkers.forEach(function (_entry, key) {
+        if (key.indexOf('admin-pilot-') === 0 && !activePilotKeys.has(key)) {
+          removeAnimatedMapMarker(key);
+        }
+      });
+      flights.forEach(function (f) {
+        if (f.pickup && f.pickup.lat != null) points.push([f.pickup.lat, f.pickup.lng]);
+        if (f.dest && f.dest.lat != null) points.push([f.dest.lat, f.dest.lng]);
+      });
+      if (points.length) {
+        adminLiveMap.fitBounds(L.latLngBounds(points).pad(0.12));
+      }
+    }
+  } catch (e) {
+    listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Could not load live flights.</div></div>';
+    if (fleetEl) fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Could not load fleet.</div></div>';
+  }
 }
 
 function setupAutocomplete(inputId, callback) {
@@ -4146,6 +6544,7 @@ function setPickup(latlng, name) {
   if (pickupCoord && destCoord) drawRoute();
   else map.setView(pickupCoord, 13);
   captureBookingDraft();
+  refreshNearbyTaxis();
 }
 
 function setDest(latlng, name) {
@@ -4157,6 +6556,7 @@ function setDest(latlng, name) {
   if (pickupCoord && destCoord) drawRoute();
   else map.setView(destCoord, 13);
   captureBookingDraft();
+  if (pickupCoord && destCoord) refreshNearbyTaxis();
 }
 
 function drawRoute() {
@@ -4202,6 +6602,16 @@ function drawRoute() {
 
   const bounds = L.latLngBounds([pickupCoord, destCoord]).pad(0.3);
   map.fitBounds(bounds);
+  onRouteReady();
+}
+
+// When pickup + drop are both set: show nearby taxis (10 km) and fare options with CO₂.
+function onRouteReady() {
+  captureBookingDraft();
+  renderDemoTaxisOnMap();
+  startDemoTaxiDrift();
+  refreshNearbyTaxis();
+  if (bookingDraftReady()) searchRides();
 }
 
 function swapLocations() {
@@ -4220,8 +6630,46 @@ function swapLocations() {
 }
 
 function useCurrentLocation() {
-  // Simulate GPS - default to Connaught Place
-  setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+  const btn = document.querySelector('.loc-gps-btn');
+  if (btn) { btn.classList.add('gps-loading'); btn.disabled = true; }
+  navigator.geolocation.getCurrentPosition(
+    async function (pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      // Reverse geocode with Nominatim to get a readable place name
+      let name = 'My Location (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
+      try {
+        const r = await fetch(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const d = await r.json();
+        if (d && d.display_name) {
+          // Use suburb/city/town for a short, friendly name
+          const a = d.address || {};
+          name = a.suburb || a.neighbourhood || a.village || a.town || a.city || d.display_name.split(',')[0];
+          name = name + ', ' + (a.city || a.town || a.county || '');
+        }
+      } catch (e) { /* keep coordinates as name */ }
+      setPickup([lat, lng], name.trim().replace(/,\s*$/, ''));
+      map.setView([lat, lng], 14);
+      if (btn) { btn.classList.remove('gps-loading'); btn.disabled = false; }
+    },
+    function (err) {
+      if (btn) { btn.classList.remove('gps-loading'); btn.disabled = false; }
+      const msgs = {
+        1: 'Location access denied. Please allow location in your browser settings.',
+        2: 'Location unavailable. Try again or enter manually.',
+        3: 'Location request timed out.',
+      };
+      showAuthError('booking-error', msgs[err.code] || 'Could not get your location.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
 }
 
 // ── Service Switching ──
@@ -4511,8 +6959,7 @@ async function bookRide() {
 
     // Confirmation screen reflects the SAVED booking (id, route, service, fare).
     currentBooking = data.booking;
-    fillConfirmation(currentBooking);
-    document.getElementById('confirm-overlay').classList.add('active');
+    showPaymentOverlay(currentBooking);
   } catch (err) {
     showAuthError('booking-error', 'Network error \u2014 please check your connection and try again.');
   } finally {
@@ -4529,7 +6976,44 @@ function fillConfirmation(booking) {
     (selectedRide ? selectedRide.name + ' \u00B7 ' : '') + (SERVICE_LABELS[booking.service] || booking.service);
   document.getElementById('confirm-time').textContent = selectedRide ? selectedRide.time + ' min' : '\u2014';
   document.getElementById('confirm-cost').textContent = '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
-  document.getElementById('confirm-carbon').textContent = selectedRide ? '-' + selectedRide.co2 + ' kg' : '\u2014';
+  const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
+  document.getElementById('confirm-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+}
+
+function showPaymentOverlay(booking) {
+  hideAuthError('payment-error');
+  document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
+  document.getElementById('payment-amount').textContent =
+    '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
+  const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
+  document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+  document.getElementById('payment-overlay').classList.add('active');
+}
+
+function closePayment() {
+  document.getElementById('payment-overlay').classList.remove('active');
+}
+
+async function payForBooking() {
+  if (!currentBooking) return;
+  hideAuthError('payment-error');
+  setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST' });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
+      return;
+    }
+    currentBooking = data.booking;
+    closePayment();
+    fillConfirmation(currentBooking);
+    document.getElementById('confirm-overlay').classList.add('active');
+  } catch (e) {
+    showAuthError('payment-error', 'Network error — please try again.');
+  } finally {
+    setBusy('payment-pay-btn', false, 'Processing\u2026', 'Pay now');
+  }
 }
 
 function closeConfirm() {
@@ -4556,6 +7040,9 @@ function resetBooking() {
   if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
   aircraftMarkers.forEach(m => map.removeLayer(m));
   aircraftMarkers = [];
+  stopDemoTaxiDrift();
+  clearAnimatedMarkersByPrefix('real-', map);
+  clearAnimatedMarkersByPrefix('track-operator', map);
   map.setView([28.6139, 77.2090], 12);
 }
 
@@ -4570,12 +7057,160 @@ let trackPathPoints = [];
 let trackCurrentFrac = 0;          // mock marker position along the route (0..1)
 let trackTargetFrac = 0;           // position implied by the current status
 let trackAircraft = null;
+let trackOperatorGps = { lat: null, lng: null };
+
+// ── Smooth map markers (lerp — no jumps) ──
+function offsetKm(lat, lng, km, bearingDeg) {
+  const R = 6371;
+  const br = (bearingDeg * Math.PI) / 180;
+  const d = km / R;
+  const lat1 = (lat * Math.PI) / 180;
+  const lng1 = (lng * Math.PI) / 180;
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(br)
+  );
+  const lng2 =
+    lng1 +
+    Math.atan2(
+      Math.sin(br) * Math.sin(d) * Math.cos(lat1),
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+    );
+  return [(lat2 * 180) / Math.PI, (lng2 * 180) / Math.PI];
+}
+
+function startMarkerAnimationLoop() {
+  if (markerAnimFrameId != null) return;
+  function tick() {
+    animatedMarkers.forEach(function (entry) {
+      entry.cur[0] += (entry.tgt[0] - entry.cur[0]) * 0.14;
+      entry.cur[1] += (entry.tgt[1] - entry.cur[1]) * 0.14;
+      entry.layer.setLatLng(entry.cur);
+    });
+    markerAnimFrameId = requestAnimationFrame(tick);
+  }
+  markerAnimFrameId = requestAnimationFrame(tick);
+}
+
+function setAnimatedMapMarker(key, targetMap, lat, lng, iconHtml, popupHtml) {
+  if (!targetMap) return;
+  let entry = animatedMarkers.get(key);
+  if (!entry) {
+    const icon = L.divIcon({
+      html: iconHtml,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+    const layer = L.marker([lat, lng], { icon: icon, zIndexOffset: 500 });
+    layer.addTo(targetMap);
+    if (popupHtml) layer.bindPopup(popupHtml);
+    entry = { layer: layer, cur: [lat, lng], tgt: [lat, lng], map: targetMap };
+    animatedMarkers.set(key, entry);
+    startMarkerAnimationLoop();
+  } else {
+    entry.tgt = [lat, lng];
+  }
+}
+
+function removeAnimatedMapMarker(key) {
+  const entry = animatedMarkers.get(key);
+  if (!entry) return;
+  entry.map.removeLayer(entry.layer);
+  animatedMarkers.delete(key);
+}
+
+function clearAnimatedMarkersByPrefix(prefix, targetMap) {
+  const keys = [];
+  animatedMarkers.forEach(function (_v, k) {
+    if (k.indexOf(prefix) === 0) keys.push(k);
+  });
+  keys.forEach(function (k) {
+    const entry = animatedMarkers.get(k);
+    if (!targetMap || entry.map === targetMap) removeAnimatedMapMarker(k);
+  });
+}
+
+function buildDemoTaxisAroundPickup(lat, lng) {
+  const names = ['Aarav K.', 'Priya S.', 'Rohan M.', 'Neha V.', 'Vikram D.', 'Ananya R.', 'Karan P.', 'Isha T.'];
+  const taxis = [];
+  let i = 0;
+  // Dry-data taxis at 5 km and 10 km rings — within 10 km radius per spec.
+  for (let km = 5; km <= 10; km += 5) {
+    const bearings = [15, 60, 120, 180, 240, 300];
+    bearings.forEach(function (bearing) {
+      const pos = offsetKm(lat, lng, km, bearing);
+      taxis.push({
+        id: i,
+        baseKm: km,
+        baseBearing: bearing,
+        lat: pos[0],
+        lng: pos[1],
+        name: names[i % names.length],
+        distanceKm: km,
+      });
+      i += 1;
+    });
+  }
+  return taxis;
+}
+
+function renderDemoTaxisOnMap() {
+  if (!map || !pickupCoord) return;
+  clearAnimatedMarkersByPrefix('demo-', map);
+  demoTaxiMeta = buildDemoTaxisAroundPickup(pickupCoord[0], pickupCoord[1]);
+  demoTaxiMeta.forEach(function (tx) {
+    // Each taxi starts at its fixed base position (no orbit, no circle)
+    setAnimatedMapMarker(
+      'demo-' + tx.id,
+      map,
+      tx.lat,
+      tx.lng,
+      '<div class="nearby-taxi-marker" title="Air taxi">✈️</div>',
+      '<b>' + escapeHtml(tx.name) + '</b><br>~' + tx.baseKm + ' km away<br><span style="color:#64748B;font-size:11px">Preview — dry data</span>'
+    );
+  });
+}
+
+function startDemoTaxiDrift() {
+  if (demoTaxiAnimInterval) clearInterval(demoTaxiAnimInterval);
+  // Update target positions every 1s.
+  // Each taxi does a gentle sine-wave patrol: moves ~1.2 km back-and-forth
+  // along its bearing axis — no circular orbiting, just natural hovering.
+  demoTaxiAnimInterval = setInterval(function () {
+    if (!map || !pickupCoord || !demoTaxiMeta.length) return;
+    const now = Date.now() / 1000; // seconds
+    demoTaxiMeta.forEach(function (tx) {
+      // phase offset per taxi so they don't all move in sync
+      const phase = tx.id * 1.3;
+      const patrol = Math.sin(now * 0.18 + phase) * 1.2; // ±1.2 km along bearing
+      const pos = offsetKm(pickupCoord[0], pickupCoord[1], tx.baseKm + patrol, tx.baseBearing);
+      setAnimatedMapMarker(
+        'demo-' + tx.id,
+        map,
+        pos[0],
+        pos[1],
+        '<div class="nearby-taxi-marker" title="Air taxi">✈️</div>',
+        '<b>' + escapeHtml(tx.name) + '</b><br>~' + tx.baseKm + ' km away<br><span style="color:#64748B;font-size:11px">Preview — dry data</span>'
+      );
+    });
+  }, 1000);
+}
+
+function stopDemoTaxiDrift() {
+  if (demoTaxiAnimInterval) {
+    clearInterval(demoTaxiAnimInterval);
+    demoTaxiAnimInterval = null;
+  }
+  clearAnimatedMarkersByPrefix('demo-', map);
+  demoTaxiMeta = [];
+}
 
 // Persisted booking status -> tracking step index (0=confirmed .. 4=arrived)
 // plus the customer-facing copy. The DB statuses requested/assigned/accepted
 // all map to the "Confirmed" step (a pilot isn't yet en route).
 const STATUS_DISPLAY = {
-  requested: { step: 0, status: 'Booking confirmed', sub: 'Waiting for a pilot to be assigned' },
+  requested: { step: 0, status: 'Booking confirmed', sub: 'Complete payment to find a pilot' },
+  dispatching: { step: 0, status: 'Finding a pilot', sub: 'Notifying nearby available pilots' },
   assigned:  { step: 0, status: 'Pilot assigned', sub: 'Your pilot will confirm shortly' },
   accepted:  { step: 0, status: 'Pilot confirmed', sub: 'Preparing for departure' },
   enroute:   { step: 1, status: 'Pilot en route to pickup', sub: 'Your aircraft is on its way' },
@@ -4583,11 +7218,12 @@ const STATUS_DISPLAY = {
   flying:    { step: 3, status: 'In flight', sub: 'Enjoy the view! Flying to destination' },
   arrived:   { step: 4, status: 'Arriving now', sub: 'Prepare for landing' },
   completed: { step: 4, status: 'Ride complete!', sub: 'Thank you for flying with IraGo' },
+  no_pilot:  { step: 0, status: 'No pilots nearby', sub: 'No available pilot within range — try again shortly' },
   rejected:  { step: 0, status: 'Pilot unavailable', sub: 'Reassigning you to another pilot' },
   cancelled: { step: 0, status: 'Booking cancelled', sub: 'This trip has been cancelled' },
 };
 // Statuses at which the customer view stops polling.
-const TRACKING_TERMINAL = ['arrived', 'completed', 'cancelled', 'rejected'];
+const TRACKING_TERMINAL = ['arrived', 'completed', 'cancelled', 'rejected', 'no_pilot'];
 
 // Show/hide the empty state vs. the live tracking content.
 function showTrackingEmpty(show) {
@@ -4617,7 +7253,9 @@ function startTracking() {
   const distKm = currentBooking.distanceKm != null ? currentBooking.distanceKm : calcDistance();
   document.getElementById('tracking-dist').textContent = Math.round(distKm) + ' km';
   document.getElementById('tracking-carbon').textContent =
-    selectedRide ? '-' + selectedRide.co2 + ' kg CO\u2082' : '\u2014';
+    currentBooking.carbonSavedKg != null
+      ? '-' + currentBooking.carbonSavedKg + ' kg CO\u2082'
+      : (selectedRide ? '-' + selectedRide.co2 + ' kg CO\u2082' : '\u2014');
 
   // Fit map to route.
   if (pickupCoord && destCoord) {
@@ -4654,11 +7292,24 @@ function startTracking() {
 
   // Render the status we already have, then poll the API for changes.
   applyTrackingStatus(currentBooking.status);
+  // Uber-style: subscribe to the live ride stream (status + pilot GPS) and
+  // stop showing the nearby fleet — the passenger now tracks only their plane.
+  stopNearbyTaxisPoll();
+  stopDemoTaxiDrift();
+  clearAnimatedMarkersByPrefix('demo-', map);
+  clearAnimatedMarkersByPrefix('real-', map);
+  rideFollowOn = true;
+  connectRideStream(currentBooking.id);
+  // Keep a slow fallback poll in case SSE drops silently.
   if (!TRACKING_TERMINAL.includes(currentBooking.status)) {
-    trackingPollInterval = setInterval(pollBookingStatus, 4000);
+    trackingPollInterval = setInterval(function () {
+      pollBookingStatus();
+      pollOperatorGpsForRide();
+    }, 8000);
   }
+  pollOperatorGpsForRide();
 
-  // MOCK animation loop \u2014 eases the placeholder marker toward the position
+  // MOCK animation loop
   // implied by the current status and updates the (mock) ETA.
   trackingAnimInterval = setInterval(animateTrackingAircraft, 120);
 }
@@ -4697,6 +7348,7 @@ async function pollBookingStatus() {
     if (!data.booking) return;
     currentBooking = data.booking;
     applyTrackingStatus(currentBooking.status);
+    pollOperatorGpsForRide();
     if (TRACKING_TERMINAL.includes(currentBooking.status)) stopTrackingPolling();
   } catch (err) {
     /* transient network error \u2014 keep showing the last known status */
@@ -4706,6 +7358,7 @@ async function pollBookingStatus() {
 // MOCK aircraft animation \u2014 placeholder for real GPS. Eases the marker toward
 // the position implied by the booking status and shows a nominal ETA.
 function animateTrackingAircraft() {
+  if (trackOperatorGps.lat != null) return;
   if (!trackAircraft || trackPathPoints.length < 2) return;
   trackCurrentFrac += (trackTargetFrac - trackCurrentFrac) * 0.08;
   const idx = Math.min(Math.round(trackCurrentFrac * (trackPathPoints.length - 1)), trackPathPoints.length - 1);
@@ -4716,14 +7369,115 @@ function animateTrackingAircraft() {
   document.getElementById('tracking-eta').textContent = Math.round(nominalTotal * remaining);
 }
 
+// ── Uber-style customer ride stream (SSE) ────────────────────────────────
+// After the passenger confirms + pays, we stop showing the nearby fleet and
+// subscribe to this booking's ride stream. The server pushes ride_state (the
+// current snapshot), ride_update (status changes), and ride_gps (the assigned
+// pilot's live position). The passenger sees ONLY their plane — like Uber's
+// "track your driver".
+let rideStream = null;
+let rideFollowOn = false;
+
+function disconnectRideStream() {
+  if (rideStream) {
+    try { rideStream.close(); } catch (e) { /* ignore */ }
+    rideStream = null;
+  }
+}
+
+function connectRideStream(bookingId) {
+  if (!bookingId) return;
+  disconnectRideStream();
+  try {
+    const es = new EventSource('/api/tracking/my-ride/' + bookingId + '/stream');
+    rideStream = es;
+
+    es.addEventListener('ride_state', function (ev) {
+      const d = JSON.parse(ev.data || '{}');
+      handleRideState(d);
+    });
+    es.addEventListener('ride_update', function (ev) {
+      const d = JSON.parse(ev.data || '{}');
+      if (d.status) {
+        if (currentBooking) { currentBooking.status = d.status; }
+        applyTrackingStatus(d.status);
+        if (TRACKING_TERMINAL.includes(d.status)) {
+          stopTrackingPolling();
+        }
+      }
+    });
+    es.addEventListener('ride_gps', function (ev) {
+      const d = JSON.parse(ev.data || '{}');
+      if (d.lat != null && d.lng != null) handleRideGps(d);
+    });
+    es.onerror = function () { /* EventSource auto-reconnects */ };
+  } catch (e) { /* fall back to polling below */ }
+}
+
+// Initial snapshot from the server: set status + draw the assigned plane if any.
+function handleRideState(d) {
+  if (d.status) {
+    if (currentBooking) { currentBooking.status = d.status; }
+    applyTrackingStatus(d.status);
+  }
+  if (d.operator && d.operator.lat != null) {
+    showAssignedPlane(d.operator.lat, d.operator.lng, d.operator.name);
+  }
+}
+
+// Live GPS from the assigned pilot — move the plane marker + update ETA.
+function handleRideGps(d) {
+  trackOperatorGps = { lat: d.lat, lng: d.lng };
+  showAssignedPlane(d.lat, d.lng);
+  if (d.distanceKm != null) {
+    document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm * 3));
+  }
+  if (rideFollowOn && map) map.panTo([d.lat, d.lng]);
+}
+
+// Render the ONE plane the passenger is allowed to see (Uber-style). Removes
+// the fleet/nearby markers and the mock aircraft, replacing them with the
+// assigned plane's live position.
+function showAssignedPlane(lat, lng, name) {
+  if (!map) return;
+  // Drop any fleet markers — the passenger now tracks only their plane.
+  stopNearbyTaxisPoll();
+  stopDemoTaxiDrift();
+  clearAnimatedMarkersByPrefix('demo-', map);
+  clearAnimatedMarkersByPrefix('real-', map);
+  // Remove the mock aircraft marker if present.
+  if (trackAircraft) {
+    map.removeLayer(trackAircraft);
+    const idx = aircraftMarkers.indexOf(trackAircraft);
+    if (idx >= 0) aircraftMarkers.splice(idx, 1);
+    trackAircraft = null;
+  }
+  const label = name != null ? escapeHtml(name) : 'Your pilot';
+  setAnimatedMapMarker(
+    'track-operator',
+    map,
+    lat,
+    lng,
+    '<div class="marker-aircraft" style="font-size:30px;">&#9992;&#65039;</div>',
+    '<b>' + label + '</b><br>Live GPS &middot; your air taxi'
+  );
+  if (name) {
+    const vn = document.getElementById('tracking-vehicle-name');
+    if (vn) vn.textContent = name + ' \u00B7 your pilot';
+  }
+}
+
 function stopTrackingPolling() {
   if (trackingPollInterval) { clearInterval(trackingPollInterval); trackingPollInterval = null; }
 }
 
 function endTracking() {
   stopTrackingPolling();
+  disconnectRideStream();
   if (trackingAnimInterval) { clearInterval(trackingAnimInterval); trackingAnimInterval = null; }
   trackAircraft = null;
+  trackOperatorGps = { lat: null, lng: null };
+  rideFollowOn = false;
   document.getElementById('tracking-panel').classList.remove('active');
   document.getElementById('booking-panel').style.display = 'flex';
   showTrackingEmpty(false);

@@ -12,7 +12,9 @@ This document describes the authentication system, OTP flows, rate limits, and t
 | SameSite | Lax | — |
 | HttpOnly | Yes (JS cannot read token) | — |
 
-The server signs tokens with HMAC-SHA256 (`AUTH_SECRET`). Clients send the cookie automatically via `credentials: 'include'`. Bearer tokens in the `Authorization` header are still accepted for tests and API clients.
+The server signs tokens with **HS256 JWT** (`jsonwebtoken`, `AUTH_SECRET`). Clients send the cookie automatically via `credentials: 'include'`. Bearer tokens in the `Authorization` header are still accepted for tests and API clients.
+
+Claims: `sub` (user id), `name`, `role`, plus standard `iat`/`exp`. Issuer: `irago` (`AUTH_JWT_ISSUER`). Audience: `irago-app` (`AUTH_JWT_AUDIENCE`).
 
 **Endpoints:** `POST /api/auth/passenger|operator|admin/login`, verify-signup, and reset-password set the cookie. `POST /api/auth/logout` clears it.
 
@@ -59,7 +61,10 @@ Signup payloads (name, password hash, role) are **AES-256-GCM encrypted** in `ot
 3. **Change password (logged in)**
    - `POST /api/auth/change-password` — `{ currentPassword, newPassword }`
 
-4. **Admin-initiated password reset**
+4. **Delete account (logged in, customer/operator)**
+   - `POST /api/auth/delete-account` — `{ password }` — soft-deletes the account (anonymizes email/name, clears password), blocks login; rejected if active bookings/trips exist
+
+5. **Admin-initiated password reset**
    - `PATCH /api/admin/users/:id/password` — admin sets a new password directly (any role)
    - `POST /api/admin/users/:id/send-reset-otp` — admin triggers OTP email to that user
 

@@ -24,6 +24,10 @@ const fakeDb = (() => {
   async function query(sql, params = []) {
     const s = sql.replace(/\s+/g, " ").trim();
 
+    function activeUsers() {
+      return users.filter((u) => !u.deletedAt);
+    }
+
     if (s.startsWith("INSERT INTO users")) {
       const [name, email, passwordHash, role] = params;
       const row = {
@@ -33,6 +37,10 @@ const fakeDb = (() => {
         passwordHash,
         role,
         createdAt: `2026-01-01 00:00:0${nextId}`,
+        deletedAt: null,
+        bannedAt: null,
+        emailVerified: 1,
+        mustResetPassword: 1,
       };
       users.push(row);
       return { insertId: row.id, affectedRows: 1 };
@@ -40,25 +48,68 @@ const fakeDb = (() => {
     if (s.startsWith("SELECT id FROM users WHERE email")) {
       return users.filter((u) => u.email === params[0]).map((u) => ({ id: u.id }));
     }
-    if (s.includes("FROM users WHERE id")) {
-      return users.filter((u) => u.id === params[0]).map((u) => ({ ...u }));
+    if (s.includes("SELECT COUNT(*) AS total FROM users")) {
+      let rows = activeUsers();
+      if (s.includes("role = ?")) {
+        rows = rows.filter((u) => u.role === params[0]);
+      }
+      return [{ total: rows.length }];
     }
-    // List endpoint: optional role filter, ordered newest-first.
-    if (s.startsWith("SELECT id, name, email, role, createdAt FROM users")) {
-      let rows = users.map((u) => ({
+    if (s.includes("FROM users") && s.includes("LIMIT ? OFFSET ?")) {
+      let rows = activeUsers();
+      let p = 0;
+      if (s.includes("role = ?")) {
+        rows = rows.filter((u) => u.role === params[p++]);
+      }
+      rows.sort((a, b) =>
+        b.createdAt < a.createdAt ? -1 : b.createdAt > a.createdAt ? 1 : b.id - a.id
+      );
+      const limit = Number(params[params.length - 2]);
+      const offset = Number(params[params.length - 1]);
+      return rows.slice(offset, offset + limit).map((u) => ({
         id: u.id,
         name: u.name,
         email: u.email,
         role: u.role,
         createdAt: u.createdAt,
+        bannedAt: u.bannedAt || null,
+        mustResetPassword: u.mustResetPassword || 0,
       }));
-      if (s.includes("WHERE role")) {
-        rows = rows.filter((u) => u.role === params[0]);
+    }
+    if (/FROM users WHERE id = \?/.test(s)) {
+      let rows = users.filter((u) => u.id === params[0]);
+      if (s.includes("deletedAt IS NULL")) {
+        rows = rows.filter((u) => !u.deletedAt);
       }
-      rows.sort((a, b) =>
-        b.createdAt < a.createdAt ? -1 : b.createdAt > a.createdAt ? 1 : b.id - a.id
-      );
-      return rows;
+      return rows.map((u) => ({ ...u }));
+    }
+    if (s.includes("UPDATE users SET bannedAt = NOW()")) {
+      const row = users.find((u) => u.id === params[0]);
+      if (row) row.bannedAt = new Date();
+      return { affectedRows: 1 };
+    }
+    if (s.includes("UPDATE users SET bannedAt = NULL")) {
+      const row = users.find((u) => u.id === params[0]);
+      if (row) row.bannedAt = null;
+      return { affectedRows: 1 };
+    }
+    if (s.includes("UPDATE users SET deletedAt = NOW()")) {
+      const [email, name, passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) {
+        row.deletedAt = new Date();
+        row.email = email;
+        row.name = name;
+        row.passwordHash = passwordHash;
+        row.bannedAt = null;
+      }
+      return { affectedRows: 1 };
+    }
+    if (s.includes("UPDATE users SET passwordHash")) {
+      const [passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) row.passwordHash = passwordHash;
+      return { affectedRows: 1 };
     }
     return [];
   }
@@ -201,18 +252,22 @@ test("admin can create an operator; response omits passwordHash", async () => {
   assert.ok(json.user.id);
   assert.equal(json.user.passwordHash, undefined);
   assert.equal("passwordHash" in json.user, false);
+  // Admin-provisioned accounts must reset their temp password on first login.
+  assert.equal(json.user.mustResetPassword, true);
   // The stored row keeps a bcrypt hash, never the plaintext.
   const stored = fakeDb._users.find((u) => u.email === "olivia@irago.com");
   assert.match(stored.passwordHash, /^\$2[aby]\$/);
   assert.notEqual(stored.passwordHash, "secret1");
 });
 
-test("admin cannot create another admin via API", async () => {
-  const { status } = await post(
+test("admin can create another admin; it must reset its temp password on first login", async () => {
+  const { status, json } = await post(
     { name: "Andy", email: "andy@irago.com", password: "secret1", role: "admin" },
     adminToken()
   );
-  assert.equal(status, 400);
+  assert.equal(status, 201);
+  assert.equal(json.user.role, "admin");
+  assert.equal(json.user.mustResetPassword, true);
 });
 
 test("duplicate email (case-insensitive) returns 409", async () => {
@@ -241,19 +296,33 @@ test("GET /api/admin/users with a non-admin token returns 403", async () => {
 });
 
 test("GET /api/admin/users returns users newest-first, no passwordHash", async () => {
-  const { status, json } = await get("", adminToken());
+  const { status, json } = await get("?limit=6&offset=0", adminToken());
   assert.equal(status, 200);
   assert.ok(Array.isArray(json.users));
   assert.ok(json.users.length > 0);
+  assert.equal(json.limit, 6);
+  assert.equal(json.offset, 0);
+  assert.ok(typeof json.total === "number");
+  assert.ok("hasMore" in json);
   for (const u of json.users) {
     assert.equal("passwordHash" in u, false);
     assert.ok("createdAt" in u);
+    assert.ok("banned" in u);
     assert.ok(u.id && u.name && u.email && u.role);
   }
-  // Newest-first: ids are strictly descending given our monotonic createdAt.
   const ids = json.users.map((u) => u.id);
   const sorted = [...ids].sort((a, b) => b - a);
   assert.deepEqual(ids, sorted);
+});
+
+test("GET /api/admin/users respects limit 6 and returns pagination meta", async () => {
+  const { status, json } = await get("?limit=6&offset=0", adminToken());
+  assert.equal(status, 200);
+  assert.ok(json.users.length <= 6);
+  assert.equal(json.limit, 6);
+  assert.equal(json.offset, 0);
+  assert.ok(typeof json.total === "number");
+  assert.ok("hasMore" in json);
 });
 
 test("GET /api/admin/users?role=admin filters by role", async () => {
@@ -264,10 +333,10 @@ test("GET /api/admin/users?role=admin filters by role", async () => {
 });
 
 test("GET /api/admin/users with an invalid role returns all users", async () => {
-  const all = await get("", adminToken());
-  const bogus = await get("?role=superadmin", adminToken());
+  const all = await get("?limit=6&offset=0", adminToken());
+  const bogus = await get("?role=superadmin&limit=6&offset=0", adminToken());
   assert.equal(bogus.status, 200);
-  assert.equal(bogus.json.users.length, all.json.users.length);
+  assert.equal(bogus.json.total, all.json.total);
 });
 
 // --- Admin password reset -----------------------------------------------------
@@ -311,15 +380,125 @@ test("admin password cannot be reset via API", async () => {
   assert.equal(json.code, "ADMIN_ENV_ONLY");
 });
 
-test("POST /api/admin/users rejects admin role", async () => {
+test("POST /api/admin/users accepts admin role (admin-provisioned)", async () => {
   const res = await post(
     { name: "Bad", email: "badadmin@x.com", password: "secret1", role: "admin" },
     adminToken()
   );
-  assert.equal(res.status, 400);
+  assert.equal(res.status, 201);
+  assert.equal(res.json.user.role, "admin");
 });
 
 test("PATCH password without admin token returns 401", async () => {
   const { status } = await patchPassword(1, { newPassword: "newpass2" });
   assert.equal(status, 401);
+});
+
+async function patchBan(userId, body, token) {
+  const headers = { "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/admin/users/${userId}/ban`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+test("admin can ban and unban an operator", async () => {
+  const created = await post(
+    { name: "BanMe", email: "ban@x.com", password: "secret1", role: "operator" },
+    adminToken()
+  );
+  const userId = created.json.user.id;
+  const banned = await patchBan(userId, { banned: true }, adminToken());
+  assert.equal(banned.status, 200);
+  assert.equal(banned.json.user.banned, true);
+  const unbanned = await patchBan(userId, { banned: false }, adminToken());
+  assert.equal(unbanned.status, 200);
+  assert.equal(unbanned.json.user.banned, false);
+});
+
+test("admin can soft-delete an operator", async () => {
+  const created = await post(
+    { name: "DelMe", email: "del@x.com", password: "secret1", role: "operator" },
+    adminToken()
+  );
+  const userId = created.json.user.id;
+  const headers = { authorization: `Bearer ${adminToken()}` };
+  const res = await fetch(`${baseUrl}/api/admin/users/${userId}`, {
+    method: "DELETE",
+    headers,
+  });
+  assert.equal(res.status, 200);
+  const row = fakeDb._users.find((u) => u.id === userId);
+  assert.ok(row.deletedAt);
+});
+
+// --- Per-user detail + stats (user-detail drawer) -----------------------------
+
+async function getDetail(userId, token) {
+  const headers = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/admin/users/${userId}`, { headers });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+async function getStats(userId, token) {
+  const headers = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${baseUrl}/api/admin/users/${userId}/stats`, { headers });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+test("GET /api/admin/users/:id requires admin (403 for customer)", async () => {
+  const { status } = await getDetail(1000, customerToken());
+  assert.equal(status, 403);
+});
+
+test("GET /api/admin/users/:id without a token returns 401", async () => {
+  const { status } = await getDetail(1000);
+  assert.equal(status, 401);
+});
+
+test("GET /api/admin/users/:id returns the full profile without passwordHash", async () => {
+  const created = await post(
+    { name: "Detail Op", email: "detail@x.com", password: "secret1", role: "operator" },
+    adminToken()
+  );
+  const userId = created.json.user.id;
+  const { status, json } = await getDetail(userId, adminToken());
+  assert.equal(status, 200);
+  assert.equal(json.user.id, userId);
+  assert.equal(json.user.role, "operator");
+  assert.equal(json.user.email, "detail@x.com");
+  assert.equal(json.user.mustResetPassword, true);
+  assert.equal("passwordHash" in json.user, false);
+  assert.equal(json.user.gps, null);
+});
+
+test("GET /api/admin/users/:id returns 404 for a missing user", async () => {
+  const { status } = await getDetail(999999, adminToken());
+  assert.equal(status, 404);
+});
+
+test("GET /api/admin/users/:id/stats returns operator-scoped stats", async () => {
+  const created = await post(
+    { name: "Stats Op", email: "stats@x.com", password: "secret1", role: "operator" },
+    adminToken()
+  );
+  const userId = created.json.user.id;
+  const { status, json } = await getStats(userId, adminToken());
+  assert.equal(status, 200);
+  assert.equal(json.stats.scope, "operator");
+  assert.ok(json.stats.totals && typeof json.stats.totals === "object");
+  assert.equal(json.stats.totals.assigned, 0);
+});
+
+test("GET /api/admin/users/:id/stats returns 404 for a missing user", async () => {
+  const { status } = await getStats(999999, adminToken());
+  assert.equal(status, 404);
 });

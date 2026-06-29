@@ -52,7 +52,9 @@ Copy `.env.example` to `.env` (gitignored) and fill in values.
 | `DATABASE_PROVIDER` | `mysql` (Hostinger / production, **default**) or `sqlite` (local). |
 | `DATABASE_URL`      | Prisma connection string (datasource `url`).                   |
 | `PORT`              | Port the Express server listens on (default `3000`).           |
-| `AUTH_SECRET`       | HMAC secret for signing session tokens. **Set in production**; falls back to an insecure dev secret (with a warning) if unset. |
+| `AUTH_SECRET`       | HMAC secret for signing JWT session tokens. **Set in production**; falls back to an insecure dev secret (with a warning) if unset. |
+| `AUTH_JWT_ISSUER`   | JWT `iss` claim (default `irago`). |
+| `AUTH_JWT_AUDIENCE` | JWT `aud` claim (default `irago-app`). |
 
 ### Why the provider swap?
 

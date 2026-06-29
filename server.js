@@ -5,15 +5,19 @@
 // DB_USER / DB_PASSWORD / DB_NAME — see README and .env.example.
 require("dotenv").config();
 
+const http = require("http");
 const path = require("path");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const { ping, maskedConfig, pool } = require("./src/db");
+const { pingZones, zonesDbConfig, pool: zonesPool } = require("./src/zones-db");
 const { validateEmailConfig } = require("./src/email");
 const { initSchema } = require("./src/schema");
+const { initZonesSchema } = require("./src/zones-schema");
 const apiRouter = require("./src/api");
 const { clearAuthCookie } = require("./src/auth");
 const { cleanupExpiredOtps } = require("./src/otp");
+const { attachWebSocketServer } = require("./src/dispatch-hub");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -55,6 +59,7 @@ app.use(express.static(ROOT));
 // Tracks whether the database came up so the startup log (and /api/health)
 // can report a degraded state instead of guessing.
 let dbConnected = false;
+let zonesDbConnected = false;
 
 async function connectDatabase() {
   // The whole DB bring-up is wrapped in try/catch so a database outage or bad
@@ -75,6 +80,27 @@ async function connectDatabase() {
   try {
     await ping();
     await initSchema();
+    try {
+      await pingZones();
+      await initZonesSchema();
+      zonesDbConnected = true;
+      console.log(
+        "[startup] zones database connected:",
+        maskedConfig({
+          host: zonesDbConfig.host,
+          port: zonesDbConfig.port,
+          user: zonesDbConfig.user,
+          database: zonesDbConfig.database,
+          password: zonesDbConfig.password,
+        })
+      );
+    } catch (zonesErr) {
+      zonesDbConnected = false;
+      console.error(
+        "[startup] WARNING: airspace zones database unavailable — map overlays and fuel planning may fail."
+      );
+      console.error(`[startup] zones message: ${zonesErr.message}`);
+    }
     const purged = await cleanupExpiredOtps();
     dbConnected = true;
     console.log(
@@ -111,11 +137,15 @@ async function start() {
   }
   await connectDatabase();
 
-  app.listen(PORT, () => {
+  // Create a plain HTTP server so the WebSocket server can share the same port.
+  const httpServer = http.createServer(app);
+  attachWebSocketServer(httpServer);
+
+  httpServer.listen(PORT, () => {
     console.log(
       `[startup] Server running on port ${PORT} (database: ${
         dbConnected ? "connected" : "unavailable"
-      }, smtp: ${smtpReady ? "configured" : "missing"}).`
+      }, smtp: ${smtpReady ? "configured" : "missing"}, ws: /ws/operator).`
     );
   });
 }
@@ -125,7 +155,8 @@ async function shutdown(signal) {
   console.log(`[shutdown] ${signal} received, closing MySQL pool ...`);
   try {
     await pool.end();
-    console.log("[shutdown] pool closed.");
+    await zonesPool.end().catch(() => {});
+    console.log("[shutdown] pools closed.");
   } catch (err) {
     console.error("[shutdown] error closing pool:", err.message);
   } finally {

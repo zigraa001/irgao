@@ -7,6 +7,9 @@
 const express = require("express");
 const { query, queryOne } = require("./db");
 const { requireAuth, requireRole } = require("./auth");
+const { subscribeOperator, pushCustomer } = require("./dispatch-hub");
+const { acceptOffer, rejectOffer } = require("./dispatch");
+const { haversineKm } = require("./pricing");
 
 const router = express.Router();
 
@@ -147,6 +150,148 @@ router.post(
       booking.id,
     ]);
     res.json({ booking: updated });
+  }
+);
+
+// ── Status progression (Uber-style ride lifecycle) ───────────────────────
+// Each advance moves the booking forward and notifies the passenger in real
+// time via the customer SSE channel. Allowed transitions:
+//   accepted  → enroute   (pilot heading to pickup)
+//   enroute   → picked_up (pilot arrived at pickup, passenger boarded)
+//   picked_up → flying    (in the air to destination)
+//   flying    → completed (landed at destination, trip done)
+async function advanceTripStatus(req, res, fromStatus, toStatus) {
+  const booking = await loadOwnTrip(req, res);
+  if (!booking) return;
+  if (booking.status !== fromStatus) {
+    return res.status(409).json({
+      error: `Trip must be "${fromStatus}" to move it to "${toStatus}"`,
+    });
+  }
+  await query("UPDATE bookings SET status = ? WHERE id = ?", [
+    toStatus,
+    booking.id,
+  ]);
+  const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
+    booking.id,
+  ]);
+  pushCustomer(booking.id, "ride_update", {
+    bookingId: booking.id,
+    status: toStatus,
+  });
+  res.json({ booking: updated });
+}
+
+router.post(
+  "/trips/:id/enroute",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => advanceTripStatus(req, res, "accepted", "enroute")
+);
+router.post(
+  "/trips/:id/pickup",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => advanceTripStatus(req, res, "enroute", "picked_up")
+);
+router.post(
+  "/trips/:id/takeoff",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => advanceTripStatus(req, res, "picked_up", "flying")
+);
+router.post(
+  "/trips/:id/complete",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => advanceTripStatus(req, res, "flying", "completed")
+);
+
+// GET /api/operator/dispatch/stream — SSE dispatch offers (ting sound on client).
+router.get(
+  "/dispatch/stream",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders?.();
+    res.write(": connected\n\n");
+    subscribeOperator(req.user.id, res);
+  }
+);
+
+// POST /api/operator/location — GPS heartbeat from pilot device.
+// Saves the GPS, then — if the pilot has an active in-transit booking — pushes
+// the position to that booking's customer SSE channel so the passenger sees the
+// plane move in real time (Uber-style "track your driver").
+router.post("/location", requireAuth, requireRole("operator"), async (req, res) => {
+  const lat = Number(req.body?.lat);
+  const lng = Number(req.body?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "lat and lng are required" });
+  }
+  await query(
+    "UPDATE users SET gpsLat = ?, gpsLng = ?, gpsUpdatedAt = NOW() WHERE id = ?",
+    [lat, lng, req.user.id]
+  );
+
+  // Push live GPS to the passenger watching this pilot's active trip.
+  const active = await queryOne(
+    `SELECT id, pickupLat, pickupLng, destLat, destLng, status FROM bookings
+     WHERE operatorId = ? AND status IN ('assigned','accepted','enroute','picked_up','flying')
+     ORDER BY updatedAt DESC LIMIT 1`,
+    [req.user.id]
+  );
+  if (active) {
+    const refLat =
+      active.status === "flying" ? active.destLat : active.pickupLat;
+    const refLng =
+      active.status === "flying" ? active.destLng : active.pickupLng;
+    const distanceKm =
+      Number.isFinite(refLat) && Number.isFinite(refLng)
+        ? Math.round(haversineKm(refLat, refLng, lat, lng) * 10) / 10
+        : null;
+    pushCustomer(active.id, "ride_gps", {
+      bookingId: active.id,
+      lat,
+      lng,
+      status: active.status,
+      distanceKm,
+    });
+  }
+
+  res.json({ ok: true, lat, lng });
+});
+
+// POST /api/operator/dispatch/offers/:id/accept
+router.post(
+  "/dispatch/offers/:id/accept",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const offerId = Number(req.params.id);
+    const result = await acceptOffer(offerId, req.user.id);
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
+    }
+    res.json({ booking: result.booking });
+  }
+);
+
+// POST /api/operator/dispatch/offers/:id/reject
+router.post(
+  "/dispatch/offers/:id/reject",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const offerId = Number(req.params.id);
+    const result = await rejectOffer(offerId, req.user.id);
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
+    }
+    res.json({ message: "Offer declined. Dispatching to next pilot." });
   }
 );
 

@@ -7,8 +7,13 @@ const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
 const operatorRoutes = require("./operator-routes");
 const adminRoutes = require("./admin-routes");
-const { requireAuth } = require("./auth");
+const adminOpsRoutes = require("./admin-ops-routes");
+const zoneRoutes = require("./zone-routes");
+const { router: routeRoutes } = require("./route-routes");
+const trackingRoutes = require("./tracking-routes");
+const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
+const { buildProfileStats } = require("./profile-stats");
 
 const router = express.Router();
 
@@ -74,15 +79,29 @@ router.use("/operator", operatorRoutes);
 
 // Admin: user management — Tailscale-gated when ADMIN_REQUIRE_TAILSCALE=true.
 router.use("/admin", requireTailscale, adminRoutes);
+router.use("/admin", requireTailscale, adminOpsRoutes);
 
-// Current authenticated user — reads from cookie/Bearer token and returns profile.
+// Live GPS / fleet (passenger 10 km radius).
+router.use("/tracking", trackingRoutes);
+
+// Least-fuel route planning.
+router.use("/route", routeRoutes);
+
+// Flight / restricted airspace zones for map overlays.
+router.use("/zones", zoneRoutes);
 router.get("/me", requireAuth, async (req, res) => {
   const user = await queryOne(
-    "SELECT id, name, email, role, emailVerified FROM users WHERE id = ?",
+    `SELECT id, name, email, role, emailVerified, bannedAt, mustResetPassword FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,
     [req.user.id]
   );
   if (!user) {
     return res.status(401).json({ error: "Authentication required" });
+  }
+  if (user.bannedAt) {
+    return res.status(403).json({
+      error: "This account has been suspended.",
+      code: "ACCOUNT_BANNED",
+    });
   }
   res.json({
     user: {
@@ -91,8 +110,23 @@ router.get("/me", requireAuth, async (req, res) => {
       email: user.email,
       role: user.role,
       emailVerified: Boolean(user.emailVerified),
+      mustResetPassword: Boolean(user.mustResetPassword),
     },
   });
+});
+
+// GET /api/me/stats — aggregated profile dashboard for the logged-in user.
+// Role-scoped: customer (trips/spend/CO₂), operator (assigned/flown/earnings),
+// admin (platform totals). Returns zeros on a fresh DB so the dashboard renders
+// cleanly before any bookings exist.
+router.get("/me/stats", requireAuth, async (req, res) => {
+  try {
+    const stats = await buildProfileStats(req.user.id, req.user.role);
+    res.json({ stats });
+  } catch (err) {
+    console.error("[api] /me/stats failed:", err.message);
+    res.status(500).json({ error: "Could not load profile stats." });
+  }
 });
 
 module.exports = router;
