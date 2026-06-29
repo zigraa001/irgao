@@ -21,6 +21,7 @@ const {
   clearAuthCookie,
   requireAuth,
   USER_NOT_DELETED,
+  invalidateUserStatus,
 } = require("./auth");
 const {
   createAndSendOtp,
@@ -296,6 +297,9 @@ router.post("/delete-account", requireAuth, async (req, res) => {
      WHERE id = ?`,
     [tombstoneEmail, "Deleted user", unusableHash, user.id]
   );
+  // Drop the cached status so the soft-delete takes effect on the next request
+  // (their token would otherwise stay valid until expiry).
+  invalidateUserStatus(user.id);
 
   clearAuthCookie(res);
   return res.json({
@@ -314,20 +318,21 @@ router.post("/forgot-password", async (req, res) => {
     normalizedEmail,
   ]);
 
-  // No account — tell the user clearly so they know to register first.
-  if (!user) {
-    return res.status(404).json({
-      error: "No account found with this email. Please register first.",
-      code: "ACCOUNT_NOT_FOUND",
+  // Always return the same generic "code sent" response so this endpoint can't
+  // be used to enumerate which emails have accounts (login already avoids this).
+  const genericSent = () =>
+    res.json({
+      message: "If an account exists for this email, a verification code has been sent.",
     });
+
+  if (!user) {
+    // No account — don't reveal that. Pretend we sent a code.
+    return genericSent();
   }
 
   // Admin passwords are managed via .env only.
   if (user.role === "admin") {
-    return res.status(403).json({
-      error: "Admin password is managed via .env only. Update ADMIN_PASSWORD and run npm run admin:bootstrap.",
-      code: "ADMIN_ENV_ONLY",
-    });
+    return genericSent();
   }
 
   const result = await createAndSendOtp(normalizedEmail, "reset_password", {});

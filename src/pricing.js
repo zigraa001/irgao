@@ -35,6 +35,21 @@ function haversineKm(aLat, aLng, bLat, bLng) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+// Strict lat/lng parser. Returns null for anything that isn't a finite number
+// in valid range — critically this rejects null/undefined/""/booleans, all of
+// which Number() silently coerces to 0 (which previously created bookings at
+// lat 0, lng 0). `kind` is "lat" ([-90, 90]) or "lng" ([-180, 180]).
+function parseCoord(v, kind) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "boolean") return null;
+  if (typeof v === "string" && v.trim() === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  if (kind === "lat" && (n < -90 || n > 90)) return null;
+  if (kind === "lng" && (n < -180 || n > 180)) return null;
+  return n;
+}
+
 // Mock fare estimate for a service over a distance. Returns an INR amount
 // rounded to the nearest ₹100 for tidy display. Throws on an unknown service.
 function estimateFare(service, distanceKm) {
@@ -47,4 +62,10 @@ function estimateFare(service, distanceKm) {
   return Math.round(raw / 100) * 100;
 }
 
-module.exports = { SERVICE_PRICING, SERVICES, haversineKm, estimateFare };
+module.exports = {
+  SERVICE_PRICING,
+  SERVICES,
+  haversineKm,
+  estimateFare,
+  parseCoord,
+};

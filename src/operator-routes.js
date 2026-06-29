@@ -8,8 +8,17 @@ const express = require("express");
 const { query, queryOne } = require("./db");
 const { requireAuth, requireRole } = require("./auth");
 const { subscribeOperator, pushCustomer } = require("./dispatch-hub");
-const { acceptOffer, rejectOffer } = require("./dispatch");
-const { haversineKm } = require("./pricing");
+const {
+  acceptOffer,
+  rejectOffer,
+  offerToNextOperator,
+  releaseAircraft,
+  setOperatorDuty,
+  BUSY_STATUSES,
+} = require("./dispatch");
+const { haversineKm, parseCoord } = require("./pricing");
+const { rateLimit } = require("./rate-limit");
+const push = require("./push");
 
 const router = express.Router();
 
@@ -59,6 +68,84 @@ const TRIP_SELECT = `
   JOIN users c ON c.id = b.customerId
   LEFT JOIN aircraft a ON a.id = b.aircraftId
 `;
+
+// GET /api/operator/duty — current on-duty/off-duty state for the pilot.
+router.get("/duty", requireAuth, requireRole("operator"), async (req, res) => {
+  const u = await queryOne(
+    "SELECT onDuty, gpsLat, gpsLng, gpsUpdatedAt FROM users WHERE id = ?",
+    [req.user.id]
+  );
+  res.json({ onDuty: Boolean(u?.onDuty), gps: { lat: u?.gpsLat ?? null, lng: u?.gpsLng ?? null } });
+});
+
+// POST /api/operator/duty — toggle on-duty / off-duty.
+// Body: { onDuty: true|false }. Going off-duty is refused while the pilot still
+// has an active in-transit trip (they're committed to that ride). On-duty is
+// always allowed. Accepting a trip auto-forces on-duty; drop-off/cancel
+// auto-flips off-duty — this endpoint is the manual override in between.
+router.post("/duty", requireAuth, requireRole("operator"), async (req, res) => {
+  const onDuty = Boolean(req.body?.onDuty);
+  if (!onDuty) {
+    const active = await queryOne(
+      `SELECT id FROM bookings
+       WHERE operatorId = ? AND status IN (${BUSY_STATUSES.map(() => "?").join(",")})
+       LIMIT 1`,
+      [req.user.id, ...BUSY_STATUSES]
+    );
+    if (active) {
+      return res.status(409).json({
+        error: "Cannot go off-duty while you have an active trip.",
+        code: "ACTIVE_TRIP",
+      });
+    }
+  }
+  await setOperatorDuty(req.user.id, onDuty ? 1 : 0);
+  res.json({ onDuty });
+});
+
+// ── Web Push subscriptions ────────────────────────────────────────────────
+// GET /api/operator/push/vapid-public-key — public key the browser needs to
+// subscribe via pushManager.subscribe({ applicationServerKey }).
+router.get(
+  "/push/vapid-public-key",
+  requireAuth,
+  requireRole("operator"),
+  (req, res) => {
+    const publicKey = push.getPublicKey();
+    if (!publicKey) {
+      return res
+        .status(503)
+        .json({ error: "Web Push is not configured (VAPID keys missing).", configured: false });
+    }
+    res.json({ publicKey, configured: true });
+  }
+);
+
+// POST /api/operator/push/subscribe — store a browser PushSubscription.
+// Body: { endpoint, keys: { p256dh, auth } } (the serialized PushSubscription).
+router.post(
+  "/push/subscribe",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const result = await push.saveSubscription(req.user.id, req.body);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+    res.json({ ok: true });
+  }
+);
+
+// POST /api/operator/push/unsubscribe — drop a subscription (e.g. user logged
+// out / denied notifications). Body: { endpoint }.
+router.post(
+  "/push/unsubscribe",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const result = await push.removeSubscription(req.user.id, req.body?.endpoint);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+    res.json({ ok: true });
+  }
+);
 
 // GET /api/operator/trips — bookings assigned to the logged-in operator.
 // Includes the customer and assigned aircraft so the list can show route,
@@ -125,9 +212,11 @@ router.post(
   }
 );
 
-// POST /api/operator/trips/:id/reject — reject an assigned mission.
-// Sets status to "rejected" and frees the booking for reassignment by clearing
-// the operator and aircraft so an admin can assign it to someone else.
+// POST /api/operator/trips/:id/reject — hand back an assigned mission.
+// Releases the aircraft, returns the booking to a dispatchable state, and
+// re-enters the nearest-pilot dispatch loop (which excludes operators already
+// offered this trip, including this one). Previously this stranded the booking
+// in "rejected" with no re-dispatch — the customer was stuck.
 router.post(
   "/trips/:id/reject",
   requireAuth,
@@ -142,10 +231,22 @@ router.post(
       });
     }
 
+    await releaseAircraft(booking.id);
     await query(
-      "UPDATE bookings SET status = ?, operatorId = NULL, aircraftId = NULL WHERE id = ?",
-      ["rejected", booking.id]
+      `UPDATE bookings
+       SET status = 'dispatching', operatorId = NULL, aircraftId = NULL, pendingOperatorId = NULL
+       WHERE id = ?`,
+      [booking.id]
     );
+    // Handing back an accepted trip ends the operator's "on-duty for this ride"
+    // state — they go off-duty and must toggle back on to receive new offers.
+    await setOperatorDuty(req.user.id, 0);
+    pushCustomer(booking.id, "ride_update", {
+      bookingId: booking.id,
+      status: "dispatching",
+      message: "Your pilot reassigned — finding another nearby pilot…",
+    });
+    await offerToNextOperator(booking.id);
     const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
       booking.id,
     ]);
@@ -158,8 +259,8 @@ router.post(
 // time via the customer SSE channel. Allowed transitions:
 //   accepted  → enroute   (pilot heading to pickup)
 //   enroute   → picked_up (pilot arrived at pickup, passenger boarded)
-//   picked_up → flying    (in the air to destination)
-//   flying    → completed (landed at destination, trip done)
+//   picked_up → flying    (in the air to destination — requires an aircraft)
+//   flying    → completed (landed at destination, trip done — frees aircraft)
 async function advanceTripStatus(req, res, fromStatus, toStatus) {
   const booking = await loadOwnTrip(req, res);
   if (!booking) return;
@@ -168,10 +269,24 @@ async function advanceTripStatus(req, res, fromStatus, toStatus) {
       error: `Trip must be "${fromStatus}" to move it to "${toStatus}"`,
     });
   }
+  // A pilot cannot take off without an assigned aircraft.
+  if (toStatus === "flying" && !booking.aircraftId) {
+    return res.status(409).json({
+      error:
+        "No aircraft is assigned to this trip. Cannot take off until an aircraft is available.",
+      code: "NO_AIRCRAFT",
+    });
+  }
   await query("UPDATE bookings SET status = ? WHERE id = ?", [
     toStatus,
     booking.id,
   ]);
+  // Landing completes the trip — release the aircraft back to the fleet and
+  // flip the operator off-duty (auto on-duty lasts only for the active ride).
+  if (toStatus === "completed") {
+    await releaseAircraft(booking.id);
+    await setOperatorDuty(req.user.id, 0);
+  }
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
     booking.id,
   ]);
@@ -226,11 +341,13 @@ router.get(
 // Saves the GPS, then — if the pilot has an active in-transit booking — pushes
 // the position to that booking's customer SSE channel so the passenger sees the
 // plane move in real time (Uber-style "track your driver").
-router.post("/location", requireAuth, requireRole("operator"), async (req, res) => {
-  const lat = Number(req.body?.lat);
-  const lng = Number(req.body?.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return res.status(400).json({ error: "lat and lng are required" });
+router.post("/location", requireAuth, requireRole("operator"), rateLimit("operator.location"), async (req, res) => {
+  const lat = parseCoord(req.body?.lat, "lat");
+  const lng = parseCoord(req.body?.lng, "lng");
+  if (lat === null || lng === null) {
+    return res
+      .status(400)
+      .json({ error: "lat ([-90,90]) and lng ([-180,180]) are required" });
   }
   await query(
     "UPDATE users SET gpsLat = ?, gpsLng = ?, gpsUpdatedAt = NOW() WHERE id = ?",

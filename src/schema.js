@@ -213,6 +213,51 @@ async function initSchema() {
     INDEX idx_dispatch_booking (bookingId),
     INDEX idx_dispatch_operator (operatorId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  // Ratings: both sides rate after completion. raterRole records who rated whom.
+  await query(`CREATE TABLE IF NOT EXISTS ratings (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    bookingId  INT          NOT NULL,
+    raterId    INT          NOT NULL,
+    raterRole  VARCHAR(32)  NOT NULL,
+    rateeId    INT          NOT NULL,
+    stars      INT          NOT NULL,
+    comment    VARCHAR(1000) NULL,
+    createdAt  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_rating (bookingId, raterId),
+    INDEX idx_ratings_ratee (rateeId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  // Cancellation ledger: records fee policy applied (free / fee / waived) per cancel.
+  await ensureColumn(
+    "bookings",
+    "cancelledAt",
+    "cancelledAt DATETIME NULL"
+  );
+  await ensureColumn(
+    "bookings",
+    "assignedAt",
+    "assignedAt DATETIME NULL"
+  );
+  await ensureColumn(
+    "bookings",
+    "cancellationFee",
+    "cancellationFee DOUBLE NOT NULL DEFAULT 0"
+  );
+  // Operator duty state. onDuty=0 means offline and excluded from dispatch.
+  await ensureColumn(
+    "users",
+    "onDuty",
+    "onDuty TINYINT(1) NOT NULL DEFAULT 0"
+  );
+  // Web-push subscriptions (one operator may have multiple devices).
+  await query(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    userId        INT          NOT NULL,
+    endpoint      VARCHAR(512) NOT NULL,
+    p256dh        VARCHAR(255) NOT NULL,
+    auth          VARCHAR(255) NOT NULL,
+    createdAt     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_push_user (userId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   dbg("initSchema: done");
 }
 

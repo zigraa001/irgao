@@ -6,6 +6,7 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { queryOne } = require("./db");
 
 const BCRYPT_ROUNDS = 10;
 // Session token lifetime (seconds). Override with AUTH_COOKIE_TTL_SECONDS.
@@ -172,7 +173,41 @@ function clearAuthCookie(res) {
 
 // Express middleware: require a valid session token (cookie or Bearer).
 // On success sets req.user = { id, name, role }; otherwise responds 401.
-function requireAuth(req, res, next) {
+//
+// The JWT alone proves identity + expiry, but it can't reflect a ban or
+// soft-delete that happens AFTER the token was issued — so a banned operator
+// could otherwise keep accepting offers until token expiry (up to 7 days). We
+// re-check the user row in the DB with a short cache (STATUS_CACHE_TTL_MS).
+// If the DB is unreachable, we degrade gracefully and admit the token alone
+// (the whole app is degraded when the DB is down anyway).
+const STATUS_CACHE_TTL_MS = 30_000;
+const userStatusCache = new Map(); // id → { row, expiresAt }
+
+async function getUserStatus(id) {
+  const now = Date.now();
+  const cached = userStatusCache.get(id);
+  if (cached && cached.expiresAt > now) return cached.row;
+  let row = null;
+  try {
+    row = await queryOne(
+      "SELECT deletedAt, bannedAt, role FROM users WHERE id = ?",
+      [id]
+    );
+  } catch {
+    // DB unavailable (or a test fake that doesn't handle this SQL) — degrade.
+    row = null;
+  }
+  userStatusCache.set(id, { row, expiresAt: now + STATUS_CACHE_TTL_MS });
+  return row;
+}
+
+// Drop the cached status for a user so a ban / unban / delete takes effect on
+// the very next request instead of after the cache TTL.
+function invalidateUserStatus(id) {
+  userStatusCache.delete(Number(id));
+}
+
+async function requireAuth(req, res, next) {
   const token = extractToken(req);
   const payload = token ? verifyToken(token) : null;
   if (!payload) {
@@ -182,7 +217,24 @@ function requireAuth(req, res, next) {
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  req.user = { id, name: payload.name, role: payload.role };
+
+  const status = await getUserStatus(id);
+  if (status) {
+    if (status.deletedAt) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    if (status.bannedAt) {
+      return res
+        .status(403)
+        .json({ error: "This account has been suspended.", code: "ACCOUNT_BANNED" });
+    }
+  }
+
+  req.user = {
+    id,
+    name: payload.name,
+    role: (status && status.role) || payload.role,
+  };
   next();
 }
 
@@ -220,4 +272,5 @@ module.exports = {
   clearAuthCookie,
   requireAuth,
   requireRole,
+  invalidateUserStatus,
 };

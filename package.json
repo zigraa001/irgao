@@ -10,6 +10,7 @@
     "db:seed": "node scripts/seed.js",
     "admin:bootstrap": "node scripts/bootstrap-admin.js",
     "smtp:verify": "node scripts/verify-smtp.js",
+    "vapid:gen": "node scripts/gen-vapid.js",
     "local:setup": "bash scripts/local/setup.sh",
     "local:mysql-up": "bash scripts/local/mysql-up.sh",
     "local:mysql-down": "bash scripts/local/mysql-down.sh",
@@ -33,6 +34,7 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.5",
     "nodemailer": "^9.0.1",
+    "web-push": "^3.6.7",
     "ws": "^8.21.0"
   },
   "devDependencies": {

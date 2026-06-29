@@ -72,7 +72,10 @@ test("WebSocket auth rejects connections without a valid operator JWT", async ()
 
   const { WebSocket } = require("ws");
   async function connectAndReceive(token) {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/operator?token=${encodeURIComponent(token || "")}`);
+    // Token is carried as a WebSocket subprotocol, not in the URL.
+    const ws = token
+      ? new WebSocket(`ws://127.0.0.1:${port}/ws/operator`, `irago.operator.${token}`)
+      : new WebSocket(`ws://127.0.0.1:${port}/ws/operator`);
     sockets.push(ws);
     return new Promise((resolve) => {
       let done = false;

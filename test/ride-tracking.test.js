@@ -36,6 +36,7 @@ const fakeDb = (() => {
       fareEstimate: 5000,
       carbonSavedKg: 10,
       paymentStatus: "paid",
+      aircraftId: 1,
       createdAt: "2026-06-29 00:00:00",
       updatedAt: "2026-06-29 00:00:00",
       ...over,
@@ -57,6 +58,11 @@ const fakeDb = (() => {
     if (s.startsWith("UPDATE users SET gpsLat")) {
       const u = users.find((x) => x.id === params[2]);
       if (u) { u.gpsLat = params[0]; u.gpsLng = params[1]; }
+      return { affectedRows: 1 };
+    }
+    if (s.startsWith("UPDATE users SET onDuty = ? WHERE id = ?")) {
+      const u = users.find((x) => x.id === params[1]);
+      if (u) u.onDuty = params[0];
       return { affectedRows: 1 };
     }
     if (s.includes("FROM bookings") && s.includes("operatorId = ?") && s.includes("ORDER BY updatedAt DESC")) {
@@ -103,6 +109,19 @@ const fakeDb = (() => {
     if (s.startsWith("SELECT id, name, gpsLat, gpsLng, gpsUpdatedAt FROM users WHERE id = ?")) {
       const u = users.find((x) => x.id === params[0]);
       return u ? [u] : [];
+    }
+    // Aircraft release on trip completion.
+    if (s.startsWith("SELECT aircraftId FROM bookings WHERE id = ?")) {
+      const b = bookings.find((x) => x.id === params[0]);
+      return b ? [{ aircraftId: b.aircraftId != null ? b.aircraftId : null }] : [];
+    }
+    if (s.startsWith("UPDATE aircraft SET status = 'available' WHERE id = ?")) {
+      return { affectedRows: 1 };
+    }
+    if (s.startsWith("UPDATE bookings SET aircraftId = NULL WHERE id = ?")) {
+      const b = bookings.find((x) => x.id === params[0]);
+      if (b) b.aircraftId = null;
+      return { affectedRows: 1 };
     }
     throw new Error("Unhandled SQL in fake ride-tracking: " + s.slice(0, 90));
   }

@@ -85,6 +85,18 @@ require.cache[require.resolve("../src/zones-db")] = {
   exports: fakeZonesDb,
 };
 
+// requireAuth now re-checks the user row in the main DB; stub ./db so the
+// lookup degrades to "allow on token alone" without a real MySQL connection.
+require.cache[require.resolve("../src/db")] = {
+  id: require.resolve("../src/db"),
+  filename: require.resolve("../src/db"),
+  loaded: true,
+  exports: {
+    query: async () => [],
+    queryOne: async () => null,
+  },
+};
+
 const zoneRoutes = require("../src/zone-routes");
 const { signToken } = require("../src/auth");
 

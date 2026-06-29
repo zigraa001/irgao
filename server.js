@@ -5,6 +5,10 @@
 // DB_USER / DB_PASSWORD / DB_NAME — see README and .env.example.
 require("dotenv").config();
 
+// Capture console output into an in-memory ring buffer for the admin
+// observability panel. Install first so boot logs are captured too. Idempotent.
+require("./src/log-bus").install();
+
 const http = require("http");
 const path = require("path");
 const express = require("express");
@@ -18,6 +22,7 @@ const apiRouter = require("./src/api");
 const { clearAuthCookie } = require("./src/auth");
 const { cleanupExpiredOtps } = require("./src/otp");
 const { attachWebSocketServer } = require("./src/dispatch-hub");
+const { recoverDispatch } = require("./src/dispatch");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -136,6 +141,21 @@ async function start() {
     );
   }
   await connectDatabase();
+
+  // Re-offer any bookings left mid-dispatch by a restart (in-memory offer
+  // timers don't survive a restart). No-op on a clean boot.
+  if (dbConnected) {
+    try {
+      const recovered = await recoverDispatch();
+      if (recovered.expiredOffers || recovered.redispatched) {
+        console.log(
+          `[startup] dispatch recovery: expired ${recovered.expiredOffers} stale offer(s), re-offered ${recovered.redispatched} booking(s).`
+        );
+      }
+    } catch (err) {
+      console.error("[startup] dispatch recovery failed:", err.message);
+    }
+  }
 
   // Create a plain HTTP server so the WebSocket server can share the same port.
   const httpServer = http.createServer(app);

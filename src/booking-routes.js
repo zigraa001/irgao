@@ -6,31 +6,39 @@
 // trust client-supplied money or geometry.
 const express = require("express");
 const { query, queryOne } = require("./db");
-const { requireAuth } = require("./auth");
-const { SERVICES, haversineKm, estimateFare } = require("./pricing");
+const { requireAuth, requireRole } = require("./auth");
+const {
+  SERVICES,
+  haversineKm,
+  estimateFare,
+  parseCoord,
+} = require("./pricing");
 const { estimateCarbonSavedKg } = require("./carbon");
-const { startDispatch } = require("./dispatch");
+const { startDispatch, stopDispatch, setOperatorDuty } = require("./dispatch");
+const { pushOperator, pushCustomer } = require("./dispatch-hub");
+const { rateLimit } = require("./rate-limit");
+const { fareBreakdown } = require("./fare-breakdown");
+const { checkRouteFeasibility } = require("./route-feasibility");
+const { sendReceiptEmail, isEmailConfigured } = require("./receipt");
 
 const router = express.Router();
 
-// Coerce a value to a finite number, or null if it isn't one.
-function num(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
+// Minimum trip distance (km). Pickup == destination yields a 0-km booking
+// priced at just the base fare — reject it.
+const MIN_TRIP_KM = 0.1;
 
 // POST /api/bookings — create a booking for the logged-in customer.
 // Body: { pickupName, pickupLat, pickupLng, destName, destLat, destLng,
 //         service }. distanceKm + fareEstimate are computed server-side.
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.create"), async (req, res) => {
   const b = req.body || {};
 
   const pickupName = typeof b.pickupName === "string" ? b.pickupName.trim() : "";
   const destName = typeof b.destName === "string" ? b.destName.trim() : "";
-  const pickupLat = num(b.pickupLat);
-  const pickupLng = num(b.pickupLng);
-  const destLat = num(b.destLat);
-  const destLng = num(b.destLng);
+  const pickupLat = parseCoord(b.pickupLat, "lat");
+  const pickupLng = parseCoord(b.pickupLng, "lng");
+  const destLat = parseCoord(b.destLat, "lat");
+  const destLng = parseCoord(b.destLng, "lng");
   const service = typeof b.service === "string" ? b.service : "";
 
   // Guard: a booking cannot be created unless pickup, destination, and service
@@ -53,6 +61,32 @@ router.post("/", requireAuth, async (req, res) => {
 
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
+  if (distanceKm < MIN_TRIP_KM) {
+    return res
+      .status(400)
+      .json({ error: "Pickup and destination must be different locations" });
+  }
+
+  // Route feasibility: reject bookings whose path crosses a no-fly zone or
+  // whose pickup/destination sits inside one, and offer 3 nearest legal spots.
+  // Degrades to "feasible" if the zones catalog is unreachable.
+  const feasibility = await checkRouteFeasibility({
+    pickupLat,
+    pickupLng,
+    destLat,
+    destLng,
+    service,
+  });
+  if (!feasibility.feasible) {
+    return res.status(409).json({
+      error: "This route crosses a no-fly zone or starts/ends inside one.",
+      code: "ROUTE_BLOCKED",
+      violations: feasibility.violations,
+      warnings: feasibility.warnings,
+      blockedEndpoints: feasibility.blockedEndpoints,
+    });
+  }
+
   const fareEstimate = estimateFare(service, distanceKm);
   const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
@@ -83,7 +117,11 @@ router.post("/", requireAuth, async (req, res) => {
     result.insertId,
   ]);
 
-  res.status(201).json({ booking });
+  res.status(201).json({
+    booking,
+    fare: fareBreakdown(service, distanceKm),
+    warnings: feasibility.warnings,
+  });
 });
 
 // GET /api/bookings/:id — fetch a single booking for status tracking (US-007).
@@ -113,8 +151,48 @@ router.get("/:id", requireAuth, async (req, res) => {
   res.json({ booking });
 });
 
-// POST /api/bookings/:id/pay — dummy payment; starts auto-dispatch to nearest pilot.
-router.post("/:id/pay", requireAuth, async (req, res) => {
+// POST /api/bookings/feasibility — pre-check a route before the customer pays.
+// Returns the same shape as a blocked booking creation so the client can render
+// the "restricted area — pick a nearby spot" alert and suggestions up front.
+router.post("/feasibility", requireAuth, requireRole("customer"), async (req, res) => {
+  const b = req.body || {};
+  const pickupLat = parseCoord(b.pickupLat, "lat");
+  const pickupLng = parseCoord(b.pickupLng, "lng");
+  const destLat = parseCoord(b.destLat, "lat");
+  const destLng = parseCoord(b.destLng, "lng");
+  const service = typeof b.service === "string" ? b.service : "";
+  if (
+    pickupLat === null ||
+    pickupLng === null ||
+    destLat === null ||
+    destLng === null
+  ) {
+    return res
+      .status(400)
+      .json({ error: "pickupLat, pickupLng, destLat, destLng are required" });
+  }
+  if (!SERVICES.includes(service)) {
+    return res.status(400).json({ error: "A valid service must be selected" });
+  }
+  const feasibility = await checkRouteFeasibility({
+    pickupLat,
+    pickupLng,
+    destLat,
+    destLng,
+    service,
+  });
+  const distanceKm =
+    Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
+  res.json({
+    feasible: feasibility.feasible,
+    violations: feasibility.violations,
+    warnings: feasibility.warnings,
+    blockedEndpoints: feasibility.blockedEndpoints,
+    distanceKm,
+    fare: fareBreakdown(service, distanceKm),
+  });
+});
+router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("bookings.pay"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: "Invalid booking id" });
@@ -124,22 +202,321 @@ router.post("/:id/pay", requireAuth, async (req, res) => {
   if (booking.customerId !== req.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  if (booking.paymentStatus === "paid") {
-    return res.json({ booking, message: "Already paid" });
-  }
 
-  await query(
-    "UPDATE bookings SET paymentStatus = 'paid' WHERE id = ?",
+  // Race-safe claim: only the first concurrent /pay flips pending → paid.
+  // A second concurrent caller gets affectedRows=0 and an idempotent response.
+  const claim = await query(
+    "UPDATE bookings SET paymentStatus = 'paid' WHERE id = ? AND paymentStatus = 'pending'",
     [id]
   );
+  if (claim.affectedRows === 0) {
+    const alreadyPaid = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    return res.json({ booking: alreadyPaid, message: "Already paid" });
+  }
+
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
   await startDispatch(id);
   const fresh = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+
+  // Email a receipt/invoice on payment. Payment itself stays mocked, but the
+  // customer gets a real emailed breakdown (base + per-km). Best-effort: a
+  // failed send never blocks the ride.
+  let receiptEmailed = false;
+  if (isEmailConfigured()) {
+    try {
+      const customer = await queryOne(
+        "SELECT email, name FROM users WHERE id = ?",
+        [updated.customerId]
+      );
+      if (customer) {
+        await sendReceiptEmail(customer.email, {
+          booking: updated,
+          fare: fareBreakdown(updated.service, updated.distanceKm),
+          customerName: customer.name,
+        });
+        receiptEmailed = true;
+      }
+    } catch (err) {
+      console.error(`[bookings] receipt email failed for #${id}:`, err.message);
+    }
+  }
+
   res.json({
     booking: fresh,
     message: "Payment successful. Finding a nearby pilot…",
     carbonSavedKg: updated.carbonSavedKg,
+    fare: fareBreakdown(updated.service, updated.distanceKm),
+    receiptEmailed,
   });
+});
+
+// POST /api/bookings/:id/retry-dispatch — let a customer re-dispatch a booking
+// that gave up with status "no_pilot". Re-enters the nearest-pilot dispatch
+// loop (which excludes operators already offered this trip).
+router.post(
+  "/:id/retry-dispatch",
+  requireAuth,
+  requireRole("customer"),
+  rateLimit("bookings.retry"),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "Invalid booking id" });
+    }
+    const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (booking.customerId !== req.user.id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (booking.paymentStatus !== "paid") {
+      return res.status(409).json({ error: "This booking has not been paid yet." });
+    }
+    if (booking.status !== "no_pilot") {
+      return res
+        .status(409)
+        .json({ error: "This booking is not in a retryable state." });
+    }
+
+    // Move back to a dispatchable state and re-enter the dispatch loop.
+    await query(
+      "UPDATE bookings SET status = 'dispatching', pendingOperatorId = NULL WHERE id = ?",
+      [id]
+    );
+    await startDispatch(id);
+    const fresh = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    res.json({
+      booking: fresh,
+      message: "Searching for a nearby pilot again…",
+    });
+  }
+);
+
+// POST /api/bookings/:id/cancel — customer cancels a booking.
+//
+// Mirrors Uber/Ola India cancellation rules:
+//  • Free before a pilot is assigned (requested / dispatching / no_pilot).
+//  • Free within a 5-minute grace window after assignment (assignedAt).
+//  • Free if the pilot made no progress (status still assigned/accepted).
+//  • Cannot cancel once airborne or picked up (flying / picked_up).
+//  • Otherwise a cancellation fee applies (recorded; payment stays mock, so the
+//    "refund" is computed but not actually moved).
+// Side effects: stop dispatch, release aircraft, flip the assigned operator
+// off-duty, notify the operator and the customer.
+const FREE_CANCEL_SECONDS = 300; // 5-minute grace after assignment
+const CANCEL_FEE_MIN = 25; // ₹ floor
+const CANCEL_FEE_RATE = 0.25; // 25% of fare (mock)
+
+function computeCancellationPolicy(booking, nowMs = Date.now()) {
+  const fare = Number(booking.fareEstimate) || 0;
+  // No pilot assigned yet → always free.
+  if (!booking.operatorId) {
+    return { policy: "free", fee: 0, refund: fare, reason: "no_pilot_assigned" };
+  }
+  // Pilot accepted but hasn't started moving toward pickup → no progress → free.
+  const noProgress = ["assigned", "accepted"].includes(booking.status);
+  let withinGrace = false;
+  if (booking.assignedAt) {
+    const assignedMs = new Date(booking.assignedAt).getTime();
+    withinGrace = Number.isFinite(assignedMs) && nowMs - assignedMs <= FREE_CANCEL_SECONDS * 1000;
+  }
+  if (noProgress || withinGrace) {
+    return {
+      policy: "free",
+      fee: 0,
+      refund: fare,
+      reason: noProgress ? "no_progress" : "within_grace_window",
+    };
+  }
+  // Pilot made progress and the grace window elapsed → charge a fee.
+  const fee = Math.max(CANCEL_FEE_MIN, Math.round(fare * CANCEL_FEE_RATE));
+  return {
+    policy: "fee",
+    fee,
+    refund: Math.max(0, fare - fee),
+    reason: "post_grace_with_progress",
+  };
+}
+
+router.post(
+  "/:id/cancel",
+  requireAuth,
+  requireRole("customer"),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "Invalid booking id" });
+    }
+    const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (booking.customerId !== req.user.id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    if (["cancelled", "completed"].includes(booking.status)) {
+      return res
+        .status(409)
+        .json({ error: `Booking already ${booking.status}` });
+    }
+    // Once the passenger is aboard or airborne, cancellation isn't possible.
+    if (["flying", "picked_up"].includes(booking.status)) {
+      return res
+        .status(409)
+        .json({ error: "Cannot cancel once the trip is underway" });
+    }
+
+    const { policy, fee, refund, reason } = computeCancellationPolicy(booking);
+
+    // Stop dispatch (timers/offers/aircraft) before flipping status so the
+    // operator notification reflects the withdrawal, not the new status.
+    await stopDispatch(id);
+
+    await query(
+      `UPDATE bookings
+       SET status = 'cancelled', cancelledAt = NOW(), cancellationFee = ?
+       WHERE id = ?`,
+      [fee, id]
+    );
+
+    // Auto off-duty for the assigned operator on cancellation.
+    if (booking.operatorId) {
+      await setOperatorDuty(booking.operatorId, 0);
+    }
+
+    // Notify the assigned operator (if any) that the trip was cancelled.
+    if (booking.operatorId) {
+      pushOperator(booking.operatorId, "ride_cancelled", {
+        bookingId: id,
+        by: "customer",
+        policy,
+        fee,
+      });
+    }
+    // Notify the customer's own stream.
+    pushCustomer(id, "ride_update", {
+      bookingId: id,
+      status: "cancelled",
+      message:
+        policy === "free"
+          ? "Trip cancelled. No charge applied."
+          : `Trip cancelled. A cancellation fee of ₹${fee} applies.`,
+    });
+
+    const fresh = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    res.json({
+      booking: fresh,
+      cancellation: { policy, fee, refund, reason, freeSeconds: FREE_CANCEL_SECONDS },
+    });
+  }
+);
+
+// GET /api/bookings/history — ride history for the logged-in customer
+// (incl. cancelled trips), newest first. This is the "previous rides" profile
+// section. Reads from the same bookings table (no separate store needed for an
+// MVP; archiving to a cheaper store is a later optimisation, not a schema fork).
+router.get("/history", requireAuth, requireRole("customer"), async (req, res) => {
+  const rows = await query(
+    `SELECT id, pickupName, destName, service, distanceKm, fareEstimate,
+            status, paymentStatus, cancellationFee, createdAt, updatedAt,
+            cancelledAt
+     FROM bookings
+     WHERE customerId = ?
+     ORDER BY createdAt DESC
+     LIMIT 100`,
+    [req.user.id]
+  );
+  res.json({ rides: rows });
+});
+
+// ── Ratings & feedback ─────────────────────────────────────────────────────
+// After a trip completes, both sides rate each other (1–5 + comment). The
+// rater is the caller; the ratee is the other party on the booking. A
+// UNIQUE(bookingId, raterId) constraint makes re-rating an upsert-safe no-op.
+function parseStars(v) {
+  const n = Math.round(Number(v));
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+}
+
+// POST /api/bookings/:id/rate — customer rates operator, or operator rates
+// customer. Booking must be completed and the caller must be a participant.
+router.post("/:id/rate", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const stars = parseStars(req.body?.stars);
+  const comment =
+    typeof req.body?.comment === "string"
+      ? req.body.comment.trim().slice(0, 1000)
+      : "";
+  if (stars === null) {
+    return res.status(400).json({ error: "stars must be an integer 1–5" });
+  }
+
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+  const u = req.user;
+  let rateeId = null;
+  let raterRole = u.role;
+  if (u.role === "customer" && booking.customerId === u.id) {
+    rateeId = booking.operatorId;
+    raterRole = "customer";
+  } else if (u.role === "operator" && booking.operatorId === u.id) {
+    rateeId = booking.customerId;
+    raterRole = "operator";
+  } else {
+    return res.status(403).json({ error: "Not a participant on this booking" });
+  }
+  if (!rateeId) {
+    return res
+      .status(409)
+      .json({ error: "No one to rate yet (the other party is missing)" });
+  }
+  if (booking.status !== "completed") {
+    return res
+      .status(409)
+      .json({ error: "Ratings are only available after the trip completes" });
+  }
+
+  // Insert; if this (bookingId, raterId) already rated, update instead.
+  try {
+    await query(
+      `INSERT INTO ratings (bookingId, raterId, raterRole, rateeId, stars, comment)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE stars = VALUES(stars), comment = VALUES(comment)`,
+      [id, u.id, raterRole, rateeId, stars, comment]
+    );
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: "Could not save rating", detail: err.message });
+  }
+
+  res.json({ bookingId: id, stars, comment, raterRole, rateeId });
+});
+
+// GET /api/bookings/:id/ratings — both sides' ratings for a booking (caller
+// must be a participant or admin).
+router.get("/:id/ratings", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  const u = req.user;
+  const allowed =
+    u.role === "admin" ||
+    booking.customerId === u.id ||
+    booking.operatorId === u.id;
+  if (!allowed) {
+    return res.status(403).json({ error: "Not allowed to view this booking" });
+  }
+  const rows = await query(
+    "SELECT raterId, raterRole, rateeId, stars, comment, createdAt FROM ratings WHERE bookingId = ?",
+    [id]
+  );
+  res.json({ ratings: rows });
 });
 
 module.exports = router;

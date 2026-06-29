@@ -11,8 +11,10 @@ const {
   requireRole,
   USER_NOT_DELETED,
   USER_NOT_BANNED,
+  invalidateUserStatus,
 } = require("./auth");
 const { buildProfileStats } = require("./profile-stats");
+const logBus = require("./log-bus");
 
 const router = express.Router();
 
@@ -252,6 +254,9 @@ router.patch(
     } else {
       await query("UPDATE users SET bannedAt = NULL WHERE id = ?", [userId]);
     }
+    // Drop the cached status so the ban/unban takes effect on the next request
+    // instead of after the requireAuth cache TTL.
+    invalidateUserStatus(userId);
 
     res.json({
       message: banned
@@ -291,6 +296,7 @@ router.delete(
     }
 
     await softDeleteUser(target);
+    invalidateUserStatus(target.id);
     res.json({ message: `Account for ${target.email} has been deleted.` });
   }
 );
@@ -377,9 +383,34 @@ router.get(
       [userId]
     );
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ user: detailUser(user) });
+    const profile = detailUser(user);
+    // Include the operator's (or any user's) received rating average so the
+    // admin drawer / zoom-gated operator card can show reputation at a glance.
+    try {
+      const r = await queryOne(
+        `SELECT AVG(stars) AS avg, COUNT(*) AS cnt FROM ratings WHERE rateeId = ?`,
+        [userId]
+      );
+      profile.rating = {
+        avg: r?.avg != null ? Math.round(Number(r.avg) * 10) / 10 : null,
+        count: Number(r?.cnt) || 0,
+      };
+    } catch {
+      profile.rating = { avg: null, count: 0 };
+    }
+    res.json({ user: profile });
   }
 );
+
+// GET /api/admin/logs — recent structured logs (in-memory ring buffer) for the
+// observability panel. Paginated newest-first; pass the oldest `before` ts you
+// already show to load the next older page on scroll-up. Default 50 per page.
+router.get("/logs", requireAuth, requireRole("admin"), (req, res) => {
+  const limit = Number(req.query.limit) || 50;
+  const beforeTs = req.query.before ? String(req.query.before) : null;
+  const page = logBus.getLogs({ limit, beforeTs });
+  res.json(page);
+});
 
 // GET /api/admin/users/:id/stats — per-user trips/fare aggregates for the drawer.
 // Reuses the same role-scoped stats logic as /api/me/stats but for any user.

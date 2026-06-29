@@ -7,6 +7,20 @@ const assert = require("node:assert/strict");
 // Ensure a deterministic secret for the test run.
 process.env.AUTH_SECRET = "test-secret-for-auth-tests";
 
+// auth.js re-checks the user row in the DB on every requireAuth (ban / delete
+// enforcement). Stub ./db so the lookup resolves instantly without a real
+// MySQL connection; returning null means "no ban info → degrade allow", which
+// exercises the token-only path these unit tests care about.
+require.cache[require.resolve("../src/db")] = {
+  id: require.resolve("../src/db"),
+  filename: require.resolve("../src/db"),
+  loaded: true,
+  exports: {
+    query: async () => [],
+    queryOne: async () => null,
+  },
+};
+
 const {
   hashPassword,
   verifyPassword,
@@ -121,12 +135,12 @@ test("requireAuth rejects a missing/invalid token with 401", () => {
   assert.equal(res.statusCode, 401);
 });
 
-test("requireAuth accepts a valid token and sets req.user", () => {
+test("requireAuth accepts a valid token and sets req.user", async () => {
   const token = signToken(sampleUser);
   const req = { headers: { authorization: `Bearer ${token}` } };
   const res = mockRes();
   let nextCalled = false;
-  requireAuth(req, res, () => {
+  await requireAuth(req, res, () => {
     nextCalled = true;
   });
   assert.equal(nextCalled, true);
@@ -140,12 +154,12 @@ test("extractToken reads token from HttpOnly cookie header", () => {
   assert.equal(extractToken(req), token);
 });
 
-test("requireAuth accepts token from cookie", () => {
+test("requireAuth accepts token from cookie", async () => {
   const token = signToken(sampleUser);
   const req = { headers: { cookie: `${COOKIE_NAME}=${token}` } };
   const res = mockRes();
   let nextCalled = false;
-  requireAuth(req, res, () => {
+  await requireAuth(req, res, () => {
     nextCalled = true;
   });
   assert.equal(nextCalled, true);

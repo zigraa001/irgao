@@ -19,14 +19,57 @@ const customerClients = new Map(); // SSE:  bookingId → Set<res>
 
 let wss = null;
 
+// The operator JWT is carried in a WebSocket subprotocol string
+// (`irago.operator.<token>`) rather than the URL query string, so it never
+// lands in access/proxy logs or referrer headers. Read from the
+// `Sec-WebSocket-Protocol` request header on connection.
+const WS_SUBPROTO_PREFIX = "irago.operator.";
+
+function extractWsToken(req) {
+  const header = req.headers["sec-websocket-protocol"];
+  if (!header) return "";
+  const offered = String(header).split(",").map((s) => s.trim());
+  const chosen = offered.find((p) => p.startsWith(WS_SUBPROTO_PREFIX));
+  return chosen ? chosen.slice(WS_SUBPROTO_PREFIX.length) : "";
+}
+
+// SSE keepalive: write a comment frame every 15s so idle connections aren't
+// silently dropped by proxies/load balancers (typical 60–120s idle timeout).
+// `unref()` so the interval never keeps the process alive on its own.
+const SSE_PING_INTERVAL_MS = 15_000;
+let pingInterval = null;
+
+function writeSsePing(res) {
+  try {
+    res.write(": ping\n\n");
+  } catch {
+    // writer gone — caller's set will clean it up on 'close'
+  }
+}
+
+function startSseKeepalive() {
+  if (pingInterval) return;
+  pingInterval = setInterval(() => {
+    for (const set of operatorClients.values()) {
+      for (const res of set) writeSsePing(res);
+    }
+    for (const set of customerClients.values()) {
+      for (const res of set) writeSsePing(res);
+    }
+  }, SSE_PING_INTERVAL_MS);
+  if (typeof pingInterval.unref === "function") pingInterval.unref();
+}
+
 // Call once from server.js after httpServer is created.
 function attachWebSocketServer(httpServer) {
   if (wss) return;
+  startSseKeepalive();
   wss = new WebSocketServer({ server: httpServer, path: "/ws/operator" });
   wss.on("connection", (ws, req) => {
-    // Verify the JWT from ?token= so the socket is tied to a real operator.
-    const url = new URL(req.url, "http://localhost");
-    const token = url.searchParams.get("token") || "";
+    // Verify the JWT carried in the Sec-WebSocket-Protocol subprotocol so the
+    // socket is tied to a real operator. The token is no longer read from the
+    // URL (which leaks into logs/referrers).
+    const token = extractWsToken(req);
     const payload = verifyToken(token);
     if (!payload || payload.role !== "operator") {
       ws.send(JSON.stringify({ type: "auth_denied" }));

@@ -33,7 +33,29 @@ const fakeDb = {
       return hit ? [{ id: hit.id }] : [];
     }
     if (s.includes("FROM users") && s.includes("role = 'operator'")) {
-      return users.filter((u) => u.gpsLat != null);
+      let list = users.filter((u) => u.gpsLat != null);
+      // Mirror the production SQL's NOT EXISTS clauses: drop operators who are
+      // busy (active booking in a busy status) or holding a pending, unexpired
+      // dispatch offer.
+      if (s.includes("NOT EXISTS")) {
+        list = list.filter((u) => {
+          const busyBooking = bookings.some(
+            (b) =>
+              b.operatorId === u.id &&
+              ["assigned", "accepted", "enroute", "picked_up", "flying"].includes(
+                b.status
+              )
+          );
+          const pendingOffer = offers.some(
+            (o) =>
+              o.operatorId === u.id &&
+              o.status === "pending" &&
+              new Date(o.expiresAt) > new Date()
+          );
+          return !(busyBooking || pendingOffer);
+        });
+      }
+      return list;
     }
     if (s.startsWith("INSERT INTO dispatch_offers")) {
       const id = offers.length + 1;

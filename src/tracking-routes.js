@@ -3,25 +3,20 @@
 const express = require("express");
 const { query, queryOne } = require("./db");
 const { requireAuth, requireRole } = require("./auth");
-const { haversineKm } = require("./pricing");
+const { haversineKm, parseCoord } = require("./pricing");
 const { IN_TRANSIT_STATUSES, BUSY_STATUSES } = require("./dispatch");
 const { subscribeCustomer } = require("./dispatch-hub");
 
 const router = express.Router();
 const PASSENGER_RADIUS_KM = 10;
 
-function num(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
 // GET /api/tracking/nearby — AVAILABLE air taxis within 10 km of the passenger.
 // Uber-style pre-booking view: shows free pilots near the pickup so the
 // passenger can see supply before confirming. Busy (in-transit) pilots are
 // excluded — once you confirm, you track YOUR pilot via /my-ride instead.
 router.get("/nearby", requireAuth, requireRole("customer"), async (req, res) => {
-  const lat = num(req.query.lat);
-  const lng = num(req.query.lng);
+  const lat = parseCoord(req.query.lat, "lat");
+  const lng = parseCoord(req.query.lng, "lng");
   if (lat === null || lng === null) {
     return res.status(400).json({ error: "lat and lng query params are required" });
   }
@@ -77,6 +72,10 @@ router.get("/my-ride/:bookingId", requireAuth, async (req, res) => {
   if (req.user.role === "customer" && booking.customerId !== req.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
+  // Operators may only track a trip actually assigned to them; admins see all.
+  if (req.user.role === "operator" && booking.operatorId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
   if (!booking.operatorId) {
     return res.json({ operator: null, bookingStatus: booking.status });
   }
@@ -123,6 +122,10 @@ router.get(
     const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [bookingId]);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
     if (req.user.role === "customer" && booking.customerId !== req.user.id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    // Operators may only track a trip actually assigned to them; admins see all.
+    if (req.user.role === "operator" && booking.operatorId !== req.user.id) {
       return res.status(403).json({ error: "Forbidden" });
     }
 

@@ -2397,6 +2397,35 @@ a { text-decoration: none; color: inherit; }
 .dispatch-body { padding: 18px 22px; font-size: 14px; }
 .dispatch-route { font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
 .dispatch-meta { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+.tracking-retry-btn {
+  display: block; width: 100%; margin: 12px 0 4px;
+  padding: 12px 16px; border: none; border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #1E40AF, #3B82F6); color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  box-shadow: var(--shadow-md); transition: transform .12s ease, opacity .12s ease;
+}
+.tracking-retry-btn:hover { transform: translateY(-1px); }
+.tracking-retry-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.dispatch-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.dispatch-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  padding: 4px 10px; border-radius: 999px; text-transform: uppercase;
+  background: #EEF2FF; color: #1E40AF;
+}
+.dispatch-tag--mission { background: #F1F5F9; color: var(--gray-700); }
+.dispatch-tag--emergency {
+  background: #FEE2E2; color: #B91C1C;
+  animation: emergencyPulse 1.1s ease-in-out infinite;
+}
+.dispatch-tag--emergency::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: #EF4444; box-shadow: 0 0 0 0 rgba(239,68,68,.7);
+}
+@keyframes emergencyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,.45); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
 .dispatch-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2862,6 +2891,123 @@ body.admin-map-fs { overflow: hidden; }
   .admin-drawer.open .admin-drawer-nav { display: flex; }
   .admin-user-drawer-panel { max-width: 100%; }
 }
+
+/* ── Operator on-duty toggle ── */
+.op-duty-card {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 14px; border: 1px solid var(--gray-200);
+  border-radius: 12px; background: #fff;
+}
+.op-duty-label { font-size: 13px; color: var(--gray-500); }
+.op-duty-status { font-weight: 700; font-size: 15px; }
+.op-duty-sub { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.op-duty-switch {
+  width: 52px; height: 30px; border-radius: 999px; border: none;
+  background: var(--gray-300); position: relative; cursor: pointer;
+  transition: background .15s; flex: none;
+}
+.op-duty-switch[aria-pressed="true"] { background: #22C55E; }
+.op-duty-knob {
+  position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  transition: transform .15s;
+}
+.op-duty-switch[aria-pressed="true"] .op-duty-knob { transform: translateX(22px); }
+
+/* ── Tracking: rating prompt + cancel ── */
+.tracking-rate {
+  border-top: 1px solid var(--gray-200); padding: 12px 14px; background: #fff;
+}
+.tracking-rate-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+.tracking-rate-stars { display: flex; gap: 4px; margin-bottom: 8px; }
+.tracking-rate-stars button {
+  font-size: 24px; line-height: 1; border: none; background: none; cursor: pointer;
+  color: var(--gray-300); padding: 0 2px;
+}
+.tracking-rate-stars button.on { color: #F59E0B; }
+.tracking-rate-input {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--gray-300);
+  border-radius: 8px; margin-bottom: 8px; font-size: 14px;
+}
+#tracking-cancel-btn {
+  background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; margin-right: 6px;
+}
+
+/* ── Payment fare breakdown ── */
+.payment-fare-breakdown {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
+}
+.payment-fare-breakdown .fb-row {
+  display: flex; justify-content: space-between; padding: 2px 0; color: var(--gray-600);
+}
+.payment-fare-breakdown .fb-total {
+  display: flex; justify-content: space-between; border-top: 1px solid var(--gray-200);
+  margin-top: 6px; padding-top: 6px; font-weight: 700; color: #111;
+}
+
+/* ── Profile previous rides ── */
+.profile-rides { margin-top: 18px; }
+.profile-ride-row {
+  display: flex; justify-content: space-between; gap: 10px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px;
+}
+.profile-ride-route { font-weight: 600; color: #111; }
+.profile-ride-meta { color: var(--gray-500); font-size: 12px; }
+
+/* ── Admin logs ── */
+.admin-logs-scroll {
+  height: 60vh; overflow-y: auto; border: 1px solid var(--gray-200);
+  border-radius: 12px; background: #0B1020; color: #D1D5DB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+}
+.admin-logs-list { display: flex; flex-direction: column; }
+.admin-log-line { padding: 4px 12px; border-bottom: 1px solid rgba(255,255,255,.05); white-space: pre-wrap; word-break: break-word; }
+.admin-log-line.error { color: #FCA5A5; }
+.admin-log-ts { color: #6B7280; margin-right: 8px; }
+
+/* ── On-device place search dropdown ── */
+.loc-suggest {
+  position: absolute; left: 0; right: 38px; top: 100%; z-index: 25;
+  background: #fff; border: 1px solid var(--gray-200); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 280px; overflow-y: auto; margin-top: 4px;
+}
+.loc-suggest-item { padding: 9px 12px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--gray-100); }
+.loc-suggest-item:last-child { border-bottom: none; }
+.loc-suggest-item:hover, .loc-suggest-item.active { background: var(--blue-50); }
+.loc-suggest-empty { padding: 10px 12px; color: var(--gray-500); font-size: 13px; }
+
+/* ── Route feasibility warning + suggestions ── */
+.feasibility-warning {
+  background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 12px;
+  padding: 14px 16px; color: #78350F;
+}
+.feas-head { display: flex; gap: 10px; align-items: flex-start; }
+.feas-head svg { width: 22px; height: 22px; color: #B45309; flex: none; margin-top: 2px; }
+.feas-title { font-weight: 700; color: #92400E; font-size: 15px; }
+.feas-sub { color: #92400E; font-size: 13px; margin-top: 2px; }
+.feas-endpoint { margin-top: 12px; }
+.feas-endpoint-title { font-weight: 700; font-size: 13px; color: #92400E; }
+.feas-endpoint-msg { font-size: 12px; color: #B45309; margin: 2px 0 6px; }
+.feas-suggestions { display: flex; flex-direction: column; gap: 8px; }
+.feas-chip {
+  display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+  background: #fff; border: 1px solid #F59E0B; color: #92400E;
+  padding: 8px 12px; border-radius: 999px; font-size: 13px; cursor: pointer;
+  font-weight: 600; transition: background .15s;
+}
+.feas-chip:hover { background: #FEF3C7; }
+.feas-chip-pin { font-size: 14px; }
+.feas-none { color: var(--gray-500); font-size: 12px; }
+.feas-foot { margin-top: 12px; font-size: 12px; color: #B45309; }
+
+/* ── Operator rates the customer ── */
+.op-rate { padding-top: 4px; }
+.op-rate-stars { display: flex; gap: 4px; margin: 6px 0 8px; }
+.op-rate-stars button {
+  font-size: 24px; line-height: 1; border: none; background: none; cursor: pointer;
+  color: var(--gray-300); padding: 0 2px;
+}
+.op-rate-stars button.on { color: #F59E0B; }
 </style>
 </head>
 <body>
@@ -3226,6 +3372,7 @@ body.admin-map-fs { overflow: hidden; }
           <div class="tracking-eta-label">min ETA</div>
         </div>
       </div>
+      <button type="button" id="tracking-retry-btn" class="tracking-retry-btn" style="display:none;" onclick="retryDispatch()">Search for a pilot again</button>
       <div class="tracking-steps" id="tracking-steps">
         <div class="tracking-step done" id="step-confirmed">
           <div class="tracking-step-dot">
@@ -3279,7 +3426,21 @@ body.admin-map-fs { overflow: hidden; }
           <span id="tracking-vehicle-name">—</span>
         </div>
         <div class="tracking-cost" id="tracking-cost">—</div>
+        <button class="btn-end-tracking" id="tracking-cancel-btn" onclick="cancelBooking()" style="display:none;">Cancel ride</button>
         <button class="btn-end-tracking" onclick="endTracking()">End Ride</button>
+      </div>
+      <div class="tracking-rate" id="tracking-rate" style="display:none;">
+        <div class="tracking-rate-title">Rate your pilot</div>
+        <div class="tracking-rate-stars" id="tracking-rate-stars">
+          <button type="button" data-star="1" onclick="selectRating(1)">★</button>
+          <button type="button" data-star="2" onclick="selectRating(2)">★</button>
+          <button type="button" data-star="3" onclick="selectRating(3)">★</button>
+          <button type="button" data-star="4" onclick="selectRating(4)">★</button>
+          <button type="button" data-star="5" onclick="selectRating(5)">★</button>
+        </div>
+        <input type="text" id="tracking-rate-comment" class="tracking-rate-input" placeholder="Optional comment (optional)" maxlength="1000">
+        <button type="button" class="btn-end-tracking" id="tracking-rate-submit" onclick="submitRating()">Submit rating</button>
+        <div class="auth-error" id="tracking-rate-error" style="margin-top:8px;"></div>
       </div>
       </div>
     </div>
@@ -3308,6 +3469,7 @@ body.admin-map-fs { overflow: hidden; }
           <div class="confirm-detail-val green" id="payment-carbon">—</div>
         </div>
       </div>
+      <div class="payment-fare-breakdown" id="payment-fare-breakdown"></div>
       <div class="payment-fields">
         <input type="text" id="payment-card" placeholder="Card number (demo)" value="4242 4242 4242 4242" autocomplete="off">
         <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="passenger@upi" autocomplete="off">
@@ -3437,6 +3599,22 @@ body.admin-map-fs { overflow: hidden; }
           <div class="op-welcome-sub">Accept missions, manage trips, and track your live position on the map.</div>
         </div>
 
+        <!-- On-duty / off-duty toggle. Off-duty pilots get no dispatch offers.
+             Accepting a trip auto-forces on-duty; drop-off or cancellation
+             auto-flips back off-duty. -->
+        <div class="panel-section" id="op-duty-section" style="padding-top:0;">
+          <div class="op-duty-card" id="op-duty-card">
+            <div class="op-duty-info">
+              <div class="op-duty-label">Availability</div>
+              <div class="op-duty-status" id="op-duty-status">Loading…</div>
+              <div class="op-duty-sub" id="op-duty-sub"></div>
+            </div>
+            <button type="button" id="op-duty-toggle" class="op-duty-switch" onclick="toggleOperatorDuty()" aria-pressed="false">
+              <span class="op-duty-knob"></span>
+            </button>
+          </div>
+        </div>
+
         <div class="panel-section profile-account-section" style="padding-top:0;">
           <div class="profile-account-card" style="margin-bottom:0;">
             <div class="profile-account-row">
@@ -3507,6 +3685,7 @@ body.admin-map-fs { overflow: hidden; }
           <div class="dispatch-timer" id="dispatch-timer">Respond within 30s</div>
         </div>
         <div class="dispatch-body">
+          <div class="dispatch-tags" id="dispatch-tags"></div>
           <div class="dispatch-route" id="dispatch-route">—</div>
           <div class="dispatch-meta" id="dispatch-meta"></div>
         </div>
@@ -3557,6 +3736,9 @@ body.admin-map-fs { overflow: hidden; }
         </button>
         <button type="button" class="admin-nav-item" data-admin-section="add" onclick="showAdminSection('add')">
           <span class="admin-nav-icon">➕</span><span class="admin-nav-label">Add Member</span>
+        </button>
+        <button type="button" class="admin-nav-item" data-admin-section="logs" onclick="showAdminSection('logs')">
+          <span class="admin-nav-icon">🧾</span><span class="admin-nav-label">Logs</span>
         </button>
       </nav>
     </aside>
@@ -3675,6 +3857,18 @@ body.admin-map-fs { overflow: hidden; }
           <div id="admin-add-success" class="admin-add-success" role="status"></div>
         </div>
       </section>
+
+      <!-- Logs section (observability): in-memory ring buffer, last 50 first,
+           older pages load on scroll-up to avoid rendering everything at once. -->
+      <section class="admin-section" id="admin-section-logs" hidden>
+        <div class="op-section-title">Logs</div>
+        <p class="admin-users-meta" style="margin-top:-6px;">Most recent server logs (since this process started). Scroll up to load older entries — 50 at a time.</p>
+        <div id="admin-logs-meta" class="admin-users-meta"></div>
+        <div id="admin-logs-scroll" class="admin-logs-scroll">
+          <div id="admin-logs-loading" class="pd-loading" style="display:none;">Loading older logs…</div>
+          <div id="admin-logs-list" class="admin-logs-list"></div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -3725,6 +3919,13 @@ body.admin-map-fs { overflow: hidden; }
         <button type="button" class="pd-refresh" id="pd-refresh-btn">Refresh</button>
       </div>
       <div id="profile-dashboard-body"><div class="pd-loading">Loading your dashboard…</div></div>
+    </div>
+    <div class="profile-rides" id="profile-rides" style="display:none;">
+      <div class="profile-dashboard-title">
+        <span>Previous rides</span>
+        <button type="button" class="pd-refresh" id="rides-refresh-btn">Refresh</button>
+      </div>
+      <div id="profile-rides-body"><div class="pd-loading">Loading your rides…</div></div>
     </div>
     <div class="profile-change-block" id="profile-change-block">
       <h4>Change password</h4>
@@ -4535,6 +4736,8 @@ function routeForRole(user) {
       startOperatorGpsHeartbeat();
       connectOperatorDispatchStream();
       connectOperatorWebSocket();
+      loadOperatorDuty();
+      subscribeOperatorPush();
       break;
     }
     case 'customer':
@@ -4870,6 +5073,12 @@ function openProfileModal() {
     refresh.addEventListener('click', loadProfileDashboard);
   }
   loadProfileDashboard();
+  loadRideHistory();
+  const ridesRefresh = document.getElementById('rides-refresh-btn');
+  if (ridesRefresh && !ridesRefresh.dataset.pdBound) {
+    ridesRefresh.dataset.pdBound = '1';
+    ridesRefresh.addEventListener('click', loadRideHistory);
+  }
 }
 
 function closeProfileModal() {
@@ -4996,6 +5205,9 @@ function showAdminSection(name) {
   if (name === 'live') {
     initAdminLiveFlights();
     setTimeout(function () { if (adminLiveMap) adminLiveMap.invalidateSize(); }, 250);
+  }
+  if (name === 'logs') {
+    loadAdminLogs();
   }
   if (name === 'dashboard') {
     loadAdminPlatformStats();
@@ -5631,8 +5843,62 @@ function renderTripDetailsBody(t, fuelPlan) {
         '</div>' +
       '</div>' +
       tripActionsHtml(t) +
+      tripRatingHtml(t) +
     '</div>'
   );
+}
+
+// Operator rates the customer after a completed trip (both-sides feedback).
+function tripRatingHtml(t) {
+  if (t.status !== 'completed') return '';
+  const customer = t.customer || {};
+  return (
+    '<div class="op-detail-divider"></div>' +
+    '<div class="op-rate" id="op-rate-block">' +
+      '<div class="op-detail-label">Rate ' + escapeHtml(customer.name || 'customer') + '</div>' +
+      '<div class="op-rate-stars" id="op-rate-stars">' +
+        [1,2,3,4,5].map(s => '<button type="button" data-star="' + s + '" onclick="selectOpRating(' + s + ')">★</button>').join('') +
+      '</div>' +
+      '<input type="text" id="op-rate-comment" class="tracking-rate-input" placeholder="Optional comment" maxlength="1000">' +
+      '<button type="button" class="op-btn op-btn--accept" id="op-rate-submit" onclick="submitOperatorRating(' + t.id + ')">Submit rating</button>' +
+      '<div class="op-action-error" id="op-rate-error"></div>' +
+    '</div>'
+  );
+}
+
+function selectOpRating(stars) {
+  document.querySelectorAll('#op-rate-stars button').forEach(function (b) {
+    b.classList.toggle('on', Number(b.getAttribute('data-star')) <= stars);
+  });
+}
+
+async function submitOperatorRating(id) {
+  const picked = document.querySelectorAll('#op-rate-stars button.on').length;
+  const errEl = document.getElementById('op-rate-error');
+  if (picked < 1) {
+    if (errEl) { errEl.textContent = 'Please pick a star rating.'; errEl.classList.add('show'); }
+    return;
+  }
+  const comment = (document.getElementById('op-rate-comment') || {}).value || '';
+  const btn = document.getElementById('op-rate-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await apiFetch('/api/bookings/' + id + '/rate', {
+      method: 'POST',
+      body: JSON.stringify({ stars: picked, comment }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      const block = document.getElementById('op-rate-block');
+      if (block) block.innerHTML = '<div class="op-detail-label">Thanks — rating submitted. ⭐</div>';
+    } else {
+      if (errEl) { errEl.textContent = (data && data.error) || 'Could not submit rating.'; errEl.classList.add('show'); }
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Network error — please try again.'; errEl.classList.add('show'); }
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function openTripDetails(id) {
@@ -5820,9 +6086,10 @@ function connectOperatorWebSocket() {
   const token = AUTH.token;
   if (!token) return;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  // Auth is verified server-side via the JWT in ?token= — we no longer send a
-  // client-supplied operatorId (that let any socket impersonate any pilot).
-  const ws = new WebSocket(proto + '//' + location.host + '/ws/operator?token=' + encodeURIComponent(token));
+  // Auth is verified server-side via the JWT carried in a WebSocket
+  // subprotocol (`irago.operator.<token>`), not in the URL — the URL would
+  // leak the token into access/proxy logs and referrer headers.
+  const ws = new WebSocket(proto + '//' + location.host + '/ws/operator', 'irago.operator.' + token);
   operatorWs = ws;
   ws.onmessage = function (ev) {
     try {
@@ -5895,6 +6162,22 @@ function updateOpSelfMap(lat, lng) {
 function showDispatchOffer(payload) {
   activeDispatchOffer = payload;
   const b = payload.booking || {};
+
+  // Mission id + emergency badge so the pilot can see WHICH request this is
+  // and immediately spot air-ambulance (golden) missions that need urgent action.
+  const tagsEl = document.getElementById('dispatch-tags');
+  if (tagsEl) {
+    const isEmergency = b.service === 'golden';
+    tagsEl.innerHTML =
+      '<span class="dispatch-tag dispatch-tag--mission">Mission #' + escapeHtml(b.id != null ? b.id : payload.requestId != null ? payload.requestId : '?') + '</span>' +
+      (isEmergency
+        ? '<span class="dispatch-tag dispatch-tag--emergency">Emergency</span>'
+        : '') +
+      (payload.attempt && payload.maxAttempts
+        ? '<span class="dispatch-tag">Request ' + payload.attempt + ' of ' + payload.maxAttempts + '</span>'
+        : '');
+  }
+
   document.getElementById('dispatch-route').textContent =
     (b.pickupName || 'Pickup') + ' → ' + (b.destName || 'Destination');
   document.getElementById('dispatch-meta').innerHTML =
@@ -6362,6 +6645,7 @@ async function initAdminLiveFlights() {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 18,
     }).addTo(adminLiveMap);
+    attachAdminMapZoomProfiles();
   }
   await refreshAdminLiveFlights();
   if (adminLivePollInterval) clearInterval(adminLivePollInterval);
@@ -6465,6 +6749,20 @@ async function refreshAdminLiveFlights() {
           (p.inTransit ? ' · in transit' : ' · available') +
           '<br>~' + (p.lat.toFixed(4) + ', ' + p.lng.toFixed(4));
         setAnimatedMapMarker(key, adminLiveMap, p.lat, p.lng, icon, label);
+        // Zoom-gated profile: clicking a pilot marker opens their profile
+        // drawer once the admin has zoomed in close enough (zoom >= 10).
+        const entry = animatedMarkers.get(key);
+        if (entry && !entry._profileClick) {
+          entry._profileClick = true;
+          entry.layer.on('click', function (ev) {
+            L.DomEvent.stopPropagation(ev);
+            if (adminLiveMap && adminLiveMap._iragoZoomProfileEnabled) {
+              openAdminUserDrawer(p.operatorId);
+            } else {
+              adminLiveMap && adminLiveMap.fitBounds(L.latLngBounds([p.lat, p.lng], [p.lat, p.lng]).pad(0.4));
+            }
+          });
+        }
         points.push([p.lat, p.lng]);
       });
       animatedMarkers.forEach(function (_entry, key) {
@@ -6491,21 +6789,26 @@ function setupAutocomplete(inputId, callback) {
   let dropdown = null;
 
   input.addEventListener('input', function() {
-    const val = this.value.toLowerCase();
-    if (dropdown) dropdown.remove();
+    const val = this.value.toLowerCase().trim();
+    if (dropdown) { dropdown.remove(); dropdown = null; }
     if (val.length < 1) return;
 
-    const matches = Object.keys(demoLocations).filter(n => n.toLowerCase().includes(val));
+    // On-device: filter the embedded places dataset by keyword/substring.
+    // No server call — the same map data the overlay uses. Top 7 results only.
+    const matches = Object.keys(demoLocations)
+      .filter(n => n.toLowerCase().includes(val))
+      .slice(0, 7);
     if (!matches.length) return;
 
     dropdown = document.createElement('div');
-    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--gray-200);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.08);z-index:100;max-height:200px;overflow-y:auto;margin-top:4px;';
+    dropdown.className = 'loc-suggest';
+    if (!matches.length) {
+      dropdown.innerHTML = '<div class="loc-suggest-empty">No matching places</div>';
+    }
     matches.forEach(name => {
       const item = document.createElement('div');
+      item.className = 'loc-suggest-item';
       item.textContent = name;
-      item.style.cssText = 'padding:10px 14px;font-size:13px;cursor:pointer;transition:background 0.15s;';
-      item.onmouseover = () => item.style.background = '#F1F5F9';
-      item.onmouseout = () => item.style.background = '';
       item.onclick = () => {
         input.value = name;
         input.classList.add('has-value');
@@ -6844,7 +7147,7 @@ function calcDistance() {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function searchRides() {
+async function searchRides() {
   if (!pickupCoord || !destCoord) {
     // Auto-populate demo if empty
     if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
@@ -6865,6 +7168,31 @@ function searchRides() {
   const title = document.getElementById('rides-title');
 
   title.textContent = currentService === 'taxi' ? 'Available Rides' : currentService === 'golden' ? 'Air Ambulances Nearby' : 'Shuttle Routes';
+
+  // Route feasibility pre-check at booking time: alert the customer if the
+  // route crosses / lands in a restricted (no-fly) zone and surface the 3
+  // nearest safe spots as clickable suggestions. The server blocks a blocked
+  // route at creation too; this gives a friendly heads-up before payment.
+  try {
+    const fres = await apiFetch('/api/bookings/feasibility', {
+      method: 'POST',
+      body: JSON.stringify({
+        pickupLat: draft.pickup.lat,
+        pickupLng: draft.pickup.lng,
+        destLat: draft.dest.lat,
+        destLng: draft.dest.lng,
+        service: draft.service,
+      }),
+    });
+    const fdata = await fres.json().catch(() => ({}));
+    if (fres.ok && fdata && fdata.feasible === false) {
+      list.innerHTML = renderFeasibilityWarning(fdata);
+      document.getElementById('book-btn').style.display = 'none';
+      area.style.display = 'block';
+      area.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+  } catch (e) { /* degrade: if feasibility call fails, fall through to rides */ }
 
   // Vary prices/times by distance
   const factor = Math.max(0.5, dist / 25);
@@ -6917,6 +7245,53 @@ function searchRides() {
   area.scrollIntoView({ behavior: 'smooth' });
 }
 
+// Render the "restricted area" alert with the 3 nearest safe spots, returned
+// by the feasibility pre-check (or by a blocked booking-creation response).
+function renderFeasibilityWarning(data) {
+  const violations = (data && data.violations && data.violations.length)
+    ? data.violations.map(escapeHtml).join('; ')
+    : 'This route crosses or ends inside a restricted (no-fly) area.';
+  const endpoints = (data && data.blockedEndpoints) || [];
+  let endpointsHtml = '';
+  endpoints.forEach(function (ep) {
+    const label = ep.which === 'pickup' ? 'Pickup' : 'Destination';
+    const chips = (ep.suggestions || []).slice(0, 3).map(function (s) {
+      const nm = escapeHtml(s.name || (s.lat.toFixed(4) + ', ' + s.lng.toFixed(4)));
+      return '<button type="button" class="feas-chip" onclick="chooseFeasibilitySuggestion(' +
+        JSON.stringify(ep.which) + ',' + Number(s.lat) + ',' + Number(s.lng) + ',' + JSON.stringify(s.name || '') + ')">' +
+        '<span class="feas-chip-pin">\uD83D\uDCCD</span><span>' + nm + '</span></button>';
+    }).join('');
+    endpointsHtml +=
+      '<div class="feas-endpoint">' +
+        '<div class="feas-endpoint-title">' + escapeHtml(label) + ' is in a restricted area</div>' +
+        '<div class="feas-endpoint-msg">' + escapeHtml(ep.message || 'Pick a nearby safe spot instead:') + '</div>' +
+        '<div class="feas-suggestions">' + (chips || '<span class="feas-none">No safe alternatives found nearby.</span>') + '</div>' +
+      '</div>';
+  });
+  return (
+    '<div class="feasibility-warning">' +
+      '<div class="feas-head">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+        '<div>' +
+          '<div class="feas-title">Restricted airspace on this route</div>' +
+          '<div class="feas-sub">' + violations + '</div>' +
+        '</div>' +
+      '</div>' +
+      (endpointsHtml || '') +
+      '<div class="feas-foot">Choose a suggested spot to update your route and search again.</div>' +
+    '</div>'
+  );
+}
+
+// Customer picks one of the 3 nearest safe spots; update the endpoint and
+// re-run the search so the warning clears if the new route is feasible.
+function chooseFeasibilitySuggestion(which, lat, lng, name) {
+  const label = name || (Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4));
+  if (which === 'pickup') setPickup([lat, lng], label);
+  else setDest([lat, lng], label);
+  searchRides();
+}
+
 function selectRideCard(el, idx, price, time, co2) {
   document.querySelectorAll('.ride-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
@@ -6953,12 +7328,22 @@ async function bookRide() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      showAuthError('booking-error', data.error || 'Could not create your booking. Please try again.');
+      if (res.status === 409 && data && data.code === 'ROUTE_BLOCKED') {
+        const list = document.getElementById('rides-list');
+        const area = document.getElementById('rides-area');
+        if (list) list.innerHTML = renderFeasibilityWarning(data);
+        if (area) { area.style.display = 'block'; area.scrollIntoView({ behavior: 'smooth' }); }
+        document.getElementById('book-btn').style.display = 'none';
+        showAuthError('booking-error', 'This route is restricted. Pick a suggested spot and try again.');
+      } else {
+        showAuthError('booking-error', data.error || 'Could not create your booking. Please try again.');
+      }
       return;
     }
 
     // Confirmation screen reflects the SAVED booking (id, route, service, fare).
     currentBooking = data.booking;
+    currentFareBreakdown = data.fare || null;
     showPaymentOverlay(currentBooking);
   } catch (err) {
     showAuthError('booking-error', 'Network error \u2014 please check your connection and try again.');
@@ -6987,6 +7372,7 @@ function showPaymentOverlay(booking) {
     '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+  renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
   document.getElementById('payment-overlay').classList.add('active');
 }
 
@@ -7006,9 +7392,18 @@ async function payForBooking() {
       return;
     }
     currentBooking = data.booking;
+    currentFareBreakdown = data.fare || currentFareBreakdown;
     closePayment();
     fillConfirmation(currentBooking);
     document.getElementById('confirm-overlay').classList.add('active');
+    if (data.receiptEmailed) {
+      // Non-blocking note that a receipt was emailed (payment still mocked).
+      const note = document.createElement('p');
+      note.className = 'payment-note';
+      note.textContent = 'A receipt has been emailed to you.';
+      const card = document.querySelector('#confirm-overlay .confirm-card .confirm-body') || document.querySelector('#confirm-overlay .confirm-card');
+      if (card) card.appendChild(note);
+    }
   } catch (e) {
     showAuthError('payment-error', 'Network error — please try again.');
   } finally {
@@ -7218,7 +7613,7 @@ const STATUS_DISPLAY = {
   flying:    { step: 3, status: 'In flight', sub: 'Enjoy the view! Flying to destination' },
   arrived:   { step: 4, status: 'Arriving now', sub: 'Prepare for landing' },
   completed: { step: 4, status: 'Ride complete!', sub: 'Thank you for flying with IraGo' },
-  no_pilot:  { step: 0, status: 'No pilots nearby', sub: 'No available pilot within range — try again shortly' },
+  no_pilot:  { step: 0, status: 'Sorry — no pilot found', sub: 'Sorry, we couldn\u2019t find a pilot nearby. Please try again shortly.' },
   rejected:  { step: 0, status: 'Pilot unavailable', sub: 'Reassigning you to another pilot' },
   cancelled: { step: 0, status: 'Booking cancelled', sub: 'This trip has been cancelled' },
 };
@@ -7335,6 +7730,36 @@ function applyTrackingStatus(status) {
 
   // MOCK: drive the placeholder aircraft toward the status-implied position.
   trackTargetFrac = info.step / span;
+
+  // Show the "search again" button only when dispatch gave up with no pilot.
+  const retryBtn = document.getElementById('tracking-retry-btn');
+  if (retryBtn) retryBtn.style.display = (status === 'no_pilot') ? 'block' : 'none';
+
+  // Cancel button: available while the ride is still cancellable (before the
+  // trip is underway). Hidden once airborne/picked up or terminal.
+  const cancelBtn = document.getElementById('tracking-cancel-btn');
+  const cancellable = !['flying', 'picked_up', 'completed', 'cancelled', 'no_pilot', 'rejected', 'arrived'].includes(status);
+  if (cancelBtn) {
+    cancelBtn.style.display = cancellable ? 'inline-block' : 'none';
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = 'Cancel ride';
+  }
+
+  // Rating prompt appears once the ride completes. The customer rates the
+  // operator (1–5 + optional comment); the operator rates the customer on
+  // their own console.
+  const rateBox = document.getElementById('tracking-rate');
+  if (rateBox) {
+    if (status === 'completed') {
+      rateBox.style.display = 'block';
+      selectedRatingStars = 0;
+      document.querySelectorAll('#tracking-rate-stars button').forEach(b => b.classList.remove('on'));
+      const comment = document.getElementById('tracking-rate-comment');
+      if (comment) comment.value = '';
+    } else {
+      rateBox.style.display = 'none';
+    }
+  }
 }
 
 // Poll the persisted booking status and re-render. Keeps the last known status
@@ -7410,6 +7835,10 @@ function connectRideStream(bookingId) {
       const d = JSON.parse(ev.data || '{}');
       if (d.lat != null && d.lng != null) handleRideGps(d);
     });
+    es.addEventListener('dispatch_progress', function (ev) {
+      const d = JSON.parse(ev.data || '{}');
+      handleDispatchProgress(d);
+    });
     es.onerror = function () { /* EventSource auto-reconnects */ };
   } catch (e) { /* fall back to polling below */ }
 }
@@ -7433,6 +7862,47 @@ function handleRideGps(d) {
     document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm * 3));
   }
   if (rideFollowOn && map) map.panTo([d.lat, d.lng]);
+}
+
+// Dispatch progress: shows the passenger which operator we're currently
+// waiting on ("Waiting for operator 1 of 10…") or the final "sorry" message
+// when no pilot could be found. Updates the tracking sub-text live without
+// changing the persisted status step.
+function handleDispatchProgress(d) {
+  if (!d || !d.message) return;
+  const subEl = document.getElementById('tracking-sub');
+  if (subEl) subEl.textContent = d.message;
+  if (d.final) {
+    const statusEl = document.getElementById('tracking-status');
+    if (statusEl) statusEl.textContent = 'Sorry — no pilot found';
+  }
+}
+
+// Customer-initiated retry when dispatch gave up (status === 'no_pilot').
+// Re-enters the nearest-pilot search via POST /api/bookings/:id/retry-dispatch.
+async function retryDispatch() {
+  if (!currentBooking || !currentBooking.id) return;
+  const btn = document.getElementById('tracking-retry-btn');
+  if (btn) { btn.disabled = true; }
+  const subEl = document.getElementById('tracking-sub');
+  if (subEl) subEl.textContent = 'Searching for a nearby pilot again…';
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/retry-dispatch', {
+      method: 'POST',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.booking) {
+      currentBooking = data.booking;
+      applyTrackingStatus(currentBooking.status);
+      if (!rideStream) connectRideStream(currentBooking.id);
+    } else {
+      if (subEl) subEl.textContent = (data && data.error) ? data.error : 'Could not retry right now. Please try again shortly.';
+    }
+  } catch (e) {
+    if (subEl) subEl.textContent = 'Network error — please try again shortly.';
+  } finally {
+    if (btn) { btn.disabled = false; }
+  }
 }
 
 // Render the ONE plane the passenger is allowed to see (Uber-style). Removes
@@ -7491,6 +7961,343 @@ function endTracking() {
   document.getElementById('tracking-eta').textContent = '--';
 
   resetBooking();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// CANCELLATION (Uber/Ola-style) + RATINGS + FARE BREAKDOWN + RIDE HISTORY
+// ════════════════════════════════════════════════════════════════════════
+let currentFareBreakdown = null;
+let selectedRatingStars = 0;
+
+// Fare breakdown renderer (base + per-km; surge/taxes shown as 0 for now).
+function renderFareBreakdown(hostId, fare) {
+  const host = document.getElementById(hostId);
+  if (!host) return;
+  if (!fare) { host.innerHTML = ''; return; }
+  const money = n => '&#8377;' + Number(n).toLocaleString('en-IN');
+  host.innerHTML =
+    '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
+    '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
+    (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
+    (fare.taxes ? '<div class="fb-row"><span>Taxes</span><span>' + money(fare.taxes) + '</span></div>' : '') +
+    '<div class="fb-total"><span>Total</span><span>' + money(fare.total) + '</span></div>';
+}
+
+// Customer cancels the active ride. Server applies Uber/Ola rules and returns
+// the policy (free / fee). We surface it in the tracking sub-text.
+async function cancelBooking() {
+  if (!currentBooking || !currentBooking.id) return;
+  if (!confirm('Cancel this ride? A fee may apply after your pilot is assigned and 5 minutes pass.')) return;
+  const btn = document.getElementById('tracking-cancel-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/cancel', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.booking) {
+      currentBooking = data.booking;
+      applyTrackingStatus(currentBooking.status);
+      const c = data.cancellation || {};
+      const subEl = document.getElementById('tracking-sub');
+      if (subEl) {
+        subEl.textContent = c.policy === 'free'
+          ? 'Trip cancelled — no charge applied.'
+          : 'Trip cancelled — a cancellation fee of ₹' + (c.fee || 0) + ' applies.';
+      }
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Cancel ride'; }
+      alert((data && data.error) || 'Could not cancel right now.');
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Cancel ride'; }
+    alert('Network error — please try again.');
+  }
+}
+
+// Star selection for the post-ride rating prompt.
+function selectRating(stars) {
+  selectedRatingStars = stars;
+  document.querySelectorAll('#tracking-rate-stars button').forEach(b => {
+    b.classList.toggle('on', Number(b.getAttribute('data-star')) <= stars);
+  });
+}
+
+async function submitRating() {
+  if (!currentBooking || !currentBooking.id) return;
+  if (selectedRatingStars < 1) {
+    const err = document.getElementById('tracking-rate-error');
+    if (err) err.textContent = 'Please pick a star rating.';
+    return;
+  }
+  const comment = (document.getElementById('tracking-rate-comment') || {}).value || '';
+  const btn = document.getElementById('tracking-rate-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/rate', {
+      method: 'POST',
+      body: JSON.stringify({ stars: selectedRatingStars, comment }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      const box = document.getElementById('tracking-rate');
+      if (box) box.innerHTML = '<div class="tracking-rate-title">Thanks for your feedback! ⭐</div>';
+    } else {
+      const err = document.getElementById('tracking-rate-error');
+      if (err) err.textContent = (data && data.error) || 'Could not submit rating.';
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    const err = document.getElementById('tracking-rate-error');
+    if (err) err.textContent = 'Network error — please try again.';
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Previous rides in the profile (incl. cancelled). Customer-only.
+async function loadRideHistory() {
+  const box = document.getElementById('profile-rides');
+  const body = document.getElementById('profile-rides-body');
+  if (!box || !body) return;
+  const user = AUTH && AUTH.user;
+  if (!user || user.role !== 'customer') { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  body.innerHTML = '<div class="pd-loading">Loading your rides…</div>';
+  try {
+    const res = await apiFetch('/api/bookings/history');
+    const data = await res.json().catch(() => ({}));
+    const rides = Array.isArray(data.rides) ? data.rides : [];
+    if (!rides.length) {
+      body.innerHTML = '<div class="pd-loading">No rides yet — your trips will appear here.</div>';
+      return;
+    }
+    body.innerHTML = rides.map(function (r) {
+      const route = escapeHtml(r.pickupName) + ' &rarr; ' + escapeHtml(r.destName);
+      const fare = r.fareEstimate != null ? '₹' + Number(r.fareEstimate).toLocaleString('en-IN') : '—';
+      const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '';
+      const badge = statusBadgeHtml(r.status);
+      const fee = r.cancellationFee ? ' · fee ₹' + r.cancellationFee : '';
+      return '<div class="profile-ride-row">' +
+        '<div><div class="profile-ride-route">' + route + '</div>' +
+        '<div class="profile-ride-meta">' + escapeHtml(SERVICE_LABELS[r.service] || r.service) + ' · ' + date + fee + '</div></div>' +
+        '<div style="text-align:right;">' + badge + '<div class="profile-ride-meta">' + fare + '</div></div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<div class="pd-error">Could not load your rides.</div>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// OPERATOR ON-DUTY / OFF-DUTY TOGGLE + WEB PUSH
+// ════════════════════════════════════════════════════════════════════════
+async function loadOperatorDuty() {
+  const statusEl = document.getElementById('op-duty-status');
+  const subEl = document.getElementById('op-duty-sub');
+  const btn = document.getElementById('op-duty-toggle');
+  if (!statusEl || !btn) return;
+  try {
+    const res = await apiFetch('/api/operator/duty');
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      renderOperatorDuty(!!data.onDuty, data.gps && data.gps.lat != null);
+    } else {
+      statusEl.textContent = 'Unavailable';
+      if (subEl) subEl.textContent = 'Could not load duty status.';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Unavailable';
+  }
+}
+
+function renderOperatorDuty(onDuty, hasGps) {
+  const statusEl = document.getElementById('op-duty-status');
+  const subEl = document.getElementById('op-duty-sub');
+  const btn = document.getElementById('op-duty-toggle');
+  if (statusEl) statusEl.textContent = onDuty ? 'On duty' : 'Off duty';
+  if (btn) {
+    btn.setAttribute('aria-pressed', onDuty ? 'true' : 'false');
+    btn.disabled = false;
+  }
+  if (subEl) {
+    if (!hasGps) subEl.textContent = 'Share your GPS to receive nearby offers.';
+    else if (onDuty) subEl.textContent = 'You will receive dispatch offers.';
+    else subEl.textContent = 'Toggle on to start receiving offers.';
+  }
+}
+
+async function toggleOperatorDuty() {
+  const btn = document.getElementById('op-duty-toggle');
+  if (!btn) return;
+  const currentlyOn = btn.getAttribute('aria-pressed') === 'true';
+  const nextOn = !currentlyOn;
+  btn.disabled = true;
+  try {
+    const res = await apiFetch('/api/operator/duty', {
+      method: 'POST',
+      body: JSON.stringify({ onDuty: nextOn }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      renderOperatorDuty(!!data.onDuty, true);
+    } else {
+      btn.disabled = false;
+      alert((data && data.error) || 'Could not change duty status.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    alert('Network error — please try again.');
+  }
+}
+
+// Subscribe this browser to Web Push so offers reach the pilot even when the
+// tab is backgrounded. Requires a service worker (/sw.js) + VAPID keys on the
+// server. No-ops gracefully if push isn't available or not configured.
+async function subscribeOperatorPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    let sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await sendPushSubscription(sub);
+      return;
+    }
+    const keyRes = await apiFetch('/api/operator/push/vapid-public-key');
+    const keyData = await keyRes.json().catch(() => ({}));
+    if (!keyRes.ok || !keyData.publicKey) return; // push not configured
+    const applicationServerKey = urlBase64ToUint8Array(keyData.publicKey);
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+    await sendPushSubscription(sub);
+  } catch (e) {
+    // Permission denied or SW unavailable — silently fall back to SSE only.
+  }
+}
+
+async function sendPushSubscription(sub) {
+  const payload = {
+    endpoint: sub.endpoint,
+    keys: {
+      p256dh: sub.keys ? sub.keys.p256dh : null,
+      auth: sub.keys ? sub.keys.auth : null,
+    },
+  };
+  try {
+    await apiFetch('/api/operator/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (e) { /* best-effort */ }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// ADMIN LOG VIEWER (last 50 on scroll-up) + ZOOM-GATED OPERATOR PROFILES
+// ════════════════════════════════════════════════════════════════════════
+let adminLogsLoading = false;
+let adminLogsOldestTs = null;
+let adminLogsHasMore = true;
+
+async function loadAdminLogs() {
+  const list = document.getElementById('admin-logs-list');
+  const scroll = document.getElementById('admin-logs-scroll');
+  const meta = document.getElementById('admin-logs-meta');
+  if (!list) return;
+  // Newest-first page; the list renders column-reverse so newest sit at the
+  // bottom (top of the user's view), and older pages prepend above on scroll-up.
+  adminLogsOldestTs = null;
+  adminLogsHasMore = true;
+  list.innerHTML = '';
+  await fetchAdminLogsPage(true);
+  if (scroll) {
+    // Jump to the bottom (newest) on first load.
+    scroll.scrollTop = scroll.scrollHeight;
+    scroll.onscroll = onAdminLogsScroll;
+  }
+  if (meta) meta.textContent = 'Most recent 50 entries shown first. Scroll up to load older logs.';
+}
+
+async function fetchAdminLogsPage(firstPage) {
+  if (adminLogsLoading || (!firstPage && !adminLogsHasMore)) return;
+  adminLogsLoading = true;
+  const loadingEl = document.getElementById('admin-logs-loading');
+  if (loadingEl) loadingEl.style.display = 'block';
+  try {
+    const url = '/api/admin/logs?limit=50' + (adminLogsOldestTs ? '&before=' + encodeURIComponent(adminLogsOldestTs) : '');
+    const res = await apiFetch(url);
+    const data = await res.json().catch(() => ({}));
+    const logs = Array.isArray(data.logs) ? data.logs : [];
+    adminLogsHasMore = !!data.hasMore;
+    const list = document.getElementById('admin-logs-list');
+    if (list) {
+      // Server returns newest-first. Render oldest-first so the newest entry
+      // sits at the bottom (chat-style); older pages prepend above on scroll-up.
+      const pageLogs = logs.slice().reverse();
+      const html = pageLogs.map(function (l) {
+        const ts = l.ts ? new Date(l.ts).toLocaleTimeString('en-IN', { hour12: false }) : '';
+        return '<div class="admin-log-line ' + (l.level === 'error' ? 'error' : '') + '">' +
+          '<span class="admin-log-ts">' + escapeHtml(ts) + '</span>' + escapeHtml(l.msg || '') + '</div>';
+      }).join('');
+      if (firstPage) {
+        list.innerHTML = html;
+      } else {
+        list.insertAdjacentHTML('afterbegin', html);
+      }
+    }
+    if (logs.length) {
+      // Page is newest-first; oldest in this page is the last entry.
+      adminLogsOldestTs = logs[logs.length - 1].ts;
+    }
+  } catch (e) { /* ignore transient */ }
+  if (loadingEl) loadingEl.style.display = 'none';
+  adminLogsLoading = false;
+}
+
+function onAdminLogsScroll() {
+  const scroll = document.getElementById('admin-logs-scroll');
+  if (!scroll) return;
+  // Near the top → load an older page.
+  if (scroll.scrollTop < 40) {
+    const prevHeight = scroll.scrollHeight;
+    fetchAdminLogsPage(false).then(function () {
+      // Keep the user's viewport stable after prepending older logs.
+      const newHeight = scroll.scrollHeight;
+      scroll.scrollTop = newHeight - prevHeight;
+    });
+  }
+}
+
+// Make admin live-map pilot markers clickable when zoomed in: at zoom >= 10,
+// clicking a pilot opens their profile drawer (zoom-gated observation).
+function attachAdminMapZoomProfiles() {
+  if (!adminLiveMap || adminLiveMap._iragoZoomWired) return;
+  adminLiveMap._iragoZoomWired = true;
+  adminLiveMap.on('zoomend', updateAdminMapZoomHint);
+  adminLiveMap.on('click', function (e) {
+    // Clicking a marker also fires map click; only treat bare-map clicks.
+    if (e.originalEvent && e.originalEvent._stopped) return;
+  });
+  updateAdminMapZoomHint();
+}
+function updateAdminMapZoomHint() {
+  const meta = document.getElementById('admin-live-meta');
+  if (!meta || !adminLiveMap) return;
+  // The refresh loop overwrites meta text; we just annotate via a data flag.
+  const z = adminLiveMap.getZoom();
+  adminLiveMap._iragoZoomProfileEnabled = z >= 10;
+  const hint = adminLiveMap._iragoZoomProfileEnabled
+    ? 'Click a pilot marker to open their profile.'
+    : 'Zoom in closer (10+) to click a pilot and view their profile.';
+  const cur = meta.getAttribute('data-irago-hint') || '';
+  if (cur !== hint) {
+    meta.setAttribute('data-irago-hint', hint);
+    meta.title = hint;
+  }
 }
 </script>
 </body>
