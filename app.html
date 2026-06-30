@@ -7706,8 +7706,10 @@ function renderFeasibilityWarning(data) {
     const label = ep.which === 'pickup' ? 'Pickup' : 'Destination';
     const chips = (ep.suggestions || []).slice(0, 3).map(function (s) {
       const nm = escapeHtml(s.name || (s.lat.toFixed(4) + ', ' + s.lng.toFixed(4)));
-      return '<button type="button" class="feas-chip" onclick="chooseFeasibilitySuggestion(' +
-        JSON.stringify(ep.which) + ',' + Number(s.lat) + ',' + Number(s.lng) + ',' + JSON.stringify(s.name || '') + ')">' +
+      const w = ep.which.replace(/'/g, "\\'");
+      const n = (s.name || '').replace(/'/g, "\\'");
+      return '<button type="button" class="feas-chip" onclick="chooseFeasibilitySuggestion(\'' +
+        w + '\',' + Number(s.lat) + ',' + Number(s.lng) + ',\'' + n + '\')">' +
         '<span class="feas-chip-pin">\uD83D\uDCCD</span><span>' + nm + '</span></button>';
     }).join('');
     endpointsHtml +=
@@ -7736,8 +7738,10 @@ function renderFeasibilityWarning(data) {
 // re-run the search so the warning clears if the new route is feasible.
 function chooseFeasibilitySuggestion(which, lat, lng, name) {
   const label = name || (Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4));
+  currentRoute = null;
   if (which === 'pickup') setPickup([lat, lng], label);
   else setDest([lat, lng], label);
+  showToast('Updated ' + which + ' to ' + label, 'success');
   searchRides();
 }
 
