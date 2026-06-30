@@ -100,6 +100,7 @@ function analyseRouteZones(points, zones, cruiseAltitudeM) {
   const violations = [];
   const warnings = [];
   let detourFactor = 1;
+  let maxRequiredAltitudeM = cruiseAltitudeM;
 
   for (const p of points) {
     const at = zonesAtPoint(p.lng, p.lat, zones);
@@ -107,11 +108,16 @@ function analyseRouteZones(points, zones, cruiseAltitudeM) {
       if (z.zoneType === "no_fly") {
         violations.push(`Route crosses no-fly zone: ${z.name}`);
       }
-      if (z.zoneType === "restricted" && cruiseAltitudeM <= z.maxAltitudeM) {
-        warnings.push(
-          `Restricted airspace ${z.name}: climb above ${z.maxAltitudeM} m or reroute`
-        );
-        detourFactor = Math.max(detourFactor, 1.12);
+      if (z.zoneType === "restricted") {
+        if (cruiseAltitudeM <= z.maxAltitudeM) {
+          const climbTo = z.maxAltitudeM + 50;
+          maxRequiredAltitudeM = Math.max(maxRequiredAltitudeM, climbTo);
+          warnings.push(
+            `Restricted airspace ${z.name}: auto-climbing to ${climbTo} m (above ${z.maxAltitudeM} m ceiling)`
+          );
+          // Altitude change costs fuel but less than a full ground detour.
+          detourFactor = Math.max(detourFactor, 1.05);
+        }
       }
     }
   }
@@ -128,7 +134,12 @@ function analyseRouteZones(points, zones, cruiseAltitudeM) {
     }
   }
 
-  return { violations: [...new Set(violations)], warnings: [...new Set(warnings)], detourFactor };
+  return {
+    violations: [...new Set(violations)],
+    warnings: [...new Set(warnings)],
+    detourFactor,
+    maxRequiredAltitudeM,
+  };
 }
 
 function estimateFuelKg(service, distanceKm, cruiseAltitudeM, detourFactor = 1) {
@@ -168,15 +179,14 @@ function planLeastFuelRoute({
     service
   );
   const points = sampleRoutePoints(pickupLat, pickupLng, destLat, destLng);
-  const { violations, warnings, detourFactor } = analyseRouteZones(
-    points,
-    zones,
-    altitudeM
-  );
+  const { violations, warnings, detourFactor, maxRequiredAltitudeM } =
+    analyseRouteZones(points, zones, altitudeM);
 
+  // Use the higher altitude if restricted zones force a climb.
+  const effectiveAltitudeM = maxRequiredAltitudeM || altitudeM;
   const effectiveDistanceKm =
     Math.round(distanceKm * detourFactor * 10) / 10;
-  const fuelKg = estimateFuelKg(service, distanceKm, altitudeM, detourFactor);
+  const fuelKg = estimateFuelKg(service, distanceKm, effectiveAltitudeM, detourFactor);
   const feasible = violations.length === 0;
 
   return {
@@ -184,7 +194,7 @@ function planLeastFuelRoute({
     distanceKm,
     effectiveDistanceKm,
     detourFactor: Math.round(detourFactor * 100) / 100,
-    cruiseAltitudeM: altitudeM,
+    cruiseAltitudeM: effectiveAltitudeM,
     corridor: corridor || null,
     altitudeEfficiency: Math.round(factor * 100) / 100,
     fuelKg,

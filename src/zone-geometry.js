@@ -57,7 +57,7 @@ const ZONES_QUERY_LIMIT = 240;
 
 function buildZonesSql(bounds) {
   return {
-    sql: `SELECT id, name, zoneType, minAltitudeM, maxAltitudeM, geometry,
+    sql: `SELECT id, name, zoneType, category, minAltitudeM, maxAltitudeM, geometry,
                  minLat, maxLat, minLng, maxLng
           FROM flight_zones
           WHERE maxLat >= ? AND minLat <= ? AND maxLng >= ? AND minLng <= ?

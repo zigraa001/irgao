@@ -229,9 +229,10 @@ async function offerToNextOperator(bookingId, triedOperatorIds = []) {
   // gracefully instead of widening to global. The customer is told no pilot
   // was found nearby.
   if (!nearby.length || tried.length >= MAX_OFFER_ATTEMPTS) {
-    await query("UPDATE bookings SET status = 'no_pilot' WHERE id = ?", [
-      bookingId,
-    ]);
+    await query(
+      "UPDATE bookings SET status = 'no_pilot' WHERE id = ? AND operatorId IS NULL AND status = 'dispatching'",
+      [bookingId]
+    );
     pushCustomer(bookingId, "ride_update", {
       bookingId,
       status: "no_pilot",
@@ -303,30 +304,38 @@ async function recoverDispatch() {
 }
 
 async function acceptOffer(offerId, operatorId) {
-  const offer = await queryOne(
-    "SELECT * FROM dispatch_offers WHERE id = ? AND operatorId = ?",
+  // Race-safe offer claim: atomically flip pending→accepted so only one
+  // concurrent accept on the same offer succeeds.
+  const offerClaim = await query(
+    `UPDATE dispatch_offers SET status = 'accepted'
+     WHERE id = ? AND operatorId = ? AND status = 'pending' AND expiresAt > NOW()`,
     [offerId, operatorId]
   );
-  if (!offer || offer.status !== "pending") {
-    return { ok: false, status: 404, error: "Offer not found or expired" };
+  if (offerClaim.affectedRows === 0) {
+    return { ok: false, status: 409, error: "Offer not found, expired, or already handled" };
   }
-  if (new Date(offer.expiresAt) < new Date()) {
-    return { ok: false, status: 409, error: "Offer expired" };
-  }
+
+  const offer = await queryOne(
+    "SELECT * FROM dispatch_offers WHERE id = ?",
+    [offerId]
+  );
 
   clearAllOfferTimersForBooking(offer.bookingId);
 
-  // Race-safe claim: only the first concurrent accept flips the booking to
-  // "assigned". The conditional `WHERE operatorId IS NULL` guarantees a second
-  // concurrent accept (on a different pending offer for the same booking) gets
-  // affectedRows=0 and loses — no double-assignment, no duplicate pushCustomer.
-  // assignedAt seeds the cancellation grace clock (Uber/Ola 5-min free window).
+  // Race-safe booking claim: only the first concurrent accept flips the
+  // booking to "assigned". A second concurrent accept (on a different offer
+  // for the same booking) gets affectedRows=0 and loses.
   const claim = await query(
     `UPDATE bookings SET operatorId = ?, pendingOperatorId = NULL, status = 'assigned', assignedAt = NOW()
      WHERE id = ? AND operatorId IS NULL`,
     [operatorId, offer.bookingId]
   );
   if (claim.affectedRows === 0) {
+    // Roll back the offer claim — booking was taken by another pilot.
+    await query(
+      "UPDATE dispatch_offers SET status = 'expired' WHERE id = ?",
+      [offerId]
+    );
     return {
       ok: false,
       status: 409,
@@ -334,13 +343,8 @@ async function acceptOffer(offerId, operatorId) {
     };
   }
 
-  // Auto on-duty: accepting a trip forces the operator on-duty for its
-  // duration. They go back off-duty on drop-off or cancellation.
   await setOperatorDuty(operatorId, 1);
 
-  await query("UPDATE dispatch_offers SET status = 'accepted' WHERE id = ?", [
-    offerId,
-  ]);
   await query(
     `UPDATE dispatch_offers SET status = 'expired'
      WHERE bookingId = ? AND id != ? AND status = 'pending'`,

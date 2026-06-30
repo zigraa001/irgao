@@ -1,18 +1,17 @@
 // Route feasibility check used at booking time.
 //
-// Decides whether a pickup→destination segment is flyable against the airspace
-// catalog: does the great-circle path cross a no-fly zone, and is either
-// endpoint inside one? When an endpoint is blocked we also compute up to three
-// "nearest safe spots" just outside the blocking zone's bounding box so the
-// customer can pick a legal pickup/drop instead of guessing.
+// Uses the visibility-graph route planner to find a path that avoids no-fly
+// zones. When an endpoint is inside a no-fly zone, suggests up to 3 nearest
+// safe spots. Restricted zones are handled by altitude adjustments (fly above
+// maxAltitudeM) rather than rerouting.
 //
 // Zone loading is best-effort: if the zones database is unreachable we degrade
-// to "feasible" rather than blocking every booking (the in-app map overlay
-// still shows zones client-side). pointInPolygon / zonesAtPoint are reused from
-// fuel-route so this stays consistent with the planner.
+// to "feasible" rather than blocking every booking.
 const { loadZones } = require("./route-routes");
-const { planLeastFuelRoute, pointInPolygon } = require("./fuel-route");
+const { planAvoidanceRoute } = require("./route-planner");
+const { pointInPolygon } = require("./fuel-route");
 const { haversineKm } = require("./pricing");
+const { SERVICE_FUEL } = require("./fuel-route");
 
 function round5(n) {
   return Math.round(n * 1e5) / 1e5;
@@ -26,12 +25,10 @@ function isNoFly(z, lat, lng) {
   );
 }
 
-// Up to 3 nearest points just outside the blocking no-fly zone's bbox, verified
-// to not fall inside any other no-fly zone in the loaded set.
 function suggestSafeSpots(lat, lng, zones) {
   const blocking = zones.filter((z) => isNoFly(z, lat, lng));
   if (!blocking.length) return [];
-  const margin = 0.01; // ~1.1 km nudge past the bbox edge
+  const margin = 0.01;
   const candidates = [];
   for (const z of blocking) {
     candidates.push({ lat: z.maxLat + margin, lng: round5(lng), label: `just north of ${z.name}` });
@@ -65,17 +62,19 @@ async function checkRouteFeasibility({
   try {
     zones = await loadZones(pickupLat, pickupLng, destLat, destLng);
   } catch {
-    // Zones DB unreachable — degrade to feasible (client map still shows zones).
     zones = [];
   }
 
-  const plan = planLeastFuelRoute({
+  const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
+  const baseCruiseAltitudeM = profile.optimalAltitudeM;
+
+  const routePlan = planAvoidanceRoute({
     pickupLat,
     pickupLng,
     destLat,
     destLng,
-    service,
     zones,
+    baseCruiseAltitudeM,
   });
 
   const pickupBlocked = zones.some((z) => isNoFly(z, pickupLat, pickupLng));
@@ -97,11 +96,33 @@ async function checkRouteFeasibility({
     });
   }
 
+  const violations = [];
+  const warnings = [];
+
+  if (!routePlan.feasible) {
+    violations.push(
+      routePlan.reason === "endpoint_in_no_fly"
+        ? "Route starts or ends inside a no-fly zone"
+        : "No safe route found — all paths cross no-fly zones"
+    );
+  }
+
+  // Collect restricted zone warnings from the altitude profile.
+  for (const seg of routePlan.segments) {
+    for (const rz of seg.crossedRestricted) {
+      warnings.push(
+        `Restricted airspace ${rz.name}: climbing to ${seg.altitudeM} m (above ${rz.maxAltitudeM} m ceiling)`
+      );
+    }
+  }
+  const uniqueWarnings = [...new Set(warnings)];
+
   return {
-    feasible: plan.feasible && !pickupBlocked && !destBlocked,
-    violations: plan.violations,
-    warnings: plan.warnings,
+    feasible: routePlan.feasible && !pickupBlocked && !destBlocked,
+    violations,
+    warnings: uniqueWarnings,
     blockedEndpoints,
+    route: routePlan,
   };
 }
 

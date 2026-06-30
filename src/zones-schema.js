@@ -64,6 +64,7 @@ async function initZonesSchema() {
   } catch (err) {
     dbg(`[zones-schema] idx_zones_bbox note: ${err.message}`);
   }
+  await ensureColumn("flight_zones", "category", "category VARCHAR(64) NULL");
   await backfillZoneBboxes();
   const { seedFlightZones } = require("./seed-zones");
   await seedFlightZones();

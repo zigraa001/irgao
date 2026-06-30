@@ -3,6 +3,12 @@ const express = require("express");
 const { zonesQuery } = require("./zones-db");
 const { requireAuth } = require("./auth");
 const { parseBoundsQuery, buildZonesSql } = require("./zone-geometry");
+const {
+  ZONE_TYPE_LEGENDS,
+  ZONE_CATEGORY_LEGENDS,
+  ALTITUDE_BANDS,
+  getZoneLegend,
+} = require("./zone-legends");
 
 const router = express.Router();
 
@@ -13,19 +19,20 @@ function shapeZone(row) {
   } catch {
     geometry = null;
   }
+  const legend = getZoneLegend(row.zoneType, row.category);
   return {
     id: row.id,
     name: row.name,
     zoneType: row.zoneType,
+    category: row.category || null,
     minAltitudeM: row.minAltitudeM,
     maxAltitudeM: row.maxAltitudeM,
-    // Bounding box used by the client to cull sub-pixel zones without
-    // re-parsing the polygon geometry on every redraw.
     minLat: row.minLat,
     maxLat: row.maxLat,
     minLng: row.minLng,
     maxLng: row.maxLng,
     geometry,
+    legend,
   };
 }
 
@@ -61,6 +68,17 @@ router.get("/", requireAuth, async (req, res) => {
   }
 
   res.json({ zones, bounds });
+});
+
+// GET /api/zones/legends — map legend definitions (zone types, categories,
+// altitude bands) so the frontend can render a legend without hardcoding.
+// Public (no auth) — the legend is static metadata, not user data.
+router.get("/legends", (req, res) => {
+  res.json({
+    zoneTypes: ZONE_TYPE_LEGENDS,
+    categories: ZONE_CATEGORY_LEGENDS,
+    altitudeBands: ALTITUDE_BANDS,
+  });
 });
 
 module.exports = router;

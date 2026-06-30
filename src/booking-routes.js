@@ -121,6 +121,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     booking,
     fare: fareBreakdown(service, distanceKm),
     warnings: feasibility.warnings,
+    route: feasibility.route || null,
   });
 });
 
@@ -190,6 +191,7 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     blockedEndpoints: feasibility.blockedEndpoints,
     distanceKm,
     fare: fareBreakdown(service, distanceKm),
+    route: feasibility.route || null,
   });
 });
 router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("bookings.pay"), async (req, res) => {
@@ -366,16 +368,19 @@ router.post(
 
     const { policy, fee, refund, reason } = computeCancellationPolicy(booking);
 
-    // Stop dispatch (timers/offers/aircraft) before flipping status so the
-    // operator notification reflects the withdrawal, not the new status.
-    await stopDispatch(id);
-
-    await query(
+    // Race-safe: only the first concurrent cancel flips the status. A second
+    // concurrent caller gets affectedRows=0 and a conflict response.
+    const claim = await query(
       `UPDATE bookings
        SET status = 'cancelled', cancelledAt = NOW(), cancellationFee = ?
-       WHERE id = ?`,
+       WHERE id = ? AND status NOT IN ('cancelled', 'completed')`,
       [fee, id]
     );
+    if (claim.affectedRows === 0) {
+      return res.status(409).json({ error: "Booking already cancelled or completed" });
+    }
+
+    await stopDispatch(id);
 
     // Auto off-duty for the assigned operator on cancellation.
     if (booking.operatorId) {

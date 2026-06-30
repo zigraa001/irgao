@@ -231,15 +231,19 @@ router.post(
       });
     }
 
-    await releaseAircraft(booking.id);
-    await query(
+    // Race-safe: only succeeds if still assigned to this operator.
+    const claim = await query(
       `UPDATE bookings
        SET status = 'dispatching', operatorId = NULL, aircraftId = NULL, pendingOperatorId = NULL
-       WHERE id = ?`,
-      [booking.id]
+       WHERE id = ? AND status = 'assigned' AND operatorId = ?`,
+      [booking.id, req.user.id]
     );
-    // Handing back an accepted trip ends the operator's "on-duty for this ride"
-    // state — they go off-duty and must toggle back on to receive new offers.
+    if (claim.affectedRows === 0) {
+      return res.status(409).json({
+        error: "Trip already changed — refresh and try again",
+      });
+    }
+    await releaseAircraft(booking.id);
     await setOperatorDuty(req.user.id, 0);
     pushCustomer(booking.id, "ride_update", {
       bookingId: booking.id,
@@ -269,7 +273,6 @@ async function advanceTripStatus(req, res, fromStatus, toStatus) {
       error: `Trip must be "${fromStatus}" to move it to "${toStatus}"`,
     });
   }
-  // A pilot cannot take off without an assigned aircraft.
   if (toStatus === "flying" && !booking.aircraftId) {
     return res.status(409).json({
       error:
@@ -277,12 +280,16 @@ async function advanceTripStatus(req, res, fromStatus, toStatus) {
       code: "NO_AIRCRAFT",
     });
   }
-  await query("UPDATE bookings SET status = ? WHERE id = ?", [
-    toStatus,
-    booking.id,
-  ]);
-  // Landing completes the trip — release the aircraft back to the fleet and
-  // flip the operator off-duty (auto on-duty lasts only for the active ride).
+  // Race-safe: only the first concurrent advance from this status succeeds.
+  const claim = await query(
+    "UPDATE bookings SET status = ? WHERE id = ? AND status = ?",
+    [toStatus, booking.id, fromStatus]
+  );
+  if (claim.affectedRows === 0) {
+    return res.status(409).json({
+      error: `Trip status already changed — refresh and try again`,
+    });
+  }
   if (toStatus === "completed") {
     await releaseAircraft(booking.id);
     await setOperatorDuty(req.user.id, 0);

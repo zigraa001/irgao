@@ -24,17 +24,19 @@ async function upsertZone(z) {
     z.name,
   ]);
   const geometry = JSON.stringify(z.geometry);
+  const category = z.category || null;
 
   if (existing) {
     await zonesQuery(
       `UPDATE flight_zones
-       SET zoneType = ?, minAltitudeM = ?, maxAltitudeM = ?,
+       SET zoneType = ?, minAltitudeM = ?, maxAltitudeM = ?, category = ?,
            minLat = ?, maxLat = ?, minLng = ?, maxLng = ?, geometry = ?
        WHERE id = ?`,
       [
         z.zoneType,
         z.minAltitudeM,
         z.maxAltitudeM,
+        category,
         bbox.minLat,
         bbox.maxLat,
         bbox.minLng,
@@ -48,13 +50,14 @@ async function upsertZone(z) {
 
   await zonesQuery(
     `INSERT INTO flight_zones
-       (name, zoneType, minAltitudeM, maxAltitudeM, minLat, maxLat, minLng, maxLng, geometry)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (name, zoneType, minAltitudeM, maxAltitudeM, category, minLat, maxLat, minLng, maxLng, geometry)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       z.name,
       z.zoneType,
       z.minAltitudeM,
       z.maxAltitudeM,
+      category,
       bbox.minLat,
       bbox.maxLat,
       bbox.minLng,
