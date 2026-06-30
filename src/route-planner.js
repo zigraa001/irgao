@@ -1,20 +1,27 @@
-// Route planner: visibility-graph pathfinder that routes around no-fly zones
-// and handles altitude for restricted zones.
+// Least-fuel route planner for air taxis.
 //
-// Algorithm:
-// 1. Sample the direct path — if clear, return the straight line.
-// 2. Otherwise build a visibility graph: start + end + all no-fly zone
-//    boundary vertices, with edges between mutually-visible pairs.
-// 3. Run Dijkstra on the graph to find the shortest safe path.
-// 4. For restricted zones along the path, compute altitude adjustments
-//    (fly above maxAltitudeM) rather than routing around.
-// 5. Return ordered waypoints with per-segment altitude profiles.
+// Builds a visibility graph where:
+//   - No-fly zones are hard blocks: edges cannot cross them at any altitude.
+//   - Restricted zones are soft blocks: edges CAN cross them, but at a higher
+//     altitude (above the zone ceiling), which costs more fuel for climb.
+//   - Boundary vertices of restricted zones are added so the algorithm can
+//     also choose to ROUTE AROUND them at base cruise altitude.
+//
+// Dijkstra edge weights are FUEL COST (kg), not distance. This means the
+// algorithm automatically decides "fly over at 450 m (more climb fuel)" vs.
+// "detour 8 km around at 280 m (more cruise fuel)" — whichever burns less.
+//
+// The fuel model uses SERVICE_FUEL profiles from fuel-route.js:
+//   cruiseKgPerKm — fuel per km at optimal altitude
+//   climbKgPerM   — fuel per metre of altitude gain
+//   optimalAltitudeM — sweet spot for cruise efficiency
 
 const { haversineKm } = require("./pricing");
-const { pointInPolygon } = require("./fuel-route");
+const { pointInPolygon, SERVICE_FUEL } = require("./fuel-route");
 
 const MARGIN_DEG = 0.005; // ~550 m buffer outside zone boundaries
-const MAX_WAYPOINTS = 60;
+const MAX_GRAPH_NODES = 80;
+const DESCENT_RECOVERY = 0.28; // 28% energy recovery on descent
 
 // ── Geometry helpers ─────────────────────────────────────────────────────
 
@@ -58,8 +65,6 @@ function midpoint(ax, ay, bx, by) {
   return [(ax + bx) / 2, (ay + by) / 2];
 }
 
-// Check if a line segment (lng1,lat1)→(lng2,lat2) crosses the interior
-// of any no-fly zone. "Crosses" = edge intersection OR midpoint inside.
 function segmentCrossesNoFly(lng1, lat1, lng2, lat2, noFlyZones) {
   for (const z of noFlyZones) {
     if (!z.geometry?.coordinates?.[0]) continue;
@@ -71,8 +76,26 @@ function segmentCrossesNoFly(lng1, lat1, lng2, lat2, noFlyZones) {
   return false;
 }
 
-// Push a vertex outward from the zone centroid by MARGIN_DEG so the
-// path doesn't graze the zone boundary.
+// Which restricted zones does a segment cross? Returns list with required
+// altitude for each (zone ceiling + 50 m buffer).
+function segmentRestrictedZones(lng1, lat1, lng2, lat2, restrictedZones) {
+  const crossed = [];
+  for (const z of restrictedZones) {
+    if (!z.geometry?.coordinates?.[0]) continue;
+    const ring = z.geometry.coordinates[0];
+    const [mx, my] = midpoint(lng1, lat1, lng2, lat2);
+    const hits =
+      segmentIntersectsPolygon(lng1, lat1, lng2, lat2, ring) ||
+      pointInPolygon(mx, my, z.geometry) ||
+      pointInPolygon(lng1, lat1, z.geometry) ||
+      pointInPolygon(lng2, lat2, z.geometry);
+    if (hits) {
+      crossed.push({ zone: z, requiredAltitudeM: z.maxAltitudeM + 50 });
+    }
+  }
+  return crossed;
+}
+
 function inflateVertex(lng, lat, centroidLng, centroidLat) {
   const dx = lng - centroidLng;
   const dy = lat - centroidLat;
@@ -83,125 +106,392 @@ function inflateVertex(lng, lat, centroidLng, centroidLat) {
 function polygonCentroid(ring) {
   let cx = 0, cy = 0;
   const n = ring.length - 1;
-  for (let i = 0; i < n; i++) {
-    cx += ring[i][0];
-    cy += ring[i][1];
-  }
+  for (let i = 0; i < n; i++) { cx += ring[i][0]; cy += ring[i][1]; }
   return [cx / n, cy / n];
+}
+
+// ── Fuel cost model ──────────────────────────────────────────────────────
+
+// Parabolic penalty when cruising away from optimal altitude.
+function altitudeFuelFactor(altitudeM, optimalM) {
+  const delta = (altitudeM - optimalM) / 100;
+  return 1 + 0.22 * delta * delta;
+}
+
+// Fuel cost (kg) for flying `distanceKm` at `altitudeM` for a given service.
+// Includes climb cost from ground and partial descent recovery.
+function segmentFuelKg(service, distanceKm, altitudeM) {
+  const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
+  const factor = altitudeFuelFactor(altitudeM, profile.optimalAltitudeM);
+  const cruiseKg = distanceKm * profile.cruiseKgPerKm * factor;
+  return cruiseKg;
+}
+
+// Extra fuel for climbing from baseAltitudeM to targetAltitudeM (one-way).
+function climbFuelKg(service, baseAltitudeM, targetAltitudeM) {
+  if (targetAltitudeM <= baseAltitudeM) return 0;
+  const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
+  const climbM = targetAltitudeM - baseAltitudeM;
+  const climbCost = climbM * profile.climbKgPerM;
+  const descentSaving = climbCost * DESCENT_RECOVERY;
+  return climbCost - descentSaving;
+}
+
+// Total fuel for an edge: cruise cost + climb penalty if restricted zone
+// forces a higher altitude.
+function edgeFuelKg(service, distanceKm, baseCruiseAltitudeM, crossedRestricted) {
+  if (!crossedRestricted.length) {
+    return segmentFuelKg(service, distanceKm, baseCruiseAltitudeM);
+  }
+  // Must climb above the highest restricted zone ceiling along this edge.
+  let requiredAlt = baseCruiseAltitudeM;
+  for (const cr of crossedRestricted) {
+    requiredAlt = Math.max(requiredAlt, cr.requiredAltitudeM);
+  }
+  const cruise = segmentFuelKg(service, distanceKm, requiredAlt);
+  const climb = climbFuelKg(service, baseCruiseAltitudeM, requiredAlt);
+  return cruise + climb;
 }
 
 // ── Visibility graph construction ────────────────────────────────────────
 
-function buildVisibilityGraph(startLng, startLat, endLng, endLat, noFlyZones) {
+function buildFuelGraph(startLng, startLat, endLng, endLat, zones, service, baseCruiseAltitudeM) {
+  const noFlyZones = zones.filter((z) => z.zoneType === "no_fly" && z.geometry);
+  const restrictedZones = zones.filter((z) => z.zoneType === "restricted" && z.geometry);
+  const obstacleZones = [...noFlyZones, ...restrictedZones];
+
   const nodes = [
     { id: 0, lng: startLng, lat: startLat, label: "start" },
     { id: 1, lng: endLng, lat: endLat, label: "end" },
   ];
 
-  // Add inflated boundary vertices from each no-fly zone.
+  // Add inflated boundary vertices from no-fly zones (must route around).
   for (const z of noFlyZones) {
     if (!z.geometry?.coordinates?.[0]) continue;
     const ring = z.geometry.coordinates[0];
     const [cx, cy] = polygonCentroid(ring);
     const n = ring.length - 1;
-    // Sample vertices (skip duplicate closing vertex). For large polygons
-    // take every Nth vertex to keep the graph tractable.
     const step = Math.max(1, Math.floor(n / 12));
     for (let i = 0; i < n; i += step) {
       const [ilng, ilat] = inflateVertex(ring[i][0], ring[i][1], cx, cy);
-      // Skip vertices that land inside another no-fly zone.
-      const insideAnother = noFlyZones.some(
-        (oz) => oz !== z && oz.geometry && pointInPolygon(ilng, ilat, oz.geometry)
-      );
-      if (insideAnother) continue;
+      if (noFlyZones.some((oz) => oz !== z && oz.geometry && pointInPolygon(ilng, ilat, oz.geometry))) continue;
       nodes.push({ id: nodes.length, lng: ilng, lat: ilat, label: z.name });
     }
-    if (nodes.length > MAX_WAYPOINTS) break;
+    if (nodes.length > MAX_GRAPH_NODES) break;
   }
 
-  // Build adjacency: edge exists iff the segment doesn't cross any no-fly zone.
+  // Add inflated boundary vertices from restricted zones too, so the
+  // algorithm has the option to go AROUND them at base cruise altitude
+  // instead of flying through at higher altitude.
+  for (const z of restrictedZones) {
+    if (!z.geometry?.coordinates?.[0]) continue;
+    const ring = z.geometry.coordinates[0];
+    const [cx, cy] = polygonCentroid(ring);
+    const n = ring.length - 1;
+    const step = Math.max(1, Math.floor(n / 8));
+    for (let i = 0; i < n; i += step) {
+      const [ilng, ilat] = inflateVertex(ring[i][0], ring[i][1], cx, cy);
+      if (noFlyZones.some((oz) => oz.geometry && pointInPolygon(ilng, ilat, oz.geometry))) continue;
+      nodes.push({ id: nodes.length, lng: ilng, lat: ilat, label: z.name });
+    }
+    if (nodes.length > MAX_GRAPH_NODES) break;
+  }
+
+  // Build adjacency with FUEL COST as edge weight.
   const adj = new Map();
   for (const n of nodes) adj.set(n.id, []);
 
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       const a = nodes[i], b = nodes[j];
-      if (!segmentCrossesNoFly(a.lng, a.lat, b.lng, b.lat, noFlyZones)) {
-        const dist = haversineKm(a.lat, a.lng, b.lat, b.lng);
-        adj.get(a.id).push({ to: b.id, dist });
-        adj.get(b.id).push({ to: a.id, dist });
+
+      // Hard block: no-fly zones cannot be crossed.
+      if (segmentCrossesNoFly(a.lng, a.lat, b.lng, b.lat, noFlyZones)) continue;
+
+      const distKm = haversineKm(a.lat, a.lng, b.lat, b.lng);
+      const crossedRestricted = segmentRestrictedZones(a.lng, a.lat, b.lng, b.lat, restrictedZones);
+      const fuelKg = edgeFuelKg(service, distKm, baseCruiseAltitudeM, crossedRestricted);
+
+      // Determine altitude for this edge.
+      let altitudeM = baseCruiseAltitudeM;
+      for (const cr of crossedRestricted) {
+        altitudeM = Math.max(altitudeM, cr.requiredAltitudeM);
       }
+
+      const edge = { to: -1, fuelKg, distKm, altitudeM, crossedRestricted };
+      adj.get(a.id).push({ ...edge, to: b.id });
+      adj.get(b.id).push({ ...edge, to: a.id });
     }
   }
 
-  return { nodes, adj };
+  return { nodes, adj, noFlyZones, restrictedZones };
 }
 
-// ── Dijkstra shortest path ───────────────────────────────────────────────
+// ── Dijkstra (fuel-weighted) ─────────────────────────────────────────────
 
-function dijkstra(nodes, adj, startId, endId) {
-  const dist = new Map();
+function dijkstraFuel(nodes, adj, startId, endId) {
+  const cost = new Map();
   const prev = new Map();
+  const edgeUsed = new Map();
   const visited = new Set();
 
-  for (const n of nodes) dist.set(n.id, Infinity);
-  dist.set(startId, 0);
+  for (const n of nodes) cost.set(n.id, Infinity);
+  cost.set(startId, 0);
 
   while (true) {
-    let u = -1, uDist = Infinity;
-    for (const [id, d] of dist) {
-      if (!visited.has(id) && d < uDist) { u = id; uDist = d; }
+    let u = -1, uCost = Infinity;
+    for (const [id, c] of cost) {
+      if (!visited.has(id) && c < uCost) { u = id; uCost = c; }
     }
     if (u === -1 || u === endId) break;
     visited.add(u);
 
     for (const edge of (adj.get(u) || [])) {
-      const alt = uDist + edge.dist;
-      if (alt < dist.get(edge.to)) {
-        dist.set(edge.to, alt);
+      const alt = uCost + edge.fuelKg;
+      if (alt < cost.get(edge.to)) {
+        cost.set(edge.to, alt);
         prev.set(edge.to, u);
+        edgeUsed.set(edge.to, edge);
       }
     }
   }
 
-  if (!Number.isFinite(dist.get(endId))) return null;
+  if (!Number.isFinite(cost.get(endId))) return null;
 
   const path = [];
+  const edges = [];
   let cur = endId;
   while (cur !== undefined) {
     path.unshift(cur);
+    if (edgeUsed.has(cur)) edges.unshift(edgeUsed.get(cur));
     cur = prev.get(cur);
   }
-  return { path, totalKm: Math.round(dist.get(endId) * 10) / 10 };
+  return { path, edges, totalFuelKg: Math.round(cost.get(endId) * 10) / 10 };
 }
 
-// ── Altitude profile ─────────────────────────────────────────────────────
+// ── Build segments with altitude profile ─────────────────────────────────
 
+function buildSegments(waypoints, edges, baseCruiseAltitudeM) {
+  const segments = [];
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const a = waypoints[i], b = waypoints[i + 1];
+    const edge = edges[i] || {};
+    segments.push({
+      from: { lat: a.lat, lng: a.lng },
+      to: { lat: b.lat, lng: b.lng },
+      distanceKm: Math.round((edge.distKm || haversineKm(a.lat, a.lng, b.lat, b.lng)) * 10) / 10,
+      fuelKg: Math.round((edge.fuelKg || 0) * 10) / 10,
+      altitudeM: Math.round(edge.altitudeM || baseCruiseAltitudeM),
+      crossedRestricted: (edge.crossedRestricted || []).map((cr) => ({
+        name: cr.zone.name,
+        category: cr.zone.category || null,
+        maxAltitudeM: cr.zone.maxAltitudeM,
+        requiredAltitudeM: cr.requiredAltitudeM,
+      })),
+    });
+  }
+  return segments;
+}
+
+// ── Altitude profile summary ─────────────────────────────────────────────
+
+function buildAltitudeProfile(segments, baseCruiseAltitudeM) {
+  if (!segments.length) return { min: baseCruiseAltitudeM, max: baseCruiseAltitudeM, transitions: [] };
+  const transitions = [];
+  let prevAlt = 0;
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (seg.altitudeM !== prevAlt) {
+      transitions.push({
+        atSegment: i,
+        from: prevAlt || 0,
+        to: seg.altitudeM,
+        reason: seg.crossedRestricted.length
+          ? `Climbing above ${seg.crossedRestricted.map((r) => r.name).join(", ")}`
+          : i === 0 ? "Takeoff climb" : "Returning to cruise altitude",
+      });
+      prevAlt = seg.altitudeM;
+    }
+  }
+  return {
+    min: Math.min(...segments.map((s) => s.altitudeM)),
+    max: Math.max(...segments.map((s) => s.altitudeM)),
+    baseCruiseM: baseCruiseAltitudeM,
+    transitions,
+  };
+}
+
+// ── Main entry point ─────────────────────────────────────────────────────
+
+function planAvoidanceRoute({
+  pickupLat,
+  pickupLng,
+  destLat,
+  destLng,
+  zones,
+  baseCruiseAltitudeM,
+  service,
+}) {
+  service = service || "taxi";
+  const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
+  baseCruiseAltitudeM = baseCruiseAltitudeM || profile.optimalAltitudeM;
+
+  const noFlyZones = zones.filter((z) => z.zoneType === "no_fly" && z.geometry);
+  const restrictedZones = zones.filter((z) => z.zoneType === "restricted" && z.geometry);
+
+  const pickupInsideNoFly = noFlyZones.some((z) =>
+    pointInPolygon(pickupLng, pickupLat, z.geometry)
+  );
+  const destInsideNoFly = noFlyZones.some((z) =>
+    pointInPolygon(destLng, destLat, z.geometry)
+  );
+
+  const directKm = Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
+
+  if (pickupInsideNoFly || destInsideNoFly) {
+    return {
+      feasible: false,
+      reason: "endpoint_in_no_fly",
+      waypoints: [],
+      segments: [],
+      altitudeProfile: { min: 0, max: 0, transitions: [] },
+      totalDistanceKm: directKm,
+      directDistanceKm: directKm,
+      totalFuelKg: 0,
+      directFuelKg: 0,
+      fuelSavingKg: 0,
+      detourRatio: 1,
+      algorithm: "least_fuel_dijkstra_v2",
+    };
+  }
+
+  // Check if direct path crosses any no-fly zone.
+  const directCrossesNoFly = segmentCrossesNoFly(
+    pickupLng, pickupLat, destLng, destLat, noFlyZones
+  );
+
+  // Check if direct path crosses any restricted zone.
+  const directCrossedRestricted = segmentRestrictedZones(
+    pickupLng, pickupLat, destLng, destLat, restrictedZones
+  );
+
+  // Direct fuel: what it would cost to fly straight (at whatever altitude).
+  const directFuelKg = Math.round(
+    edgeFuelKg(service, directKm, baseCruiseAltitudeM, directCrossedRestricted) * 10
+  ) / 10;
+
+  // Fast path: no no-fly zones in the way AND no restricted zones either
+  // → straight line at base cruise altitude is optimal.
+  if (!directCrossesNoFly && !directCrossedRestricted.length) {
+    const waypoints = [
+      { lat: pickupLat, lng: pickupLng, label: "pickup" },
+      { lat: destLat, lng: destLng, label: "destination" },
+    ];
+    const segments = [{
+      from: { lat: pickupLat, lng: pickupLng },
+      to: { lat: destLat, lng: destLng },
+      distanceKm: directKm,
+      fuelKg: directFuelKg,
+      altitudeM: baseCruiseAltitudeM,
+      crossedRestricted: [],
+    }];
+    return {
+      feasible: true,
+      reason: "direct_clear",
+      waypoints,
+      segments,
+      altitudeProfile: buildAltitudeProfile(segments, baseCruiseAltitudeM),
+      totalDistanceKm: directKm,
+      directDistanceKm: directKm,
+      totalFuelKg: directFuelKg,
+      directFuelKg,
+      fuelSavingKg: 0,
+      detourRatio: 1,
+      algorithm: "least_fuel_dijkstra_v2",
+    };
+  }
+
+  // Build fuel-weighted visibility graph and run Dijkstra.
+  const { nodes, adj } = buildFuelGraph(
+    pickupLng, pickupLat, destLng, destLat, zones, service, baseCruiseAltitudeM
+  );
+  const result = dijkstraFuel(nodes, adj, 0, 1);
+
+  if (!result) {
+    return {
+      feasible: false,
+      reason: "no_path_found",
+      waypoints: [],
+      segments: [],
+      altitudeProfile: { min: 0, max: 0, transitions: [] },
+      totalDistanceKm: 0,
+      directDistanceKm: directKm,
+      totalFuelKg: 0,
+      directFuelKg,
+      fuelSavingKg: 0,
+      detourRatio: Infinity,
+      algorithm: "least_fuel_dijkstra_v2",
+    };
+  }
+
+  const waypoints = result.path.map((id) => {
+    const n = nodes.find((node) => node.id === id);
+    return { lat: n.lat, lng: n.lng, label: n.label };
+  });
+
+  const segments = buildSegments(waypoints, result.edges, baseCruiseAltitudeM);
+  const totalKm = segments.reduce((s, seg) => s + seg.distanceKm, 0);
+  const totalFuelKg = Math.round(result.totalFuelKg * 10) / 10;
+
+  // Determine the reason: did we reroute around no-fly, or fly over restricted?
+  const crossedAnyRestricted = segments.some((s) => s.crossedRestricted.length > 0);
+  let reason;
+  if (directCrossesNoFly && crossedAnyRestricted) {
+    reason = "rerouted_no_fly_and_overfly_restricted";
+  } else if (directCrossesNoFly) {
+    reason = "rerouted_around_no_fly";
+  } else {
+    reason = crossedAnyRestricted
+      ? "overfly_restricted_least_fuel"
+      : "rerouted_around_restricted";
+  }
+
+  return {
+    feasible: true,
+    reason,
+    waypoints,
+    segments,
+    altitudeProfile: buildAltitudeProfile(segments, baseCruiseAltitudeM),
+    totalDistanceKm: Math.round(totalKm * 10) / 10,
+    directDistanceKm: directKm,
+    totalFuelKg,
+    directFuelKg,
+    fuelSavingKg: Math.round((directFuelKg - totalFuelKg) * 10) / 10,
+    detourRatio: Math.round((totalKm / directKm) * 100) / 100,
+    algorithm: "least_fuel_dijkstra_v2",
+  };
+}
+
+// Legacy exports for tests + compatibility.
 function computeAltitudeProfile(waypoints, allZones, baseCruiseAltitudeM) {
   const segments = [];
   for (let i = 0; i < waypoints.length - 1; i++) {
     const a = waypoints[i], b = waypoints[i + 1];
     const mLng = (a.lng + b.lng) / 2;
     const mLat = (a.lat + b.lat) / 2;
-
     let requiredAltitudeM = baseCruiseAltitudeM;
     const crossedRestricted = [];
-
     for (const z of allZones) {
-      if (z.zoneType !== "restricted") continue;
-      if (!z.geometry) continue;
-      // Check if this segment's midpoint or endpoints are inside the zone.
+      if (z.zoneType !== "restricted" || !z.geometry) continue;
       const hits =
         pointInPolygon(mLng, mLat, z.geometry) ||
         pointInPolygon(a.lng, a.lat, z.geometry) ||
         pointInPolygon(b.lng, b.lat, z.geometry);
       if (hits) {
         crossedRestricted.push(z);
-        // Must fly above the restricted zone's ceiling.
         requiredAltitudeM = Math.max(requiredAltitudeM, z.maxAltitudeM + 50);
       }
     }
-
     segments.push({
       from: { lat: a.lat, lng: a.lng },
       to: { lat: b.lat, lng: b.lng },
@@ -216,109 +506,17 @@ function computeAltitudeProfile(waypoints, allZones, baseCruiseAltitudeM) {
   return segments;
 }
 
-// ── Main entry point ─────────────────────────────────────────────────────
-
-function planAvoidanceRoute({
-  pickupLat,
-  pickupLng,
-  destLat,
-  destLng,
-  zones,
-  baseCruiseAltitudeM,
-}) {
-  const noFlyZones = zones.filter(
-    (z) => z.zoneType === "no_fly" && z.geometry
-  );
-
-  // Fast path: direct route has no no-fly violations → straight line.
-  const directClear = !segmentCrossesNoFly(
-    pickupLng, pickupLat, destLng, destLat, noFlyZones
-  );
-  const pickupInsideNoFly = noFlyZones.some((z) =>
-    pointInPolygon(pickupLng, pickupLat, z.geometry)
-  );
-  const destInsideNoFly = noFlyZones.some((z) =>
-    pointInPolygon(destLng, destLat, z.geometry)
-  );
-
-  if (pickupInsideNoFly || destInsideNoFly) {
-    return {
-      feasible: false,
-      reason: "endpoint_in_no_fly",
-      waypoints: [],
-      segments: [],
-      totalDistanceKm: haversineKm(pickupLat, pickupLng, destLat, destLng),
-      directDistanceKm: haversineKm(pickupLat, pickupLng, destLat, destLng),
-      detourRatio: 1,
-      algorithm: "visibility_graph_v1",
-    };
-  }
-
-  if (directClear) {
-    const dist = Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
-    const waypoints = [
-      { lat: pickupLat, lng: pickupLng, label: "pickup" },
-      { lat: destLat, lng: destLng, label: "destination" },
-    ];
-    const segments = computeAltitudeProfile(waypoints, zones, baseCruiseAltitudeM);
-    return {
-      feasible: true,
-      reason: "direct_clear",
-      waypoints,
-      segments,
-      totalDistanceKm: dist,
-      directDistanceKm: dist,
-      detourRatio: 1,
-      algorithm: "visibility_graph_v1",
-    };
-  }
-
-  // Build visibility graph and find shortest path around no-fly zones.
-  const { nodes, adj } = buildVisibilityGraph(
-    pickupLng, pickupLat, destLng, destLat, noFlyZones
-  );
-  const result = dijkstra(nodes, adj, 0, 1);
-
-  if (!result) {
-    return {
-      feasible: false,
-      reason: "no_path_found",
-      waypoints: [],
-      segments: [],
-      totalDistanceKm: 0,
-      directDistanceKm: haversineKm(pickupLat, pickupLng, destLat, destLng),
-      detourRatio: Infinity,
-      algorithm: "visibility_graph_v1",
-    };
-  }
-
-  const waypoints = result.path.map((id) => {
-    const n = nodes.find((node) => node.id === id);
-    return { lat: n.lat, lng: n.lng, label: n.label };
-  });
-
-  const directKm = haversineKm(pickupLat, pickupLng, destLat, destLng);
-  const segments = computeAltitudeProfile(waypoints, zones, baseCruiseAltitudeM);
-  const totalKm = segments.reduce((s, seg) => s + seg.distanceKm, 0);
-
-  return {
-    feasible: true,
-    reason: "rerouted_around_no_fly",
-    waypoints,
-    segments,
-    totalDistanceKm: Math.round(totalKm * 10) / 10,
-    directDistanceKm: Math.round(directKm * 10) / 10,
-    detourRatio: Math.round((totalKm / directKm) * 100) / 100,
-    algorithm: "visibility_graph_v1",
-  };
-}
-
 module.exports = {
   planAvoidanceRoute,
   segmentCrossesNoFly,
-  buildVisibilityGraph,
-  dijkstra,
+  segmentRestrictedZones,
+  buildFuelGraph,
+  dijkstraFuel,
   computeAltitudeProfile,
   inflateVertex,
   segmentsIntersect,
+  edgeFuelKg,
+  climbFuelKg,
+  segmentFuelKg,
+  altitudeFuelFactor,
 };

@@ -75,6 +75,7 @@ async function checkRouteFeasibility({
     destLng,
     zones,
     baseCruiseAltitudeM,
+    service,
   });
 
   const pickupBlocked = zones.some((z) => isNoFly(z, pickupLat, pickupLng));
