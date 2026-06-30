@@ -4186,11 +4186,14 @@ function bookingDraftReady() {
 }
 
 // ── Demo Cities (Indian locations) ──
+// Vertiport locations are positioned OUTSIDE airport no-fly zones (~3-4 km
+// radius). Passengers board at vertiports, not runways.
 const demoLocations = {
   // Delhi NCR
   'Connaught Place, Delhi':       [28.6315, 77.2167],
   'India Gate, Delhi':            [28.6129, 77.2295],
-  'IGI Airport T3, Delhi':        [28.5562, 77.1000],
+  'Dwarka Helipad, Delhi':        [28.5830, 77.0780],
+  'Vasant Kunj Vertiport, Delhi': [28.5700, 77.1200],
   'IIT Delhi Campus':             [28.5459, 77.1926],
   'AIIMS Hospital, Delhi':        [28.5672, 77.2100],
   'Safdarjung Hospital, Delhi':   [28.5685, 77.2065],
@@ -4200,13 +4203,14 @@ const demoLocations = {
 
   // Mumbai
   'BKC, Mumbai':                  [19.0660, 72.8710],
-  'Mumbai Airport':               [19.0896, 72.8656],
+  'Andheri Vertiport, Mumbai':    [19.1150, 72.8700],
+  'Powai Vertiport, Mumbai':      [19.0700, 72.9000],
   'Marine Drive, Mumbai':         [18.9440, 72.8235],
   'Kokilaben Hospital, Mumbai':   [19.1310, 72.8265],
   'Lilavati Hospital, Mumbai':    [19.0509, 72.8289],
 
   // Chennai
-  'Chennai Airport':              [12.9941, 80.1709],
+  'Pallavaram Vertiport, Chennai':[13.0200, 80.1850],
   'IIT Madras Cricket Ground':    [12.9916, 80.2336],
   'IIT Madras Campus':            [12.9915, 80.2337],
   'Apollo Hospital, Chennai':     [13.0067, 80.2206],
@@ -4216,7 +4220,7 @@ const demoLocations = {
   'Whitefield, Bengaluru':        [12.9698, 77.7500],
   'MG Road, Bengaluru':           [12.9756, 77.6096],
   'Koramangala, Bengaluru':       [12.9352, 77.6245],
-  'Kempegowda Airport, Bengaluru':[13.1979, 77.7063],
+  'Devanahalli Vertiport, Bengaluru': [13.2200, 77.7300],
   'Narayana Health, Bengaluru':   [12.8828, 77.5987],
 
   // Hyderabad
@@ -4224,16 +4228,16 @@ const demoLocations = {
   'Gachibowli, Hyderabad':        [17.4401, 78.3489],
   'NIMS Hospital, Hyderabad':     [17.3941, 78.5012],
 
-  // Remote / Emergency routes
-  'Leh Airport, Ladakh':          [34.1359, 77.5465],
+  // Remote / Emergency routes (smaller airports — no-fly zones don't apply)
+  'Leh Vertiport, Ladakh':        [34.1500, 77.5600],
   'SNM Hospital, Leh':            [34.1526, 77.5771],
-  'Shimla Airport':               [31.0818, 77.0681],
+  'Shimla Vertiport':             [31.0950, 77.0800],
   'IGMC Hospital, Shimla':        [31.1048, 77.1734],
-  'Dehradun Airport':             [30.1897, 78.1803],
+  'Dehradun Vertiport':           [30.2050, 78.1950],
   'AIIMS Rishikesh':              [30.0688, 78.3137],
-  'Dibrugarh Airport, Assam':     [27.4839, 95.0169],
+  'Dibrugarh Vertiport, Assam':   [27.4950, 95.0300],
   'AMCH Hospital, Dibrugarh':     [27.4728, 94.9120],
-  'Port Blair Airport, Andaman':  [11.6410, 92.7297],
+  'Port Blair Vertiport, Andaman':[11.6550, 92.7400],
   'GB Pant Hospital, Andaman':    [11.6683, 92.7358],
 };
 
@@ -7379,38 +7383,38 @@ function switchService(service) {
 // ── Popular Routes per Service ──
 const popularRoutes = {
   taxi: [
-    { from: 'Chennai Airport', to: 'IIT Madras Cricket Ground', emoji: '&#9992;&#65039;', meta: '15 min &middot; 18 km', tag: 'Campus' },
-    { from: 'IGI Airport T3, Delhi', to: 'IIT Delhi Campus', emoji: '&#127979;', meta: '12 min &middot; 14 km', tag: 'Campus' },
-    { from: 'Mumbai Airport', to: 'BKC, Mumbai', emoji: '&#127961;', meta: '8 min &middot; 12 km', tag: 'Business' },
-    { from: 'Kempegowda Airport, Bengaluru', to: 'Whitefield, Bengaluru', emoji: '&#128187;', meta: '18 min &middot; 35 km', tag: 'Tech Hub' },
+    { from: 'Pallavaram Vertiport, Chennai', to: 'IIT Madras Cricket Ground', emoji: '&#9992;&#65039;', meta: '12 min &middot; 15 km', tag: 'Campus' },
+    { from: 'Dwarka Helipad, Delhi', to: 'IIT Delhi Campus', emoji: '&#127979;', meta: '10 min &middot; 12 km', tag: 'Campus' },
+    { from: 'Andheri Vertiport, Mumbai', to: 'BKC, Mumbai', emoji: '&#127961;', meta: '6 min &middot; 8 km', tag: 'Business' },
+    { from: 'Devanahalli Vertiport, Bengaluru', to: 'Whitefield, Bengaluru', emoji: '&#128187;', meta: '18 min &middot; 35 km', tag: 'Tech Hub' },
     { from: 'Connaught Place, Delhi', to: 'Cyber Hub, Gurugram', emoji: '&#127747;', meta: '14 min &middot; 28 km', tag: 'City' },
     { from: 'Hi-Tech City, Hyderabad', to: 'Gachibowli, Hyderabad', emoji: '&#128296;', meta: '4 min &middot; 8 km', tag: 'Intra-City' },
-    { from: 'Marine Drive, Mumbai', to: 'Mumbai Airport', emoji: '&#127754;', meta: '10 min &middot; 20 km', tag: 'Airport' },
-    { from: 'MG Road, Bengaluru', to: 'Kempegowda Airport, Bengaluru', emoji: '&#9992;&#65039;', meta: '20 min &middot; 38 km', tag: 'Airport' },
+    { from: 'Marine Drive, Mumbai', to: 'Powai Vertiport, Mumbai', emoji: '&#127754;', meta: '10 min &middot; 18 km', tag: 'City' },
+    { from: 'MG Road, Bengaluru', to: 'Devanahalli Vertiport, Bengaluru', emoji: '&#9992;&#65039;', meta: '20 min &middot; 38 km', tag: 'Airport Link' },
   ],
   golden: [
-    { from: 'IGI Airport T3, Delhi', to: 'AIIMS Hospital, Delhi', emoji: '&#127973;', meta: '6 min &middot; 8 km', tag: 'Emergency' },
+    { from: 'Vasant Kunj Vertiport, Delhi', to: 'AIIMS Hospital, Delhi', emoji: '&#127973;', meta: '4 min &middot; 5 km', tag: 'Emergency' },
     { from: 'Connaught Place, Delhi', to: 'Safdarjung Hospital, Delhi', emoji: '&#128657;', meta: '5 min &middot; 6 km', tag: 'Emergency' },
-    { from: 'Mumbai Airport', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '7 min &middot; 10 km', tag: 'Emergency' },
+    { from: 'Andheri Vertiport, Mumbai', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '5 min &middot; 6 km', tag: 'Emergency' },
     { from: 'Marine Drive, Mumbai', to: 'Lilavati Hospital, Mumbai', emoji: '&#128657;', meta: '6 min &middot; 9 km', tag: 'Emergency' },
-    { from: 'Chennai Airport', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '8 min &middot; 12 km', tag: 'Emergency' },
+    { from: 'Pallavaram Vertiport, Chennai', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '8 min &middot; 10 km', tag: 'Emergency' },
     { from: 'Whitefield, Bengaluru', to: 'Narayana Health, Bengaluru', emoji: '&#128657;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
-    { from: 'Leh Airport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
-    { from: 'Shimla Airport', to: 'IGMC Hospital, Shimla', emoji: '&#9968;', meta: '5 min &middot; 7 km', tag: 'Remote' },
-    { from: 'Dehradun Airport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
-    { from: 'Dibrugarh Airport, Assam', to: 'AMCH Hospital, Dibrugarh', emoji: '&#127795;', meta: '4 min &middot; 5 km', tag: 'Remote' },
-    { from: 'Port Blair Airport, Andaman', to: 'GB Pant Hospital, Andaman', emoji: '&#127964;', meta: '5 min &middot; 6 km', tag: 'Remote' },
+    { from: 'Leh Vertiport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
+    { from: 'Shimla Vertiport', to: 'IGMC Hospital, Shimla', emoji: '&#9968;', meta: '5 min &middot; 7 km', tag: 'Remote' },
+    { from: 'Dehradun Vertiport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
+    { from: 'Dibrugarh Vertiport, Assam', to: 'AMCH Hospital, Dibrugarh', emoji: '&#127795;', meta: '4 min &middot; 5 km', tag: 'Remote' },
+    { from: 'Port Blair Vertiport, Andaman', to: 'GB Pant Hospital, Andaman', emoji: '&#127964;', meta: '5 min &middot; 6 km', tag: 'Remote' },
     { from: 'Cyber Hub, Gurugram', to: 'Medanta Hospital, Gurugram', emoji: '&#127973;', meta: '4 min &middot; 5 km', tag: 'Emergency' },
   ],
   shuttle: [
-    { from: 'Connaught Place, Delhi', to: 'IGI Airport T3, Delhi', emoji: '&#9992;&#65039;', meta: '12 min &middot; 14 km &middot; Daily 8 slots', tag: 'Commuter' },
+    { from: 'Connaught Place, Delhi', to: 'Dwarka Helipad, Delhi', emoji: '&#9992;&#65039;', meta: '10 min &middot; 12 km &middot; Daily 8 slots', tag: 'Commuter' },
     { from: 'Noida Sec 62', to: 'Cyber Hub, Gurugram', emoji: '&#128187;', meta: '18 min &middot; 40 km &middot; Daily 6 slots', tag: 'Business' },
-    { from: 'BKC, Mumbai', to: 'Mumbai Airport', emoji: '&#9992;&#65039;', meta: '6 min &middot; 12 km &middot; Daily 12 slots', tag: 'Commuter' },
+    { from: 'BKC, Mumbai', to: 'Andheri Vertiport, Mumbai', emoji: '&#9992;&#65039;', meta: '5 min &middot; 8 km &middot; Daily 12 slots', tag: 'Commuter' },
     { from: 'Marine Drive, Mumbai', to: 'BKC, Mumbai', emoji: '&#127961;', meta: '5 min &middot; 8 km &middot; Daily 10 slots', tag: 'Business' },
     { from: 'Whitefield, Bengaluru', to: 'MG Road, Bengaluru', emoji: '&#128187;', meta: '9 min &middot; 22 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
-    { from: 'Koramangala, Bengaluru', to: 'Kempegowda Airport, Bengaluru', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Commuter' },
+    { from: 'Koramangala, Bengaluru', to: 'Devanahalli Vertiport, Bengaluru', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Commuter' },
     { from: 'Hi-Tech City, Hyderabad', to: 'Gachibowli, Hyderabad', emoji: '&#128296;', meta: '4 min &middot; 8 km &middot; Daily 15 slots', tag: 'Tech Corridor' },
-    { from: 'Chennai Airport', to: 'IIT Madras Campus', emoji: '&#127979;', meta: '15 min &middot; 18 km &middot; Daily 5 slots', tag: 'Commuter' },
+    { from: 'Pallavaram Vertiport, Chennai', to: 'IIT Madras Campus', emoji: '&#127979;', meta: '12 min &middot; 15 km &middot; Daily 5 slots', tag: 'Commuter' },
     { from: 'India Gate, Delhi', to: 'Noida Sec 62', emoji: '&#127747;', meta: '10 min &middot; 20 km &middot; Daily 6 slots', tag: 'Commuter' },
   ],
 };
@@ -7496,7 +7500,7 @@ async function searchRides() {
     // Auto-populate demo if empty
     if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
     if (!destCoord) {
-      setTimeout(() => setDest([28.5562, 77.1000], 'IGI Airport T3, Delhi'), 300);
+      setTimeout(() => setDest([28.5830, 77.0780], 'Dwarka Helipad, Delhi'), 300);
       setTimeout(searchRides, 700);
       return;
     }

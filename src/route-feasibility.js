@@ -25,28 +25,93 @@ function isNoFly(z, lat, lng) {
   );
 }
 
+function cleanZoneName(name) {
+  return (name || "").replace(/\s*[-—–]\s*no[_-]?fly\s*/gi, "").trim();
+}
+
+const VERTIPORT_SUGGESTIONS = {
+  "Delhi IGI": [
+    { lat: 28.5830, lng: 77.0780, name: "Dwarka Sector 21 Helipad" },
+    { lat: 28.5260, lng: 77.1080, name: "Mahipalpur Vertiport" },
+    { lat: 28.5700, lng: 77.1200, name: "Vasant Kunj Vertiport" },
+  ],
+  "Mumbai CSIA": [
+    { lat: 19.1150, lng: 72.8700, name: "Andheri Vertiport" },
+    { lat: 19.0650, lng: 72.8400, name: "BKC Helipad" },
+    { lat: 19.0700, lng: 72.9000, name: "Powai Vertiport" },
+  ],
+  "Bengaluru KIAL": [
+    { lat: 13.1700, lng: 77.6800, name: "Yelahanka Vertiport" },
+    { lat: 13.2200, lng: 77.7300, name: "Devanahalli Vertiport" },
+  ],
+  "Chennai": [
+    { lat: 13.0200, lng: 80.1850, name: "Pallavaram Vertiport" },
+    { lat: 12.9700, lng: 80.1950, name: "Tambaram Vertiport" },
+  ],
+};
+
 function suggestSafeSpots(lat, lng, zones) {
   const blocking = zones.filter((z) => isNoFly(z, lat, lng));
   if (!blocking.length) return [];
-  const margin = 0.01;
+
   const candidates = [];
+
   for (const z of blocking) {
-    candidates.push({ lat: z.maxLat + margin, lng: round5(lng), label: `just north of ${z.name}` });
-    candidates.push({ lat: z.minLat - margin, lng: round5(lng), label: `just south of ${z.name}` });
-    candidates.push({ lat: round5(lat), lng: z.maxLng + margin, label: `just east of ${z.name}` });
-    candidates.push({ lat: round5(lat), lng: z.minLng - margin, label: `just west of ${z.name}` });
+    const baseName = cleanZoneName(z.name);
+    const known = Object.entries(VERTIPORT_SUGGESTIONS).find(
+      ([key]) => baseName.toLowerCase().includes(key.toLowerCase())
+    );
+    if (known) {
+      for (const v of known[1]) {
+        if (!zones.some((oz) => isNoFly(oz, v.lat, v.lng))) {
+          candidates.push({ ...v });
+        }
+      }
+    }
+
+    if (candidates.length < 3) {
+      const margin = 0.015;
+      const ring = z.geometry?.coordinates?.[0];
+      let cLat = lat, cLng = lng;
+      if (ring) {
+        const n = ring.length - 1;
+        let sx = 0, sy = 0;
+        for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
+        cLng = sx / n; cLat = sy / n;
+      }
+      const dirs = [
+        { dLat: margin, dLng: 0, dir: "North" },
+        { dLat: -margin, dLng: 0, dir: "South" },
+        { dLat: 0, dLng: margin, dir: "East" },
+        { dLat: 0, dLng: -margin, dir: "West" },
+      ];
+      for (const d of dirs) {
+        const sLat = round5(cLat + d.dLat);
+        const sLng = round5(cLng + d.dLng);
+        if (!zones.some((oz) => isNoFly(oz, sLat, sLng))) {
+          candidates.push({ lat: sLat, lng: sLng, name: `${baseName} ${d.dir} Vertiport` });
+        }
+      }
+    }
   }
-  const safe = candidates.filter(
-    (c) => !zones.some((z) => isNoFly(z, c.lat, c.lng))
-  );
-  for (const c of safe) {
+
+  for (const c of candidates) {
     c.distanceKm = Math.round(haversineKm(lat, lng, c.lat, c.lng) * 10) / 10;
   }
-  safe.sort((a, b) => a.distanceKm - b.distanceKm);
-  return safe.slice(0, 3).map((c) => ({
+  candidates.sort((a, b) => a.distanceKm - b.distanceKm);
+
+  const seen = new Set();
+  const unique = candidates.filter((c) => {
+    const key = c.lat + "," + c.lng;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return unique.slice(0, 3).map((c) => ({
     lat: round5(c.lat),
     lng: round5(c.lng),
-    name: c.label,
+    name: c.name,
     distanceKm: c.distanceKm,
   }));
 }
