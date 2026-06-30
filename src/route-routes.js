@@ -2,7 +2,8 @@
 const express = require("express");
 const { requireAuth } = require("./auth");
 const { SERVICES } = require("./pricing");
-const { planLeastFuelRoute, publicFuelPlan } = require("./fuel-route");
+const { planLeastFuelRoute, publicFuelPlan, SERVICE_FUEL } = require("./fuel-route");
+const { planAvoidanceRoute } = require("./route-planner");
 const { routeEnvelope } = require("./zone-geometry");
 const { queryZonesInBounds } = require("./zone-routes");
 
@@ -59,6 +60,17 @@ router.post("/fuel-plan", requireAuth, async (req, res) => {
     zones,
   });
 
+  const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
+  const routePlan = planAvoidanceRoute({
+    pickupLat,
+    pickupLng,
+    destLat,
+    destLng,
+    zones,
+    baseCruiseAltitudeM: profile.optimalAltitudeM,
+    service,
+  });
+
   if (!plan.feasible) {
     return res.status(409).json({
       error: "Route is not feasible with current airspace restrictions.",
@@ -71,10 +83,10 @@ router.post("/fuel-plan", requireAuth, async (req, res) => {
   }
 
   if (req.user.role === "customer") {
-    return res.json({ plan: publicFuelPlan(plan) });
+    return res.json({ plan: publicFuelPlan(plan), route: routePlan });
   }
 
-  res.json({ plan });
+  res.json({ plan, route: routePlan });
 });
 
 module.exports = { router, loadZones };

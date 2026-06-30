@@ -1569,6 +1569,44 @@ a { text-decoration: none; color: inherit; }
 .flight-path { stroke-dasharray: 12 6; animation: dashMove 1s linear infinite; }
 @keyframes dashMove { to { stroke-dashoffset: -18; } }
 
+/* Route info bar — real waypoint route stats (passenger + operator) */
+.route-info-bar {
+  display: none; flex-wrap: wrap; gap: 2px; padding: 8px 10px;
+  background: var(--gray-50); border-radius: var(--radius); margin: 6px 0 0;
+  border: 1px solid var(--gray-200); font-size: 11px;
+}
+.ri-stat { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 54px; padding: 3px 4px; }
+.ri-label { color: var(--gray-500); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; font-size: 9px; }
+.ri-val { color: var(--gray-800); font-weight: 700; font-size: 12px; margin-top: 1px; }
+.ri-detour .ri-val { color: #B45309; }
+.ri-direct .ri-val { color: #059669; }
+
+/* Operator route info chips */
+.op-route-info {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px;
+  background: var(--gray-50); border-radius: var(--radius); margin-top: 8px;
+  border: 1px solid var(--gray-200); font-size: 11px;
+}
+.op-ri-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+  background: #fff; border-radius: 99px; border: 1px solid var(--gray-200);
+  font-size: 11px; font-weight: 600; color: var(--gray-700);
+}
+.op-ri-chip b { color: var(--blue); }
+
+/* Profile enhancements */
+.profile-verified { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: #ECFDF5; color: #059669; border-radius: 99px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+.profile-member-since { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.profile-quick-stats { display: flex; gap: 6px; margin: 10px 0 6px; }
+.profile-qs { flex: 1; text-align: center; padding: 8px 4px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--gray-100); }
+.profile-qs-val { font-size: 18px; font-weight: 800; color: var(--gray-800); }
+.profile-qs-label { font-size: 9px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.profile-hero-enhanced .profile-avatar { width: 72px; height: 72px; font-size: 28px; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.pd-stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.pd-stat-card { background: var(--gray-50); border-radius: var(--radius); padding: 10px; text-align: center; border: 1px solid var(--gray-100); }
+.pd-stat-card-val { font-size: 20px; font-weight: 800; color: var(--gray-800); }
+.pd-stat-card-label { font-size: 10px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
 /* ═══════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════ */
@@ -3008,6 +3046,143 @@ body.admin-map-fs { overflow: hidden; }
   color: var(--gray-300); padding: 0 2px;
 }
 .op-rate-stars button.on { color: #F59E0B; }
+
+/* ═══════════════════════════════════════════
+   ROUTE INFO CARD
+   ═══════════════════════════════════════════ */
+.route-info-card {
+  background: linear-gradient(135deg, #F0F4FF 0%, #F8FAFC 100%);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+.route-info-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  margin-bottom: 10px;
+}
+.route-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.route-info-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.route-info-label { color: var(--gray-500); }
+.route-info-val { font-weight: 600; color: var(--gray-800); }
+.route-info-note {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--gray-200);
+  font-size: 12px;
+  color: var(--orange);
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════
+   IMPROVED PROFILE MODAL
+   ═══════════════════════════════════════════ */
+.profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 18px;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #1D4ED8 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  margin: -24px -24px 20px;
+  color: #fff;
+  position: relative;
+}
+.profile-hero-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  border: 3px solid rgba(255,255,255,0.3);
+  margin-bottom: 10px;
+}
+.profile-hero-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.profile-hero-email {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.profile-hero-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.profile-hero-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
+}
+.profile-hero-badge.verified { background: rgba(16,185,129,0.3); }
+.profile-hero-badge.role-admin { background: rgba(139,92,246,0.3); }
+.profile-hero-badge.role-operator { background: rgba(59,130,246,0.3); }
+
+.profile-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.profile-quick-stat {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-100);
+}
+.profile-quick-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+.profile-quick-stat-label {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+.profile-section-card {
+  background: #fff;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.profile-section-card h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.op-route-info {
+  animation: adminFade 0.2s ease;
+}
 </style>
 </head>
 <body>
@@ -3340,6 +3515,7 @@ body.admin-map-fs { overflow: hidden; }
 
     <!-- Map -->
     <div id="map"></div>
+    <div class="route-info-bar" id="route-info-bar"></div>
     <div class="booking-map-legend" id="booking-map-legend">
       <span style="color:#D97706">&#9644; Restricted</span>
       <span style="color:#DC2626">&#9644; No-fly</span>
@@ -3899,20 +4075,16 @@ body.admin-map-fs { overflow: hidden; }
   <div class="profile-modal-backdrop js-close-profile"></div>
   <div class="profile-modal-card" role="dialog" aria-labelledby="profile-modal-title">
     <button type="button" class="profile-modal-close js-close-profile" aria-label="Close">&times;</button>
-    <h3 class="profile-modal-title" id="profile-modal-title">My profile</h3>
-    <div class="profile-account-card" style="margin-bottom:0;">
-      <div class="profile-account-row">
-        <div class="profile-account-avatar profile-modal-avatar profile-display-avatar">G</div>
-        <div class="profile-account-info">
-          <p class="profile-account-name profile-display-name">Guest</p>
-          <p class="profile-account-email profile-display-email">—</p>
-        </div>
-      </div>
-      <div class="profile-account-meta">
-        <span class="profile-account-detail profile-display-role">Passenger</span>
-        <span class="profile-account-detail profile-display-verified">Email verified</span>
+    <div class="profile-hero">
+      <div class="profile-hero-avatar profile-display-avatar">G</div>
+      <div class="profile-hero-name profile-display-name">Guest</div>
+      <div class="profile-hero-email profile-display-email">—</div>
+      <div class="profile-hero-badges">
+        <span class="profile-hero-badge profile-display-role">Passenger</span>
+        <span class="profile-hero-badge verified profile-display-verified">Email verified</span>
       </div>
     </div>
+    <div class="profile-quick-stats" id="profile-quick-stats"></div>
     <div class="profile-dashboard" id="profile-dashboard">
       <div class="profile-dashboard-title">
         <span>Profile dashboard</span>
@@ -3927,7 +4099,7 @@ body.admin-map-fs { overflow: hidden; }
       </div>
       <div id="profile-rides-body"><div class="pd-loading">Loading your rides…</div></div>
     </div>
-    <div class="profile-change-block" id="profile-change-block">
+    <div class="profile-section-card profile-change-block" id="profile-change-block">
       <h4>Change password</h4>
       <div class="auth-field">
         <label>Current password</label>
@@ -3942,7 +4114,7 @@ body.admin-map-fs { overflow: hidden; }
       <div id="profile-change-success" class="admin-add-success" role="status" style="display:none;margin-top:10px;"></div>
     </div>
     <p class="profile-admin-note" id="profile-admin-note" style="display:none;">Admin password is managed via <code>.env</code> only. Update <code>ADMIN_PASSWORD</code> and run <code>npm run admin:bootstrap</code>.</p>
-    <div class="profile-delete-block" id="profile-delete-block">
+    <div class="profile-section-card profile-delete-block" id="profile-delete-block">
       <h4>Delete account</h4>
       <p class="profile-delete-warning">Permanently delete your IraGo account and free your email for a new signup. Booking records may be kept for compliance.</p>
       <div class="auth-field">
@@ -3971,6 +4143,7 @@ let pickupCoord = null, destCoord = null;
 // The persisted booking returned by POST /api/bookings (US-006). Source of
 // truth for the confirmation screen and live tracking (US-007).
 let currentBooking = null;
+let currentRoute = null;
 
 // ── Booking draft (US-005) ──
 // Single source of truth for the in-progress booking: the selected pickup and
@@ -5018,6 +5191,35 @@ async function loadProfileDashboard() {
   }
 }
 
+async function loadProfileQuickStats() {
+  var host = document.getElementById('profile-quick-stats');
+  if (!host) return;
+  try {
+    var res = await apiFetch('/api/me/stats');
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.stats) {
+      var t = data.stats.totals || {};
+      var user = AUTH.user;
+      if (user && user.role === 'operator') {
+        host.innerHTML =
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.completed || 0) + '</div><div class="profile-quick-stat-label">Flights</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + KM(t.distanceFlownKm) + '</div><div class="profile-quick-stat-label">Distance</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + INR(t.earningsINR) + '</div><div class="profile-quick-stat-label">Earnings</div></div>';
+      } else if (user && user.role === 'admin') {
+        host.innerHTML =
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.totalUsers || 0) + '</div><div class="profile-quick-stat-label">Users</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.totalBookings || 0) + '</div><div class="profile-quick-stat-label">Bookings</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + INR(t.revenueINR) + '</div><div class="profile-quick-stat-label">Revenue</div></div>';
+      } else {
+        host.innerHTML =
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.trips || 0) + '</div><div class="profile-quick-stat-label">Trips</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + KM(t.distanceKm) + '</div><div class="profile-quick-stat-label">Distance</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + CO2(t.carbonSavedKg) + '</div><div class="profile-quick-stat-label">CO₂ saved</div></div>';
+      }
+    }
+  } catch (e) { /* ignore */ }
+}
+
 function bindProfileActions() {
   document.querySelectorAll('.js-open-profile').forEach(function (btn) {
     if (btn.dataset.profileOpenBound) return;
@@ -5073,6 +5275,7 @@ function openProfileModal() {
     refresh.addEventListener('click', loadProfileDashboard);
   }
   loadProfileDashboard();
+  loadProfileQuickStats();
   loadRideHistory();
   const ridesRefresh = document.getElementById('rides-refresh-btn');
   if (ridesRefresh && !ridesRefresh.dataset.pdBound) {
@@ -5928,7 +6131,84 @@ async function openTripDetails(id) {
 
   if (operatorTrips.some(function (x) { return x.id === id; })) {
     document.getElementById('op-detail-body').innerHTML = renderTripDetailsBody(t, fuelPlan);
+    drawTripRouteOnOperatorMap(t);
   }
+}
+
+function drawTripRouteOnOperatorMap(t) {
+  if (!opSelfMap) return;
+  if (window._opRouteLayer) { opSelfMap.removeLayer(window._opRouteLayer); window._opRouteLayer = null; }
+  if (window._opRouteDots) { window._opRouteDots.forEach(function (d) { opSelfMap.removeLayer(d); }); window._opRouteDots = []; }
+
+  apiFetch('/api/bookings/feasibility', {
+    method: 'POST',
+    body: JSON.stringify({
+      pickupLat: t.pickupLat, pickupLng: t.pickupLng,
+      destLat: t.destLat, destLng: t.destLng,
+      service: t.service,
+    }),
+  }).then(function (res) { return res.json(); }).then(function (fdata) {
+    if (!opSelfMap) return;
+    var route = fdata && fdata.route;
+    var layers = [];
+
+    if (route && route.segments && route.segments.length) {
+      route.segments.forEach(function (seg) {
+        var color = (seg.crossedRestricted && seg.crossedRestricted.length) ? '#F59E0B' : '#3B82F6';
+        layers.push(L.polyline(
+          [[seg.from.lat, seg.from.lng], [seg.to.lat, seg.to.lng]],
+          { color: color, weight: 3.5, opacity: 0.85, dashArray: (seg.crossedRestricted && seg.crossedRestricted.length) ? '8 5' : null }
+        ));
+      });
+
+      window._opRouteDots = [];
+      if (route.waypoints) {
+        route.waypoints.forEach(function (wp, i) {
+          if (i === 0 || i === route.waypoints.length - 1) return;
+          var dot = L.circleMarker([wp.lat, wp.lng], {
+            radius: 4, color: '#fff', fillColor: '#F59E0B', fillOpacity: 1, weight: 2
+          }).addTo(opSelfMap);
+          window._opRouteDots.push(dot);
+        });
+      }
+    } else {
+      layers.push(L.polyline(
+        [[t.pickupLat, t.pickupLng], [t.destLat, t.destLng]],
+        { color: '#3B82F6', weight: 3, opacity: 0.7, dashArray: '10 6' }
+      ));
+    }
+
+    window._opRouteLayer = L.layerGroup(layers).addTo(opSelfMap);
+
+    var pickupIcon = L.divIcon({ html: '<div style="font-size:20px;">&#128205;</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 24] });
+    var destIcon = L.divIcon({ html: '<div style="font-size:20px;">&#127919;</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+    var pMarker = L.marker([t.pickupLat, t.pickupLng], { icon: pickupIcon }).addTo(opSelfMap);
+    var dMarker = L.marker([t.destLat, t.destLng], { icon: destIcon }).addTo(opSelfMap);
+    if (!window._opRouteDots) window._opRouteDots = [];
+    window._opRouteDots.push(pMarker, dMarker);
+
+    opSelfMap.fitBounds(L.latLngBounds([[t.pickupLat, t.pickupLng], [t.destLat, t.destLng]]).pad(0.3));
+
+    if (route && route.totalFuelKg) {
+      var routeEl = document.querySelector('.op-detail-card');
+      if (routeEl) {
+        var routeInfo = document.createElement('div');
+        routeInfo.className = 'op-route-info';
+        routeInfo.innerHTML =
+          '<div class="op-detail-divider"></div>' +
+          '<div class="op-detail-block">' +
+            '<div class="op-detail-label">Route plan</div>' +
+            '<div class="op-detail-value">' + route.totalDistanceKm + ' km · ' + route.totalFuelKg + ' kg fuel</div>' +
+            '<div class="op-detail-sub">' +
+              'Altitude ' + (route.altitudeProfile ? route.altitudeProfile.min + '–' + route.altitudeProfile.max + ' m' : '—') +
+              ' · Detour ' + (route.detourRatio > 1 ? route.detourRatio + 'x' : 'direct') +
+              (route.reason && route.reason !== 'direct_clear' ? ' · ' + routeReasonLabel(route.reason) : '') +
+            '</div>' +
+          '</div>';
+        routeEl.appendChild(routeInfo);
+      }
+    }
+  }).catch(function () {});
 }
 
 // Accept / reject / progress controls. Only an assigned trip can be accepted
@@ -6182,7 +6462,8 @@ function showDispatchOffer(payload) {
     (b.pickupName || 'Pickup') + ' → ' + (b.destName || 'Destination');
   document.getElementById('dispatch-meta').innerHTML =
     'Fare ' + fmtINR(b.fareEstimate) + ' · ' + (b.distanceKm != null ? b.distanceKm + ' km' : '—') +
-    '<br>You are ~' + (payload.operatorDistanceKm != null ? payload.operatorDistanceKm : '?') + ' km from pickup';
+    '<br>You are ~' + (payload.operatorDistanceKm != null ? payload.operatorDistanceKm : '?') + ' km from pickup' +
+    '<br><strong>' + escapeHtml((b.pickupName || 'Pickup')) + '</strong> → <strong>' + escapeHtml((b.destName || 'Destination')) + '</strong>';
   const secs = payload.expiresInSeconds || 30;
   document.getElementById('dispatch-timer').textContent = 'Respond within ' + secs + 's';
   document.getElementById('dispatch-overlay').classList.add('active');
@@ -6867,7 +7148,13 @@ function drawRoute() {
   aircraftMarkers.forEach(m => map.removeLayer(m));
   aircraftMarkers = [];
 
-  // Curved flight path
+  // Use actual avoidance route when available
+  if (currentRoute && currentRoute.segments && currentRoute.segments.length) {
+    drawRouteFromPlan();
+    return;
+  }
+
+  // Fallback: curved flight path
   const midLat = (pickupCoord[0] + destCoord[0]) / 2;
   const midLng = (pickupCoord[1] + destCoord[1]) / 2;
   const dist = Math.sqrt(Math.pow(pickupCoord[0] - destCoord[0], 2) + Math.pow(pickupCoord[1] - destCoord[1], 2));
@@ -6906,6 +7193,62 @@ function drawRoute() {
   const bounds = L.latLngBounds([pickupCoord, destCoord]).pad(0.3);
   map.fitBounds(bounds);
   onRouteReady();
+}
+
+function drawRouteFromPlan() {
+  if (!currentRoute || !currentRoute.segments || !currentRoute.segments.length) return;
+  if (routeLine) map.removeLayer(routeLine);
+  aircraftMarkers.forEach(function (m) { map.removeLayer(m); });
+  aircraftMarkers = [];
+
+  var serviceColor = currentService === 'golden' ? '#EF4444' : currentService === 'shuttle' ? '#10B981' : '#3B82F6';
+  var layers = [];
+
+  currentRoute.segments.forEach(function (seg) {
+    var color = (seg.crossedRestricted && seg.crossedRestricted.length) ? '#F59E0B' : serviceColor;
+    var line = L.polyline(
+      [[seg.from.lat, seg.from.lng], [seg.to.lat, seg.to.lng]],
+      { color: color, weight: 3.5, opacity: 0.85, dashArray: (seg.crossedRestricted && seg.crossedRestricted.length) ? '8 5' : null }
+    );
+    layers.push(line);
+  });
+
+  routeLine = L.layerGroup(layers).addTo(map);
+
+  if (currentRoute.waypoints) {
+    currentRoute.waypoints.forEach(function (wp, i) {
+      if (i === 0 || i === currentRoute.waypoints.length - 1) return;
+      L.circleMarker([wp.lat, wp.lng], {
+        radius: 4, color: '#fff', fillColor: '#F59E0B', fillOpacity: 1, weight: 2
+      }).addTo(map);
+    });
+  }
+
+  var midIdx = Math.floor((currentRoute.waypoints || []).length / 2);
+  var midWp = (currentRoute.waypoints || [])[midIdx] || (currentRoute.waypoints || [])[0];
+  if (midWp) {
+    var acIcon = L.divIcon({
+      html: '<div class="marker-aircraft">&#9992;&#65039;</div>',
+      className: '', iconSize: [30, 30], iconAnchor: [15, 15]
+    });
+    var acMarker = L.marker([midWp.lat, midWp.lng], { icon: acIcon }).addTo(map);
+    aircraftMarkers.push(acMarker);
+  }
+
+  if (pickupCoord && destCoord) {
+    map.fitBounds(L.latLngBounds([pickupCoord, destCoord]).pad(0.3));
+  }
+  onRouteReady();
+}
+
+function routeReasonLabel(reason) {
+  var labels = {
+    rerouted_around_no_fly: 'Route adjusted to avoid no-fly zone',
+    rerouted_no_fly_and_overfly_restricted: 'Rerouted around no-fly + climbing over restricted zone',
+    overfly_restricted_least_fuel: 'Climbing over restricted zone (least fuel option)',
+    rerouted_around_restricted: 'Routing around restricted zone (least fuel option)',
+  };
+  return labels[reason] || '';
 }
 
 // When pickup + drop are both set: show nearby taxis (10 km) and fare options with CO₂.
@@ -6978,6 +7321,7 @@ function useCurrentLocation() {
 // ── Service Switching ──
 function switchService(service) {
   currentService = service;
+  currentRoute = null;
   document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-service="${service}"]`).classList.add('active');
 
@@ -7185,6 +7529,10 @@ async function searchRides() {
       }),
     });
     const fdata = await fres.json().catch(() => ({}));
+    currentRoute = (fdata && fdata.route) ? fdata.route : null;
+    if (currentRoute && currentRoute.segments && currentRoute.segments.length) {
+      drawRouteFromPlan();
+    }
     if (fres.ok && fdata && fdata.feasible === false) {
       list.innerHTML = renderFeasibilityWarning(fdata);
       document.getElementById('book-btn').style.display = 'none';
@@ -7240,6 +7588,23 @@ async function searchRides() {
         </div>
       </div>`;
   }).join('');
+
+  if (currentRoute && currentRoute.feasible !== false) {
+    var altProfile = currentRoute.altitudeProfile || {};
+    var routeInfoHtml =
+      '<div class="route-info-card">' +
+        '<div class="route-info-title">Flight Route</div>' +
+        '<div class="route-info-grid">' +
+          '<div class="route-info-item"><span class="route-info-label">Distance</span><span class="route-info-val">' + (currentRoute.totalDistanceKm || '—') + ' km</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Fuel est.</span><span class="route-info-val">' + (currentRoute.totalFuelKg || '—') + ' kg</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Detour</span><span class="route-info-val">' + (currentRoute.detourRatio > 1 ? (currentRoute.detourRatio + 'x') : 'Direct') + '</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Altitude</span><span class="route-info-val">' + (altProfile.min || '—') + '–' + (altProfile.max || '—') + ' m</span></div>' +
+        '</div>' +
+        (currentRoute.reason && currentRoute.reason !== 'direct_clear' ?
+          '<div class="route-info-note">' + routeReasonLabel(currentRoute.reason) + '</div>' : '') +
+      '</div>';
+    list.innerHTML += routeInfoHtml;
+  }
 
   area.style.display = 'block';
   area.scrollIntoView({ behavior: 'smooth' });
@@ -7423,6 +7788,7 @@ function resetBooking() {
   hideAuthError('booking-error');
   selectedRide = null;
   currentBooking = null;
+  currentRoute = null;
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
