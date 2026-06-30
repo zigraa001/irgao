@@ -121,6 +121,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     booking,
     fare: fareBreakdown(service, distanceKm),
     warnings: feasibility.warnings,
+    emergencyBypass: feasibility.emergencyBypass || false,
     route: feasibility.route || null,
   });
 });
@@ -186,6 +187,7 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
   res.json({
     feasible: feasibility.feasible,
+    emergencyBypass: feasibility.emergencyBypass || false,
     violations: feasibility.violations,
     warnings: feasibility.warnings,
     blockedEndpoints: feasibility.blockedEndpoints,

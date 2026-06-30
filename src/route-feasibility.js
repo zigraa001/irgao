@@ -1,17 +1,18 @@
 // Route feasibility check used at booking time.
 //
 // Uses the visibility-graph route planner to find a path that avoids no-fly
-// zones. When an endpoint is inside a no-fly zone, suggests up to 3 nearest
-// safe spots. Restricted zones are handled by altitude adjustments (fly above
-// maxAltitudeM) rather than rerouting.
+// zones. When an endpoint is inside a no-fly zone, suggests nearest safe spots
+// computed algorithmically from zone boundary vertices (no hardcoded lists).
 //
-// Zone loading is best-effort: if the zones database is unreachable we degrade
-// to "feasible" rather than blocking every booking.
+// Golden Hour (air ambulance) service can bypass no-fly restrictions when the
+// admin toggle `emergencyNoFlyBypass` is enabled — the booking goes through
+// with a warning instead of being blocked.
 const { loadZones } = require("./route-routes");
 const { planAvoidanceRoute } = require("./route-planner");
 const { pointInPolygon } = require("./fuel-route");
 const { haversineKm } = require("./pricing");
 const { SERVICE_FUEL } = require("./fuel-route");
+const platformSettings = require("./platform-settings");
 
 function round5(n) {
   return Math.round(n * 1e5) / 1e5;
@@ -29,69 +30,55 @@ function cleanZoneName(name) {
   return (name || "").replace(/\s*[-—–]\s*no[_-]?fly\s*/gi, "").trim();
 }
 
-const VERTIPORT_SUGGESTIONS = {
-  "Delhi IGI": [
-    { lat: 28.5830, lng: 77.0780, name: "Dwarka Sector 21 Helipad" },
-    { lat: 28.5260, lng: 77.1080, name: "Mahipalpur Vertiport" },
-    { lat: 28.5700, lng: 77.1200, name: "Vasant Kunj Vertiport" },
-  ],
-  "Mumbai CSIA": [
-    { lat: 19.1150, lng: 72.8700, name: "Andheri Vertiport" },
-    { lat: 19.0650, lng: 72.8400, name: "BKC Helipad" },
-    { lat: 19.0700, lng: 72.9000, name: "Powai Vertiport" },
-  ],
-  "Bengaluru KIAL": [
-    { lat: 13.1700, lng: 77.6800, name: "Yelahanka Vertiport" },
-    { lat: 13.2200, lng: 77.7300, name: "Devanahalli Vertiport" },
-  ],
-  "Chennai": [
-    { lat: 13.0200, lng: 80.1850, name: "Pallavaram Vertiport" },
-    { lat: 12.9700, lng: 80.1950, name: "Tambaram Vertiport" },
-  ],
-};
+// ── Algorithmic safe-spot finder ────────────────────────────────────────
+// Projects outward from each boundary vertex of the blocking zone's polygon,
+// picks the nearest points that land outside ALL no-fly zones, and labels
+// them with compass direction relative to the zone centre.
+
+const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+function bearing(lat1, lng1, lat2, lng2) {
+  const dLng = lng2 - lng1;
+  const dLat = lat2 - lat1;
+  const angle = (Math.atan2(dLng, dLat) * 180) / Math.PI;
+  return (angle + 360) % 360;
+}
+function compassLabel(deg) {
+  return COMPASS[Math.round(deg / 45) % 8];
+}
 
 function suggestSafeSpots(lat, lng, zones) {
   const blocking = zones.filter((z) => isNoFly(z, lat, lng));
   if (!blocking.length) return [];
 
   const candidates = [];
+  const MARGIN_DEG = 0.012;
 
   for (const z of blocking) {
     const baseName = cleanZoneName(z.name);
-    const known = Object.entries(VERTIPORT_SUGGESTIONS).find(
-      ([key]) => baseName.toLowerCase().includes(key.toLowerCase())
-    );
-    if (known) {
-      for (const v of known[1]) {
-        if (!zones.some((oz) => isNoFly(oz, v.lat, v.lng))) {
-          candidates.push({ ...v });
-        }
-      }
-    }
+    const ring = z.geometry?.coordinates?.[0];
+    if (!ring || ring.length < 4) continue;
 
-    if (candidates.length < 3) {
-      const margin = 0.015;
-      const ring = z.geometry?.coordinates?.[0];
-      let cLat = lat, cLng = lng;
-      if (ring) {
-        const n = ring.length - 1;
-        let sx = 0, sy = 0;
-        for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
-        cLng = sx / n; cLat = sy / n;
-      }
-      const dirs = [
-        { dLat: margin, dLng: 0, dir: "North" },
-        { dLat: -margin, dLng: 0, dir: "South" },
-        { dLat: 0, dLng: margin, dir: "East" },
-        { dLat: 0, dLng: -margin, dir: "West" },
-      ];
-      for (const d of dirs) {
-        const sLat = round5(cLat + d.dLat);
-        const sLng = round5(cLng + d.dLng);
-        if (!zones.some((oz) => isNoFly(oz, sLat, sLng))) {
-          candidates.push({ lat: sLat, lng: sLng, name: `${baseName} ${d.dir} Vertiport` });
-        }
-      }
+    const n = ring.length - 1;
+    let cx = 0, cy = 0;
+    for (let i = 0; i < n; i++) { cx += ring[i][0]; cy += ring[i][1]; }
+    cx /= n; cy /= n;
+
+    const step = Math.max(1, Math.floor(n / 16));
+    for (let i = 0; i < n; i += step) {
+      const vLng = ring[i][0], vLat = ring[i][1];
+      const dx = vLng - cx, dy = vLat - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const sLng = round5(vLng + (dx / dist) * MARGIN_DEG);
+      const sLat = round5(vLat + (dy / dist) * MARGIN_DEG);
+
+      if (zones.some((oz) => isNoFly(oz, sLat, sLng))) continue;
+
+      const dir = compassLabel(bearing(cy, cx, sLat, sLng));
+      candidates.push({
+        lat: sLat,
+        lng: sLng,
+        name: `${baseName} ${dir} Safe Spot`,
+      });
     }
   }
 
@@ -108,13 +95,15 @@ function suggestSafeSpots(lat, lng, zones) {
     return true;
   });
 
-  return unique.slice(0, 3).map((c) => ({
+  return unique.slice(0, 4).map((c) => ({
     lat: round5(c.lat),
     lng: round5(c.lng),
     name: c.name,
     distanceKm: c.distanceKm,
   }));
 }
+
+// ── Feasibility check ───────────────────────────────────────────────────
 
 async function checkRouteFeasibility({
   pickupLat,
@@ -130,15 +119,21 @@ async function checkRouteFeasibility({
     zones = [];
   }
 
+  const isEmergency = service === "golden";
+  const bypassEnabled = platformSettings.get("emergencyNoFlyBypass");
+  const emergencyBypass = isEmergency && bypassEnabled;
+
   const profile = SERVICE_FUEL[service] || SERVICE_FUEL.taxi;
   const baseCruiseAltitudeM = profile.optimalAltitudeM;
+
+  const zonesForPlanner = emergencyBypass ? [] : zones;
 
   const routePlan = planAvoidanceRoute({
     pickupLat,
     pickupLng,
     destLat,
     destLng,
-    zones,
+    zones: zonesForPlanner,
     baseCruiseAltitudeM,
     service,
   });
@@ -147,25 +142,37 @@ async function checkRouteFeasibility({
   const destBlocked = zones.some((z) => isNoFly(z, destLat, destLng));
 
   const blockedEndpoints = [];
-  if (pickupBlocked) {
-    blockedEndpoints.push({
-      which: "pickup",
-      message: "Pickup is inside a no-fly zone. Choose a nearby spot.",
-      suggestions: suggestSafeSpots(pickupLat, pickupLng, zones),
-    });
-  }
-  if (destBlocked) {
-    blockedEndpoints.push({
-      which: "destination",
-      message: "Destination is inside a no-fly zone. Choose a nearby spot.",
-      suggestions: suggestSafeSpots(destLat, destLng, zones),
-    });
+  if (!emergencyBypass) {
+    if (pickupBlocked) {
+      blockedEndpoints.push({
+        which: "pickup",
+        message: "Pickup is inside a no-fly zone. Choose a nearby spot.",
+        suggestions: suggestSafeSpots(pickupLat, pickupLng, zones),
+      });
+    }
+    if (destBlocked) {
+      blockedEndpoints.push({
+        which: "destination",
+        message: "Destination is inside a no-fly zone. Choose a nearby spot.",
+        suggestions: suggestSafeSpots(destLat, destLng, zones),
+      });
+    }
   }
 
   const violations = [];
   const warnings = [];
 
-  if (!routePlan.feasible) {
+  if (emergencyBypass && (pickupBlocked || destBlocked)) {
+    const crossedNames = zones
+      .filter((z) => isNoFly(z, pickupLat, pickupLng) || isNoFly(z, destLat, destLng))
+      .map((z) => cleanZoneName(z.name));
+    warnings.push(
+      `Emergency bypass active — crossing no-fly zone${crossedNames.length > 1 ? "s" : ""}: ${crossedNames.join(", ")}. ` +
+      "ATC clearance will be requested automatically."
+    );
+  }
+
+  if (!emergencyBypass && !routePlan.feasible) {
     violations.push(
       routePlan.reason === "endpoint_in_no_fly"
         ? "Route starts or ends inside a no-fly zone"
@@ -173,7 +180,6 @@ async function checkRouteFeasibility({
     );
   }
 
-  // Collect restricted zone warnings from the altitude profile.
   for (const seg of routePlan.segments) {
     for (const rz of seg.crossedRestricted) {
       warnings.push(
@@ -183,8 +189,13 @@ async function checkRouteFeasibility({
   }
   const uniqueWarnings = [...new Set(warnings)];
 
+  const feasible = emergencyBypass
+    ? true
+    : routePlan.feasible && !pickupBlocked && !destBlocked;
+
   return {
-    feasible: routePlan.feasible && !pickupBlocked && !destBlocked,
+    feasible,
+    emergencyBypass: emergencyBypass || false,
     violations,
     warnings: uniqueWarnings,
     blockedEndpoints,

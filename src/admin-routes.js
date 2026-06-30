@@ -15,6 +15,7 @@ const {
 } = require("./auth");
 const { buildProfileStats } = require("./profile-stats");
 const logBus = require("./log-bus");
+const platformSettings = require("./platform-settings");
 
 const router = express.Router();
 
@@ -433,6 +434,39 @@ router.get(
       res.json({ stats });
     } catch (err) {
       res.status(500).json({ error: "Failed to load user stats" });
+    }
+  }
+);
+
+// ── Platform settings ───────────────────────────────────────────────────
+
+router.get(
+  "/settings",
+  requireAuth,
+  requireRole("admin"),
+  (req, res) => {
+    res.json({ settings: platformSettings.all() });
+  }
+);
+
+router.patch(
+  "/settings",
+  requireAuth,
+  requireRole("admin"),
+  (req, res) => {
+    const { key, value } = req.body || {};
+    if (typeof key !== "string" || value === undefined) {
+      return res.status(400).json({ error: "key and value are required" });
+    }
+    try {
+      platformSettings.set(key, value);
+      logBus.emit("log", {
+        level: "info",
+        msg: `Admin ${req.user.email} changed setting ${key} = ${JSON.stringify(value)}`,
+      });
+      res.json({ settings: platformSettings.all() });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
     }
   }
 );
