@@ -31,6 +31,7 @@ const {
 } = require("./otp");
 const { mountRoleSignup } = require("./role-signup");
 const { createRoleLoginHandler } = require("./role-login");
+const mobileAuthRoutes = require("./mobile-auth-routes");
 
 const router = express.Router();
 
@@ -119,6 +120,11 @@ router.post("/admin/verify-signup", (_req, res) => {
 router.post("/passenger/login", createRoleLoginHandler("customer", authResponse));
 router.post("/operator/login", createRoleLoginHandler("operator", authResponse));
 router.post("/admin/login", createRoleLoginHandler("admin", authResponse));
+
+// Mobile OTP login/register — phone-based passwordless auth.
+// TODO [Channel switch]: Once WhatsApp/MSG91 are live, OTP goes to phone directly.
+// For now, OTP is delivered to the user's email address.
+router.use("/mobile", mobileAuthRoutes);
 
 // Legacy passenger login alias
 router.post("/login", createRoleLoginHandler("customer", authResponse));

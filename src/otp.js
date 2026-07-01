@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { query, queryOne } = require("./db");
 const { sendOtpEmail } = require("./email");
+const { deliverOtp: deliverOtpViaChannel, maskPhone } = require("./otp-channel");
 const { deriveOtpPayloadKey } = require("./auth");
 const {
   OTP_EXPIRY_SECONDS,
@@ -16,6 +17,7 @@ const PURPOSES = [
   "signup_passenger",
   "signup_operator",
   "reset_password",
+  "mobile_login",
 ];
 
 const ENCRYPTED_PREFIX = "enc:v1:";
@@ -267,6 +269,94 @@ async function verifyOtp(email, purpose, code) {
   return { ok: true, payload: parseStoredPayload(row.payload) };
 }
 
+// Mobile OTP: uses the channel router (WhatsApp → MSG91 → Email) instead of
+// direct email. The `identifier` is the phone number (E.164 digits), and
+// `recipientEmail` is passed through to the email fallback channel.
+async function createAndSendMobileOtp(phone, purpose, recipientEmail, payload = null) {
+  if (!PURPOSES.includes(purpose)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Invalid verification request.",
+      code: "INVALID_OTP_PURPOSE",
+    };
+  }
+
+  try {
+    const limits = await checkSendLimits(phone, purpose);
+    if (!limits.ok) return limits;
+
+    await cleanupExpiredOtps();
+
+    const code = generateCode();
+    const codeHash = await hashCode(code);
+    const payloadStored = serializePayload(payload);
+
+    await query(
+      `UPDATE otp_requests SET consumedAt = NOW()
+       WHERE email = ? AND purpose = ? AND consumedAt IS NULL`,
+      [phone, purpose]
+    );
+
+    const insertResult = await query(
+      `INSERT INTO otp_requests (email, purpose, codeHash, payload, attempts, expiresAt)
+       VALUES (?, ?, ?, ?, 0, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
+      [phone, purpose, codeHash, payloadStored, OTP_EXPIRY_SECONDS]
+    );
+
+    // TODO [Channel switch]: When WhatsApp/MSG91 are live, deliverOtpViaChannel
+    // will send via those channels first, falling back to email only if they fail.
+    // For now, all delivery goes through email.
+    try {
+      const delivery = await deliverOtpViaChannel(phone, code, purpose, recipientEmail);
+      if (!delivery.sent) {
+        if (insertResult?.insertId) {
+          await query(`UPDATE otp_requests SET consumedAt = NOW() WHERE id = ?`, [
+            insertResult.insertId,
+          ]);
+        }
+        return {
+          ok: false,
+          status: 503,
+          error: "Could not send verification code. Please try again.",
+          code: "OTP_DELIVERY_FAILED",
+        };
+      }
+      console.log(
+        `[otp] mobile OTP sent to ${maskPhone(phone)} via ${delivery.channel} (${purpose})`
+      );
+    } catch (err) {
+      if (insertResult?.insertId) {
+        await query(`UPDATE otp_requests SET consumedAt = NOW() WHERE id = ?`, [
+          insertResult.insertId,
+        ]);
+      }
+      return {
+        ok: false,
+        status: 503,
+        error: "Could not send verification code. Check configuration or contact support.",
+        code: err.code || "OTP_SEND_FAILED",
+      };
+    }
+
+    return {
+      ok: true,
+      expiresInSeconds: OTP_EXPIRY_SECONDS,
+      resendCooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+    };
+  } catch (err) {
+    console.error(
+      `[otp] createAndSendMobileOtp failed (${purpose}): ${err.code || ""} ${err.message}`
+    );
+    return {
+      ok: false,
+      status: 500,
+      error: "Could not send verification code. Please try again in a moment.",
+      code: "OTP_SEND_FAILED",
+    };
+  }
+}
+
 module.exports = {
   OTP_EXPIRY_SECONDS,
   OTP_RESEND_COOLDOWN_SECONDS,
@@ -282,6 +372,7 @@ module.exports = {
   cleanupExpiredOtps,
   checkSendLimits,
   createAndSendOtp,
+  createAndSendMobileOtp,
   findActiveOtp,
   verifyOtp,
 };

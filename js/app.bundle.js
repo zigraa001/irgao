@@ -258,6 +258,9 @@ function applyPortalLabels(role) {
   if (regBtn && cfg.registerBtn) regBtn.textContent = cfg.registerBtn;
   if (regRow) regRow.style.display = loginOnly || signupDisabled ? 'none' : '';
   if (forgotRow) forgotRow.style.display = loginOnly ? 'none' : '';
+  // Mobile OTP login is only available for passengers.
+  const mobileBtn = document.querySelector('.btn-mobile-login');
+  if (mobileBtn) mobileBtn.style.display = role === 'passenger' ? '' : 'none';
   document.title = cfg.loginTitle + ' — IraGo';
 }
 
@@ -366,11 +369,11 @@ function otpUiPrefix() {
 function showPassengerRegister() { window.location.href = '/app.html?register=1'; }
 
 function hideAllAuthCards() {
-  ['login-card', 'register-passenger-card', 'register-operator-card', 'otp-card', 'forgot-card', 'reset-card'].forEach(id => {
+  ['login-card', 'register-passenger-card', 'register-operator-card', 'otp-card', 'forgot-card', 'reset-card', 'mobile-login-card', 'mobile-otp-card'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  ['login-error', 'register-passenger-error', 'register-operator-error', 'otp-error', 'forgot-error', 'reset-error'].forEach(hideAuthError);
+  ['login-error', 'register-passenger-error', 'register-operator-error', 'otp-error', 'forgot-error', 'reset-error', 'mobile-login-error', 'mobile-otp-error'].forEach(hideAuthError);
 }
 
 function showLoginCard() {
@@ -378,6 +381,7 @@ function showLoginCard() {
   document.getElementById('login-card').style.display = 'block';
   applyPortalLabels(authRole || 'passenger');
   clearOtpTimers();
+  clearMobileOtpTimers();
   hideLoginSuccess();
 }
 
@@ -811,6 +815,196 @@ function logoutForcedReset() {
   document.getElementById('must-reset-overlay').classList.remove('active');
   showView('login-view');
   showLoginCard();
+}
+
+// ── Mobile OTP Login ────────────────────────────────────────────────────
+// State for the mobile OTP flow (phone-based passwordless login).
+const pendingMobileOtp = { phone: '', isNewUser: false, resendTimerId: null };
+
+function showMobileLoginCard(keepPhone) {
+  clearMobileOtpTimers();
+  hideAllAuthCards();
+  const card = document.getElementById('mobile-login-card');
+  if (card) card.style.display = 'block';
+  if (!keepPhone) {
+    document.getElementById('mobile-phone').value = '';
+    const newFields = document.getElementById('mobile-new-user-fields');
+    if (newFields) newFields.style.display = 'none';
+    document.getElementById('mobile-name').value = '';
+    document.getElementById('mobile-email').value = '';
+    pendingMobileOtp.phone = '';
+    pendingMobileOtp.isNewUser = false;
+  }
+  hideAuthError('mobile-login-error');
+  const phoneInput = document.getElementById('mobile-phone');
+  if (phoneInput) phoneInput.focus();
+}
+
+function clearMobileOtpTimers() {
+  if (pendingMobileOtp.resendTimerId) {
+    clearInterval(pendingMobileOtp.resendTimerId);
+    pendingMobileOtp.resendTimerId = null;
+  }
+}
+
+function showMobileOtpCard(phone, timing) {
+  hideAllAuthCards();
+  pendingMobileOtp.phone = phone;
+  document.getElementById('mobile-otp-phone-display').textContent = phone;
+  document.getElementById('mobile-otp-code').value = '';
+  hideAuthError('mobile-otp-error');
+  document.getElementById('mobile-otp-card').style.display = 'block';
+  startMobileOtpTimers(timing);
+  const otpInput = document.getElementById('mobile-otp-code');
+  if (otpInput) otpInput.focus();
+}
+
+function startMobileOtpTimers(timing) {
+  clearMobileOtpTimers();
+  const t = normalizeOtpTiming(timing);
+  const btn = document.getElementById('mobile-otp-resend-btn');
+  const hintEl = document.getElementById('mobile-otp-resend-hint');
+  if (!hintEl) return;
+  let remaining = t.resendCooldownSeconds;
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+  const tick = () => {
+    if (remaining <= 0) {
+      clearMobileOtpTimers();
+      hintEl.textContent = "Didn't receive the code?";
+      if (btn) { btn.disabled = false; btn.style.display = ''; }
+      return;
+    }
+    hintEl.textContent = "Didn't receive the code? Resend in " + formatResendCountdown(remaining);
+    remaining -= 1;
+  };
+  tick();
+  pendingMobileOtp.resendTimerId = setInterval(tick, 1000);
+}
+
+// Send OTP to phone number.
+// TODO [Channel switch]: When WhatsApp/MSG91 are live, update UI messages
+// to say "sent to your WhatsApp" or "sent via SMS" instead of "sent to email".
+async function doMobileSendOtp() {
+  const rawPhone = document.getElementById('mobile-phone').value.trim();
+  hideAuthError('mobile-login-error');
+
+  if (!rawPhone || rawPhone.length < 10) {
+    return showAuthError('mobile-login-error', 'Enter a valid 10-digit mobile number.');
+  }
+
+  const body = { phone: rawPhone };
+
+  // If new-user fields are visible, include name and email.
+  const newFields = document.getElementById('mobile-new-user-fields');
+  if (newFields && newFields.style.display !== 'none') {
+    const name = document.getElementById('mobile-name').value.trim();
+    const email = document.getElementById('mobile-email').value.trim();
+    if (!name) return showAuthError('mobile-login-error', 'Name is required for new accounts.');
+    if (!email) return showAuthError('mobile-login-error', 'Email is required (OTP is sent to your email for now).');
+    body.name = name;
+    body.email = email;
+  }
+
+  setBusy('mobile-send-otp-btn', true, 'Sending…', 'Send OTP');
+  try {
+    const res = await fetch('/api/auth/mobile/send-otp', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }));
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      // Server says this is a new user — show name/email fields.
+      if (data.isNewUser && data.code === 'EMAIL_REQUIRED_NEW_USER') {
+        const newFields = document.getElementById('mobile-new-user-fields');
+        if (newFields) newFields.style.display = '';
+        return showAuthError('mobile-login-error', 'New number — enter your name and email to register.');
+      }
+      if (data.code === 'NAME_REQUIRED_NEW_USER') {
+        const newFields = document.getElementById('mobile-new-user-fields');
+        if (newFields) newFields.style.display = '';
+        return showAuthError('mobile-login-error', 'Name is required for new accounts.');
+      }
+      const msg = data.retryAfterSeconds
+        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not send OTP.');
+      return showAuthError('mobile-login-error', msg);
+    }
+
+    pendingMobileOtp.isNewUser = Boolean(data.isNewUser);
+    showMobileOtpCard(data.phone || rawPhone, data);
+  } catch (e) {
+    showAuthError('mobile-login-error', authFetchErrorMessage());
+  } finally {
+    setBusy('mobile-send-otp-btn', false, 'Sending…', 'Send OTP');
+  }
+}
+
+// Verify the 6-digit OTP code.
+async function doMobileVerifyOtp() {
+  const otp = document.getElementById('mobile-otp-code').value.trim();
+  hideAuthError('mobile-otp-error');
+
+  if (!pendingMobileOtp.phone || !otp) {
+    return showAuthError('mobile-otp-error', 'Enter the 6-digit code.');
+  }
+
+  setBusy('mobile-otp-submit', true, 'Verifying…', 'Verify & Login');
+  try {
+    const res = await fetch('/api/auth/mobile/verify-otp', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: document.getElementById('mobile-phone').value.trim(),
+        otp: otp
+      })
+    }));
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return showAuthError('mobile-otp-error', data.error || 'Invalid or expired code.');
+    }
+
+    clearMobileOtpTimers();
+    onAuthSuccess(data.user, data.token);
+  } catch (e) {
+    showAuthError('mobile-otp-error', 'Could not reach the server. Please try again.');
+  } finally {
+    setBusy('mobile-otp-submit', false, 'Verifying…', 'Verify & Login');
+  }
+}
+
+// Resend the mobile OTP.
+async function doMobileResendOtp() {
+  hideAuthError('mobile-otp-error');
+  if (!pendingMobileOtp.phone) return;
+
+  const btn = document.getElementById('mobile-otp-resend-btn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/mobile/resend-otp', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: document.getElementById('mobile-phone').value.trim()
+      })
+    }));
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      showAuthError('mobile-otp-error', data.error || 'Could not resend code.');
+      if (data.retryAfterSeconds) {
+        startMobileOtpTimers({ resendCooldownSeconds: data.retryAfterSeconds });
+      } else if (btn) btn.disabled = false;
+      return;
+    }
+    startMobileOtpTimers(data);
+  } catch (e) {
+    showAuthError('mobile-otp-error', 'Could not reach the server.');
+    if (btn) btn.disabled = false;
+  }
 }
 
 // Customers land on the booking view; operators on the pilot console (US-008);

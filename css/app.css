@@ -473,6 +473,59 @@ a { text-decoration: none; color: inherit; }
 }
 .btn-google:hover { background: var(--gray-50); border-color: var(--gray-300); }
 .btn-google svg { width: 18px; height: 18px; }
+
+/* ── Mobile OTP login ── */
+.btn-mobile-login {
+  width: 100%;
+  background: linear-gradient(135deg, #1a8d1a 0%, #0f6b0f 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+.btn-mobile-login:hover { opacity: 0.92; transform: translateY(-1px); }
+.btn-mobile-login:active { transform: scale(0.98); }
+.mobile-phone-input {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.mobile-phone-input:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.mobile-country-code {
+  padding: 10px 12px;
+  background: var(--gray-50);
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: 15px;
+  border-right: 1.5px solid var(--gray-200);
+  user-select: none;
+  flex-shrink: 0;
+}
+.mobile-phone-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  font-size: 16px;
+  letter-spacing: 1px;
+  background: transparent;
+}
+.mobile-phone-input input::placeholder { letter-spacing: 0.5px; }
+
 .auth-switch {
   text-align: center;
   margin-top: 18px;

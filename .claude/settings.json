@@ -1,5 +1,6 @@
 {
   "enabledPlugins": {
     "ralph-skills@ralph-marketplace": true
-  }
+  },
+  "model": "claude-opus-4-6"
 }

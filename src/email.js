@@ -102,6 +102,12 @@ async function sendOtpEmail(to, code, purpose) {
       subject: "IraGo — Verify your email",
       intro: "Use this code to verify your email and finish creating your IraGo account:",
     },
+    // TODO [Channel switch]: When WhatsApp/MSG91 are live, this email template
+    // becomes the fallback. The primary OTP goes to phone via WhatsApp/MSG91.
+    mobile_login: {
+      subject: "IraGo — Mobile login code",
+      intro: "Use this code to log in to your IraGo account:",
+    },
   };
   const copy = labels[purpose] || labels.signup;
   const expirySeconds = OTP_EXPIRY_SECONDS;

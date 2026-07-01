@@ -106,7 +106,7 @@ router.use("/demo", demoRoutes);
 router.use("/zones", zoneRoutes);
 router.get("/me", requireAuth, async (req, res) => {
   const user = await queryOne(
-    `SELECT id, name, email, role, emailVerified, bannedAt, mustResetPassword FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,
+    `SELECT id, name, email, phone, role, emailVerified, bannedAt, mustResetPassword FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,
     [req.user.id]
   );
   if (!user) {
@@ -123,6 +123,7 @@ router.get("/me", requireAuth, async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone || null,
       role: user.role,
       emailVerified: Boolean(user.emailVerified),
       mustResetPassword: Boolean(user.mustResetPassword),
