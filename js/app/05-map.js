@@ -672,16 +672,6 @@ function drawRoute() {
     className: 'flight-path'
   }).addTo(map);
 
-  // Add aircraft emoji at midpoint
-  const acIcon = L.divIcon({
-    html: '<div class="marker-aircraft">&#9992;&#65039;</div>',
-    className: '',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
-  });
-  const acMarker = L.marker([ctrlLat, ctrlLng], { icon: acIcon }).addTo(map);
-  aircraftMarkers.push(acMarker);
-
   const bounds = L.latLngBounds([pickupCoord, destCoord]).pad(0.3);
   map.fitBounds(bounds);
   onRouteReady();
@@ -714,17 +704,6 @@ function drawRouteFromPlan() {
         radius: 4, color: '#fff', fillColor: '#F59E0B', fillOpacity: 1, weight: 2
       }).addTo(map);
     });
-  }
-
-  var midIdx = Math.floor((currentRoute.waypoints || []).length / 2);
-  var midWp = (currentRoute.waypoints || [])[midIdx] || (currentRoute.waypoints || [])[0];
-  if (midWp) {
-    var acIcon = L.divIcon({
-      html: '<div class="marker-aircraft">&#9992;&#65039;</div>',
-      className: '', iconSize: [30, 30], iconAnchor: [15, 15]
-    });
-    var acMarker = L.marker([midWp.lat, midWp.lng], { icon: acIcon }).addTo(map);
-    aircraftMarkers.push(acMarker);
   }
 
   if (pickupCoord && destCoord) {

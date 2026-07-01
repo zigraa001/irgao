@@ -221,8 +221,6 @@ async function restoreActiveBooking() {
     // Not just "no active booking" — a throw inside (e.g. in startTracking) used
     // to be silently swallowed here, hiding the real cause of a frozen ride.
     console.error('[restoreActiveBooking] threw:', e);
-    RIDE_DEBUG.setupError = 'restore:' + ((e && e.message) || String(e));
-    rideDebugBadge();
   }
 }
 
@@ -287,33 +285,11 @@ function startTracking() {
     setTimeout(fitRouteBounds, 160);
     setTimeout(fitRouteBounds, 480);
 
-    // Build the flight path for the MOCK aircraft animation.
-    trackPathPoints = [];
-    if (routeLine) {
-      routeLine.getLatLngs().forEach(ll => trackPathPoints.push([ll.lat, ll.lng]));
-    } else if (pickupCoord && destCoord) {
-      for (let t = 0; t <= 1; t += 0.02) {
-        trackPathPoints.push([
-          pickupCoord[0] + (destCoord[0] - pickupCoord[0]) * t,
-          pickupCoord[1] + (destCoord[1] - pickupCoord[1]) * t,
-        ]);
-      }
-    }
-
-    // Reset + add the MOCK aircraft marker (placeholder for real GPS).
+    // Clean up any leftover markers from a previous ride.
     if (map) aircraftMarkers.forEach(m => map.removeLayer(m));
     aircraftMarkers = [];
-    trackCurrentFrac = 0;
-    trackTargetFrac = 0;
     trackAircraft = null;
-    if (trackPathPoints.length && map) {
-      const acIcon = L.divIcon({
-        html: '<div class="marker-aircraft" style="font-size:28px;">&#9992;&#65039;</div>',
-        className: '', iconSize: [30, 30], iconAnchor: [15, 15]
-      });
-      trackAircraft = L.marker(trackPathPoints[0] || pickupCoord, { icon: acIcon, zIndexOffset: 1000 }).addTo(map);
-      aircraftMarkers.push(trackAircraft);
-    }
+    clearAnimatedMarkersByPrefix('track-operator', map);
 
     // Render the status we already have.
     applyTrackingStatus(currentBooking.status);
@@ -324,9 +300,7 @@ function startTracking() {
     clearAnimatedMarkersByPrefix('demo-', map);
     clearAnimatedMarkersByPrefix('real-', map);
   } catch (setupErr) {
-    RIDE_DEBUG.setupError = (setupErr && setupErr.message) || String(setupErr);
     console.error('[startTracking] setup threw:', setupErr);
-    rideDebugBadge();
   }
 
   // Subscribe to the live ride stream (status + pilot GPS) — ALWAYS, even if the
@@ -342,9 +316,8 @@ function startTracking() {
   }
   pollOperatorGpsForRide();
 
-  // MOCK animation loop — eases the marker toward the status-implied position
-  // and updates the (mock) ETA. Stops mattering once real ride_gps arrives.
-  trackingAnimInterval = setInterval(animateTrackingAircraft, 120);
+  // The real GPS-driven track-operator marker (via showAssignedPlane) is the
+  // only plane shown. No mock animation interval needed.
 }
 
 // Reflect a persisted booking status onto the step UI + progress bar.
@@ -477,44 +450,6 @@ let rideStreamReconnectTimer = null;
 let rideStreamClosedByUs = false;
 
 // ── DEBUG: live ride-stream badge (temporary — pinpoints the freeze) ──
-const RIDE_DEBUG = {
-  streamState: 'idle', updates: 0, gps: 0, lastStatus: '-',
-  lastGpsLat: null, lastGpsAt: 0, opened: 0, errors: 0, setupError: null,
-};
-function rideDebugBadge() {
-  var el = document.getElementById('ride-debug-badge');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'ride-debug-badge';
-    el.style.cssText =
-      'position:fixed;top:64px;left:10px;z-index:1500;background:rgba(17,24,39,0.92);' +
-      'color:#fff;font:11px/1.45 monospace;padding:8px 10px;border-radius:8px;max-width:340px;' +
-      'white-space:pre;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.3)';
-    document.body.appendChild(el);
-  }
-  var age = RIDE_DEBUG.lastGpsAt
-    ? Math.round((Date.now() - RIDE_DEBUG.lastGpsAt) / 1000) + 's ago'
-    : 'never';
-  var sz = (map && map.getSize) ? map.getSize() : null;
-  el.textContent =
-    'BUILD ' + (window.__BUILD__ || '?') + '\n' +
-    'booking #' + (currentBooking ? currentBooking.id : '-') +
-    ' status=' + (currentBooking ? currentBooking.status : '-') + '\n' +
-    'WS: ' + RIDE_DEBUG.streamState +
-    (rideStream ? ' (rs=' + rideStream.readyState + ')' : '') +
-    ' open=' + RIDE_DEBUG.opened + ' err=' + RIDE_DEBUG.errors + '\n' +
-    'ride_update: ' + RIDE_DEBUG.updates + ' last=' + RIDE_DEBUG.lastStatus + '\n' +
-    'ride_gps: ' + RIDE_DEBUG.gps + ' last=' + (RIDE_DEBUG.lastGpsLat || '-') +
-    ' (' + age + ')\n' +
-    'trackOperatorGps: ' + (trackOperatorGps.lat != null
-      ? trackOperatorGps.lat.toFixed(4) + ',' + trackOperatorGps.lng.toFixed(4) : 'null') + '\n' +
-    'mock trackAircraft: ' + (trackAircraft ? 'yes' : 'no') +
-    ' frac=' + trackCurrentFrac.toFixed(2) + '->' + trackTargetFrac.toFixed(2) + '\n' +
-    'followOn=' + rideFollowOn + ' mapSize=' + (sz ? sz.x + 'x' + sz.y : '-') +
-    (RIDE_DEBUG.setupError ? '\nSETUP ERR: ' + RIDE_DEBUG.setupError : '');
-}
-setInterval(rideDebugBadge, 1000);
-
 function disconnectRideStream() {
   rideStreamClosedByUs = true;
   if (rideStreamReconnectTimer) {
@@ -550,19 +485,12 @@ function openRideStream() {
   try {
     ws = new WebSocket(url, protocols);
   } catch (e) {
-    RIDE_DEBUG.streamState = 'throw:' + e.message;
-    rideDebugBadge();
     scheduleRideStreamReconnect();
     return;
   }
   rideStream = ws;
-  RIDE_DEBUG.streamState = 'ws-connecting';
-  rideDebugBadge();
 
   ws.onopen = function () {
-    RIDE_DEBUG.streamState = 'ws-open';
-    RIDE_DEBUG.opened++;
-    rideDebugBadge();
     try { ws.send(JSON.stringify({ bookingId: rideStreamBookingId })); } catch (e) { /* ignore */ }
   };
 
@@ -571,37 +499,13 @@ function openRideStream() {
     try { d = JSON.parse(ev.data); } catch (e) { return; }
     if (!d || !d.type) return;
     switch (d.type) {
-      case 'auth_ok':
-        RIDE_DEBUG.streamState = 'auth-ok';
-        rideDebugBadge();
-        break;
-      case 'auth_denied':
-        RIDE_DEBUG.streamState = 'auth-denied';
-        rideDebugBadge();
-        break;
-      case 'error':
-        RIDE_DEBUG.streamState = 'srv-error:' + (d.error || '?');
-        rideDebugBadge();
-        break;
       case 'ride_state':
-        RIDE_DEBUG.streamState = 'open';
-        if (d.status) RIDE_DEBUG.lastStatus = d.status;
-        rideDebugBadge();
         handleRideState(d);
         break;
       case 'ride_update':
-        RIDE_DEBUG.updates++;
-        if (d.status) RIDE_DEBUG.lastStatus = d.status;
-        rideDebugBadge();
         handleRideUpdate(d);
         break;
       case 'ride_gps':
-        RIDE_DEBUG.gps++;
-        if (d.lat != null && d.lng != null) {
-          RIDE_DEBUG.lastGpsLat = d.lat.toFixed(4) + ',' + d.lng.toFixed(4);
-          RIDE_DEBUG.lastGpsAt = Date.now();
-        }
-        rideDebugBadge();
         if (d.lat != null && d.lng != null) handleRideGps(d);
         break;
       case 'ride_path':
@@ -614,19 +518,12 @@ function openRideStream() {
   };
 
   ws.onclose = function () {
-    RIDE_DEBUG.streamState = 'ws-closed';
-    rideDebugBadge();
-    // EventSource auto-reconnected; WebSocket does not, so reconnect ourselves
-    // (unless we closed it on purpose). The 8s fallback poll also keeps status
-    // fresh if the socket stays down.
+    // WebSocket doesn't auto-reconnect, so reconnect ourselves unless we closed
+    // it on purpose. The 8s fallback poll also keeps status fresh if it stays down.
     if (!rideStreamClosedByUs) scheduleRideStreamReconnect();
   };
 
-  ws.onerror = function () {
-    RIDE_DEBUG.errors++;
-    RIDE_DEBUG.streamState = 'ws-error';
-    rideDebugBadge();
-  };
+  ws.onerror = function () { /* onclose handles reconnect */ };
 }
 
 function scheduleRideStreamReconnect() {
@@ -719,14 +616,21 @@ function showPilotCard(pilot, company, officeCity) {
   var parts = [];
   if (pilot.aircraftType) parts.push(pilot.aircraftType);
   if (pilot.aircraftReg) parts.push(pilot.aircraftReg);
+  if (pilot.license) parts.push(pilot.license);
   if (metaEl) metaEl.textContent = parts.length ? parts.join(' · ') : '';
   var compEl = document.getElementById('tracking-pilot-company');
   var compParts = [];
-  if (company && company.name) compParts.push(company.name);
+  if (pilot.companyName) compParts.push(pilot.companyName);
+  else if (company && company.name) compParts.push(company.name);
   if (officeCity) compParts.push(officeCity + ' Regional Office');
-  if (compEl) compEl.textContent = compParts.length ? compParts.join(' — ') : '';
+  if (pilot.flightHours) compParts.push(pilot.flightHours + ' flight hrs');
+  if (pilot.rating) compParts.push('★ ' + pilot.rating);
+  if (compEl) compEl.textContent = compParts.length ? compParts.join(' · ') : '';
   var vn = document.getElementById('tracking-vehicle-name');
-  if (vn) vn.textContent = (pilot.name || 'Your pilot') + ' · ' + (pilot.aircraftType || 'eVTOL');
+  var vnParts = [];
+  if (pilot.aircraftType) vnParts.push(pilot.aircraftType);
+  if (pilot.aircraftReg) vnParts.push(pilot.aircraftReg);
+  if (vn) vn.textContent = vnParts.length ? vnParts.join(' · ') : (pilot.aircraftType || 'eVTOL Air Taxi');
 }
 
 async function fetchAndShowRideOtp() {
@@ -802,13 +706,10 @@ function showAssignedPlane(lat, lng, name) {
   stopDemoTaxiDrift();
   clearAnimatedMarkersByPrefix('demo-', map);
   clearAnimatedMarkersByPrefix('real-', map);
-  // Remove the mock aircraft marker if present.
-  if (trackAircraft) {
-    map.removeLayer(trackAircraft);
-    const idx = aircraftMarkers.indexOf(trackAircraft);
-    if (idx >= 0) aircraftMarkers.splice(idx, 1);
-    trackAircraft = null;
-  }
+  // Remove ALL static aircraft markers (route-preview planes, mock, etc.).
+  aircraftMarkers.forEach(m => { try { map.removeLayer(m); } catch (_) {} });
+  aircraftMarkers = [];
+  trackAircraft = null;
   const label = name != null ? escapeHtml(name) : 'Your pilot';
   setAnimatedMapMarker(
     'track-operator',
@@ -820,7 +721,7 @@ function showAssignedPlane(lat, lng, name) {
   );
   if (name) {
     const vn = document.getElementById('tracking-vehicle-name');
-    if (vn) vn.textContent = name + ' \u00B7 your pilot';
+    if (vn && vn.textContent === '\u2014') vn.textContent = 'eVTOL Air Taxi';
   }
 }
 

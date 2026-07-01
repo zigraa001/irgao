@@ -16,10 +16,44 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// Strip internal server details before a line enters the admin-visible buffer:
+// DB connection config, raw SQL, absolute file paths, stack frames, and IPs.
+// The server's own stdout still gets the full, un-redacted line (see install()),
+// so operators with shell access keep complete logs — only the web admin panel
+// is sanitised. This is where "don't leak internal architecture" is enforced.
+function redactSensitive(s) {
+  if (typeof s !== "string" || !s) return s;
+  let out = s;
+  // DB / connection config keys: host: '...', user: "...", database:, password:, port:
+  out = out.replace(
+    /\b(host|hostname|user|username|database|db|password|passwd|pass|port|connectionLimit)\s*:\s*(['"]).*?\2/gi,
+    "$1: ‹redacted›"
+  );
+  out = out.replace(/\b(port|connectionLimit)\s*:\s*\d+/gi, "$1: ‹redacted›");
+  // Raw SQL emitted by the db layer ("SQL >", "SQL FAILED:", "params:") + any
+  // standalone statement — hide schema/queries.
+  out = out.replace(/\bSQL(?:\s+(?:FAILED|>|<))?\s*:?.*/gi, "SQL ‹redacted›");
+  out = out.replace(
+    /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+(?:TABLE|INDEX)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX))\b.*/gi,
+    "‹sql redacted›"
+  );
+  // Absolute filesystem paths (real dirs only — leaves /api/... URLs intact).
+  out = out.replace(
+    /\/(?:home|Users|root|tmp|var|usr|opt|etc|app|srv|mnt)\/[\w./+-]+/g,
+    "‹path›"
+  );
+  // Stack-trace frames: "    at fn (‹path›:line:col)" or "at ‹path›:line:col".
+  out = out.replace(/\s+at\s+.*(?:‹path›|:\d+:\d+).*/g, " ‹stack›");
+  // IPv4 addresses.
+  out = out.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, "‹ip›");
+  return out;
+}
+
 function capture(level, args) {
-  const msg = args
+  const raw = args
     .map((a) => (typeof a === "string" ? a : safeStringify(a)))
     .join(" ");
+  const msg = redactSensitive(raw);
   const entry = { ts: nowIso(), level, msg };
   buffer.unshift(entry);
   if (buffer.length > MAX_LOGS) buffer.length = MAX_LOGS;
@@ -79,4 +113,4 @@ function _reset() {
   buffer.length = 0;
 }
 
-module.exports = { install, getLogs, subscribe, _reset };
+module.exports = { install, getLogs, subscribe, _reset, redactSensitive };

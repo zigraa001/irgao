@@ -168,6 +168,16 @@ router.get("/active", requireAuth, requireRole("customer"), async (req, res) => 
       "SELECT id, name, gpsLat, gpsLng, aircraftType, aircraftReg FROM users WHERE id = ?",
       [booking.operatorId]
     );
+    if (operator && operator.name && /demo-pilot/.test(
+      (await queryOne("SELECT email FROM users WHERE id = ?", [operator.id]) || {}).email || ""
+    )) {
+      const { demoPilotProfile } = require("./demo-routes");
+      const profile = demoPilotProfile(booking.id);
+      operator.license = profile.license;
+      operator.flightHours = profile.flightHours;
+      operator.rating = profile.rating;
+      operator.companyName = profile.companyName;
+    }
   }
   let company = null;
   if (booking.companyId) {

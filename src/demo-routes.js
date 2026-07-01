@@ -79,11 +79,40 @@ async function avoidanceWaypoints(pickupLat, pickupLng, destLat, destLng) {
 // still advancing. Entries are removed on completion/abort.
 const activeDemoBookings = new Set();
 
+const DEMO_PILOTS = [
+  { name: "Capt. Arjun Mehta",     license: "DGCA-ATPL-4821",  hours: 2400, rating: 4.9 },
+  { name: "Capt. Vikram Singh",    license: "DGCA-ATPL-3917",  hours: 3100, rating: 4.8 },
+  { name: "Capt. Priya Sharma",    license: "DGCA-ATPL-5203",  hours: 1800, rating: 5.0 },
+  { name: "Capt. Rohan Desai",     license: "DGCA-ATPL-2746",  hours: 2900, rating: 4.7 },
+  { name: "Capt. Ananya Rao",      license: "DGCA-ATPL-6058",  hours: 2200, rating: 4.9 },
+  { name: "Capt. Kabir Malhotra",  license: "DGCA-ATPL-3384",  hours: 3500, rating: 4.8 },
+  { name: "Capt. Neha Kapoor",     license: "DGCA-ATPL-4492",  hours: 2600, rating: 5.0 },
+  { name: "Capt. Aditya Nair",     license: "DGCA-ATPL-1835",  hours: 4100, rating: 4.9 },
+];
+
+const DEMO_AIRCRAFT = [
+  { type: "IraGo X1 eVTOL",  reg: "VT-IRA001" },
+  { type: "IraGo X1 eVTOL",  reg: "VT-IRA004" },
+  { type: "IraGo S2 eVTOL",  reg: "VT-IRA007" },
+  { type: "IraGo S2 eVTOL",  reg: "VT-IRA012" },
+];
+
 const DEMO_PILOT = {
   email: "demo-pilot@irago.internal",
-  name: "Demo Pilot (Auto)",
   password: "DemoIraGo@2025",
 };
+
+const DEMO_COMPANY = "IraGo Air Mobility";
+
+function demoPilotProfile(bookingId) {
+  const p = DEMO_PILOTS[bookingId % DEMO_PILOTS.length];
+  const aircraft = DEMO_AIRCRAFT[bookingId % DEMO_AIRCRAFT.length];
+  return {
+    name: p.name, license: p.license, flightHours: p.hours, rating: p.rating,
+    aircraftType: aircraft.type, aircraftReg: aircraft.reg,
+    companyName: DEMO_COMPANY,
+  };
+}
 
 // Demo routes — each has a pilot spawn point just next to the pickup
 const DEMO_SCENARIOS = [
@@ -199,7 +228,7 @@ async function runDemoSequence(bookingId, operatorId, scenario) {
   activeDemoBookings.add(bookingId);
 
   try {
-    const pilotRow = await queryOne("SELECT id, name, gpsLat, gpsLng FROM users WHERE id = ?", [operatorId]);
+    const pilotRow = await queryOne("SELECT id, name, gpsLat, gpsLng, aircraftType, aircraftReg FROM users WHERE id = ?", [operatorId]);
     if (!pilotRow) return;
     const b = await queryOne("SELECT * FROM bookings WHERE id = ?", [bookingId]);
     if (!b) return;
@@ -207,7 +236,13 @@ async function runDemoSequence(bookingId, operatorId, scenario) {
     // OTP is generated up front so it can be shown to the passenger the moment
     // the pilot is assigned (used at pickup, like a real ride).
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const pilotInfo = { id: pilotRow.id, name: pilotRow.name, lat: pilotRow.gpsLat, lng: pilotRow.gpsLng };
+    const profile = demoPilotProfile(bookingId);
+    const pilotInfo = {
+      id: pilotRow.id, name: pilotRow.name, lat: pilotRow.gpsLat, lng: pilotRow.gpsLng,
+      aircraftType: pilotRow.aircraftType, aircraftReg: pilotRow.aircraftReg,
+      license: profile.license, flightHours: profile.flightHours,
+      rating: profile.rating, companyName: profile.companyName,
+    };
 
     // The per-booking demo pilot is retired (off-duty + GPS cleared) in the
     // finally block below — covers completion, every abort-return, and errors.
@@ -355,9 +390,11 @@ router.post("/start", requireAuth, requireRole("customer"), async (req, res) => 
     fare,
     operator: {
       id: demoOp.id,
-      name: DEMO_PILOT.name,
+      name: demoOp.name,
       gpsLat: demoOp.gpsLat,
       gpsLng: demoOp.gpsLng,
+      aircraftType: demoOp.aircraftType,
+      aircraftReg: demoOp.aircraftReg,
     },
   });
   // autoRunDemoForBooking already kicked off the background lifecycle.
@@ -386,20 +423,25 @@ async function autoRunDemoForBooking(booking) {
   // off-route" bug). Per-booking pilots keep each ride's GPS independent.
   const pilotEmail = `demo-pilot+${booking.id}@irago.internal`;
 
+  const profile = demoPilotProfile(booking.id);
+
   let demoOp = await queryOne("SELECT id FROM users WHERE email = ?", [pilotEmail]);
   if (demoOp) {
     await query(
       `UPDATE users SET name=?, passwordHash=?, role='operator', onDuty=1,
-       gpsLat=?, gpsLng=?, companyId=?, officeId=?, deletedAt=NULL WHERE id=?`,
-      [DEMO_PILOT.name, hash, pilotLat, pilotLng,
-       office?.companyId || null, office?.officeId || null, demoOp.id]
+       gpsLat=?, gpsLng=?, companyId=?, officeId=?, aircraftType=?, aircraftReg=?,
+       deletedAt=NULL WHERE id=?`,
+      [profile.name, hash, pilotLat, pilotLng,
+       office?.companyId || null, office?.officeId || null,
+       profile.aircraftType, profile.aircraftReg, demoOp.id]
     );
   } else {
     const r = await query(
-      `INSERT INTO users (email, name, passwordHash, role, onDuty, gpsLat, gpsLng, companyId, officeId)
-       VALUES (?, ?, ?, 'operator', 1, ?, ?, ?, ?)`,
-      [pilotEmail, DEMO_PILOT.name, hash,
-       pilotLat, pilotLng, office?.companyId || null, office?.officeId || null]
+      `INSERT INTO users (email, name, passwordHash, role, onDuty, gpsLat, gpsLng, companyId, officeId, aircraftType, aircraftReg)
+       VALUES (?, ?, ?, 'operator', 1, ?, ?, ?, ?, ?, ?)`,
+      [pilotEmail, profile.name, hash,
+       pilotLat, pilotLng, office?.companyId || null, office?.officeId || null,
+       profile.aircraftType, profile.aircraftReg]
     );
     demoOp = { id: r.insertId };
   }
@@ -410,7 +452,12 @@ async function autoRunDemoForBooking(booking) {
   };
   runDemoSequence(booking.id, demoOp.id, scenario);
 
-  return { id: demoOp.id, name: DEMO_PILOT.name, gpsLat: pilotLat, gpsLng: pilotLng };
+  return {
+    id: demoOp.id, name: profile.name, gpsLat: pilotLat, gpsLng: pilotLng,
+    aircraftType: profile.aircraftType, aircraftReg: profile.aircraftReg,
+    license: profile.license, flightHours: profile.flightHours,
+    rating: profile.rating, companyName: profile.companyName,
+  };
 }
 
 // POST /api/demo/run/:id
@@ -460,3 +507,4 @@ module.exports = router;
 module.exports.autoRunDemoForBooking = autoRunDemoForBooking;
 module.exports.isDemoRunning = (bookingId) => activeDemoBookings.has(bookingId);
 module.exports.reconcileDemoPilotsOnStartup = reconcileDemoPilotsOnStartup;
+module.exports.demoPilotProfile = demoPilotProfile;

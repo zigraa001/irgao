@@ -772,6 +772,9 @@ async function refreshNearbyTaxis() {
     );
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) return;
+    // Re-check after await: tracking may have started while the fetch was in flight.
+    var tp = document.getElementById('tracking-panel');
+    if (tp && tp.classList.contains('active')) return;
     clearAnimatedMarkersByPrefix('real-', map);
     (data.taxis || []).forEach(function (t) {
       setAnimatedMapMarker(
