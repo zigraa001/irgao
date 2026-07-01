@@ -219,7 +219,7 @@ const SIGNUP_CONFIG = {
     loginUrl: '/login/admin',
     loginTitle: 'Admin sign in',
     loginSub: 'Platform admin — team management and fleet oversight.',
-    loginHint: 'Admin accounts are created by an admin only (the first admin via .env + npm run admin:bootstrap). No public signup.',
+    loginHint: '',
     loginOnly: true,
   },
 };

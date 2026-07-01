@@ -63,7 +63,7 @@ function parseListQuery(q) {
 }
 
 function userListWhere(roleFilter) {
-  const clauses = [USER_NOT_DELETED];
+  const clauses = [USER_NOT_DELETED, "email NOT LIKE 'demo-pilot%@irago.internal'"];
   const params = [];
   if (roleFilter) {
     clauses.push("role = ?");
