@@ -292,9 +292,9 @@ async function initSchema() {
   await ensureColumn("users", "aircraftReg", "aircraftReg VARCHAR(32) NULL");
   await ensureColumn("users", "pilotLicense", "pilotLicense VARCHAR(64) NULL");
 
-  // Mobile OTP login: phone number (E.164 digits, e.g. 919876543210).
-  // Indexed for fast lookup during phone-based OTP login.
   await ensureColumn("users", "phone", "phone VARCHAR(20) NULL");
+  await ensureColumn("users", "gender", "gender VARCHAR(20) NULL");
+  await ensureColumn("users", "age", "age INT NULL");
   try {
     await query(
       "CREATE UNIQUE INDEX idx_users_phone ON users (phone)"

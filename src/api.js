@@ -12,6 +12,7 @@ const zoneRoutes = require("./zone-routes");
 const { router: routeRoutes } = require("./route-routes");
 const trackingRoutes = require("./tracking-routes");
 const demoRoutes = require("./demo-routes");
+const mobileAuthRoutes = require("./mobile-auth-routes");
 const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
@@ -101,6 +102,9 @@ router.use("/route", routeRoutes);
 
 // Demo mode: auto-runs a full ride lifecycle for testing.
 router.use("/demo", demoRoutes);
+
+// Phone verification (add/change phone on profile).
+router.use("/auth/mobile", mobileAuthRoutes);
 
 // Flight / restricted airspace zones for map overlays.
 router.use("/zones", zoneRoutes);

@@ -17,7 +17,7 @@ const PURPOSES = [
   "signup_passenger",
   "signup_operator",
   "reset_password",
-  "mobile_login",
+  "phone_verify",
 ];
 
 const ENCRYPTED_PREFIX = "enc:v1:";
