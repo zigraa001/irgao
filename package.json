@@ -23,7 +23,9 @@
     "local:tailscale": "bash scripts/local/tailscale-serve.sh",
     "local:tailscale-stop": "bash scripts/local/tailscale-stop.sh",
     "typecheck": "tsc --noEmit",
-    "test": "node --test"
+    "test": "node --test",
+    "build:js": "node scripts/build-app-js.js",
+    "prestart": "node scripts/build-app-js.js"
   },
   "private": true,
   "dependencies": {

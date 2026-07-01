@@ -86,6 +86,14 @@ const fakeDb = {
       return { affectedRows: 1 };
     }
 
+    // ── SELECT TIMESTAMPDIFF(SECOND, assignedAt, NOW()) — cancel grace age ──
+    if (s.includes("TIMESTAMPDIFF(SECOND, assignedAt, NOW())")) {
+      const b = bookings.find((x) => x.id === params[0]);
+      if (!b || !b.assignedAt) return [{ secs: null }];
+      const secs = Math.floor((Date.now() - new Date(b.assignedAt).getTime()) / 1000);
+      return [{ secs }];
+    }
+
     // ── SELECT * FROM bookings WHERE id ──
     if (s.startsWith("SELECT * FROM bookings WHERE id")) {
       return bookings.filter((b) => b.id === params[0]);

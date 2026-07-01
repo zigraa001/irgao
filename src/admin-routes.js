@@ -460,14 +460,129 @@ router.patch(
     }
     try {
       platformSettings.set(key, value);
-      logBus.emit("log", {
-        level: "info",
-        msg: `Admin ${req.user.email} changed setting ${key} = ${JSON.stringify(value)}`,
-      });
+      // log-bus captures console output into the admin observability buffer.
+      console.log(
+        `[admin] ${req.user.email} changed setting ${key} = ${JSON.stringify(value)}`
+      );
       res.json({ settings: platformSettings.all() });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
+  }
+);
+
+// ── Operator companies & regional offices ───────────────────────────────
+
+// GET /api/admin/companies — list all operator companies with office count.
+router.get(
+  "/companies",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const rows = await query(
+      `SELECT oc.*,
+              (SELECT COUNT(*) FROM regional_offices ro WHERE ro.companyId = oc.id) AS officeCount
+       FROM operator_companies oc
+       ORDER BY oc.name`
+    );
+    res.json({ companies: rows });
+  }
+);
+
+// POST /api/admin/companies — create a new operator company.
+router.post(
+  "/companies",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const { name, code } = req.body || {};
+    if (!name || !code) {
+      return res.status(400).json({ error: "name and code are required" });
+    }
+    const existing = await queryOne(
+      "SELECT id FROM operator_companies WHERE code = ?",
+      [String(code).toUpperCase()]
+    );
+    if (existing) {
+      return res.status(409).json({ error: "A company with that code already exists" });
+    }
+    const result = await query(
+      "INSERT INTO operator_companies (name, code) VALUES (?, ?)",
+      [String(name), String(code).toUpperCase()]
+    );
+    const company = await queryOne(
+      "SELECT * FROM operator_companies WHERE id = ?",
+      [result.insertId]
+    );
+    res.status(201).json({ company });
+  }
+);
+
+// GET /api/admin/companies/:id/offices — list offices for a company.
+router.get(
+  "/companies/:id/offices",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      return res.status(400).json({ error: "Invalid company id" });
+    }
+    const rows = await query(
+      "SELECT * FROM regional_offices WHERE companyId = ? ORDER BY city",
+      [companyId]
+    );
+    res.json({ offices: rows });
+  }
+);
+
+// POST /api/admin/companies/:id/offices — add a regional office to a company.
+router.post(
+  "/companies/:id/offices",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      return res.status(400).json({ error: "Invalid company id" });
+    }
+    const company = await queryOne(
+      "SELECT id FROM operator_companies WHERE id = ?",
+      [companyId]
+    );
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+    const { city, lat, lng, address, contactPhone } = req.body || {};
+    if (!city || lat == null || lng == null) {
+      return res.status(400).json({ error: "city, lat, and lng are required" });
+    }
+    const result = await query(
+      `INSERT INTO regional_offices (companyId, city, address, lat, lng, contactPhone)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [companyId, String(city), address || null, Number(lat), Number(lng), contactPhone || null]
+    );
+    const office = await queryOne(
+      "SELECT * FROM regional_offices WHERE id = ?",
+      [result.insertId]
+    );
+    res.status(201).json({ office });
+  }
+);
+
+// GET /api/admin/offices — list all regional offices with company name.
+router.get(
+  "/offices",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const rows = await query(
+      `SELECT ro.*, oc.name AS companyName, oc.code AS companyCode
+       FROM regional_offices ro
+       JOIN operator_companies oc ON oc.id = ro.companyId
+       ORDER BY oc.name, ro.city`
+    );
+    res.json({ offices: rows });
   }
 );
 

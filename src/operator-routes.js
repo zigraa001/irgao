@@ -14,6 +14,7 @@ const {
   offerToNextOperator,
   releaseAircraft,
   setOperatorDuty,
+  verifyRideOtp,
   BUSY_STATUSES,
 } = require("./dispatch");
 const { haversineKm, parseCoord } = require("./pricing");
@@ -262,7 +263,8 @@ router.post(
 // Each advance moves the booking forward and notifies the passenger in real
 // time via the customer SSE channel. Allowed transitions:
 //   accepted  → enroute   (pilot heading to pickup)
-//   enroute   → picked_up (pilot arrived at pickup, passenger boarded)
+//   enroute   → at_pickup (pilot arrived at pickup, waiting for customer OTP)
+//   at_pickup → picked_up (customer OTP verified via /verify-otp)
 //   picked_up → flying    (in the air to destination — requires an aircraft)
 //   flying    → completed (landed at destination, trip done — frees aircraft)
 async function advanceTripStatus(req, res, fromStatus, toStatus) {
@@ -314,7 +316,7 @@ router.post(
   "/trips/:id/pickup",
   requireAuth,
   requireRole("operator"),
-  (req, res) => advanceTripStatus(req, res, "enroute", "picked_up")
+  (req, res) => advanceTripStatus(req, res, "enroute", "at_pickup")
 );
 router.post(
   "/trips/:id/takeoff",
@@ -388,6 +390,31 @@ router.post("/location", requireAuth, requireRole("operator"), rateLimit("operat
 
   res.json({ ok: true, lat, lng });
 });
+
+// POST /api/operator/bookings/:id/verify-otp — pilot verifies the ride OTP
+// shared by the customer at pickup. Only the assigned operator can verify.
+router.post(
+  "/bookings/:id/verify-otp",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "Invalid booking id" });
+    }
+    const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    if (!booking || booking.operatorId !== req.user.id) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    const otp = typeof req.body?.otp === "string" ? req.body.otp.trim() : "";
+    const result = await verifyRideOtp(id, otp);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error });
+    }
+    const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+    res.json({ booking: updated, message: "OTP verified — ride started!" });
+  }
+);
 
 // POST /api/operator/dispatch/offers/:id/accept
 router.post(

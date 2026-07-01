@@ -11,14 +11,17 @@ function round2(n) {
   return Math.round(Number(n) * 100) / 100;
 }
 
+const GST_RATE = 0.18;
+
 function fareBreakdown(service, distanceKm) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
   const kmCharge = round2(pricing.perKm * km);
-  const surge = 0; // reserved for demand-based surge multiplier
-  const taxes = 0; // reserved for GST etc.
-  const total = estimateFare(service, km);
+  const surge = 0;
+  const subtotal = round2(pricing.base + kmCharge + surge);
+  const gst = round2(subtotal * GST_RATE);
+  const total = Math.round((subtotal + gst) / 100) * 100;
   return {
     service,
     base: pricing.base,
@@ -26,10 +29,9 @@ function fareBreakdown(service, distanceKm) {
     distanceKm: round2(km),
     kmCharge,
     surge,
-    taxes,
-    // Unrounded sum of components — kept for the receipt; `total` is what the
-    // customer is charged and what's stored on the booking.
-    subtotal: round2(pricing.base + kmCharge + surge + taxes),
+    taxes: gst,
+    taxLabel: "GST (18%)",
+    subtotal,
     total,
     currency: "INR",
   };

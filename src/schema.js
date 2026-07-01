@@ -258,6 +258,51 @@ async function initSchema() {
     createdAt     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_push_user (userId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // ── Operator companies & regional offices ─────────────────────────────
+  await query(`CREATE TABLE IF NOT EXISTS operator_companies (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(255) NOT NULL,
+    code       VARCHAR(32)  NOT NULL UNIQUE,
+    logoUrl    VARCHAR(512) NULL,
+    rating     DOUBLE       NOT NULL DEFAULT 4.5,
+    fleetSize  INT          NOT NULL DEFAULT 0,
+    active     TINYINT(1)   NOT NULL DEFAULT 1,
+    createdAt  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS regional_offices (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    companyId    INT          NOT NULL,
+    city         VARCHAR(255) NOT NULL,
+    address      VARCHAR(512) NULL,
+    lat          DOUBLE       NOT NULL,
+    lng          DOUBLE       NOT NULL,
+    contactPhone VARCHAR(32)  NULL,
+    radiusKm     DOUBLE       NOT NULL DEFAULT 30,
+    active       TINYINT(1)   NOT NULL DEFAULT 1,
+    createdAt    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_office_company (companyId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Pilot profile columns on users (company/office assignment, aircraft info).
+  await ensureColumn("users", "companyId", "companyId INT NULL");
+  await ensureColumn("users", "officeId", "officeId INT NULL");
+  await ensureColumn("users", "aircraftType", "aircraftType VARCHAR(128) NULL");
+  await ensureColumn("users", "aircraftReg", "aircraftReg VARCHAR(32) NULL");
+  await ensureColumn("users", "pilotLicense", "pilotLicense VARCHAR(64) NULL");
+
+  // Company/office linkage and ride OTP columns on bookings.
+  await ensureColumn("bookings", "companyId", "companyId INT NULL");
+  await ensureColumn("bookings", "officeId", "officeId INT NULL");
+  await ensureColumn("bookings", "rideOtp", "rideOtp VARCHAR(8) NULL");
+  await ensureColumn("bookings", "rideOtpVerified", "rideOtpVerified TINYINT(1) NOT NULL DEFAULT 0");
+  await ensureColumn("bookings", "estimatedPickupMin", "estimatedPickupMin INT NULL");
+
+  // Seed operator companies and regional offices (idempotent).
+  const { seedOperators } = require("./seed-operators");
+  await seedOperators().catch(err => dbg("seedOperators: " + err.message));
+
   dbg("initSchema: done");
 }
 

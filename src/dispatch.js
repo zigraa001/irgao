@@ -16,10 +16,11 @@ const BUSY_STATUSES = [
   "assigned",
   "accepted",
   "enroute",
+  "at_pickup",
   "picked_up",
   "flying",
 ];
-const IN_TRANSIT_STATUSES = ["accepted", "enroute", "picked_up", "flying"];
+const IN_TRANSIT_STATUSES = ["accepted", "enroute", "at_pickup", "picked_up", "flying"];
 
 // offerId → { timer, bookingId }. We track the bookingId so that when one
 // operator accepts, we can clear every other pending offer's timer for that
@@ -69,13 +70,20 @@ async function listAvailableOperatorsNear(pickupLat, pickupLng, excludeIds = [])
   // pending unexpired offer) in one pass via NOT EXISTS — replaces the previous
   // N+1 that ran 2 queries per candidate. Off-duty pilots are excluded so they
   // never receive offers.
+  // Includes company/office info via LEFT JOINs for dispatch payloads.
   const busyPlaceholders = BUSY_STATUSES.map(() => "?").join(",");
   const rows = await query(
-    `SELECT id, name, email, gpsLat, gpsLng
+    `SELECT u.id, u.name, u.email, u.gpsLat, u.gpsLng,
+            u.companyId, u.officeId, u.aircraftType, u.aircraftReg, u.pilotLicense,
+            oc.name AS companyName, oc.code AS companyCode, oc.rating AS companyRating,
+            ro.city AS officeCity
      FROM users u
+     LEFT JOIN operator_companies oc ON oc.id = u.companyId
+     LEFT JOIN regional_offices ro ON ro.id = u.officeId
      WHERE u.role = 'operator' AND u.deletedAt IS NULL AND u.bannedAt IS NULL
        AND u.onDuty = 1
        AND u.gpsLat IS NOT NULL AND u.gpsLng IS NOT NULL
+       AND u.email NOT LIKE 'demo-pilot%@irago.internal'
        AND NOT EXISTS (
          SELECT 1 FROM bookings b
          WHERE b.operatorId = u.id AND b.status IN (${busyPlaceholders})
@@ -138,6 +146,9 @@ async function createOffer(booking, operator, meta = {}) {
     [offerId]
   );
 
+  // ETA: avg 150 km/h = 2.5 km/min for eVTOL.
+  const estimatedPickupMin = Math.max(2, Math.round((operator.distanceKm || 0) / 2.5));
+
   pushOperator(operator.id, "dispatch_offer", {
     offerId,
     expiresInSeconds: OFFER_SECONDS,
@@ -160,6 +171,13 @@ async function createOffer(booking, operator, meta = {}) {
       carbonSavedKg: offer.carbonSavedKg,
     },
     operatorDistanceKm: operator.distanceKm,
+    estimatedPickupMin,
+    company: operator.companyName ? {
+      name: operator.companyName,
+      code: operator.companyCode,
+      rating: operator.companyRating,
+    } : null,
+    officeCity: operator.officeCity || null,
   });
 
   // Tell the passenger which operator we're currently waiting on (one at a
@@ -355,14 +373,51 @@ async function acceptOffer(offerId, operatorId) {
   // aircraftId stays NULL and the pilot won't be able to take off until one is.
   await assignAvailableAircraft(offer.bookingId);
 
+  // Generate a 4-digit ride OTP for passenger verification at pickup.
+  const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+  // Compute ETA from the pilot's GPS to the pickup point.
+  const pilot = await queryOne(
+    `SELECT u.name, u.gpsLat, u.gpsLng, u.aircraftType, u.aircraftReg, u.companyId, u.officeId,
+            oc.name AS companyName, ro.city AS officeCity
+     FROM users u
+     LEFT JOIN operator_companies oc ON oc.id = u.companyId
+     LEFT JOIN regional_offices ro ON ro.id = u.officeId
+     WHERE u.id = ?`,
+    [operatorId]
+  );
+  const bookingRow = await queryOne("SELECT * FROM bookings WHERE id = ?", [
+    offer.bookingId,
+  ]);
+  let estimatedPickupMin = null;
+  if (pilot && bookingRow && pilot.gpsLat != null && pilot.gpsLng != null) {
+    const dist = haversineKm(pilot.gpsLat, pilot.gpsLng, bookingRow.pickupLat, bookingRow.pickupLng);
+    estimatedPickupMin = Math.max(2, Math.round(dist / 2.5));
+  }
+
+  // Store rideOtp and estimatedPickupMin in the booking.
+  await query(
+    "UPDATE bookings SET rideOtp = ?, estimatedPickupMin = ? WHERE id = ?",
+    [rideOtp, estimatedPickupMin, offer.bookingId]
+  );
+
   const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [
     offer.bookingId,
   ]);
   // Tell the passenger a pilot has been assigned (Uber-style "driver found").
+  // Include pilot profile, company/office, and ETA.
   pushCustomer(offer.bookingId, "ride_update", {
     bookingId: offer.bookingId,
     status: "assigned",
     operatorId,
+    estimatedPickupMin,
+    pilot: pilot ? {
+      name: pilot.name,
+      aircraftType: pilot.aircraftType || null,
+      aircraftReg: pilot.aircraftReg || null,
+    } : null,
+    company: pilot?.companyName ? { name: pilot.companyName } : null,
+    officeCity: pilot?.officeCity || null,
   });
   return { ok: true, booking };
 }
@@ -454,6 +509,38 @@ async function rejectOffer(offerId, operatorId) {
   return { ok: true };
 }
 
+// Verify the 4-digit ride OTP at pickup. The customer shares the OTP with the
+// pilot; calling this confirms the right passenger was picked up and starts the
+// ride (status → picked_up).
+async function verifyRideOtp(bookingId, otp) {
+  if (!otp || typeof otp !== "string" || otp.length !== 4) {
+    return { ok: false, error: "A valid 4-digit OTP is required" };
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [bookingId]);
+  if (!booking) {
+    return { ok: false, error: "Booking not found" };
+  }
+  if (booking.rideOtpVerified) {
+    return { ok: false, error: "OTP already verified" };
+  }
+  if (booking.status !== "at_pickup") {
+    return { ok: false, error: "Pilot must be at pickup to verify OTP" };
+  }
+  if (!booking.rideOtp || booking.rideOtp !== otp) {
+    return { ok: false, error: "Invalid OTP" };
+  }
+  await query(
+    "UPDATE bookings SET rideOtpVerified = 1, status = 'picked_up' WHERE id = ? AND rideOtpVerified = 0",
+    [bookingId]
+  );
+  pushCustomer(bookingId, "ride_update", {
+    bookingId,
+    status: "picked_up",
+    message: "OTP verified — ride started!",
+  });
+  return { ok: true };
+}
+
 module.exports = {
   OFFER_SECONDS,
   DISPATCH_RADIUS_KM,
@@ -471,4 +558,5 @@ module.exports = {
   releaseAircraft,
   stopDispatch,
   setOperatorDuty,
+  verifyRideOtp,
 };

@@ -10,18 +10,18 @@ const {
   estimateFare,
 } = require("../src/pricing");
 
-test("estimateFare uses base + per-km per service", () => {
+test("estimateFare uses base + per-km per service with 18% GST", () => {
   for (const service of SERVICES) {
     const { base, perKm } = SERVICE_PRICING[service];
-    const expected = Math.round((base + perKm * 10) / 100) * 100;
+    const expected = Math.round((base + perKm * 10) * 1.18 / 100) * 100;
     assert.equal(estimateFare(service, 10), expected);
   }
 });
 
-test("estimateFare equals base at zero distance (rounded)", () => {
+test("estimateFare equals base with GST at zero distance (rounded)", () => {
   for (const service of SERVICES) {
     const { base } = SERVICE_PRICING[service];
-    assert.equal(estimateFare(service, 0), Math.round(base / 100) * 100);
+    assert.equal(estimateFare(service, 0), Math.round(base * 1.18 / 100) * 100);
   }
 });
 
@@ -29,8 +29,8 @@ test("estimateFare grows with distance", () => {
   assert.ok(estimateFare("taxi", 50) > estimateFare("taxi", 10));
 });
 
-test("estimateFare clamps negative / non-numeric distance to base", () => {
-  const base = Math.round(SERVICE_PRICING.taxi.base / 100) * 100;
+test("estimateFare clamps negative / non-numeric distance to base with GST", () => {
+  const base = Math.round(SERVICE_PRICING.taxi.base * 1.18 / 100) * 100;
   assert.equal(estimateFare("taxi", -5), base);
   assert.equal(estimateFare("taxi", "abc"), base);
 });

@@ -189,13 +189,17 @@ test("operator advances the ride through the full lifecycle + notifies the custo
   }
 
   assert.equal((await postAction("enroute")).json.booking.status, "enroute");
-  assert.equal((await postAction("pickup")).json.booking.status, "picked_up");
+  assert.equal((await postAction("pickup")).json.booking.status, "at_pickup");
+
+  // Simulate OTP verification to move from at_pickup → picked_up.
+  fakeDb._bookings[0].status = "picked_up";
+  fakeDb._bookings[0].rideOtpVerified = 1;
+
   assert.equal((await postAction("takeoff")).json.booking.status, "flying");
   assert.equal((await postAction("complete")).json.booking.status, "completed");
 
-  // Each advance pushed a ride_update to the customer channel.
   const statuses = pushedCustomers.map((p) => p.data.status);
-  assert.deepEqual(statuses, ["enroute", "picked_up", "flying", "completed"]);
+  assert.deepEqual(statuses, ["enroute", "at_pickup", "flying", "completed"]);
   assert.ok(pushedCustomers.every((p) => p.event === "ride_update"));
 });
 

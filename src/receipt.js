@@ -31,8 +31,8 @@ function buildReceipt({ booking, fare, customerName }) {
     `  Base fare:        ${money(fb.base)}`,
     `  Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km): ${money(fb.kmCharge)}`,
     fb.surge ? `  Surge:            ${money(fb.surge)}` : null,
-    fb.taxes ? `  Taxes:            ${money(fb.taxes)}` : null,
     `  Subtotal:         ${money(fb.subtotal)}`,
+    fb.taxes ? `  ${fb.taxLabel || "Taxes"}:       ${money(fb.taxes)}` : null,
     `  Total:            ${money(fb.total)}`,
     "",
     `Carbon saved: ${Number(booking.carbonSavedKg || 0).toFixed(2)} kg`,
@@ -62,8 +62,8 @@ function buildReceipt({ booking, fare, customerName }) {
         ${row("Base fare", money(fb.base))}
         ${row(`Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km)`, money(fb.kmCharge))}
         ${fb.surge ? row("Surge", money(fb.surge)) : ""}
-        ${fb.taxes ? row("Taxes", money(fb.taxes)) : ""}
         ${row("Subtotal", money(fb.subtotal))}
+        ${fb.taxes ? row(fb.taxLabel || "Taxes", money(fb.taxes)) : ""}
         <tr><td colspan="2" style="border-top:1px solid #eee;padding-top:8px;"></td></tr>
         ${row("Total", money(fb.total))}
       </table>

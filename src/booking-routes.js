@@ -20,6 +20,8 @@ const { rateLimit } = require("./rate-limit");
 const { fareBreakdown } = require("./fare-breakdown");
 const { checkRouteFeasibility } = require("./route-feasibility");
 const { sendReceiptEmail, isEmailConfigured } = require("./receipt");
+const { autoRunDemoForBooking, isDemoRunning } = require("./demo-routes");
+const platformSettings = require("./platform-settings");
 
 const router = express.Router();
 
@@ -90,11 +92,33 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
   const fareEstimate = estimateFare(service, distanceKm);
   const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
+  // Find the nearest active regional office to the pickup point.
+  let nearestOffice = null;
+  try {
+    const offices = await query(
+      "SELECT ro.*, oc.name AS companyName FROM regional_offices ro JOIN operator_companies oc ON oc.id = ro.companyId WHERE ro.active = 1 AND oc.active = 1"
+    );
+    let minDist = Infinity;
+    for (const office of offices) {
+      const d = haversineKm(pickupLat, pickupLng, office.lat, office.lng);
+      if (d < minDist) {
+        minDist = d;
+        nearestOffice = office;
+      }
+    }
+  } catch (err) {
+    // Degrade gracefully — office assignment is best-effort.
+  }
+
+  const bookingCompanyId = nearestOffice ? nearestOffice.companyId : null;
+  const bookingOfficeId = nearestOffice ? nearestOffice.id : null;
+
   const result = await query(
     `INSERT INTO bookings
        (customerId, pickupName, pickupLat, pickupLng, destName, destLat, destLng,
-        service, distanceKm, fareEstimate, carbonSavedKg, paymentStatus, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+        service, distanceKm, fareEstimate, carbonSavedKg, paymentStatus, status,
+        companyId, officeId)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
     [
       req.user.id,
       pickupName,
@@ -108,6 +132,8 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
       fareEstimate,
       carbonSavedKg,
       "requested",
+      bookingCompanyId,
+      bookingOfficeId,
     ]
   );
 
@@ -123,7 +149,73 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     warnings: feasibility.warnings,
     emergencyBypass: feasibility.emergencyBypass || false,
     route: feasibility.route || null,
+    company: nearestOffice ? { name: nearestOffice.companyName, officeCity: nearestOffice.city } : null,
   });
+});
+
+// GET /api/bookings/active — the customer's in-progress (paid & dispatched) booking.
+router.get("/active", requireAuth, requireRole("customer"), async (req, res) => {
+  const booking = await queryOne(
+    `SELECT * FROM bookings
+     WHERE customerId = ? AND status IN ('dispatching','assigned','accepted','enroute','at_pickup','picked_up','flying')
+     ORDER BY createdAt DESC LIMIT 1`,
+    [req.user.id]
+  );
+  if (!booking) return res.json({ booking: null });
+  let operator = null;
+  if (booking.operatorId) {
+    operator = await queryOne(
+      "SELECT id, name, gpsLat, gpsLng, aircraftType, aircraftReg FROM users WHERE id = ?",
+      [booking.operatorId]
+    );
+  }
+  let company = null;
+  if (booking.companyId) {
+    const row = await queryOne(
+      `SELECT oc.name, ro.city FROM operator_companies oc
+       LEFT JOIN regional_offices ro ON ro.companyId = oc.id AND ro.id = ?
+       WHERE oc.id = ?`,
+      [booking.officeId, booking.companyId]
+    );
+    if (row) company = { name: row.name, officeCity: row.city };
+  }
+
+  // Auto-resume demo sequence if the server restarted and the in-memory demo
+  // sequence for this booking was lost (fire-and-forget demo lives in memory).
+  // Only resumes if demo mode is on and no demo is already running.
+  if (
+    platformSettings.get("demoMode") &&
+    booking.paymentStatus === "paid" &&
+    !isDemoRunning(booking.id) &&
+    !["completed", "cancelled", "no_pilot", "rejected"].includes(booking.status)
+  ) {
+    try {
+      const op = await autoRunDemoForBooking(booking);
+      if (op && !operator) operator = op;
+    } catch (err) {
+      console.error(`[bookings] auto-resume demo for #${booking.id}:`, err.message);
+    }
+  }
+
+  res.json({ booking, operator, company });
+});
+
+// GET /api/bookings/history — ride history for the logged-in customer
+// (incl. cancelled trips), newest first. MUST be declared before the "/:id"
+// route below — otherwise Express matches "history" as an :id (NaN → 400) and
+// this endpoint becomes unreachable.
+router.get("/history", requireAuth, requireRole("customer"), async (req, res) => {
+  const rows = await query(
+    `SELECT id, pickupName, destName, service, distanceKm, fareEstimate,
+            status, paymentStatus, cancellationFee, createdAt, updatedAt,
+            cancelledAt
+     FROM bookings
+     WHERE customerId = ?
+     ORDER BY createdAt DESC
+     LIMIT 100`,
+    [req.user.id]
+  );
+  res.json({ rides: rows });
 });
 
 // GET /api/bookings/:id — fetch a single booking for status tracking (US-007).
@@ -219,7 +311,23 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
   }
 
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
-  await startDispatch(id);
+
+  // Demo mode: auto-assign a demo pilot and run the full animated lifecycle
+  // instead of real dispatch. This avoids the no-pilot race (real dispatch
+  // would time out to "no_pilot" when no live operators are on duty) and makes
+  // the workflow self-complete. The booking is parked at "dispatching" so the
+  // tracking panel restores on refresh until the demo sequence advances it.
+  let demoOperator = null;
+  if (platformSettings.get("demoMode")) {
+    await query("UPDATE bookings SET status = 'dispatching' WHERE id = ?", [id]);
+    try {
+      demoOperator = await autoRunDemoForBooking(updated);
+    } catch (err) {
+      console.error(`[bookings] demo auto-run failed for #${id}:`, err.message);
+    }
+  } else {
+    await startDispatch(id);
+  }
   const fresh = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
 
   // Email a receipt/invoice on payment. Payment itself stays mocked, but the
@@ -251,6 +359,7 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
     carbonSavedKg: updated.carbonSavedKg,
     fare: fareBreakdown(updated.service, updated.distanceKm),
     receiptEmailed,
+    operator: demoOperator,
   });
 });
 
@@ -310,7 +419,12 @@ const FREE_CANCEL_SECONDS = 300; // 5-minute grace after assignment
 const CANCEL_FEE_MIN = 25; // ₹ floor
 const CANCEL_FEE_RATE = 0.25; // 25% of fare (mock)
 
-function computeCancellationPolicy(booking, nowMs = Date.now()) {
+// assignedSecondsAgo MUST be computed in SQL (TIMESTAMPDIFF(SECOND, assignedAt,
+// NOW())), NOT by parsing booking.assignedAt with a JS Date — mysql2 returns
+// naive DATETIME columns reinterpreted in the connection timezone, so JS-vs-SQL
+// time math is off by the server's UTC offset (it wrongly charged a fee for a
+// cancel made seconds after assignment). null = no assignedAt timestamp.
+function computeCancellationPolicy(booking, assignedSecondsAgo = null) {
   const fare = Number(booking.fareEstimate) || 0;
   // No pilot assigned yet → always free.
   if (!booking.operatorId) {
@@ -318,11 +432,10 @@ function computeCancellationPolicy(booking, nowMs = Date.now()) {
   }
   // Pilot accepted but hasn't started moving toward pickup → no progress → free.
   const noProgress = ["assigned", "accepted"].includes(booking.status);
-  let withinGrace = false;
-  if (booking.assignedAt) {
-    const assignedMs = new Date(booking.assignedAt).getTime();
-    withinGrace = Number.isFinite(assignedMs) && nowMs - assignedMs <= FREE_CANCEL_SECONDS * 1000;
-  }
+  const withinGrace =
+    assignedSecondsAgo != null &&
+    assignedSecondsAgo >= 0 &&
+    assignedSecondsAgo <= FREE_CANCEL_SECONDS;
   if (noProgress || withinGrace) {
     return {
       policy: "free",
@@ -368,7 +481,20 @@ router.post(
         .json({ error: "Cannot cancel once the trip is underway" });
     }
 
-    const { policy, fee, refund, reason } = computeCancellationPolicy(booking);
+    // Compute assignment age in SQL (server timezone) to avoid JS↔MySQL Date
+    // timezone skew in the grace-window check.
+    let assignedSecondsAgo = null;
+    if (booking.assignedAt) {
+      const ageRow = await queryOne(
+        "SELECT TIMESTAMPDIFF(SECOND, assignedAt, NOW()) AS secs FROM bookings WHERE id = ?",
+        [id]
+      );
+      assignedSecondsAgo = ageRow ? Number(ageRow.secs) : null;
+    }
+    const { policy, fee, refund, reason } = computeCancellationPolicy(
+      booking,
+      assignedSecondsAgo
+    );
 
     // Race-safe: only the first concurrent cancel flips the status. A second
     // concurrent caller gets affectedRows=0 and a conflict response.
@@ -415,24 +541,6 @@ router.post(
     });
   }
 );
-
-// GET /api/bookings/history — ride history for the logged-in customer
-// (incl. cancelled trips), newest first. This is the "previous rides" profile
-// section. Reads from the same bookings table (no separate store needed for an
-// MVP; archiving to a cheaper store is a later optimisation, not a schema fork).
-router.get("/history", requireAuth, requireRole("customer"), async (req, res) => {
-  const rows = await query(
-    `SELECT id, pickupName, destName, service, distanceKm, fareEstimate,
-            status, paymentStatus, cancellationFee, createdAt, updatedAt,
-            cancelledAt
-     FROM bookings
-     WHERE customerId = ?
-     ORDER BY createdAt DESC
-     LIMIT 100`,
-    [req.user.id]
-  );
-  res.json({ rides: rows });
-});
 
 // ── Ratings & feedback ─────────────────────────────────────────────────────
 // After a trip completes, both sides rate each other (1–5 + comment). The
@@ -524,6 +632,28 @@ router.get("/:id/ratings", requireAuth, async (req, res) => {
     [id]
   );
   res.json({ ratings: rows });
+});
+
+// GET /api/bookings/:id/ride-otp — the 4-digit ride OTP for the booking.
+// Only the owning customer can see it, and only once the status is 'enroute'
+// or later (the pilot is on the way / at the pickup).
+router.get("/:id/ride-otp", requireAuth, requireRole("customer"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (booking.customerId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const otpVisibleStatuses = ["enroute", "at_pickup", "picked_up", "flying", "completed"];
+  if (!otpVisibleStatuses.includes(booking.status)) {
+    return res.status(409).json({
+      error: "Ride OTP is available only once the pilot is en route.",
+    });
+  }
+  res.json({ rideOtp: booking.rideOtp || null, verified: Boolean(booking.rideOtpVerified) });
 });
 
 module.exports = router;

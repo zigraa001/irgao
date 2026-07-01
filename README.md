@@ -15,13 +15,38 @@ single-page app (`app.html`) gated by user role (customer / operator / admin).
 
 ```
 server.js            Express entry point (static + /api)
-src/db.js            Shared Prisma client singleton
-src/api.js           /api router (health, plus future routes)
-prisma/schema.prisma Prisma schema (datasource provider is swapped per env)
-prisma/seed.js       Seeds sample users + aircraft
-scripts/db-setup.js  Swaps the Prisma provider based on DATABASE_PROVIDER
+src/*.js             Backend modules (auth, bookings, dispatch, tracking, …)
+app.html             Passenger/operator/admin SPA — HTML only (CSS + JS linked)
+css/app.css          App styles (extracted from app.html)
+js/app/*.js          App JS source, split per feature (EDIT THESE)
+js/app.bundle.js      Generated bundle loaded by app.html (DO NOT EDIT)
+scripts/build-app-js.js  Concatenates js/app/*.js → js/app.bundle.js
 .env.example         Documented env template (copy to .env)
 ```
+
+### Frontend structure (no build framework)
+
+`app.html` is plain HTML; its styles live in `css/app.css` and its behaviour in
+`js/app/*.js`, split per feature:
+
+| file | responsibility |
+|------|----------------|
+| `01-state.js`         | shared globals, booking draft, demo locations |
+| `02-auth.js`          | login / signup / OTP / role switching |
+| `03-admin-profile.js` | admin user management + profile dashboard |
+| `04-operator.js`      | operator trips, GPS heartbeat, dispatch SSE |
+| `05-map.js`           | Leaflet map init + zone overlays |
+| `06-booking.js`       | service switching, popular routes, ride options |
+| `07-tracking.js`      | live ride tracking, smooth markers, ride stream |
+| `08-actions.js`       | cancellation, ratings, history, duty toggle, push |
+
+These share one global scope (≈75 `let`/`const` globals like `currentBooking`,
+`map`), so they're **concatenated** into `js/app.bundle.js` rather than loaded as
+separate `<script>` tags (separate classic scripts don't share top-level scope).
+
+**Workflow:** edit a file in `js/app/`, then run `npm run build:js` (it also runs
+automatically on `npm start` via the `prestart` hook). Never edit
+`js/app.bundle.js` by hand — it's regenerated.
 
 ## Data model
 

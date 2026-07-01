@@ -25,7 +25,8 @@ router.get("/nearby", requireAuth, requireRole("customer"), async (req, res) => 
     `SELECT u.id AS operatorId, u.name AS operatorName, u.gpsLat, u.gpsLng, u.gpsUpdatedAt
      FROM users u
      WHERE u.role = 'operator' AND u.deletedAt IS NULL AND u.bannedAt IS NULL
-       AND u.gpsLat IS NOT NULL AND u.gpsLng IS NOT NULL`
+       AND u.gpsLat IS NOT NULL AND u.gpsLng IS NOT NULL
+       AND u.email NOT LIKE 'demo-pilot%@irago.internal'`
   );
 
   // Find pilots currently busy with a trip so we can exclude them.

@@ -1,0 +1,536 @@
+// IraGo app — 06-booking.js
+// (extracted from app.html; part of the concatenated app.bundle.js)
+
+// ── Service Switching ──
+function switchService(service) {
+  currentService = service;
+  currentRoute = null;
+  document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-service="${service}"]`).classList.add('active');
+
+  const btn = document.getElementById('search-btn');
+  const btnText = document.getElementById('search-btn-text');
+  const banner = document.getElementById('service-banner-area');
+  const extra = document.getElementById('extra-fields-area');
+
+  // Reset rides
+  document.getElementById('rides-area').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'none';
+  selectedRide = null;
+
+  btn.className = 'search-btn';
+  extra.innerHTML = '';
+  banner.innerHTML = '';
+
+  if (service === 'taxi') {
+    btn.classList.add('search-btn-blue');
+    btnText.textContent = 'Find Available Rides';
+  } else if (service === 'golden') {
+    btn.classList.add('search-btn-red');
+    btnText.textContent = 'Dispatch Air Ambulance';
+    banner.innerHTML = `
+      <div class="emergency-banner" style="margin-bottom:4px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div><strong>For emergencies, call 112 first.</strong> This dispatches DGCA-certified air ambulances.</div>
+      </div>`;
+    extra.innerHTML = `
+      <div class="extra-field">
+        <label>Nature of Emergency</label>
+        <select><option>Accident / Trauma</option><option>Cardiac Emergency</option><option>Stroke</option><option>Burns</option><option>Organ Transport</option><option>Neonatal</option><option>Other Medical</option></select>
+      </div>
+      <div class="extra-field">
+        <label>Contact Phone</label>
+        <input type="tel" placeholder="+91 98765 43210">
+      </div>`;
+  } else {
+    btn.classList.add('search-btn-green');
+    btnText.textContent = 'Find Shuttle Routes';
+    banner.innerHTML = `
+      <div class="shuttle-info-banner">
+        <strong>All routes DGCA-certified.</strong> Select pickup &amp; destination to see matching shuttle routes.
+      </div>`;
+  }
+
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  aircraftMarkers.forEach(m => map.removeLayer(m));
+  aircraftMarkers = [];
+
+  captureBookingDraft();
+  renderPopularRoutes(service);
+}
+
+// ── Popular Routes per Service ──
+const popularRoutes = {
+  taxi: [
+    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km', tag: 'Inter-city' },
+    { from: 'Greater Noida Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#127973;', meta: '24 min &middot; 47 km', tag: 'Medical' },
+    { from: 'Dwarka Sector 21 Vertiport', to: 'Faridabad Vertiport', emoji: '&#127747;', meta: '16 min &middot; 30 km', tag: 'Inter-city' },
+    { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', emoji: '&#127961;', meta: '14 min &middot; 28 km', tag: 'Inter-city' },
+    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km', tag: 'Business' },
+    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '16 min &middot; 28 km', tag: 'Tech Hub' },
+    { from: 'Noida Sec 62 Vertiport', to: 'Ghaziabad Vertiport', emoji: '&#9992;&#65039;', meta: '8 min &middot; 12 km', tag: 'Intra-city' },
+    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 25 km', tag: 'Airport Link' },
+    { from: 'OMR Vertiport, Chennai', to: 'Velachery Vertiport, Chennai', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km', tag: 'Tech Corridor' },
+    { from: 'Ghaziabad Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#127747;', meta: '18 min &middot; 35 km', tag: 'Inter-city' },
+  ],
+  golden: [
+    { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
+    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#128657;', meta: '20 min &middot; 38 km', tag: 'Emergency' },
+    { from: 'Thane Vertiport', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '14 min &middot; 26 km', tag: 'Emergency' },
+    { from: 'Navi Mumbai Vertiport', to: 'Lilavati Hospital, Mumbai', emoji: '&#128657;', meta: '16 min &middot; 30 km', tag: 'Emergency' },
+    { from: 'Navi Mumbai Apollo Hospital', to: 'Powai Vertiport, Mumbai', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
+    { from: 'OMR Vertiport, Chennai', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
+    { from: 'OMR Vertiport, Chennai', to: 'MIOT Hospital, Chennai', emoji: '&#128657;', meta: '8 min &middot; 12 km', tag: 'Emergency' },
+    { from: 'Sarjapur Vertiport', to: 'Narayana Health, Bengaluru', emoji: '&#128657;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
+    { from: 'Whitefield Vertiport', to: 'Manipal Hospital, Bengaluru', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
+    { from: 'Hi-Tech City Vertiport', to: 'Yashoda Hospital, Hyderabad', emoji: '&#128657;', meta: '6 min &middot; 8 km', tag: 'Emergency' },
+    { from: 'Dehradun Vertiport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
+    { from: 'Leh Vertiport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
+    { from: 'Port Blair Vertiport, Andaman', to: 'GB Pant Hospital, Andaman', emoji: '&#127964;', meta: '5 min &middot; 6 km', tag: 'Remote' },
+  ],
+  shuttle: [
+    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#128187;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Business' },
+    { from: 'Greater Noida Vertiport', to: 'Noida Sec 62 Vertiport', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 12 slots', tag: 'Commuter' },
+    { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km &middot; Daily 10 slots', tag: 'Commuter' },
+    { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 28 km &middot; Daily 14 slots', tag: 'Commuter' },
+    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#127961;', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Business' },
+    { from: 'Whitefield Vertiport', to: 'Sarjapur Vertiport', emoji: '&#9992;&#65039;', meta: '6 min &middot; 10 km &middot; Daily 15 slots', tag: 'Commuter' },
+    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
+    { from: 'Greater Noida Vertiport', to: 'Ghaziabad Vertiport', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 6 slots', tag: 'Commuter' },
+    { from: 'OMR Vertiport, Chennai', to: 'Velachery Vertiport, Chennai', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 8 slots', tag: 'Tech Corridor' },
+    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#128296;', meta: '14 min &middot; 25 km &middot; Daily 12 slots', tag: 'Commuter' },
+  ],
+};
+
+function renderPopularRoutes(service) {
+  const area = document.getElementById('popular-routes-area');
+  const routes = popularRoutes[service] || [];
+  const colorMap = { taxi: 'blue', golden: 'red', shuttle: 'green' };
+  const color = colorMap[service];
+  const hoverCls = service === 'golden' ? 'red-hover' : service === 'shuttle' ? 'green-hover' : '';
+  const iconCls = `route-chip-icon-${color}`;
+
+  const titleIcon = service === 'taxi'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2"/></svg>'
+    : service === 'golden'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>';
+
+  const titleText = service === 'taxi' ? 'Popular Routes' : service === 'golden' ? 'Emergency Routes' : 'Shuttle Routes';
+
+  area.innerHTML = `
+    <div class="popular-routes-title" style="color:var(--${color})">
+      ${titleIcon} ${titleText}
+    </div>
+    ${routes.map(r => `
+      <button class="route-chip ${hoverCls}" onclick="selectRoute('${r.from}','${r.to}')">
+        <div class="route-chip-icon ${iconCls}">${r.emoji}</div>
+        <div class="route-chip-info">
+          <div class="route-chip-name">${r.from} &rarr; ${r.to}</div>
+          <div class="route-chip-meta">
+            <span>${r.meta}</span>
+            <span style="background:var(--${color}-light);color:var(--${color}-dark);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:600;">${r.tag}</span>
+          </div>
+        </div>
+        <div class="route-chip-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </button>
+    `).join('')}
+  `;
+}
+
+function selectRoute(from, to) {
+  const fromCoord = demoLocations[from];
+  const toCoord = demoLocations[to];
+  if (fromCoord) setPickup(fromCoord, from);
+  if (toCoord) setTimeout(() => setDest(toCoord, to), 200);
+  // Hide popular routes after selection
+  document.getElementById('popular-routes-area').innerHTML = '';
+}
+
+// ── Ride Data ──
+const GST_RATE_CLIENT = 0.18;
+const rideOptions = {
+  taxi: [
+    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 200, baseTime: 18, co2: 2.1 },
+    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 500, perKm: 280, baseTime: 22, co2: 3.4 },
+    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 500, perKm: 450, baseTime: 20, co2: 4.8 },
+    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 150, baseTime: 32, co2: 1.2 },
+  ],
+  golden: [
+    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, perKm: 600, baseTime: 12, co2: 5.2 },
+    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 5000, perKm: 1100, baseTime: 15, co2: 7.8 },
+    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', base: 5000, perKm: 1200, baseTime: 14, co2: 6.1 },
+  ],
+  shuttle: [
+    { name: 'Shuttle Standard', desc: 'Shared seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 80, baseTime: 15, co2: 0.8 },
+    { name: 'Shuttle Business', desc: 'Priority boarding, lounge access', icon: 'purple', badge: '', badgeCls: '', base: 500, perKm: 130, baseTime: 12, co2: 1.1 },
+    { name: 'Shuttle Express', desc: 'Non-stop, fastest route', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 180, baseTime: 8, co2: 1.5 },
+  ]
+};
+
+function calcDistance() {
+  if (!pickupCoord || !destCoord) return 25;
+  const R = 6371;
+  const dLat = (destCoord[0] - pickupCoord[0]) * Math.PI / 180;
+  const dLng = (destCoord[1] - pickupCoord[1]) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(pickupCoord[0]*Math.PI/180)*Math.cos(destCoord[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function searchRides() {
+  if (!pickupCoord || !destCoord) {
+    if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
+    if (!destCoord) {
+      setTimeout(() => setDest([28.5830, 77.0780], 'Dwarka Helipad, Delhi'), 300);
+      setTimeout(searchRides, 700);
+      return;
+    }
+  }
+
+  var searchBtnText = document.getElementById('search-btn-text');
+  var searchBtnLabel = searchBtnText.textContent;
+  searchBtnText.textContent = 'Searching…';
+  document.getElementById('search-btn').disabled = true;
+
+  const draft = captureBookingDraft();
+  const dist = draft.distanceKm != null ? draft.distanceKm : calcDistance();
+  const rides = rideOptions[currentService];
+  const list = document.getElementById('rides-list');
+  const area = document.getElementById('rides-area');
+  const title = document.getElementById('rides-title');
+
+  title.textContent = currentService === 'taxi' ? 'Available Rides' : currentService === 'golden' ? 'Air Ambulances Nearby' : 'Shuttle Routes';
+
+  // Route feasibility pre-check at booking time: alert the customer if the
+  // route crosses / lands in a restricted (no-fly) zone and surface the 3
+  // nearest safe spots as clickable suggestions. The server blocks a blocked
+  // route at creation too; this gives a friendly heads-up before payment.
+  try {
+    const fres = await apiFetch('/api/bookings/feasibility', {
+      method: 'POST',
+      body: JSON.stringify({
+        pickupLat: draft.pickup.lat,
+        pickupLng: draft.pickup.lng,
+        destLat: draft.dest.lat,
+        destLng: draft.dest.lng,
+        service: draft.service,
+      }),
+    });
+    const fdata = await fres.json().catch(() => ({}));
+    currentRoute = (fdata && fdata.route) ? fdata.route : null;
+    if (currentRoute && currentRoute.segments && currentRoute.segments.length) {
+      drawRouteFromPlan();
+    }
+    if (fres.ok && fdata && fdata.feasible === false) {
+      list.innerHTML = renderFeasibilityWarning(fdata);
+      document.getElementById('book-btn').style.display = 'none';
+      area.style.display = 'block';
+      area.scrollIntoView({ behavior: 'smooth' });
+      searchBtnText.textContent = searchBtnLabel;
+      document.getElementById('search-btn').disabled = false;
+      return;
+    }
+    if (fres.ok && fdata && fdata.emergencyBypass && fdata.warnings && fdata.warnings.length) {
+      const bypassBanner = '<div class="feasibility-warning" style="border-color:var(--amber,#f59e0b);background:rgba(245,158,11,0.08);">' +
+        '<div style="font-weight:700;color:var(--amber-dark,#92400e);font-size:13px;">Emergency Clearance Active</div>' +
+        '<div style="font-size:12px;color:var(--gray-600);margin-top:4px;">' + escapeHtml(fdata.warnings[0]) + '</div>' +
+        '</div>';
+      list.insertAdjacentHTML('beforeend', bypassBanner);
+    }
+  } catch (e) { /* degrade: if feasibility call fails, fall through to rides */ }
+
+  list.innerHTML = rides.map((r, i) => {
+    const subtotal = r.base + r.perKm * dist;
+    const price = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
+    const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
+    const time = Math.round(r.baseTime * timeFactor);
+    const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);
+    const roadTime = Math.round(time * 3.5);
+    return `
+      <div class="ride-card" data-idx="${i}" onclick="selectRideCard(this, ${i}, ${price}, ${time}, '${co2}')">
+        <div class="ride-card-top">
+          <div class="ride-icon ride-icon-${r.icon}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+          </div>
+          <div class="ride-info">
+            <div class="ride-name">
+              ${r.name}
+              ${r.badge ? `<span class="ride-badge ${r.badgeCls}">${r.badge}</span>` : ''}
+            </div>
+            <div class="ride-desc">${r.desc}</div>
+          </div>
+          <div class="ride-price">
+            <div class="ride-price-val">&#8377;${price.toLocaleString('en-IN')}</div>
+            <div class="ride-price-est">incl. 18% GST</div>
+          </div>
+        </div>
+        <div class="ride-stats">
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${time} min fly
+          </div>
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>
+            ${Math.round(dist)} km
+          </div>
+          <div class="ride-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ~${roadTime} min road
+          </div>
+          <div class="ride-stat carbon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z"/><circle cx="12" cy="10" r="3"/></svg>
+            -${co2} kg CO&#8322;
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (currentRoute && currentRoute.feasible !== false) {
+    var altProfile = currentRoute.altitudeProfile || {};
+    var routeInfoHtml =
+      '<div class="route-info-card">' +
+        '<div class="route-info-title">Flight Route</div>' +
+        '<div class="route-info-grid">' +
+          '<div class="route-info-item"><span class="route-info-label">Distance</span><span class="route-info-val">' + (currentRoute.totalDistanceKm || '—') + ' km</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Fuel est.</span><span class="route-info-val">' + (currentRoute.totalFuelKg || '—') + ' kg</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Detour</span><span class="route-info-val">' + (currentRoute.detourRatio > 1 ? (currentRoute.detourRatio + 'x') : 'Direct') + '</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Altitude</span><span class="route-info-val">' + (altProfile.min || '—') + '–' + (altProfile.max || '—') + ' m</span></div>' +
+        '</div>' +
+        (currentRoute.reason && currentRoute.reason !== 'direct_clear' ?
+          '<div class="route-info-note">' + routeReasonLabel(currentRoute.reason) + '</div>' : '') +
+      '</div>';
+    list.innerHTML += routeInfoHtml;
+  }
+
+  area.style.display = 'block';
+  area.scrollIntoView({ behavior: 'smooth' });
+  searchBtnText.textContent = searchBtnLabel;
+  document.getElementById('search-btn').disabled = false;
+}
+
+// Render the "restricted area" alert with the 3 nearest safe spots, returned
+// by the feasibility pre-check (or by a blocked booking-creation response).
+function renderFeasibilityWarning(data) {
+  const violations = (data && data.violations && data.violations.length)
+    ? data.violations.map(escapeHtml).join('; ')
+    : 'This route crosses or ends inside a restricted (no-fly) area.';
+  const endpoints = (data && data.blockedEndpoints) || [];
+  let endpointsHtml = '';
+  endpoints.forEach(function (ep) {
+    const label = ep.which === 'pickup' ? 'Pickup' : 'Destination';
+    const chips = (ep.suggestions || []).slice(0, 3).map(function (s) {
+      const nm = escapeHtml(s.name || (s.lat.toFixed(4) + ', ' + s.lng.toFixed(4)));
+      const w = ep.which.replace(/'/g, "\\'");
+      const n = (s.name || '').replace(/'/g, "\\'");
+      return '<button type="button" class="feas-chip" onclick="chooseFeasibilitySuggestion(\'' +
+        w + '\',' + Number(s.lat) + ',' + Number(s.lng) + ',\'' + n + '\')">' +
+        '<span class="feas-chip-pin">\uD83D\uDCCD</span><span>' + nm + '</span></button>';
+    }).join('');
+    endpointsHtml +=
+      '<div class="feas-endpoint">' +
+        '<div class="feas-endpoint-title">' + escapeHtml(label) + ' is in a restricted area</div>' +
+        '<div class="feas-endpoint-msg">' + escapeHtml(ep.message || 'Pick a nearby safe spot instead:') + '</div>' +
+        '<div class="feas-suggestions">' + (chips || '<span class="feas-none">No safe alternatives found nearby.</span>') + '</div>' +
+      '</div>';
+  });
+  return (
+    '<div class="feasibility-warning">' +
+      '<div class="feas-head">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+        '<div>' +
+          '<div class="feas-title">Restricted airspace on this route</div>' +
+          '<div class="feas-sub">' + violations + '</div>' +
+        '</div>' +
+      '</div>' +
+      (endpointsHtml || '') +
+      '<div class="feas-foot">Choose a suggested spot to update your route and search again.</div>' +
+    '</div>'
+  );
+}
+
+// Customer picks one of the 3 nearest safe spots; update the endpoint and
+// re-run the search so the warning clears if the new route is feasible.
+function chooseFeasibilitySuggestion(which, lat, lng, name) {
+  const label = name || (Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4));
+  currentRoute = null;
+  if (which === 'pickup') setPickup([lat, lng], label);
+  else setDest([lat, lng], label);
+  showToast('Updated ' + which + ' to ' + label, 'success');
+  searchRides();
+}
+
+function selectRideCard(el, idx, price, time, co2) {
+  document.querySelectorAll('.ride-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRide = { idx, price, time, co2, name: rideOptions[currentService][idx].name };
+  document.getElementById('book-btn').style.display = 'flex';
+  document.getElementById('book-btn').className = `search-btn search-btn-${currentService === 'golden' ? 'red' : currentService === 'shuttle' ? 'green' : 'blue'}`;
+}
+
+// startDemo() removed — demo mode now auto-triggers on book → pay.
+// No separate button needed.
+
+async function bookRide() {
+  if (!selectedRide) return;
+  hideAuthError('booking-error');
+
+  // Re-capture and gate: a booking cannot be created unless pickup,
+  // destination, and service are all set (the server enforces this too).
+  const draft = captureBookingDraft();
+  if (!bookingDraftReady()) {
+    showAuthError('booking-error', 'Please set a pickup, destination, and service before booking.');
+    return;
+  }
+
+  setBusy('book-btn', true, 'Booking\u2026', 'Confirm Booking');
+  try {
+    const res = await apiFetch('/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        pickupName: draft.pickup.name,
+        pickupLat: draft.pickup.lat,
+        pickupLng: draft.pickup.lng,
+        destName: draft.dest.name,
+        destLat: draft.dest.lat,
+        destLng: draft.dest.lng,
+        service: draft.service,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status === 409 && data && data.code === 'ROUTE_BLOCKED') {
+        const list = document.getElementById('rides-list');
+        const area = document.getElementById('rides-area');
+        if (list) list.innerHTML = renderFeasibilityWarning(data);
+        if (area) { area.style.display = 'block'; area.scrollIntoView({ behavior: 'smooth' }); }
+        document.getElementById('book-btn').style.display = 'none';
+        showAuthError('booking-error', 'This route is restricted. Pick a suggested spot and try again.');
+      } else {
+        showAuthError('booking-error', data.error || 'Could not create your booking. Please try again.');
+      }
+      return;
+    }
+
+    currentBooking = data.booking;
+    currentFareBreakdown = data.fare || null;
+    if (data.company) currentBooking._company = data.company;
+    showPaymentOverlay(currentBooking);
+  } catch (err) {
+    showAuthError('booking-error', 'Network error \u2014 please check your connection and try again.');
+  } finally {
+    setBusy('book-btn', false, 'Booking\u2026', 'Confirm Booking');
+  }
+}
+
+// Populate the confirmation overlay from a persisted booking record.
+function fillConfirmation(booking) {
+  document.getElementById('confirm-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
+  document.getElementById('confirm-pickup').textContent = booking.pickupName;
+  document.getElementById('confirm-dest').textContent = booking.destName;
+  document.getElementById('confirm-vehicle').textContent =
+    (selectedRide ? selectedRide.name + ' \u00B7 ' : '') + (SERVICE_LABELS[booking.service] || booking.service);
+  document.getElementById('confirm-time').textContent = selectedRide ? selectedRide.time + ' min' : '\u2014';
+  document.getElementById('confirm-cost').textContent = '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
+  const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
+  document.getElementById('confirm-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+}
+
+function showPaymentOverlay(booking) {
+  hideAuthError('payment-error');
+  document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
+  document.getElementById('payment-amount').textContent =
+    '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
+  const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
+  document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+  renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
+  document.getElementById('payment-overlay').classList.add('active');
+}
+
+function closePayment() {
+  document.getElementById('payment-overlay').classList.remove('active');
+}
+
+// Realistic pickup ETA (minutes) for the "aircraft dispatched" message, based
+// on the assigned pilot's distance to the pickup. Matches the live-GPS ETA
+// formula so the number is consistent as the plane flies in.
+function estimatePickupMinutes(operator) {
+  var distKm = 4.5;
+  if (operator && operator.gpsLat != null && pickupCoord) {
+    distKm = haversineKmClient(operator.gpsLat, operator.gpsLng, pickupCoord[0], pickupCoord[1]);
+  }
+  return Math.max(6, Math.min(14, Math.round(distKm * 2)));
+}
+
+async function payForBooking() {
+  if (!currentBooking) return;
+  hideAuthError('payment-error');
+  setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
+  try {
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST' });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) {
+      showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
+      return;
+    }
+    currentBooking = data.booking;
+    currentFareBreakdown = data.fare || currentFareBreakdown;
+    closePayment();
+    startTracking();
+    // The server auto-assigned ONE demo pilot (demo mode). Draw that single
+    // plane at its spawn point; the live ride stream animates it in.
+    if (data.operator) {
+      showPilotCard(data.operator, null, null);
+      if (data.operator.gpsLat != null) {
+        showAssignedPlane(data.operator.gpsLat, data.operator.gpsLng, data.operator.name);
+      }
+    }
+    // Show a clear "aircraft dispatched — arriving in ~X min" state immediately,
+    // instead of the vague "searching for a pilot" placeholder.
+    var pickupEtaMin = estimatePickupMinutes(data.operator);
+    var statusEl = document.getElementById('tracking-status');
+    var subEl = document.getElementById('tracking-sub');
+    var etaEl = document.getElementById('tracking-eta');
+    if (statusEl) statusEl.textContent = 'Aircraft dispatched!';
+    if (subEl) subEl.textContent = 'Your pilot is on the way — arriving in about ' + pickupEtaMin + ' min';
+    if (etaEl) etaEl.textContent = pickupEtaMin;
+    showToast('✈️ Aircraft dispatched! Arriving in ~' + pickupEtaMin + ' min', 'success');
+  } catch (e) {
+    showAuthError('payment-error', 'Network error — please try again.');
+  } finally {
+    setBusy('payment-pay-btn', false, 'Processing\u2026', 'Pay now');
+  }
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  resetBooking();
+}
+
+function resetBooking() {
+  document.getElementById('rides-area').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'none';
+  document.getElementById('booking-panel').style.display = 'flex';
+  hideAuthError('booking-error');
+  selectedRide = null;
+  currentBooking = null;
+  currentRoute = null;
+  pickupCoord = null;
+  destCoord = null;
+  bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
+  document.getElementById('pickup-input').value = '';
+  document.getElementById('dest-input').value = '';
+  document.getElementById('pickup-input').classList.remove('has-value');
+  document.getElementById('dest-input').classList.remove('has-value');
+  if (pickupMarker) { map.removeLayer(pickupMarker); pickupMarker = null; }
+  if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  aircraftMarkers.forEach(m => map.removeLayer(m));
+  aircraftMarkers = [];
+  stopDemoTaxiDrift();
+  clearAnimatedMarkersByPrefix('real-', map);
+  clearAnimatedMarkersByPrefix('track-operator', map);
+  map.setView([28.6139, 77.2090], 12);
+}
+

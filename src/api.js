@@ -11,11 +11,23 @@ const adminOpsRoutes = require("./admin-ops-routes");
 const zoneRoutes = require("./zone-routes");
 const { router: routeRoutes } = require("./route-routes");
 const trackingRoutes = require("./tracking-routes");
+const demoRoutes = require("./demo-routes");
 const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
 
 const router = express.Router();
+
+// Client-side JS error sink. The app.html error handler POSTs uncaught errors
+// here so they show in server logs — turns invisible "stuck screen" crashes in
+// the user's browser into something diagnosable.
+router.post("/client-error", express.json(), (req, res) => {
+  const b = req.body || {};
+  console.error(
+    `[client-error] build=${b.build} msg=${b.msg} at ${b.src}:${b.line}:${b.col}`
+  );
+  res.json({ ok: true });
+});
 
 // Health check: confirms the server is up and the database is reachable.
 router.get("/health", async (req, res) => {
@@ -86,6 +98,9 @@ router.use("/tracking", trackingRoutes);
 
 // Least-fuel route planning.
 router.use("/route", routeRoutes);
+
+// Demo mode: auto-runs a full ride lifecycle for testing.
+router.use("/demo", demoRoutes);
 
 // Flight / restricted airspace zones for map overlays.
 router.use("/zones", zoneRoutes);

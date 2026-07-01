@@ -9,13 +9,15 @@
 // │  so nothing else needs to change.                                     │
 // └─────────────────────────────────────────────────────────────────────┘
 
-// Allowed service codes and their mock pricing. Keep these in sync with the
-// client SERVICE_LABELS map in app.html (taxi / golden / shuttle).
-// All amounts are in INR (₹). base = flat boarding fee, perKm = per-kilometre.
+// Pricing aligned with evtol.travel/air-taxi-cost (launch-era 2025-2027).
+// Taxi uses mid-range launch ($4.50/mi ≈ ₹200/km), Golden Hour adds an
+// emergency premium, Shuttle uses at-scale shared-ride rates with 50% savings.
+// All amounts in INR (₹). base = flat boarding fee, perKm = per-kilometre.
+// 18% GST is applied on top by estimateFare / fareBreakdown.
 const SERVICE_PRICING = {
-  taxi: { base: 4000, perKm: 320 }, // Air Taxi
-  golden: { base: 35000, perKm: 1500 }, // Golden Hour (air ambulance)
-  shuttle: { base: 1500, perKm: 90 }, // Air Shuttle
+  taxi:    { base: 500, perKm: 200 },
+  golden:  { base: 5000, perKm: 600 },
+  shuttle: { base: 500,  perKm: 80 },
 };
 
 const SERVICES = Object.keys(SERVICE_PRICING);
@@ -50,16 +52,17 @@ function parseCoord(v, kind) {
   return n;
 }
 
-// Mock fare estimate for a service over a distance. Returns an INR amount
-// rounded to the nearest ₹100 for tidy display. Throws on an unknown service.
+const GST_RATE = 0.18;
+
 function estimateFare(service, distanceKm) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) {
     throw new Error(`Unknown service: ${service}`);
   }
   const km = Math.max(0, Number(distanceKm) || 0);
-  const raw = pricing.base + pricing.perKm * km;
-  return Math.round(raw / 100) * 100;
+  const subtotal = pricing.base + pricing.perKm * km;
+  const withGst = subtotal * (1 + GST_RATE);
+  return Math.round(withGst / 100) * 100;
 }
 
 module.exports = {

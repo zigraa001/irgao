@@ -4,6 +4,10 @@
 
 const defaults = {
   emergencyNoFlyBypass: true,
+  // When on, every paid booking auto-assigns a demo pilot and runs the full
+  // animated ride lifecycle (no real dispatch). Lets the app be demoed end to
+  // end without live operators online.
+  demoMode: true,
 };
 
 const settings = { ...defaults };

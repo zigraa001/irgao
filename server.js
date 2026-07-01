@@ -57,6 +57,15 @@ app.get("/logout", (_req, res) => {
   res.redirect(302, "/app.html?logout=1");
 });
 
+// Always serve app.html fresh (no-cache) so a deploy/code change is picked up
+// on the next normal refresh instead of the browser showing a stale page. The
+// CSS/JS it links are cache-busted with a ?v= build-version query, so they
+// update too. (This handler must precede express.static.)
+app.get("/app.html", (_req, res) => {
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.sendFile(APP_HTML);
+});
+
 // Static site (express.static guards against directory traversal and serves
 // index.html at "/").
 app.use(express.static(ROOT));
@@ -107,6 +116,8 @@ async function connectDatabase() {
       console.error(`[startup] zones message: ${zonesErr.message}`);
     }
     const purged = await cleanupExpiredOtps();
+    // Retire any demo pilots left stuck on-duty by a crash/restart mid-demo.
+    await require("./src/demo-routes").reconcileDemoPilotsOnStartup();
     dbConnected = true;
     console.log(
       `[startup] database connected and schema ensured (purged ${purged} stale OTP row(s)).`
