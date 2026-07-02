@@ -470,7 +470,8 @@
   z-index: 0;
 }
 
-.hero-image-bg img {
+.hero-image-bg img,
+.hero-image-bg video {
   width: 100%;
   height: 100%;
   object-fit: cover;
