@@ -1307,22 +1307,37 @@ function initProfilePhoneBlock(user) {
   const otpSection = document.getElementById('profile-phone-otp-section');
   const errEl = document.getElementById('profile-phone-error');
   const succEl = document.getElementById('profile-phone-success');
+  const changeBtn = document.getElementById('profile-phone-change-btn');
   if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
   if (succEl) succEl.style.display = 'none';
   if (otpSection) otpSection.style.display = 'none';
-  if (inputSection) inputSection.style.display = '';
   clearProfilePhoneTimers();
 
-  if (user && user.phone) {
+  profilePhone.verified = !!(user && user.phone);
+  if (profilePhone.verified) {
     const masked = user.phone.length > 6
       ? user.phone.slice(0, 4) + '****' + user.phone.slice(-2)
       : user.phone;
     if (status) status.textContent = 'Verified: +' + masked;
     const inp = document.getElementById('profile-phone-input');
     if (inp) inp.value = '';
+    // Already verified — collapse the form; offer "Change number" instead.
+    if (inputSection) inputSection.style.display = 'none';
+    if (changeBtn) changeBtn.style.display = '';
   } else {
     if (status) status.textContent = 'No phone number linked. Add one below.';
+    if (inputSection) inputSection.style.display = '';
+    if (changeBtn) changeBtn.style.display = 'none';
   }
+}
+
+function showProfilePhoneChange() {
+  const changeBtn = document.getElementById('profile-phone-change-btn');
+  const inputSection = document.getElementById('profile-phone-input-section');
+  if (changeBtn) changeBtn.style.display = 'none';
+  if (inputSection) inputSection.style.display = '';
+  const inp = document.getElementById('profile-phone-input');
+  if (inp) inp.focus();
 }
 
 function startProfilePhoneResendTimer(timing) {
@@ -1351,8 +1366,12 @@ function cancelProfilePhoneOtp() {
   clearProfilePhoneTimers();
   const otpSection = document.getElementById('profile-phone-otp-section');
   const inputSection = document.getElementById('profile-phone-input-section');
+  const changeBtn = document.getElementById('profile-phone-change-btn');
   if (otpSection) otpSection.style.display = 'none';
-  if (inputSection) inputSection.style.display = '';
+  // Back out to the collapsed "verified" state when a number is already
+  // linked; only show the input form again for users with no phone yet.
+  if (inputSection) inputSection.style.display = profilePhone.verified ? 'none' : '';
+  if (changeBtn) changeBtn.style.display = profilePhone.verified ? '' : 'none';
   hideAuthError('profile-phone-error');
 }
 
@@ -1412,8 +1431,11 @@ async function doProfilePhoneVerifyOtp() {
     }
 
     clearProfilePhoneTimers();
+    profilePhone.verified = true;
     document.getElementById('profile-phone-otp-section').style.display = 'none';
-    document.getElementById('profile-phone-input-section').style.display = '';
+    document.getElementById('profile-phone-input-section').style.display = 'none';
+    const changeBtn = document.getElementById('profile-phone-change-btn');
+    if (changeBtn) changeBtn.style.display = '';
     const succEl = document.getElementById('profile-phone-success');
     if (succEl) { succEl.textContent = 'Phone number verified and saved.'; succEl.style.display = ''; }
     const status = document.getElementById('profile-phone-status');
@@ -5477,9 +5499,9 @@ function handleRideGps(d) {
   trackOperatorGps = { lat: d.lat, lng: d.lng };
   showAssignedPlane(d.lat, d.lng);
   if (d.distanceKm != null) {
-    // Same factor as estimatePickupMinutes so the ETA stays consistent with the
-    // "dispatched — arriving in ~X min" message as the plane flies in.
-    document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm * 2));
+    // Same factor as estimatePickupMinutes (150 km/h = 2.5 km/min) so the ETA
+    // stays consistent with the "arriving in ~X min" dispatch message.
+    document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm / 2.5));
   }
   // Auto-follow the plane — but not while the user is manually exploring the
   // map. Resume 30s after their last pan/zoom.

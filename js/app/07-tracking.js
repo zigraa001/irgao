@@ -591,9 +591,9 @@ function handleRideGps(d) {
   trackOperatorGps = { lat: d.lat, lng: d.lng };
   showAssignedPlane(d.lat, d.lng);
   if (d.distanceKm != null) {
-    // Same factor as estimatePickupMinutes so the ETA stays consistent with the
-    // "dispatched — arriving in ~X min" message as the plane flies in.
-    document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm * 2));
+    // Same factor as estimatePickupMinutes (150 km/h = 2.5 km/min) so the ETA
+    // stays consistent with the "arriving in ~X min" dispatch message.
+    document.getElementById('tracking-eta').textContent = Math.max(1, Math.round(d.distanceKm / 2.5));
   }
   // Auto-follow the plane — but not while the user is manually exploring the
   // map. Resume 30s after their last pan/zoom.
