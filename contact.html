@@ -8,10 +8,6 @@
     <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
     <title>Contact Us - IraGo Air Mobility</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="css/reset.css">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -28,14 +24,11 @@
     }
 
     .contact-hero {
-      padding-top: calc(var(--nav-height) + var(--space-20));
-      padding-bottom: var(--space-20);
+      padding-top: calc(var(--nav-height) + var(--space-16));
+      padding-bottom: var(--space-16);
       position: relative;
       overflow: hidden;
-      min-height: 80vh;
-      display: flex;
-      align-items: center;
-      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-deep) 100%);
+      background: var(--bg-dark);
     }
 
     .form-group {
@@ -47,30 +40,28 @@
 
     .form-label {
       font-size: var(--text-sm);
-      font-weight: 500;
-      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+      color: var(--text-primary);
     }
 
     .form-control {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-sm);
+      background: #fff;
+      border: 1px solid #C4CDD8;
+      border-radius: 0;
       padding: var(--space-3) var(--space-4);
-      color: #fff;
+      color: var(--text-primary);
       font-family: var(--font-body);
       font-size: var(--text-base);
-      transition: all var(--transition-base);
+      transition: border-color var(--transition-fast);
       outline: none;
     }
 
     .form-control:focus {
-      background: rgba(255, 255, 255, 0.08);
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.15);
     }
 
     .form-control::placeholder {
-      color: rgba(255,255,255,0.3);
+      color: var(--text-hint);
     }
 
     textarea.form-control {
@@ -134,15 +125,18 @@
 ═══════════════════════════════════════════════ -->
 <section class="contact-hero" id="contact-hero">
   <div class="container" style="position:relative;z-index:1">
-    
-    <div style="text-align:center;margin-bottom:var(--space-12)">
+    <div style="text-align:center">
       <span class="section-label" style="color: var(--accent-light); display: block; text-align: center">Contact Us</span>
-      <h1 style="font-size:clamp(40px, 5vw, 64px);font-weight:800;letter-spacing:-0.04em;margin-bottom:var(--space-4);color:#fff">We're here to help.</h1>
-      <p style="font-size:var(--text-lg);color:var(--text-muted);max-width:600px;margin:0 auto">
+      <h1 style="font-size:clamp(32px, 4.5vw, 52px);font-weight:700;letter-spacing:-0.02em;margin-bottom:var(--space-4);color:#fff">We're here to help.</h1>
+      <p style="font-size:var(--text-lg);color:rgba(255,255,255,0.78);max-width:600px;margin:0 auto">
         Whether you have an emergency dispatch request, want to become an operator partner, or just have a general inquiry.
       </p>
     </div>
+  </div>
+</section>
 
+<section class="section" style="background: var(--bg-main)">
+  <div class="container">
     <div class="grid-split" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);align-items:start;max-width:1100px;margin:0 auto">
       
       <!-- Contact Info Left Side -->
@@ -151,7 +145,7 @@
         
         <div class="contact-info-item">
           <div class="icon-circle red" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>
           </div>
@@ -164,7 +158,7 @@
 
         <div class="contact-info-item">
           <div class="icon-circle sky" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7FB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
@@ -176,8 +170,8 @@
         </div>
 
         <div class="contact-info-item">
-          <div class="icon-circle violet" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAFAFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="icon-circle navy" style="flex-shrink:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
             </svg>
           </div>
@@ -194,7 +188,7 @@
       </div>
 
       <!-- Form Right Side -->
-      <div class="glass-card glow-sky reveal" style="padding:var(--space-8);position:relative">
+      <div class="white-card reveal" style="padding:var(--space-8);position:relative">
         <form id="contactForm">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
             <div class="form-group">
@@ -256,7 +250,7 @@
             </svg>
             Try Irago
           </a>
-          <a href="contact.html" class="btn btn-ghost" style="border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7)">Contact Us</a>
+          <a href="contact.html" class="btn btn-ghost-white">Contact Us</a>
         </div>
       </div>
     </div>
@@ -327,18 +321,6 @@
   </div>
 </footer>
 
-<!-- ═══════════════════════════════════════════════
-     FLIGHT SCROLL INDICATOR
-═══════════════════════════════════════════════ -->
-<div class="flight-scroll-track" id="scrollTrack">
-  <div class="flight-scroll-line"></div>
-  <div class="flight-scroll-fill" id="scrollFill"></div>
-  <div class="flight-scroll-ship" id="scrollShip">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-    </svg>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════
      BACK TO TOP BUTTON
@@ -350,27 +332,8 @@
 </button>
 
 <!-- Scripts -->
-<script src="js/canvas-constellation.js"></script>
 <script>
-  // Initialize constellation background for contact page
   document.addEventListener("DOMContentLoaded", () => {
-    if (typeof initConstellation === 'function') {
-      const hero = document.getElementById('contact-hero');
-      if (hero) {
-        const canvas = document.createElement('canvas');
-        canvas.id = 'constellationCanvas';
-        canvas.style.position = 'absolute';
-        canvas.style.inset = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.zIndex = '0';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.opacity = '0.5';
-        hero.insertBefore(canvas, hero.firstChild);
-        initConstellation('constellationCanvas');
-      }
-    }
-    
     // Form submission listener (placeholder)
     const form = document.getElementById('contactForm');
     if (form) {
@@ -384,12 +347,12 @@
         setTimeout(() => {
           btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Message Sent`;
           btn.style.opacity = '1';
-          btn.style.background = 'var(--active)';
+          btn.style.background = 'var(--green)';
           form.reset();
           
           setTimeout(() => {
             btn.innerHTML = originalText;
-            btn.style.background = 'var(--sky)';
+            btn.style.background = '';
           }, 3000);
         }, 1500);
       });

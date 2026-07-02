@@ -8,10 +8,6 @@
     <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
     <title>Vision - IraGo Air Mobility</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="css/reset.css">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -29,9 +25,7 @@
     .vision-tagline-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: var(--radius-xl);
       padding: var(--space-6) var(--space-8);
-      box-shadow: var(--shadow-card);
       display: flex;
       align-items: flex-start;
       gap: var(--space-4);
@@ -40,29 +34,16 @@
     .vision-tagline-icon {
       width: 44px;
       height: 44px;
-      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 20px;
     }
 
     .vision-cta-section {
-      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-deep) 100%);
+      background: var(--bg-dark);
       position: relative;
       overflow: hidden;
-    }
-    .vision-cta-section::before {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(232, 114, 42, 0.06) 0%, transparent 70%);
-      top: -200px;
-      right: -200px;
-      pointer-events: none;
     }
   </style>
 </head>
@@ -123,11 +104,11 @@
   <div class="container" style="position: relative; z-index: 1; text-align: center; max-width: 900px">
     <span class="section-label" style="color: var(--accent-light); display: block; text-align: center; margin-bottom: var(--space-6)">Our Vision</span>
 
-    <h1 style="font-size: clamp(36px, 6vw, 64px); font-weight: 800; line-height: 1.1; letter-spacing: -0.04em; color: #fff; margin-bottom: var(--space-6)" class="reveal">
+    <h1 style="font-size: clamp(36px, 6vw, 64px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: #fff; margin-bottom: var(--space-6)" class="reveal">
       To Build Bharat's AI-Powered<br>Air Mobility Network
     </h1>
 
-    <p style="font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.55); max-width: 640px; margin: 0 auto var(--space-10); line-height: 1.75" class="reveal">
+    <p style="font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.78); max-width: 640px; margin: 0 auto var(--space-10); line-height: 1.75" class="reveal">
       Delivering faster, smarter, and more accessible journeys through intelligent routing, dynamic scheduling, and real-time fleet orchestration.
     </p>
 
@@ -148,7 +129,9 @@
     <div style="display: flex; flex-direction: column; gap: var(--space-6)" class="stagger">
       <!-- Vision -->
       <div class="vision-tagline-card reveal">
-        <div class="vision-tagline-icon" style="background: var(--accent-glow)">🔭</div>
+        <div class="vision-tagline-icon" style="background: var(--accent-glow)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0057B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
         <div>
           <div style="font-weight: 700; color: var(--accent); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Vision</div>
           <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
@@ -159,7 +142,9 @@
 
       <!-- Mission -->
       <div class="vision-tagline-card reveal">
-        <div class="vision-tagline-icon" style="background: rgba(74, 144, 217, 0.1)">🎯</div>
+        <div class="vision-tagline-icon" style="background: var(--sky-glow)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7FB5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
         <div>
           <div style="font-weight: 700; color: var(--sky); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Mission</div>
           <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
@@ -170,7 +155,9 @@
 
       <!-- Value Proposition -->
       <div class="vision-tagline-card reveal">
-        <div class="vision-tagline-icon" style="background: rgba(27, 42, 74, 0.08)">💎</div>
+        <div class="vision-tagline-icon" style="background: rgba(11, 31, 58, 0.06)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B1F3A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
         <div>
           <div style="font-weight: 700; color: var(--navy); font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: var(--space-2)">Value Proposition</div>
           <p style="color: var(--text-body); font-size: var(--text-base); line-height: 1.7">
@@ -203,15 +190,15 @@
 
       <div class="stagger">
         <div class="feature-card reveal" style="padding: var(--space-6); text-align: center; margin-bottom: var(--space-5)">
-          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--accent); margin-bottom: var(--space-2)">₹2.1L cr</div>
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2)">₹2.1L cr</div>
           <div style="font-size: var(--text-sm); color: var(--text-muted)">Annual congestion cost to India</div>
         </div>
         <div class="feature-card reveal" style="padding: var(--space-6); text-align: center; margin-bottom: var(--space-5)">
-          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--navy); margin-bottom: var(--space-2)">14 min</div>
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 700; color: var(--navy); margin-bottom: var(--space-2)">14 min</div>
           <div style="font-size: var(--text-sm); color: var(--text-muted)">Avg. ambulance response in Tier-2 India</div>
         </div>
         <div class="feature-card reveal" style="padding: var(--space-6); text-align: center">
-          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: var(--accent); margin-bottom: var(--space-2)">18.4%</div>
+          <div style="font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 700; color: var(--accent); margin-bottom: var(--space-2)">18.4%</div>
           <div style="font-size: var(--text-sm); color: var(--text-muted)">Aviation growth — fastest in the world</div>
         </div>
       </div>
@@ -255,7 +242,7 @@
     <div class="grid-3 stagger">
       <div class="feature-card reveal" style="padding: var(--space-8)">
         <div class="icon-circle accent" style="margin-bottom: var(--space-5)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8722A" stroke-width="1.8" stroke-linecap="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0057B8" stroke-width="1.8" stroke-linecap="round">
             <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/>
           </svg>
         </div>
@@ -265,7 +252,7 @@
 
       <div class="feature-card reveal" style="padding: var(--space-8)">
         <div class="icon-circle sky" style="margin-bottom: var(--space-5)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A90D9" stroke-width="1.8" stroke-linecap="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A7FB5" stroke-width="1.8" stroke-linecap="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
         </div>
@@ -275,7 +262,7 @@
 
       <div class="feature-card reveal" style="padding: var(--space-8)">
         <div class="icon-circle navy" style="margin-bottom: var(--space-5)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="1.8" stroke-linecap="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B1F3A" stroke-width="1.8" stroke-linecap="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </div>
@@ -311,7 +298,7 @@
   <div class="container" style="position: relative; z-index: 1; max-width: 800px">
     <span class="section-label" style="color: var(--accent-light); text-align: center; display: block">Join the Movement</span>
     <h2 class="section-heading reveal" style="color: #fff; margin-bottom: var(--space-6)">The Future of Mobility<br>Is Airborne</h2>
-    <p class="section-body reveal" style="color: rgba(255,255,255,0.55); margin: 0 auto var(--space-10); text-align: center; max-width: 600px">
+    <p class="section-body reveal" style="color: rgba(255,255,255,0.78); margin: 0 auto var(--space-10); text-align: center; max-width: 600px">
       The future of mobility is not only about moving people. It is about saving time, creating access, and redefining what connected travel can mean for Bharat.
     </p>
     <a href="contact.html" class="btn btn-primary reveal" style="padding: 15px 36px; font-size: 15px">Join the Journey</a>
@@ -384,14 +371,6 @@
   </div>
 </footer>
 
-<!-- Scroll Indicator -->
-<div class="flight-scroll-track" id="scrollTrack">
-  <div class="flight-scroll-line"></div>
-  <div class="flight-scroll-fill" id="scrollFill"></div>
-  <div class="flight-scroll-ship" id="scrollShip">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
-  </div>
-</div>
 
 <button id="scrollToTopBtn" class="scroll-to-top" aria-label="Back to top">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>

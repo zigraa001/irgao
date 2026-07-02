@@ -32,44 +32,6 @@
 
   sectionLabels.forEach(el => labelObserver.observe(el));
 
-  // ─── Smooth parallax-like effect on scroll ───
-  const sections = document.querySelectorAll('.section');
-  let ticking = false;
-  
-  function applyParallax() {
-    sections.forEach(section => {
-      const rect = section.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      
-      // Only process if section is in/near viewport
-      if (rect.top < windowHeight + 200 && rect.bottom > -200) {
-        // Calculate how far into the viewport the section is (0 = just entering, 1 = centered)
-        const progress = Math.max(0, Math.min(1, 
-          (windowHeight - rect.top) / (windowHeight + rect.height)
-        ));
-        
-        // Subtle upward movement as section comes into view
-        const container = section.querySelector('.container');
-        if (container) {
-          const translateY = (1 - progress) * 15; // max 15px offset
-          const opacity = Math.max(0.4, progress);
-          container.style.transform = `translateY(${translateY}px)`;
-        }
-      }
-    });
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      window.requestAnimationFrame(applyParallax);
-      ticking = true;
-    }
-  }, { passive: true });
-
-  // Run once on load
-  applyParallax();
-
   // ─── Animated counters ───
   function animateCounter(el) {
     const target = parseFloat(el.dataset.target);
@@ -171,49 +133,5 @@
       container.scrollLeft = scrollLeft - (x - startX) * 1.5;
     });
   });
-
-  // ═══════════════════════════════════════════════
-  // FLIGHT SCROLL PROGRESS INDICATOR
-  // ═══════════════════════════════════════════════
-  const track = document.getElementById('scrollTrack');
-  const fill = document.getElementById('scrollFill');
-  const ship = document.getElementById('scrollShip');
-  
-  if (track && fill && ship) {
-    let lastScrollY = window.scrollY;
-    let isThrottled = false;
-
-    function updateScroll() {
-      const scrollHeight = document.body.scrollHeight - window.innerHeight;
-      const currentScrollY = window.scrollY;
-      
-      // Calculate progress (0 to 1)
-      let progress = scrollHeight > 0 ? (currentScrollY / scrollHeight) : 0;
-      progress = Math.max(0, Math.min(1, progress));
-      
-      fill.style.height = `${progress * 100}%`;
-      ship.style.top = `${progress * 100}%`;
-
-      // Flip the plane if direction changes
-      if (currentScrollY > lastScrollY + 5) {
-        ship.style.transform = `translate(-50%, -50%) rotate(180deg)`;
-        lastScrollY = currentScrollY;
-      } else if (currentScrollY < lastScrollY - 5) {
-        ship.style.transform = `translate(-50%, -50%) rotate(0deg)`;
-        lastScrollY = currentScrollY;
-      }
-      
-      isThrottled = false;
-    }
-
-    updateScroll();
-
-    window.addEventListener('scroll', () => {
-      if (!isThrottled) {
-        window.requestAnimationFrame(updateScroll);
-        isThrottled = true;
-      }
-    }, { passive: true });
-  }
 
 })();

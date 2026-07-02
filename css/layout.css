@@ -77,20 +77,12 @@
 .section-divider {
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(27, 42, 74, 0.08) 50%,
-    transparent 100%
-  );
+  background: #D8DEE6;
   margin: 0;
 }
 
 /* For dark sections */
 .section-dark .section-divider,
 .section-divider.light {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
+  background: rgba(255, 255, 255, 0.14);
 }
