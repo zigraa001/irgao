@@ -14,6 +14,13 @@ function initMap() {
 
   // Click to set locations
   map.on('click', function(e) {
+    if (mapPickTarget) {
+      var target = mapPickTarget;
+      mapPickTarget = null;
+      if (target === 'pickup') setPickup(e.latlng, 'Map Pin (Pickup)');
+      else setDest(e.latlng, 'Map Pin (Destination)');
+      return;
+    }
     if (!pickupCoord) {
       setPickup(e.latlng, 'Map Pin (Pickup)');
     } else if (!destCoord) {
@@ -35,8 +42,8 @@ function initMap() {
   });
 
   // Add suggestion dropdown behavior
-  setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); });
-  setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); });
+  setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); }, 'pickup');
+  setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); }, 'dest');
 
   // Render initial popular routes
   renderPopularRoutes('taxi');
@@ -481,7 +488,21 @@ async function refreshAdminLiveFlights() {
   }
 }
 
-function setupAutocomplete(inputId, suggestId, callback) {
+// When set ('pickup' | 'dest'), the next map click sets that location.
+var mapPickTarget = null;
+
+function startMapPick(target) {
+  mapPickTarget = target;
+  var input = document.getElementById(target === 'pickup' ? 'pickup-input' : 'dest-input');
+  var dropdown = document.getElementById(target === 'pickup' ? 'pickup-suggest' : 'dest-suggest');
+  if (dropdown) dropdown.style.display = 'none';
+  if (input) input.blur();
+  showToast(target === 'pickup' ? 'Tap the map to set your pickup point' : 'Tap the map to set your destination', 'info');
+}
+
+var MAP_PICK_OPTION = '__map_pick__';
+
+function setupAutocomplete(inputId, suggestId, callback, target) {
   var input = document.getElementById(inputId);
   var dropdown = document.getElementById(suggestId);
   if (!input || !dropdown) return;
@@ -522,23 +543,30 @@ function setupAutocomplete(inputId, suggestId, callback) {
   function render(query) {
     activeIdx = -1;
     var q = (query || '').trim();
-    if (q.length < 1) { dropdown.style.display = 'none'; currentMatches = []; return; }
-    var keywords = q.toLowerCase().split(/\s+/);
-    var scored = [];
     var names = Object.keys(demoLocations);
-    for (var i = 0; i < names.length; i++) {
-      var s = scoreName(names[i], keywords);
-      if (s > 0) scored.push({ name: names[i], score: s });
+    var scored = [];
+    if (q.length < 1) {
+      // Empty field: offer a few popular places under the map option
+      scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
+    } else {
+      var keywords = q.toLowerCase().split(/\s+/);
+      for (var i = 0; i < names.length; i++) {
+        var s = scoreName(names[i], keywords);
+        if (s > 0) scored.push({ name: names[i], score: s });
+      }
+      scored.sort(function (a, b) { return b.score - a.score; });
+      scored = scored.slice(0, 7);
     }
-    scored.sort(function (a, b) { return b.score - a.score; });
-    currentMatches = scored.slice(0, 7);
-    if (!currentMatches.length) {
-      dropdown.innerHTML = '<div class="loc-suggest-empty">No matching places</div>';
-      dropdown.style.display = 'block';
-      return;
-    }
+    currentMatches = [{ name: MAP_PICK_OPTION }].concat(scored);
     var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
+    var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
     dropdown.innerHTML = currentMatches.map(function (m, idx) {
+      if (m.name === MAP_PICK_OPTION) {
+        return '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
+          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>' +
+          (q.length < 1 ? '<div class="loc-suggest-label">Popular vertiports</div>' : '') +
+          (q.length >= 1 && scored.length === 0 ? '<div class="loc-suggest-empty">No matching places</div>' : '');
+      }
       return '<div class="loc-suggest-item" data-idx="' + idx + '">' +
         pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
     }).join('');
@@ -558,11 +586,12 @@ function setupAutocomplete(inputId, suggestId, callback) {
   function pickItem(idx) {
     if (idx < 0 || idx >= currentMatches.length) return;
     var name = currentMatches[idx].name;
+    dropdown.style.display = 'none';
+    currentMatches = [];
+    if (name === MAP_PICK_OPTION) { startMapPick(target); return; }
     var coord = demoLocations[name];
     input.value = name;
     input.classList.add('has-value');
-    dropdown.style.display = 'none';
-    currentMatches = [];
     callback(name, coord);
   }
 
@@ -578,7 +607,7 @@ function setupAutocomplete(inputId, suggestId, callback) {
 
   input.addEventListener('input', function () { render(this.value); });
   input.addEventListener('focus', function () {
-    if (this.value.trim().length >= 1) render(this.value);
+    render(this.value);
   });
   input.addEventListener('blur', function () {
     setTimeout(function () { dropdown.style.display = 'none'; }, 150);

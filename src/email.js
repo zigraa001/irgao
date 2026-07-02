@@ -106,6 +106,10 @@ async function sendOtpEmail(to, code, purpose) {
       subject: "IraGo — Verify your phone number",
       intro: "Use this code to verify your phone number on your IraGo account:",
     },
+    google_phone_verify: {
+      subject: "IraGo — Verify your phone number",
+      intro: "Use this code to verify your phone number and complete your Google sign-in:",
+    },
   };
   const copy = labels[purpose] || labels.signup;
   const expirySeconds = OTP_EXPIRY_SECONDS;

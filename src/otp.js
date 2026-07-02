@@ -18,6 +18,7 @@ const PURPOSES = [
   "signup_operator",
   "reset_password",
   "phone_verify",
+  "google_phone_verify",
 ];
 
 const ENCRYPTED_PREFIX = "enc:v1:";

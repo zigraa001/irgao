@@ -299,6 +299,15 @@ function initAuthPortal() {
     return;
   }
   applyPortalLabels(portal.role);
+
+  // Handle Google OAuth redirects (success / error / pending phone).
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('google_success') || params.has('google_error') || params.has('google_pending')) {
+    showView('login-view');
+    handleGoogleAuthOnLoad();
+    return;
+  }
+
   if (!AUTH.user) {
     showView('login-view');
     if (portal.mode === 'signup') showRoleRegister();
@@ -367,11 +376,11 @@ function otpUiPrefix() {
 function showPassengerRegister() { window.location.href = '/app.html?register=1'; }
 
 function hideAllAuthCards() {
-  ['login-card', 'register-passenger-card', 'register-operator-card', 'register-verify-card', 'otp-card', 'forgot-card', 'reset-card'].forEach(id => {
+  ['login-card', 'register-passenger-card', 'register-operator-card', 'register-verify-card', 'otp-card', 'forgot-card', 'reset-card', 'google-phone-card'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  ['login-error', 'register-passenger-error', 'register-operator-error', 'register-verify-error', 'reg-email-error', 'reg-phone-error', 'otp-error', 'forgot-error', 'reset-error'].forEach(hideAuthError);
+  ['login-error', 'register-passenger-error', 'register-operator-error', 'register-verify-error', 'reg-email-error', 'reg-phone-error', 'otp-error', 'forgot-error', 'reset-error', 'google-phone-error'].forEach(hideAuthError);
 }
 
 function showLoginCard() {
@@ -554,9 +563,192 @@ function setBusy(btnId, busy, busyLabel, idleLabel) {
   btn.textContent = busy ? busyLabel : idleLabel;
 }
 
-// Google sign-in is not wired to a real provider yet.
-function googleStub(errId) {
-  showAuthError(errId, 'Google sign-in is not available yet — please use email and password.');
+// ── Google OAuth ────────────────────────────────────────────────────────
+function doGoogleSignIn() {
+  window.location.href = '/api/auth/google';
+}
+
+// Pending Google signup state (no phone from Google → collect it + OTP).
+const googlePending = { state: '', phone: '', email: '', resendTimerId: null };
+
+function clearGoogleTimers() {
+  if (googlePending.resendTimerId) {
+    clearInterval(googlePending.resendTimerId);
+    googlePending.resendTimerId = null;
+  }
+}
+
+function startGoogleResendTimer(timing) {
+  clearGoogleTimers();
+  const cooldown = (timing && timing.resendCooldownSeconds) || 30;
+  const btn = document.getElementById('google-phone-resend-btn');
+  const hintEl = document.getElementById('google-phone-resend-hint');
+  if (!hintEl) return;
+  let remaining = cooldown;
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+  const tick = () => {
+    if (remaining <= 0) {
+      clearGoogleTimers();
+      hintEl.textContent = "Didn't receive the code?";
+      if (btn) { btn.disabled = false; btn.style.display = ''; }
+      return;
+    }
+    hintEl.textContent = "Didn't receive the code? Resend in " + formatResendCountdown(remaining);
+    remaining -= 1;
+  };
+  tick();
+  googlePending.resendTimerId = setInterval(tick, 1000);
+}
+
+function showGooglePhoneCard(state) {
+  googlePending.state = state;
+  hideAllAuthCards();
+  const card = document.getElementById('google-phone-card');
+  if (card) card.style.display = 'block';
+  document.getElementById('google-phone-input').value = '';
+  document.getElementById('google-phone-otp-section').style.display = 'none';
+  document.getElementById('google-phone-input-section').style.display = '';
+  hideAuthError('google-phone-error');
+  clearGoogleTimers();
+}
+
+async function googlePhoneSendOtp() {
+  const rawPhone = document.getElementById('google-phone-input').value.trim();
+  hideAuthError('google-phone-error');
+  if (!rawPhone || rawPhone.length < 10) {
+    return showAuthError('google-phone-error', 'Enter a valid 10-digit mobile number.');
+  }
+  googlePending.phone = rawPhone;
+
+  const btn = document.getElementById('google-phone-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  try {
+    const res = await fetch('/api/auth/google/send-phone-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: googlePending.state, phone: rawPhone }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
+      const msg = data.retryAfterSeconds
+        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not send OTP.');
+      return showAuthError('google-phone-error', msg);
+    }
+    googlePending.email = data.email || '';
+    document.getElementById('google-phone-email-display').textContent = data.email || '';
+    document.getElementById('google-phone-input-section').style.display = 'none';
+    document.getElementById('google-phone-otp-section').style.display = '';
+    document.getElementById('google-phone-otp').value = '';
+    document.getElementById('google-phone-otp').focus();
+    startGoogleResendTimer(data);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
+    showAuthError('google-phone-error', 'Could not reach the server.');
+  }
+}
+
+async function googlePhoneResendOtp() {
+  hideAuthError('google-phone-error');
+  if (!googlePending.phone || !googlePending.state) return;
+  const btn = document.getElementById('google-phone-resend-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/auth/google/send-phone-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: googlePending.state, phone: googlePending.phone }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showAuthError('google-phone-error', data.error || 'Could not resend code.');
+      if (btn) btn.disabled = false;
+      return;
+    }
+    startGoogleResendTimer(data);
+  } catch (e) {
+    showAuthError('google-phone-error', 'Could not reach the server.');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function googlePhoneVerify() {
+  const otp = document.getElementById('google-phone-otp').value.trim();
+  hideAuthError('google-phone-error');
+  if (!otp || otp.length < 6) {
+    return showAuthError('google-phone-error', 'Enter the 6-digit code from your email.');
+  }
+  const btn = document.getElementById('google-phone-verify-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  try {
+    const res = await fetch('/api/auth/google/verify-phone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: googlePending.state, phone: googlePending.phone, otp }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Verify & Create Account'; }
+      return showAuthError('google-phone-error', data.error || 'Invalid or expired code.');
+    }
+    clearGoogleTimers();
+    onAuthSuccess(data.user, data.token);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Verify & Create Account'; }
+    showAuthError('google-phone-error', 'Could not reach the server.');
+  }
+}
+
+function handleGoogleAuthOnLoad() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Google error
+  if (params.has('google_error')) {
+    const err = params.get('google_error');
+    const msgs = {
+      access_denied: 'Google sign-in was cancelled.',
+      token_failed: 'Could not complete Google sign-in. Try again.',
+      no_email: 'Google did not provide an email address.',
+      banned: 'This account has been suspended.',
+      server_error: 'Something went wrong. Please try again.',
+    };
+    showAuthError('login-error', msgs[err] || 'Google sign-in failed.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  // Google success — pick up the auth data from the cookie.
+  if (params.has('google_success')) {
+    try {
+      const raw = decodeURIComponent(
+        document.cookie.split('; ').find(c => c.startsWith('irago_google_auth='))?.split('=').slice(1).join('=') || ''
+      );
+      if (raw) {
+        const auth = JSON.parse(raw);
+        // Clear the temp cookie.
+        document.cookie = 'irago_google_auth=; Max-Age=0; Path=/';
+        window.history.replaceState({}, '', window.location.pathname);
+        onAuthSuccess(auth.user, auth.token);
+        return;
+      }
+    } catch (e) {
+      console.error('Google auth cookie parse failed:', e);
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  // Google pending — need phone number.
+  if (params.has('google_pending')) {
+    const state = params.get('state');
+    if (state) {
+      window.history.replaceState({}, '', window.location.pathname);
+      showGooglePhoneCard(state);
+      return;
+    }
+  }
 }
 
 async function doLogin() {
@@ -3345,6 +3537,13 @@ function initMap() {
 
   // Click to set locations
   map.on('click', function(e) {
+    if (mapPickTarget) {
+      var target = mapPickTarget;
+      mapPickTarget = null;
+      if (target === 'pickup') setPickup(e.latlng, 'Map Pin (Pickup)');
+      else setDest(e.latlng, 'Map Pin (Destination)');
+      return;
+    }
     if (!pickupCoord) {
       setPickup(e.latlng, 'Map Pin (Pickup)');
     } else if (!destCoord) {
@@ -3366,8 +3565,8 @@ function initMap() {
   });
 
   // Add suggestion dropdown behavior
-  setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); });
-  setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); });
+  setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); }, 'pickup');
+  setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); }, 'dest');
 
   // Render initial popular routes
   renderPopularRoutes('taxi');
@@ -3812,7 +4011,21 @@ async function refreshAdminLiveFlights() {
   }
 }
 
-function setupAutocomplete(inputId, suggestId, callback) {
+// When set ('pickup' | 'dest'), the next map click sets that location.
+var mapPickTarget = null;
+
+function startMapPick(target) {
+  mapPickTarget = target;
+  var input = document.getElementById(target === 'pickup' ? 'pickup-input' : 'dest-input');
+  var dropdown = document.getElementById(target === 'pickup' ? 'pickup-suggest' : 'dest-suggest');
+  if (dropdown) dropdown.style.display = 'none';
+  if (input) input.blur();
+  showToast(target === 'pickup' ? 'Tap the map to set your pickup point' : 'Tap the map to set your destination', 'info');
+}
+
+var MAP_PICK_OPTION = '__map_pick__';
+
+function setupAutocomplete(inputId, suggestId, callback, target) {
   var input = document.getElementById(inputId);
   var dropdown = document.getElementById(suggestId);
   if (!input || !dropdown) return;
@@ -3853,23 +4066,30 @@ function setupAutocomplete(inputId, suggestId, callback) {
   function render(query) {
     activeIdx = -1;
     var q = (query || '').trim();
-    if (q.length < 1) { dropdown.style.display = 'none'; currentMatches = []; return; }
-    var keywords = q.toLowerCase().split(/\s+/);
-    var scored = [];
     var names = Object.keys(demoLocations);
-    for (var i = 0; i < names.length; i++) {
-      var s = scoreName(names[i], keywords);
-      if (s > 0) scored.push({ name: names[i], score: s });
+    var scored = [];
+    if (q.length < 1) {
+      // Empty field: offer a few popular places under the map option
+      scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
+    } else {
+      var keywords = q.toLowerCase().split(/\s+/);
+      for (var i = 0; i < names.length; i++) {
+        var s = scoreName(names[i], keywords);
+        if (s > 0) scored.push({ name: names[i], score: s });
+      }
+      scored.sort(function (a, b) { return b.score - a.score; });
+      scored = scored.slice(0, 7);
     }
-    scored.sort(function (a, b) { return b.score - a.score; });
-    currentMatches = scored.slice(0, 7);
-    if (!currentMatches.length) {
-      dropdown.innerHTML = '<div class="loc-suggest-empty">No matching places</div>';
-      dropdown.style.display = 'block';
-      return;
-    }
+    currentMatches = [{ name: MAP_PICK_OPTION }].concat(scored);
     var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
+    var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
     dropdown.innerHTML = currentMatches.map(function (m, idx) {
+      if (m.name === MAP_PICK_OPTION) {
+        return '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
+          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>' +
+          (q.length < 1 ? '<div class="loc-suggest-label">Popular vertiports</div>' : '') +
+          (q.length >= 1 && scored.length === 0 ? '<div class="loc-suggest-empty">No matching places</div>' : '');
+      }
       return '<div class="loc-suggest-item" data-idx="' + idx + '">' +
         pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
     }).join('');
@@ -3889,11 +4109,12 @@ function setupAutocomplete(inputId, suggestId, callback) {
   function pickItem(idx) {
     if (idx < 0 || idx >= currentMatches.length) return;
     var name = currentMatches[idx].name;
+    dropdown.style.display = 'none';
+    currentMatches = [];
+    if (name === MAP_PICK_OPTION) { startMapPick(target); return; }
     var coord = demoLocations[name];
     input.value = name;
     input.classList.add('has-value');
-    dropdown.style.display = 'none';
-    currentMatches = [];
     callback(name, coord);
   }
 
@@ -3909,7 +4130,7 @@ function setupAutocomplete(inputId, suggestId, callback) {
 
   input.addEventListener('input', function () { render(this.value); });
   input.addEventListener('focus', function () {
-    if (this.value.trim().length >= 1) render(this.value);
+    render(this.value);
   });
   input.addEventListener('blur', function () {
     setTimeout(function () { dropdown.style.display = 'none'; }, 150);
