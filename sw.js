@@ -25,7 +25,7 @@ self.addEventListener('push', function (event) {
     renotify: true,
     requireInteraction: data.service === 'golden', // golden = air ambulance, keep visible
     data: { url: '/login/operator', requestId: data.requestId, offerId: data.offerId },
-    icon: '/assets/images/image-removebg-preview.png',
+    icon: '/assets/images/irago-icon.png',
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

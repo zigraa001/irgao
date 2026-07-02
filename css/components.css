@@ -247,22 +247,21 @@
 }
 
 .brand-logo {
-  height: 60px;
+  height: 42px;
   width: auto;
   display: block;
-  transform: scale(1.3);
   transform-origin: center;
   transition: transform var(--transition-spring), filter var(--transition-slow);
   filter: brightness(100);
 }
 
-/* On light bg, logo should be dark */
+/* On light bg, show the full-colour logo */
 .navbar.scrolled .brand-logo {
-  filter: brightness(0.2);
+  filter: none;
 }
 
 .navbar-logo:hover .brand-logo {
-  transform: scale(1.4);
+  transform: scale(1.05);
 }
 
 /* ─── NAV LINKS ─── */
@@ -891,10 +890,8 @@
 }
 
 .footer-brand-col .footer-logo img {
-  height: 65px;
+  height: 46px;
   width: auto;
-  transform: scale(1.4);
-  transform-origin: center;
   filter: brightness(100);
 }
 
