@@ -478,20 +478,23 @@ function showPaymentOverlay(booking) {
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
 
-  // Carbon credits section \u2014 always show
+  // Carbon credits section \u2014 always visible
   var credSec = document.getElementById('payment-credits-section');
   var credEarn = document.getElementById('payment-credits-earn');
   var cb = document.getElementById('payment-use-credits');
   if (cb) cb.checked = false;
   var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
   var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
+  credSec.style.display = 'block';
   if (balance > 0) {
-    credSec.style.display = 'block';
+    if (cb) cb.disabled = false;
     document.getElementById('payment-credits-balance').textContent =
       balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
     document.getElementById('payment-credits-detail').textContent = '';
   } else {
-    credSec.style.display = 'none';
+    if (cb) cb.disabled = true;
+    document.getElementById('payment-credits-balance').textContent = '0 credits';
+    document.getElementById('payment-credits-detail').textContent = 'Earn credits by completing flights';
   }
   if (willEarn > 0) {
     credEarn.style.display = 'block';
