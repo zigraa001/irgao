@@ -4867,7 +4867,7 @@ function showPaymentOverlay(booking) {
   } else {
     if (cb) cb.disabled = true;
     document.getElementById('payment-credits-balance').textContent = '0 credits';
-    document.getElementById('payment-credits-detail').textContent = 'Earn credits by completing flights';
+    document.getElementById('payment-credits-detail').textContent = 'No credits to apply yet';
   }
   if (willEarn > 0) {
     credEarn.style.display = 'block';
