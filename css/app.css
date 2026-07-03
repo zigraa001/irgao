@@ -1538,6 +1538,61 @@ a { text-decoration: none; color: inherit; }
 }
 .credits-earn-preview .credits-icon { color: #10b981; }
 
+/* ── Coupon section in payment overlay ── */
+.coupon-section {
+  margin: 10px 0;
+}
+.coupon-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.coupon-input-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: border-color 0.2s;
+}
+.coupon-input-row input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+.coupon-input-row input:disabled {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+.coupon-apply-btn {
+  padding: 10px 18px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.coupon-apply-btn:hover { background: var(--blue-dark); }
+.coupon-apply-btn:disabled { opacity: 0.6; cursor: default; }
+.coupon-apply-btn.applied {
+  background: var(--green);
+  cursor: default;
+}
+.coupon-msg {
+  margin-top: 6px;
+  font-size: 13px;
+  min-height: 18px;
+}
+.coupon-success { color: #15803d; font-weight: 600; }
+.coupon-error { color: var(--red); }
+.fb-coupon { color: #7c3aed !important; font-weight: 600; }
+.fb-coupon span:last-child { color: #7c3aed; }
+
 @media (max-width: 600px) {
   .cc-row { grid-template-columns: 1fr 80px auto auto; gap: 4px; }
   .cc-label { font-size: 11px; }

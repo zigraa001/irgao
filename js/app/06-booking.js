@@ -470,6 +470,7 @@ function fillConfirmation(booking) {
 
 function showPaymentOverlay(booking) {
   hideAuthError('payment-error');
+  resetCoupon();
   document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
   document.getElementById('payment-amount').textContent =
     '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
@@ -499,6 +500,52 @@ function showPaymentOverlay(booking) {
   }
 
   document.getElementById('payment-overlay').classList.add('active');
+}
+
+var appliedCoupon = null;
+
+async function applyCoupon() {
+  var input = document.getElementById('coupon-input');
+  var msg = document.getElementById('coupon-msg');
+  var btn = document.getElementById('coupon-apply-btn');
+  if (!input || !currentBooking) return;
+  var code = input.value.trim().toUpperCase();
+  if (!code) { if (msg) msg.textContent = 'Enter a coupon code'; return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    var res = await apiFetch('/api/bookings/' + currentBooking.id + '/coupon', {
+      method: 'POST',
+      body: JSON.stringify({ code: code }),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (data.valid) {
+      appliedCoupon = { code: data.coupon.code, discount: data.discount };
+      msg.innerHTML = '<span class="coupon-success">' +
+        escapeHtml(data.coupon.code) + ' applied — ₹' + data.discount.toLocaleString('en-IN') + ' off!</span>';
+      input.disabled = true;
+      if (btn) { btn.textContent = 'Applied'; btn.classList.add('applied'); }
+      var newTotal = currentBooking.fareEstimate - data.discount;
+      document.getElementById('payment-amount').textContent =
+        '₹' + Math.round(newTotal).toLocaleString('en-IN');
+    } else {
+      appliedCoupon = null;
+      msg.innerHTML = '<span class="coupon-error">' + escapeHtml(data.error || 'Invalid coupon') + '</span>';
+      if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
+    }
+  } catch (e) {
+    if (msg) msg.textContent = 'Network error — try again';
+    if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
+  }
+}
+
+function resetCoupon() {
+  appliedCoupon = null;
+  var input = document.getElementById('coupon-input');
+  var msg = document.getElementById('coupon-msg');
+  var btn = document.getElementById('coupon-apply-btn');
+  if (input) { input.value = ''; input.disabled = false; }
+  if (msg) msg.textContent = '';
+  if (btn) { btn.disabled = false; btn.textContent = 'Apply'; btn.classList.remove('applied'); }
 }
 
 function toggleCredits() {
@@ -537,7 +584,10 @@ async function payForBooking() {
   setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
   try {
     var useCredits = document.getElementById('payment-use-credits');
-    var payBody = useCredits && useCredits.checked ? JSON.stringify({ useCredits: true }) : undefined;
+    var payData = {};
+    if (useCredits && useCredits.checked) payData.useCredits = true;
+    if (appliedCoupon && appliedCoupon.code) payData.couponCode = appliedCoupon.code;
+    var payBody = Object.keys(payData).length ? JSON.stringify(payData) : undefined;
     const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST', body: payBody });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) {

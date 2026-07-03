@@ -1,10 +1,3 @@
-// Fare breakdown for receipts and the customer-facing fare card.
-//
-// Pricing is still mock (see pricing.js), but the customer now sees the
-// components (base + per-km) instead of one opaque rounded number. Surge and
-// taxes are wired through as zero today so the UI can show them later without
-// another schema change. `total` always equals estimateFare() so the displayed
-// total never drifts from the persisted booking.fareEstimate.
 const { SERVICE_PRICING, estimateFare, NEW_FLYER_DISCOUNT } = require("./pricing");
 
 function round2(n) {
@@ -13,7 +6,7 @@ function round2(n) {
 
 const GST_RATE = 0.18;
 
-function fareBreakdown(service, distanceKm, discountInfo, creditsUsed) {
+function fareBreakdown(service, distanceKm, discountInfo, creditsUsed, couponInfo) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
@@ -25,8 +18,11 @@ function fareBreakdown(service, distanceKm, discountInfo, creditsUsed) {
   const discountAmount = hasDiscount ? round2(subtotal * NEW_FLYER_DISCOUNT) : 0;
   const afterDiscount = round2(subtotal - discountAmount);
 
+  const couponAmt = (couponInfo && couponInfo.discount) ? Number(couponInfo.discount) : 0;
+  const afterCoupon = round2(afterDiscount - couponAmt);
+
   const credits = Number(creditsUsed) || 0;
-  const afterCredits = round2(afterDiscount - credits);
+  const afterCredits = round2(afterCoupon - credits);
 
   const gst = round2(Math.max(0, afterCredits) * GST_RATE);
   const total = Math.round((Math.max(0, afterCredits) + gst) / 100) * 100;
@@ -40,6 +36,10 @@ function fareBreakdown(service, distanceKm, discountInfo, creditsUsed) {
     discount: hasDiscount ? {
       label: `New Flyer (50% off — ${discountInfo.remaining} flight${discountInfo.remaining === 1 ? '' : 's'} left)`,
       amount: discountAmount,
+    } : null,
+    couponApplied: couponAmt > 0 ? {
+      label: `Coupon (${couponInfo.code})`,
+      amount: couponAmt,
     } : null,
     creditsApplied: credits > 0 ? { label: "Carbon Credits", amount: credits } : null,
     taxes: gst,

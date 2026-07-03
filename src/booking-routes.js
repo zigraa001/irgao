@@ -26,6 +26,61 @@ const platformSettings = require("./platform-settings");
 
 const router = express.Router();
 
+// ── Coupon helpers ──────────────────────────────────────────────────────
+async function validateCoupon(code, userId, fare, service) {
+  if (!code) return { valid: false, error: "No coupon code provided" };
+  const coupon = await queryOne(
+    "SELECT * FROM coupons WHERE code = ? AND active = 1",
+    [code.toUpperCase().trim()]
+  );
+  if (!coupon) return { valid: false, error: "Invalid coupon code" };
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+    return { valid: false, error: "This coupon has expired" };
+  }
+  if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
+    return { valid: false, error: "This coupon has been fully redeemed" };
+  }
+  if (coupon.minFare > 0 && fare < coupon.minFare) {
+    return { valid: false, error: "Minimum fare of ₹" + coupon.minFare + " required" };
+  }
+  if (coupon.services) {
+    const allowed = coupon.services.split(",").map(s => s.trim().toLowerCase());
+    if (!allowed.includes(service.toLowerCase())) {
+      return { valid: false, error: "This coupon is not valid for " + service + " flights" };
+    }
+  }
+  if (coupon.perUserLimit > 0) {
+    const used = await queryOne(
+      "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND couponCode = ?",
+      [userId, coupon.code]
+    );
+    if (used && Number(used.n) >= coupon.perUserLimit) {
+      return { valid: false, error: "You have already used this coupon" };
+    }
+  }
+  let discount = 0;
+  if (coupon.discountType === "percent") {
+    discount = Math.round(fare * (coupon.discountValue / 100));
+    if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+      discount = coupon.maxDiscount;
+    }
+  } else {
+    discount = Math.min(coupon.discountValue, fare);
+  }
+  discount = Math.round(discount);
+  return {
+    valid: true,
+    coupon: {
+      code: coupon.code,
+      description: coupon.description,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      maxDiscount: coupon.maxDiscount,
+    },
+    discount,
+  };
+}
+
 // Minimum trip distance (km). Pickup == destination yields a 0-km booking
 // priced at just the base fare — reject it.
 const MIN_TRIP_KM = 0.1;
@@ -325,6 +380,24 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     route: feasibility.route || null,
   });
 });
+
+// POST /api/bookings/:id/coupon — validate and preview a coupon for a booking.
+router.post("/:id/coupon", requireAuth, requireRole("customer"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (booking.customerId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const code = (req.body && req.body.code) ? String(req.body.code).trim().toUpperCase() : "";
+  if (!code) return res.status(400).json({ valid: false, error: "Enter a coupon code" });
+  const result = await validateCoupon(code, req.user.id, booking.fareEstimate, booking.service);
+  res.json(result);
+});
+
 router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("bookings.pay"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -336,16 +409,39 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  // Apply carbon credits if requested
   const body = req.body || {};
+
+  // Apply coupon if provided
+  let couponDiscount = 0;
+  let couponCode = null;
+  if (body.couponCode) {
+    const cv = await validateCoupon(body.couponCode, req.user.id, booking.fareEstimate, booking.service);
+    if (cv.valid) {
+      couponCode = cv.coupon.code;
+      couponDiscount = cv.discount;
+      const fareAfterCoupon = booking.fareEstimate - couponDiscount;
+      await query(
+        "UPDATE bookings SET fareEstimate = ?, couponCode = ?, couponDiscount = ? WHERE id = ?",
+        [fareAfterCoupon, couponCode, couponDiscount, id]
+      );
+      await query("UPDATE coupons SET usedCount = usedCount + 1 WHERE code = ?", [couponCode]);
+    }
+  }
+
+  // Re-read booking after coupon adjustment
+  const bookingAfterCoupon = couponDiscount > 0
+    ? await queryOne("SELECT * FROM bookings WHERE id = ?", [id])
+    : booking;
+
+  // Apply carbon credits if requested
   const wantsCredits = body.useCredits === true || body.useCredits === "true";
   let creditsUsed = 0;
   if (wantsCredits) {
     const userCred = await queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]);
     const creditBalance = userCred ? Number(userCred.carbonCredits) || 0 : 0;
     if (creditBalance > 0) {
-      creditsUsed = Math.min(creditBalance, Math.floor(booking.fareEstimate * 0.5));
-      const newFare = booking.fareEstimate - creditsUsed;
+      creditsUsed = Math.min(creditBalance, Math.floor(bookingAfterCoupon.fareEstimate * 0.5));
+      const newFare = bookingAfterCoupon.fareEstimate - creditsUsed;
       await query("UPDATE bookings SET fareEstimate = ?, creditsUsed = ? WHERE id = ?", [newFare, creditsUsed, id]);
       await query("UPDATE users SET carbonCredits = carbonCredits - ? WHERE id = ?", [creditsUsed, req.user.id]);
     }

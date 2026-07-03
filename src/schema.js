@@ -318,6 +318,46 @@ async function initSchema() {
   await ensureColumn("bookings", "creditsEarned", "creditsEarned INT NOT NULL DEFAULT 0");
   await ensureColumn("bookings", "creditsUsed", "creditsUsed INT NOT NULL DEFAULT 0");
 
+  // Coupons table + per-booking coupon tracking.
+  await query(`CREATE TABLE IF NOT EXISTS coupons (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    code        VARCHAR(32)  NOT NULL UNIQUE,
+    description VARCHAR(255) NOT NULL DEFAULT '',
+    discountType VARCHAR(16) NOT NULL DEFAULT 'percent',
+    discountValue DOUBLE     NOT NULL DEFAULT 0,
+    maxDiscount DOUBLE       NULL,
+    minFare     DOUBLE       NOT NULL DEFAULT 0,
+    maxUses     INT          NOT NULL DEFAULT 0,
+    usedCount   INT          NOT NULL DEFAULT 0,
+    perUserLimit INT         NOT NULL DEFAULT 1,
+    services    VARCHAR(255) NULL,
+    expiresAt   DATETIME     NULL,
+    active      TINYINT(1)   NOT NULL DEFAULT 1,
+    createdAt   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await ensureColumn("bookings", "couponCode", "couponCode VARCHAR(32) NULL");
+  await ensureColumn("bookings", "couponDiscount", "couponDiscount DOUBLE NOT NULL DEFAULT 0");
+
+  // Seed demo coupons (idempotent).
+  const demoCoupons = [
+    { code: "IRAGO50", desc: "50% off your ride (max ₹2,000)", type: "percent", value: 50, maxDiscount: 2000, maxUses: 0, perUser: 1 },
+    { code: "FIRSTFLIGHT", desc: "₹500 off your first flight", type: "flat", value: 500, maxDiscount: null, maxUses: 0, perUser: 1 },
+    { code: "FLYGREEN", desc: "20% off eco-friendly rides", type: "percent", value: 20, maxDiscount: 1000, maxUses: 0, perUser: 3 },
+    { code: "SHUTTLE25", desc: "25% off shuttle rides", type: "percent", value: 25, maxDiscount: 1500, maxUses: 0, perUser: 2, services: "shuttle" },
+    { code: "GOLDEN100", desc: "₹5,000 off air ambulance", type: "flat", value: 5000, maxDiscount: null, maxUses: 0, perUser: 1, services: "golden" },
+  ];
+  for (const c of demoCoupons) {
+    const [exists] = await query("SELECT id FROM coupons WHERE code = ? LIMIT 1", [c.code]);
+    if (!exists) {
+      await query(
+        `INSERT INTO coupons (code, description, discountType, discountValue, maxDiscount, maxUses, perUserLimit, services)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [c.code, c.desc, c.type, c.value, c.maxDiscount || null, c.maxUses, c.perUser, c.services || null]
+      );
+      dbg("initSchema: seeded coupon " + c.code);
+    }
+  }
+
   // Seed operator companies and regional offices (idempotent).
   const { seedOperators } = require("./seed-operators");
   await seedOperators().catch(err => dbg("seedOperators: " + err.message));

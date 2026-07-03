@@ -17,6 +17,10 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.discount && fare.discount.amount) {
     discountRow = '<div class="fb-row fb-discount"><span>' + escapeHtml(fare.discount.label) + '</span><span>-' + money(fare.discount.amount) + '</span></div>';
   }
+  var couponRow = '';
+  if (fare.couponApplied && fare.couponApplied.amount) {
+    couponRow = '<div class="fb-row fb-coupon"><span>' + escapeHtml(fare.couponApplied.label) + '</span><span>-' + money(fare.couponApplied.amount) + '</span></div>';
+  }
   var creditsRow = '';
   if (fare.creditsApplied && fare.creditsApplied.amount) {
     creditsRow = '<div class="fb-row fb-credits"><span>' + escapeHtml(fare.creditsApplied.label) + '</span><span>-' + money(fare.creditsApplied.amount) + '</span></div>';
@@ -28,6 +32,7 @@ function renderFareBreakdown(hostId, fare) {
     '<div class="fb-row" style="color:#888"><span>Subtotal</span><span>' + money(fare.subtotal) + '</span></div>' +
     discountRow +
     creditsRow +
+    couponRow +
     (fare.taxes ? '<div class="fb-row"><span>' + taxLabel + '</span><span>' + money(fare.taxes) + '</span></div>' : '') +
     '<div class="fb-total"><span>Total</span><span>' + money(fare.total) + '</span></div>';
 }
