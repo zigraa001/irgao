@@ -221,6 +221,7 @@ function statsDashboardHtml(stats) {
         pdStat('\uD83D\uDCCF', KM(t.distanceKm), 'Distance flown') +
         pdStat('\uD83D\uDCB0', INR(t.spentINR), 'Total spent') +
         pdStat('\uD83C\uDF31', CO2(t.carbonSavedKg), 'CO\u2082 saved', 'green') +
+        pdStat('\u2B50', (t.carbonCredits || 0).toLocaleString('en-IN'), 'Carbon Credits') +
       '</div>' +
       '<div class="pd-breakdown">' +
         (pdBreakdown('By service', stats.byService || {}) +
@@ -271,7 +272,8 @@ async function loadProfileQuickStats() {
         host.innerHTML =
           '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.trips || 0) + '</div><div class="profile-quick-stat-label">Trips</div></div>' +
           '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + KM(t.distanceKm) + '</div><div class="profile-quick-stat-label">Distance</div></div>' +
-          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + CO2(t.carbonSavedKg) + '</div><div class="profile-quick-stat-label">CO₂ saved</div></div>';
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + CO2(t.carbonSavedKg) + '</div><div class="profile-quick-stat-label">CO₂ saved</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.carbonCredits || 0).toLocaleString('en-IN') + '</div><div class="profile-quick-stat-label">Credits</div></div>';
       }
     }
   } catch (e) { /* ignore */ }

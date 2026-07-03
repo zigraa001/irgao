@@ -77,4 +77,21 @@ function carbonComparison(distanceKm, passengers) {
   };
 }
 
-module.exports = { CO2_SAVED_PER_KM, EMISSIONS, estimateCarbonSavedKg, carbonComparison };
+// Carbon credits: earned per completed flight based on distance and service.
+// 1 credit = ₹1 redeemable on future flights.
+const CREDITS_PER_KM = {
+  taxi: 10,
+  golden: 15,
+  shuttle: 5,
+};
+
+function computeCreditsEarned(service, distanceKm) {
+  const rate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;
+  const km = Math.max(0, Number(distanceKm) || 0);
+  return Math.round(rate * km);
+}
+
+module.exports = {
+  CO2_SAVED_PER_KM, EMISSIONS, CREDITS_PER_KM,
+  estimateCarbonSavedKg, carbonComparison, computeCreditsEarned,
+};

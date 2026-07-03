@@ -13,7 +13,7 @@ function round2(n) {
 
 const GST_RATE = 0.18;
 
-function fareBreakdown(service, distanceKm, discountInfo) {
+function fareBreakdown(service, distanceKm, discountInfo, creditsUsed) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
@@ -25,8 +25,11 @@ function fareBreakdown(service, distanceKm, discountInfo) {
   const discountAmount = hasDiscount ? round2(subtotal * NEW_FLYER_DISCOUNT) : 0;
   const afterDiscount = round2(subtotal - discountAmount);
 
-  const gst = round2(afterDiscount * GST_RATE);
-  const total = Math.round((afterDiscount + gst) / 100) * 100;
+  const credits = Number(creditsUsed) || 0;
+  const afterCredits = round2(afterDiscount - credits);
+
+  const gst = round2(Math.max(0, afterCredits) * GST_RATE);
+  const total = Math.round((Math.max(0, afterCredits) + gst) / 100) * 100;
   return {
     service,
     base: pricing.base,
@@ -38,6 +41,7 @@ function fareBreakdown(service, distanceKm, discountInfo) {
       label: `New Flyer (50% off — ${discountInfo.remaining} flight${discountInfo.remaining === 1 ? '' : 's'} left)`,
       amount: discountAmount,
     } : null,
+    creditsApplied: credits > 0 ? { label: "Carbon Credits", amount: credits } : null,
     taxes: gst,
     taxLabel: "GST (18%)",
     subtotal,

@@ -20,6 +20,7 @@ const {
 const { haversineKm, parseCoord } = require("./pricing");
 const { rateLimit } = require("./rate-limit");
 const push = require("./push");
+const { computeCreditsEarned } = require("./carbon");
 
 const router = express.Router();
 
@@ -295,6 +296,17 @@ async function advanceTripStatus(req, res, fromStatus, toStatus) {
   if (toStatus === "completed") {
     await releaseAircraft(booking.id);
     await setOperatorDuty(req.user.id, 0);
+    const credits = computeCreditsEarned(booking.service, booking.distanceKm);
+    if (credits > 0 && booking.customerId) {
+      await query(
+        "UPDATE bookings SET creditsEarned = ? WHERE id = ?",
+        [credits, booking.id]
+      );
+      await query(
+        "UPDATE users SET carbonCredits = carbonCredits + ? WHERE id = ?",
+        [credits, booking.customerId]
+      );
+    }
   }
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
     booking.id,

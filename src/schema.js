@@ -313,6 +313,11 @@ async function initSchema() {
   await ensureColumn("bookings", "rideOtpVerified", "rideOtpVerified TINYINT(1) NOT NULL DEFAULT 0");
   await ensureColumn("bookings", "estimatedPickupMin", "estimatedPickupMin INT NULL");
 
+  // Carbon credits: balance on users, per-booking earn/redeem on bookings.
+  await ensureColumn("users", "carbonCredits", "carbonCredits INT NOT NULL DEFAULT 0");
+  await ensureColumn("bookings", "creditsEarned", "creditsEarned INT NOT NULL DEFAULT 0");
+  await ensureColumn("bookings", "creditsUsed", "creditsUsed INT NOT NULL DEFAULT 0");
+
   // Seed operator companies and regional offices (idempotent).
   const { seedOperators } = require("./seed-operators");
   await seedOperators().catch(err => dbg("seedOperators: " + err.message));

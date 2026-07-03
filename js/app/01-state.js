@@ -29,6 +29,7 @@ let currentBooking = null;
 let currentRoute = null;
 let currentDiscount = null;
 let currentCarbonComparison = null;
+let currentCarbonCredits = null;
 
 // ── Booking draft (US-005) ──
 // Single source of truth for the in-progress booking: the selected pickup and

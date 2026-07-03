@@ -36,6 +36,7 @@ let currentBooking = null;
 let currentRoute = null;
 let currentDiscount = null;
 let currentCarbonComparison = null;
+let currentCarbonCredits = null;
 
 // ── Booking draft (US-005) ──
 // Single source of truth for the in-progress booking: the selected pickup and
@@ -1770,6 +1771,7 @@ function statsDashboardHtml(stats) {
         pdStat('\uD83D\uDCCF', KM(t.distanceKm), 'Distance flown') +
         pdStat('\uD83D\uDCB0', INR(t.spentINR), 'Total spent') +
         pdStat('\uD83C\uDF31', CO2(t.carbonSavedKg), 'CO\u2082 saved', 'green') +
+        pdStat('\u2B50', (t.carbonCredits || 0).toLocaleString('en-IN'), 'Carbon Credits') +
       '</div>' +
       '<div class="pd-breakdown">' +
         (pdBreakdown('By service', stats.byService || {}) +
@@ -1820,7 +1822,8 @@ async function loadProfileQuickStats() {
         host.innerHTML =
           '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.trips || 0) + '</div><div class="profile-quick-stat-label">Trips</div></div>' +
           '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + KM(t.distanceKm) + '</div><div class="profile-quick-stat-label">Distance</div></div>' +
-          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + CO2(t.carbonSavedKg) + '</div><div class="profile-quick-stat-label">CO₂ saved</div></div>';
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + CO2(t.carbonSavedKg) + '</div><div class="profile-quick-stat-label">CO₂ saved</div></div>' +
+          '<div class="profile-quick-stat"><div class="profile-quick-stat-val">' + (t.carbonCredits || 0).toLocaleString('en-IN') + '</div><div class="profile-quick-stat-label">Credits</div></div>';
       }
     }
   } catch (e) { /* ignore */ }
@@ -4815,6 +4818,7 @@ async function bookRide() {
 
     currentBooking = data.booking;
     currentFareBreakdown = data.fare || null;
+    currentCarbonCredits = data.carbonCredits || null;
     if (data.company) currentBooking._company = data.company;
     showPaymentOverlay(currentBooking);
   } catch (err) {
@@ -4845,7 +4849,44 @@ function showPaymentOverlay(booking) {
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
+
+  // Carbon credits section
+  var credSec = document.getElementById('payment-credits-section');
+  var credEarn = document.getElementById('payment-credits-earn');
+  var cb = document.getElementById('payment-use-credits');
+  if (cb) cb.checked = false;
+  if (currentCarbonCredits && currentCarbonCredits.balance > 0) {
+    credSec.style.display = 'block';
+    document.getElementById('payment-credits-balance').textContent =
+      currentCarbonCredits.balance.toLocaleString('en-IN') + ' credits (= \u20B9' + currentCarbonCredits.balance.toLocaleString('en-IN') + ')';
+    document.getElementById('payment-credits-detail').textContent = '';
+  } else {
+    credSec.style.display = 'none';
+  }
+  if (currentCarbonCredits && currentCarbonCredits.willEarn > 0) {
+    credEarn.style.display = 'block';
+    credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
+      currentCarbonCredits.willEarn + ' carbon credits</strong> from this flight';
+  } else {
+    credEarn.style.display = 'none';
+  }
+
   document.getElementById('payment-overlay').classList.add('active');
+}
+
+function toggleCredits() {
+  var cb = document.getElementById('payment-use-credits');
+  var detail = document.getElementById('payment-credits-detail');
+  if (!cb || !currentCarbonCredits || !currentBooking) return;
+  if (cb.checked) {
+    var maxCredits = Math.min(currentCarbonCredits.balance, Math.floor(currentBooking.fareEstimate * 0.5));
+    var newTotal = currentBooking.fareEstimate - maxCredits;
+    detail.innerHTML = 'Applying <strong>' + maxCredits.toLocaleString('en-IN') +
+      ' credits (\u20B9' + maxCredits.toLocaleString('en-IN') + ' off)</strong> &middot; New total: <strong>\u20B9' +
+      Math.round(newTotal).toLocaleString('en-IN') + '</strong>';
+  } else {
+    detail.textContent = '';
+  }
 }
 
 function closePayment() {
@@ -4868,7 +4909,9 @@ async function payForBooking() {
   hideAuthError('payment-error');
   setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
   try {
-    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST' });
+    var useCredits = document.getElementById('payment-use-credits');
+    var payBody = useCredits && useCredits.checked ? JSON.stringify({ useCredits: true }) : undefined;
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST', body: payBody });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) {
       showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
@@ -4967,6 +5010,7 @@ function resetBooking() {
   currentRoute = null;
   currentDiscount = null;
   currentCarbonComparison = null;
+  currentCarbonCredits = null;
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
@@ -5768,12 +5812,17 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.discount && fare.discount.amount) {
     discountRow = '<div class="fb-row fb-discount"><span>' + escapeHtml(fare.discount.label) + '</span><span>-' + money(fare.discount.amount) + '</span></div>';
   }
+  var creditsRow = '';
+  if (fare.creditsApplied && fare.creditsApplied.amount) {
+    creditsRow = '<div class="fb-row fb-credits"><span>' + escapeHtml(fare.creditsApplied.label) + '</span><span>-' + money(fare.creditsApplied.amount) + '</span></div>';
+  }
   host.innerHTML =
     '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
     '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
     (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
     '<div class="fb-row" style="color:#888"><span>Subtotal</span><span>' + money(fare.subtotal) + '</span></div>' +
     discountRow +
+    creditsRow +
     (fare.taxes ? '<div class="fb-row"><span>' + taxLabel + '</span><span>' + money(fare.taxes) + '</span></div>' : '') +
     '<div class="fb-total"><span>Total</span><span>' + money(fare.total) + '</span></div>';
 }

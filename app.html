@@ -605,6 +605,20 @@
         </div>
       </div>
       <div class="payment-fare-breakdown" id="payment-fare-breakdown"></div>
+      <div class="payment-credits-section" id="payment-credits-section" style="display:none;">
+        <div class="credits-toggle">
+          <label class="credits-toggle-label">
+            <input type="checkbox" id="payment-use-credits" onchange="toggleCredits()">
+            <span class="credits-toggle-text">
+              <span class="credits-icon">&#9733;</span>
+              Use Carbon Credits
+            </span>
+            <span class="credits-balance" id="payment-credits-balance">0 credits</span>
+          </label>
+          <div class="credits-detail" id="payment-credits-detail"></div>
+        </div>
+      </div>
+      <div class="credits-earn-preview" id="payment-credits-earn" style="display:none;"></div>
       <div class="payment-fields">
         <input type="text" id="payment-card" placeholder="Card number (demo)" value="4242 4242 4242 4242" autocomplete="off">
         <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="passenger@upi" autocomplete="off">
@@ -1178,6 +1192,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=e21e9bec"></script>
+<script src="/js/app.bundle.js?v=d94fdbfb"></script>
 </body>
 </html>

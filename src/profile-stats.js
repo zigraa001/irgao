@@ -38,15 +38,18 @@ function countBy(rows, keyCol) {
 }
 
 async function customerStats(userId) {
-  const rows = await query(
-    `SELECT id, service, status, distanceKm, fareEstimate, carbonSavedKg,
-            pickupName, destName, createdAt
-       FROM bookings
-       WHERE customerId = ?
-       ORDER BY createdAt DESC
-       LIMIT 200`,
-    [userId]
-  );
+  const [rows, userRow] = await Promise.all([
+    query(
+      `SELECT id, service, status, distanceKm, fareEstimate, carbonSavedKg,
+              creditsEarned, creditsUsed, pickupName, destName, createdAt
+         FROM bookings
+         WHERE customerId = ?
+         ORDER BY createdAt DESC
+         LIMIT 200`,
+      [userId]
+    ),
+    queryOne("SELECT carbonCredits FROM users WHERE id = ?", [userId]),
+  ]);
 
   const totals = {
     trips: rows.length,
@@ -63,6 +66,9 @@ async function customerStats(userId) {
     distanceKm: Math.round(sumRows(rows, "distanceKm") * 10) / 10,
     spentINR: Math.round(sumRows(rows, "fareEstimate")),
     carbonSavedKg: Math.round(sumRows(rows, "carbonSavedKg") * 10) / 10,
+    carbonCredits: userRow ? Number(userRow.carbonCredits) || 0 : 0,
+    creditsEarned: sumRows(rows, "creditsEarned"),
+    creditsUsed: sumRows(rows, "creditsUsed"),
   };
 
   return {

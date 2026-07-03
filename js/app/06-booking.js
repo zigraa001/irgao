@@ -445,6 +445,7 @@ async function bookRide() {
 
     currentBooking = data.booking;
     currentFareBreakdown = data.fare || null;
+    currentCarbonCredits = data.carbonCredits || null;
     if (data.company) currentBooking._company = data.company;
     showPaymentOverlay(currentBooking);
   } catch (err) {
@@ -475,7 +476,44 @@ function showPaymentOverlay(booking) {
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
+
+  // Carbon credits section
+  var credSec = document.getElementById('payment-credits-section');
+  var credEarn = document.getElementById('payment-credits-earn');
+  var cb = document.getElementById('payment-use-credits');
+  if (cb) cb.checked = false;
+  if (currentCarbonCredits && currentCarbonCredits.balance > 0) {
+    credSec.style.display = 'block';
+    document.getElementById('payment-credits-balance').textContent =
+      currentCarbonCredits.balance.toLocaleString('en-IN') + ' credits (= \u20B9' + currentCarbonCredits.balance.toLocaleString('en-IN') + ')';
+    document.getElementById('payment-credits-detail').textContent = '';
+  } else {
+    credSec.style.display = 'none';
+  }
+  if (currentCarbonCredits && currentCarbonCredits.willEarn > 0) {
+    credEarn.style.display = 'block';
+    credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
+      currentCarbonCredits.willEarn + ' carbon credits</strong> from this flight';
+  } else {
+    credEarn.style.display = 'none';
+  }
+
   document.getElementById('payment-overlay').classList.add('active');
+}
+
+function toggleCredits() {
+  var cb = document.getElementById('payment-use-credits');
+  var detail = document.getElementById('payment-credits-detail');
+  if (!cb || !currentCarbonCredits || !currentBooking) return;
+  if (cb.checked) {
+    var maxCredits = Math.min(currentCarbonCredits.balance, Math.floor(currentBooking.fareEstimate * 0.5));
+    var newTotal = currentBooking.fareEstimate - maxCredits;
+    detail.innerHTML = 'Applying <strong>' + maxCredits.toLocaleString('en-IN') +
+      ' credits (\u20B9' + maxCredits.toLocaleString('en-IN') + ' off)</strong> &middot; New total: <strong>\u20B9' +
+      Math.round(newTotal).toLocaleString('en-IN') + '</strong>';
+  } else {
+    detail.textContent = '';
+  }
 }
 
 function closePayment() {
@@ -498,7 +536,9 @@ async function payForBooking() {
   hideAuthError('payment-error');
   setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
   try {
-    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST' });
+    var useCredits = document.getElementById('payment-use-credits');
+    var payBody = useCredits && useCredits.checked ? JSON.stringify({ useCredits: true }) : undefined;
+    const res = await apiFetch('/api/bookings/' + currentBooking.id + '/pay', { method: 'POST', body: payBody });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) {
       showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
@@ -597,6 +637,7 @@ function resetBooking() {
   currentRoute = null;
   currentDiscount = null;
   currentCarbonComparison = null;
+  currentCarbonCredits = null;
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };

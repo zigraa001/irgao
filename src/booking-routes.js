@@ -14,7 +14,7 @@ const {
   parseCoord,
   applyNewFlyerDiscount,
 } = require("./pricing");
-const { estimateCarbonSavedKg, carbonComparison } = require("./carbon");
+const { estimateCarbonSavedKg, carbonComparison, CREDITS_PER_KM } = require("./carbon");
 const { startDispatch, stopDispatch, setOperatorDuty } = require("./dispatch");
 const { pushOperator, pushCustomer } = require("./dispatch-hub");
 const { rateLimit } = require("./rate-limit");
@@ -90,14 +90,16 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     });
   }
 
-  const completedRow = await queryOne(
-    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
-    [req.user.id]
-  );
+  const [completedRow, userCredRow] = await Promise.all([
+    queryOne("SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'", [req.user.id]),
+    queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]),
+  ]);
   const completedFlights = completedRow ? Number(completedRow.n) : 0;
+  const creditBalance = userCredRow ? Number(userCredRow.carbonCredits) || 0 : 0;
   const baseFare = estimateFare(service, distanceKm);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
-  const fareEstimate = discountInfo.fare;
+  let fareEstimate = discountInfo.fare;
+
   const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
   // Find the nearest active regional office to the pickup point.
@@ -151,10 +153,13 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     result.insertId,
   ]);
 
+  const creditsRate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;
+
   res.status(201).json({
     booking,
     fare: fareBreakdown(service, distanceKm, discountInfo),
     discount: discountInfo,
+    carbonCredits: { balance: creditBalance, willEarn: Math.round(creditsRate * distanceKm) },
     warnings: feasibility.warnings,
     emergencyBypass: feasibility.emergencyBypass || false,
     route: feasibility.route || null,
@@ -296,13 +301,16 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
   });
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
-  const completedRow = await queryOne(
-    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
-    [req.user.id]
-  );
+  const [completedRow, userRow] = await Promise.all([
+    queryOne("SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'", [req.user.id]),
+    queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]),
+  ]);
   const completedFlights = completedRow ? Number(completedRow.n) : 0;
+  const creditBalance = userRow ? Number(userRow.carbonCredits) || 0 : 0;
   const baseFare = estimateFare(service, distanceKm);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
+  const creditsRate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;
+  const creditsWillEarn = Math.round(creditsRate * distanceKm);
   res.json({
     feasible: feasibility.feasible,
     emergencyBypass: feasibility.emergencyBypass || false,
@@ -313,6 +321,7 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     fare: fareBreakdown(service, distanceKm, discountInfo),
     discount: discountInfo,
     carbonComparison: carbonComparison(distanceKm, 1),
+    carbonCredits: { balance: creditBalance, willEarn: creditsWillEarn },
     route: feasibility.route || null,
   });
 });
@@ -325,6 +334,21 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
   if (!booking) return res.status(404).json({ error: "Booking not found" });
   if (booking.customerId !== req.user.id) {
     return res.status(403).json({ error: "Forbidden" });
+  }
+
+  // Apply carbon credits if requested
+  const body = req.body || {};
+  const wantsCredits = body.useCredits === true || body.useCredits === "true";
+  let creditsUsed = 0;
+  if (wantsCredits) {
+    const userCred = await queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]);
+    const creditBalance = userCred ? Number(userCred.carbonCredits) || 0 : 0;
+    if (creditBalance > 0) {
+      creditsUsed = Math.min(creditBalance, Math.floor(booking.fareEstimate * 0.5));
+      const newFare = booking.fareEstimate - creditsUsed;
+      await query("UPDATE bookings SET fareEstimate = ?, creditsUsed = ? WHERE id = ?", [newFare, creditsUsed, id]);
+      await query("UPDATE users SET carbonCredits = carbonCredits - ? WHERE id = ?", [creditsUsed, req.user.id]);
+    }
   }
 
   // Race-safe claim: only the first concurrent /pay flips pending → paid.

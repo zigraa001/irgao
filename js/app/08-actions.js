@@ -17,12 +17,17 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.discount && fare.discount.amount) {
     discountRow = '<div class="fb-row fb-discount"><span>' + escapeHtml(fare.discount.label) + '</span><span>-' + money(fare.discount.amount) + '</span></div>';
   }
+  var creditsRow = '';
+  if (fare.creditsApplied && fare.creditsApplied.amount) {
+    creditsRow = '<div class="fb-row fb-credits"><span>' + escapeHtml(fare.creditsApplied.label) + '</span><span>-' + money(fare.creditsApplied.amount) + '</span></div>';
+  }
   host.innerHTML =
     '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
     '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
     (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
     '<div class="fb-row" style="color:#888"><span>Subtotal</span><span>' + money(fare.subtotal) + '</span></div>' +
     discountRow +
+    creditsRow +
     (fare.taxes ? '<div class="fb-row"><span>' + taxLabel + '</span><span>' + money(fare.taxes) + '</span></div>' : '') +
     '<div class="fb-total"><span>Total</span><span>' + money(fare.total) + '</span></div>';
 }
