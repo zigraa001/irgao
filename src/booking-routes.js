@@ -81,6 +81,60 @@ async function validateCoupon(code, userId, fare, service) {
   };
 }
 
+// Pre-GST fare base after the new-flyer discount — the amount coupons and
+// credits are computed against. Discounts never apply to GST; GST is charged
+// on whatever remains after all discounts.
+async function fareBaseForUser(booking, userId) {
+  const row = await queryOne(
+    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
+    [userId]
+  );
+  const completedFlights = row ? Number(row.n) : 0;
+  const baseFare = estimateFare(booking.service, booking.distanceKm);
+  const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
+  const fb = fareBreakdown(booking.service, booking.distanceKm, discountInfo);
+  const preGst = fb.subtotal - (fb.discount ? fb.discount.amount : 0);
+  return { discountInfo, preGst };
+}
+
+// One authoritative payment quote: new-flyer discount + optional coupon +
+// optional carbon credits (max 50% of the remaining pre-GST fare), then GST.
+// Used by both /quote (live preview) and /pay (final charge) so the number
+// the customer sees is always the number they are charged.
+async function buildPaymentQuote(booking, userId, opts) {
+  const { discountInfo, preGst } = await fareBaseForUser(booking, userId);
+
+  let coupon = null;
+  let couponError = null;
+  let couponDiscount = 0;
+  if (opts.couponCode) {
+    const cv = await validateCoupon(opts.couponCode, userId, preGst, booking.service);
+    if (cv.valid) {
+      coupon = cv.coupon;
+      couponDiscount = cv.discount;
+    } else {
+      couponError = cv.error;
+    }
+  }
+
+  const userCred = await queryOne("SELECT carbonCredits FROM users WHERE id = ?", [userId]);
+  const creditBalance = userCred ? Number(userCred.carbonCredits) || 0 : 0;
+  let creditsUsed = 0;
+  if (opts.useCredits && creditBalance > 0) {
+    const afterCoupon = Math.max(0, preGst - couponDiscount);
+    creditsUsed = Math.min(creditBalance, Math.floor(afterCoupon * 0.5));
+  }
+
+  const fare = fareBreakdown(
+    booking.service,
+    booking.distanceKm,
+    discountInfo,
+    creditsUsed,
+    coupon ? { code: coupon.code, discount: couponDiscount } : null
+  );
+  return { fare, discountInfo, coupon, couponError, couponDiscount, creditsUsed, creditBalance };
+}
+
 // Minimum trip distance (km). Pickup == destination yields a 0-km booking
 // priced at just the base fare — reject it.
 const MIN_TRIP_KM = 0.1;
@@ -394,8 +448,39 @@ router.post("/:id/coupon", requireAuth, requireRole("customer"), async (req, res
   }
   const code = (req.body && req.body.code) ? String(req.body.code).trim().toUpperCase() : "";
   if (!code) return res.status(400).json({ valid: false, error: "Enter a coupon code" });
-  const result = await validateCoupon(code, req.user.id, booking.fareEstimate, booking.service);
+  const { preGst } = await fareBaseForUser(booking, req.user.id);
+  const result = await validateCoupon(code, req.user.id, preGst, booking.service);
   res.json(result);
+});
+
+// POST /api/bookings/:id/quote — recompute the payable total with an optional
+// coupon and carbon credits toggle. Pure preview: nothing is persisted. The
+// client re-renders the fare breakdown from this so the preview always matches
+// what /pay will charge.
+router.post("/:id/quote", requireAuth, requireRole("customer"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (booking.customerId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const body = req.body || {};
+  const q = await buildPaymentQuote(booking, req.user.id, {
+    couponCode: body.couponCode ? String(body.couponCode).trim().toUpperCase() : null,
+    useCredits: body.useCredits === true || body.useCredits === "true",
+  });
+  res.json({
+    fare: q.fare,
+    total: q.fare.total,
+    coupon: q.coupon,
+    couponError: q.couponError,
+    couponDiscount: q.couponDiscount,
+    creditsUsed: q.creditsUsed,
+    creditBalance: q.creditBalance,
+  });
 });
 
 // GET /api/bookings/:id/coupons — list available coupons for this booking.
@@ -412,10 +497,11 @@ router.get("/:id/coupons", requireAuth, requireRole("customer"), async (req, res
   const allCoupons = await query(
     "SELECT * FROM coupons WHERE active = 1 AND (expiresAt IS NULL OR expiresAt > NOW())"
   );
+  const { preGst } = await fareBaseForUser(booking, req.user.id);
   const available = [];
   for (const c of allCoupons) {
     if (c.maxUses > 0 && c.usedCount >= c.maxUses) continue;
-    if (c.minFare > 0 && booking.fareEstimate < c.minFare) continue;
+    if (c.minFare > 0 && preGst < c.minFare) continue;
     if (c.services) {
       const allowed = c.services.split(",").map(s => s.trim().toLowerCase());
       if (!allowed.includes(booking.service.toLowerCase())) continue;
@@ -429,10 +515,10 @@ router.get("/:id/coupons", requireAuth, requireRole("customer"), async (req, res
     }
     let discount = 0;
     if (c.discountType === "percent") {
-      discount = Math.round(booking.fareEstimate * (c.discountValue / 100));
+      discount = Math.round(preGst * (c.discountValue / 100));
       if (c.maxDiscount && discount > c.maxDiscount) discount = c.maxDiscount;
     } else {
-      discount = Math.min(c.discountValue, booking.fareEstimate);
+      discount = Math.min(c.discountValue, preGst);
     }
     available.push({
       code: c.code,
@@ -459,44 +545,9 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
 
   const body = req.body || {};
 
-  // Apply coupon if provided
-  let couponDiscount = 0;
-  let couponCode = null;
-  if (body.couponCode) {
-    const cv = await validateCoupon(body.couponCode, req.user.id, booking.fareEstimate, booking.service);
-    if (cv.valid) {
-      couponCode = cv.coupon.code;
-      couponDiscount = cv.discount;
-      const fareAfterCoupon = booking.fareEstimate - couponDiscount;
-      await query(
-        "UPDATE bookings SET fareEstimate = ?, couponCode = ?, couponDiscount = ? WHERE id = ?",
-        [fareAfterCoupon, couponCode, couponDiscount, id]
-      );
-      await query("UPDATE coupons SET usedCount = usedCount + 1 WHERE code = ?", [couponCode]);
-    }
-  }
-
-  // Re-read booking after coupon adjustment
-  const bookingAfterCoupon = couponDiscount > 0
-    ? await queryOne("SELECT * FROM bookings WHERE id = ?", [id])
-    : booking;
-
-  // Apply carbon credits if requested
-  const wantsCredits = body.useCredits === true || body.useCredits === "true";
-  let creditsUsed = 0;
-  if (wantsCredits) {
-    const userCred = await queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]);
-    const creditBalance = userCred ? Number(userCred.carbonCredits) || 0 : 0;
-    if (creditBalance > 0) {
-      creditsUsed = Math.min(creditBalance, Math.floor(bookingAfterCoupon.fareEstimate * 0.5));
-      const newFare = bookingAfterCoupon.fareEstimate - creditsUsed;
-      await query("UPDATE bookings SET fareEstimate = ?, creditsUsed = ? WHERE id = ?", [newFare, creditsUsed, id]);
-      await query("UPDATE users SET carbonCredits = carbonCredits - ? WHERE id = ?", [creditsUsed, req.user.id]);
-    }
-  }
-
-  // Race-safe claim: only the first concurrent /pay flips pending → paid.
-  // A second concurrent caller gets affectedRows=0 and an idempotent response.
+  // Race-safe claim FIRST: only the first concurrent /pay flips pending → paid.
+  // Claiming before any coupon/credit side effects means a duplicate /pay can
+  // never double-redeem a coupon or double-deduct carbon credits.
   const claim = await query(
     "UPDATE bookings SET paymentStatus = 'paid' WHERE id = ? AND paymentStatus = 'pending'",
     [id]
@@ -504,6 +555,29 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
   if (claim.affectedRows === 0) {
     const alreadyPaid = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
     return res.json({ booking: alreadyPaid, message: "Already paid" });
+  }
+
+  // Recompute the authoritative total server-side (never trust client math),
+  // using the exact same quote the customer previewed via /quote.
+  const quote = await buildPaymentQuote(booking, req.user.id, {
+    couponCode: body.couponCode ? String(body.couponCode).trim().toUpperCase() : null,
+    useCredits: body.useCredits === true || body.useCredits === "true",
+  });
+  await query(
+    "UPDATE bookings SET fareEstimate = ?, couponCode = ?, couponDiscount = ?, creditsUsed = ? WHERE id = ?",
+    [
+      quote.fare.total,
+      quote.coupon ? quote.coupon.code : null,
+      quote.couponDiscount,
+      quote.creditsUsed,
+      id,
+    ]
+  );
+  if (quote.coupon) {
+    await query("UPDATE coupons SET usedCount = usedCount + 1 WHERE code = ?", [quote.coupon.code]);
+  }
+  if (quote.creditsUsed > 0) {
+    await query("UPDATE users SET carbonCredits = carbonCredits - ? WHERE id = ?", [quote.creditsUsed, req.user.id]);
   }
 
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
@@ -539,7 +613,7 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
       if (customer) {
         await sendReceiptEmail(customer.email, {
           booking: updated,
-          fare: fareBreakdown(updated.service, updated.distanceKm),
+          fare: quote.fare,
           customerName: customer.name,
         });
         receiptEmailed = true;
@@ -549,20 +623,15 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
     }
   }
 
-  const payCompletedRow = await queryOne(
-    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
-    [req.user.id]
-  );
-  const payCompletedFlights = payCompletedRow ? Number(payCompletedRow.n) : 0;
-  const payBaseFare = estimateFare(updated.service, updated.distanceKm);
-  const payDiscountInfo = applyNewFlyerDiscount(payBaseFare, payCompletedFlights);
-
   res.json({
     booking: fresh,
     message: "Payment successful. Finding a nearby pilot…",
     carbonSavedKg: updated.carbonSavedKg,
-    fare: fareBreakdown(updated.service, updated.distanceKm, payDiscountInfo),
-    discount: payDiscountInfo,
+    fare: quote.fare,
+    discount: quote.discountInfo,
+    coupon: quote.coupon,
+    couponDiscount: quote.couponDiscount,
+    creditsUsed: quote.creditsUsed,
     receiptEmailed,
     operator: demoOperator,
   });

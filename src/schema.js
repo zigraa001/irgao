@@ -318,6 +318,20 @@ async function initSchema() {
   await ensureColumn("bookings", "creditsEarned", "creditsEarned INT NOT NULL DEFAULT 0");
   await ensureColumn("bookings", "creditsUsed", "creditsUsed INT NOT NULL DEFAULT 0");
 
+  // Retroactive: award credits for completed flights that never got them.
+  const { computeCreditsEarned } = require("./carbon");
+  const uncredited = await query(
+    "SELECT id, customerId, service, distanceKm FROM bookings WHERE status = 'completed' AND creditsEarned = 0"
+  );
+  for (const b of uncredited) {
+    const credits = computeCreditsEarned(b.service, b.distanceKm);
+    if (credits > 0 && b.customerId) {
+      await query("UPDATE bookings SET creditsEarned = ? WHERE id = ?", [credits, b.id]);
+      await query("UPDATE users SET carbonCredits = carbonCredits + ? WHERE id = ?", [credits, b.customerId]);
+    }
+  }
+  if (uncredited.length) dbg("initSchema: retroactively awarded credits for " + uncredited.length + " completed flight(s)");
+
   // Coupons table + per-booking coupon tracking.
   await query(`CREATE TABLE IF NOT EXISTS coupons (
     id          INT AUTO_INCREMENT PRIMARY KEY,

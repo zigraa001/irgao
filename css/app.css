@@ -1590,6 +1590,16 @@ a { text-decoration: none; color: inherit; }
 }
 .coupon-success { color: #15803d; font-weight: 600; }
 .coupon-error { color: var(--red); }
+.coupon-remove {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
 .fb-coupon { color: #7c3aed !important; font-weight: 600; }
 .fb-coupon span:last-child { color: #7c3aed; }
 

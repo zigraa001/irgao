@@ -545,6 +545,34 @@ function selectCouponChip(code) {
 
 var appliedCoupon = null;
 
+// Fetch the authoritative payment quote (coupon + credits recomputed on the
+// server) and re-render the fare breakdown + amount due from it. The client
+// never does its own discount math — /quote is the same computation /pay runs.
+async function refreshPaymentQuote(candidateCode) {
+  if (!currentBooking) return null;
+  var cb = document.getElementById('payment-use-credits');
+  var body = {
+    couponCode: candidateCode || (appliedCoupon && appliedCoupon.code) || null,
+    useCredits: !!(cb && cb.checked && !cb.disabled),
+  };
+  try {
+    var res = await apiFetch('/api/bookings/' + currentBooking.id + '/quote', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.fare) {
+      currentFareBreakdown = data.fare;
+      renderFareBreakdown('payment-fare-breakdown', data.fare);
+      var amt = document.getElementById('payment-amount');
+      if (amt) amt.textContent = '₹' + Math.round(data.fare.total).toLocaleString('en-IN');
+    }
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function applyCoupon() {
   var input = document.getElementById('coupon-input');
   var msg = document.getElementById('coupon-msg');
@@ -553,34 +581,36 @@ async function applyCoupon() {
   var code = input.value.trim().toUpperCase();
   if (!code) { if (msg) msg.textContent = 'Enter a coupon code'; return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
-  try {
-    var res = await apiFetch('/api/bookings/' + currentBooking.id + '/coupon', {
-      method: 'POST',
-      body: JSON.stringify({ code: code }),
-    });
-    var data = await res.json().catch(function () { return {}; });
-    if (data.valid) {
-      appliedCoupon = { code: data.coupon.code, discount: data.discount };
-      msg.innerHTML = '<span class="coupon-success">' +
-        escapeHtml(data.coupon.code) + ' applied — ₹' + data.discount.toLocaleString('en-IN') + ' off!</span>';
-      input.disabled = true;
-      if (btn) { btn.textContent = 'Applied'; btn.classList.add('applied'); }
-      var newTotal = currentBooking.fareEstimate - data.discount;
-      document.getElementById('payment-amount').textContent =
-        '₹' + Math.round(newTotal).toLocaleString('en-IN');
-    } else {
-      appliedCoupon = null;
-      msg.innerHTML = '<span class="coupon-error">' + escapeHtml(data.error || 'Invalid coupon') + '</span>';
-      if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
-    }
-  } catch (e) {
+  var data = await refreshPaymentQuote(code);
+  if (!data) {
     if (msg) msg.textContent = 'Network error — try again';
+    if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
+    return;
+  }
+  if (data.coupon) {
+    appliedCoupon = { code: data.coupon.code, discount: data.couponDiscount };
+    input.value = data.coupon.code;
+    input.disabled = true;
+    if (btn) { btn.textContent = 'Applied'; btn.classList.add('applied'); }
+    if (msg) {
+      msg.innerHTML = '<span class="coupon-success">' + escapeHtml(data.coupon.code) +
+        ' applied — ₹' + Number(data.couponDiscount).toLocaleString('en-IN') + ' off!</span>' +
+        '<button type="button" class="coupon-remove" onclick="removeCoupon()">Remove</button>';
+    }
+  } else {
+    appliedCoupon = null;
+    if (msg) msg.innerHTML = '<span class="coupon-error">' + escapeHtml(data.couponError || 'Invalid coupon') + '</span>';
     if (btn) { btn.disabled = false; btn.textContent = 'Apply'; }
   }
 }
 
-function resetCoupon() {
+async function removeCoupon() {
   appliedCoupon = null;
+  resetCouponUI();
+  await refreshPaymentQuote();
+}
+
+function resetCouponUI() {
   var input = document.getElementById('coupon-input');
   var msg = document.getElementById('coupon-msg');
   var btn = document.getElementById('coupon-apply-btn');
@@ -589,16 +619,22 @@ function resetCoupon() {
   if (btn) { btn.disabled = false; btn.textContent = 'Apply'; btn.classList.remove('applied'); }
 }
 
-function toggleCredits() {
+function resetCoupon() {
+  appliedCoupon = null;
+  resetCouponUI();
+}
+
+async function toggleCredits() {
   var cb = document.getElementById('payment-use-credits');
   var detail = document.getElementById('payment-credits-detail');
-  if (!cb || !currentCarbonCredits || !currentBooking) return;
-  if (cb.checked) {
-    var maxCredits = Math.min(currentCarbonCredits.balance, Math.floor(currentBooking.fareEstimate * 0.5));
-    var newTotal = currentBooking.fareEstimate - maxCredits;
-    detail.innerHTML = 'Applying <strong>' + maxCredits.toLocaleString('en-IN') +
-      ' credits (\u20B9' + maxCredits.toLocaleString('en-IN') + ' off)</strong> &middot; New total: <strong>\u20B9' +
-      Math.round(newTotal).toLocaleString('en-IN') + '</strong>';
+  if (!cb) return;
+  var data = await refreshPaymentQuote();
+  if (!detail) return;
+  if (cb.checked && data && data.creditsUsed > 0) {
+    detail.innerHTML = 'Applying <strong>' + Number(data.creditsUsed).toLocaleString('en-IN') +
+      ' credits (\u20B9' + Number(data.creditsUsed).toLocaleString('en-IN') + ' off)</strong> &middot; max 50% of fare';
+  } else if (cb.checked) {
+    detail.textContent = 'No credits available to apply';
   } else {
     detail.textContent = '';
   }
