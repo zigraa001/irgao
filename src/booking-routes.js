@@ -398,6 +398,54 @@ router.post("/:id/coupon", requireAuth, requireRole("customer"), async (req, res
   res.json(result);
 });
 
+// GET /api/bookings/:id/coupons — list available coupons for this booking.
+router.get("/:id/coupons", requireAuth, requireRole("customer"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid booking id" });
+  }
+  const booking = await queryOne("SELECT * FROM bookings WHERE id = ?", [id]);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (booking.customerId !== req.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const allCoupons = await query(
+    "SELECT * FROM coupons WHERE active = 1 AND (expiresAt IS NULL OR expiresAt > NOW())"
+  );
+  const available = [];
+  for (const c of allCoupons) {
+    if (c.maxUses > 0 && c.usedCount >= c.maxUses) continue;
+    if (c.minFare > 0 && booking.fareEstimate < c.minFare) continue;
+    if (c.services) {
+      const allowed = c.services.split(",").map(s => s.trim().toLowerCase());
+      if (!allowed.includes(booking.service.toLowerCase())) continue;
+    }
+    if (c.perUserLimit > 0) {
+      const used = await queryOne(
+        "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND couponCode = ?",
+        [req.user.id, c.code]
+      );
+      if (used && Number(used.n) >= c.perUserLimit) continue;
+    }
+    let discount = 0;
+    if (c.discountType === "percent") {
+      discount = Math.round(booking.fareEstimate * (c.discountValue / 100));
+      if (c.maxDiscount && discount > c.maxDiscount) discount = c.maxDiscount;
+    } else {
+      discount = Math.min(c.discountValue, booking.fareEstimate);
+    }
+    available.push({
+      code: c.code,
+      description: c.description,
+      discountType: c.discountType,
+      discountValue: c.discountValue,
+      maxDiscount: c.maxDiscount,
+      discount,
+    });
+  }
+  res.json({ coupons: available });
+});
+
 router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("bookings.pay"), async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {

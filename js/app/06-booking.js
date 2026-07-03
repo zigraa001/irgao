@@ -478,28 +478,66 @@ function showPaymentOverlay(booking) {
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
 
-  // Carbon credits section
+  // Carbon credits section \u2014 always show
   var credSec = document.getElementById('payment-credits-section');
   var credEarn = document.getElementById('payment-credits-earn');
   var cb = document.getElementById('payment-use-credits');
   if (cb) cb.checked = false;
-  if (currentCarbonCredits && currentCarbonCredits.balance > 0) {
+  var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
+  var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
+  if (balance > 0) {
     credSec.style.display = 'block';
     document.getElementById('payment-credits-balance').textContent =
-      currentCarbonCredits.balance.toLocaleString('en-IN') + ' credits (= \u20B9' + currentCarbonCredits.balance.toLocaleString('en-IN') + ')';
+      balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
     document.getElementById('payment-credits-detail').textContent = '';
   } else {
     credSec.style.display = 'none';
   }
-  if (currentCarbonCredits && currentCarbonCredits.willEarn > 0) {
+  if (willEarn > 0) {
     credEarn.style.display = 'block';
     credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
-      currentCarbonCredits.willEarn + ' carbon credits</strong> from this flight';
+      willEarn + ' carbon credits</strong> from this flight';
   } else {
     credEarn.style.display = 'none';
   }
 
+  // Fetch available coupons
+  loadAvailableCoupons(booking.id);
+
   document.getElementById('payment-overlay').classList.add('active');
+}
+
+async function loadAvailableCoupons(bookingId) {
+  var chips = document.getElementById('coupon-chips');
+  if (!chips) return;
+  chips.innerHTML = '<div style="font-size:12px;color:var(--gray-400);">Loading coupons...</div>';
+  try {
+    var res = await apiFetch('/api/bookings/' + bookingId + '/coupons');
+    var data = await res.json().catch(function () { return {}; });
+    var coupons = Array.isArray(data.coupons) ? data.coupons : [];
+    if (!coupons.length) {
+      chips.innerHTML = '<div style="font-size:12px;color:var(--gray-400);">No coupons available right now</div>';
+      return;
+    }
+    chips.innerHTML = coupons.map(function (c) {
+      var saveText = c.discountType === 'percent'
+        ? c.discountValue + '% off' + (c.maxDiscount ? ' (max \u20B9' + c.maxDiscount.toLocaleString('en-IN') + ')' : '')
+        : '\u20B9' + c.discountValue.toLocaleString('en-IN') + ' off';
+      return '<button type="button" class="coupon-chip" onclick="selectCouponChip(\'' + escapeHtml(c.code) + '\')">' +
+        '<div class="coupon-chip-code">' + escapeHtml(c.code) + '</div>' +
+        '<div class="coupon-chip-desc">' + escapeHtml(c.description) + '</div>' +
+        '<div class="coupon-chip-save">Save \u20B9' + c.discount.toLocaleString('en-IN') + ' &middot; ' + saveText + '</div>' +
+      '</button>';
+    }).join('');
+  } catch (e) {
+    chips.innerHTML = '';
+  }
+}
+
+function selectCouponChip(code) {
+  var input = document.getElementById('coupon-input');
+  if (input) { input.value = code; }
+  applyCoupon();
 }
 
 var appliedCoupon = null;

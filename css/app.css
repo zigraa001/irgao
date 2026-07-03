@@ -1593,6 +1593,59 @@ a { text-decoration: none; color: inherit; }
 .fb-coupon { color: #7c3aed !important; font-weight: 600; }
 .fb-coupon span:last-child { color: #7c3aed; }
 
+/* ── Coupon header & available chips ── */
+.coupon-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 8px;
+}
+.coupon-header-icon { font-size: 18px; }
+.coupon-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.coupon-chip {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--blue);
+  border-radius: 10px;
+  background: var(--blue-50);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.coupon-chip:hover {
+  background: var(--blue-light);
+  border-color: var(--blue-dark);
+  transform: translateY(-1px);
+}
+.coupon-chip-code {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  letter-spacing: 1px;
+}
+.coupon-chip-desc {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-top: 2px;
+}
+.coupon-chip-save {
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+  margin-top: 3px;
+}
+
 @media (max-width: 600px) {
   .cc-row { grid-template-columns: 1fr 80px auto auto; gap: 4px; }
   .cc-label { font-size: 11px; }
