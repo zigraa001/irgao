@@ -472,8 +472,7 @@ function showPaymentOverlay(booking) {
   hideAuthError('payment-error');
   resetCoupon();
   document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
-  document.getElementById('payment-amount').textContent =
-    '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
+  updatePaymentTotals(booking.fareEstimate);
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
@@ -507,7 +506,65 @@ function showPaymentOverlay(booking) {
   // Fetch available coupons
   loadAvailableCoupons(booking.id);
 
+  paymentGoToStep(1);
   document.getElementById('payment-overlay').classList.add('active');
+}
+
+// ── Payment page steps: 1 = Review & Offers, 2 = Payment method ──
+function paymentGoToStep(step) {
+  var onStep2 = step === 2;
+  var s1 = document.getElementById('payment-step-1');
+  var s2 = document.getElementById('payment-step-2');
+  var title = document.getElementById('payment-step-title');
+  var contBtn = document.getElementById('payment-continue-btn');
+  var payBtn = document.getElementById('payment-pay-btn');
+  var d1 = document.getElementById('payment-dot-1');
+  var d2 = document.getElementById('payment-dot-2');
+  if (s1) s1.style.display = onStep2 ? 'none' : 'block';
+  if (s2) s2.style.display = onStep2 ? 'block' : 'none';
+  if (title) title.textContent = onStep2 ? 'Payment' : 'Review & Offers';
+  if (contBtn) contBtn.style.display = onStep2 ? 'none' : 'block';
+  if (payBtn) payBtn.style.display = onStep2 ? 'block' : 'none';
+  if (d1) d1.classList.toggle('on', !onStep2);
+  if (d2) d2.classList.toggle('on', onStep2);
+  if (onStep2) updatePaymentRecap();
+  var body = onStep2 ? s2 : s1;
+  if (body) body.scrollTop = 0;
+}
+
+function paymentBack() {
+  var s2 = document.getElementById('payment-step-2');
+  if (s2 && s2.style.display !== 'none') paymentGoToStep(1);
+  else closePayment();
+}
+
+// Keep the amount in sync in all three places: step-1 header, step-2 summary,
+// and the sticky footer total.
+function updatePaymentTotals(total) {
+  var t = '₹' + Math.round(Number(total) || 0).toLocaleString('en-IN');
+  var a1 = document.getElementById('payment-amount');
+  var a2 = document.getElementById('payment-amount-2');
+  var f = document.getElementById('payment-footer-total');
+  if (a1) a1.textContent = t;
+  if (a2) a2.textContent = t;
+  if (f) f.textContent = t;
+}
+
+function updatePaymentRecap() {
+  var recap = document.getElementById('payment-offers-recap');
+  if (!recap) return;
+  var fb = currentFareBreakdown;
+  var parts = [];
+  if (fb && fb.discount && fb.discount.amount) {
+    parts.push('New flyer &minus;₹' + Number(fb.discount.amount).toLocaleString('en-IN'));
+  }
+  if (fb && fb.couponApplied && fb.couponApplied.amount) {
+    parts.push(escapeHtml(fb.couponApplied.label) + ' &minus;₹' + Number(fb.couponApplied.amount).toLocaleString('en-IN'));
+  }
+  if (fb && fb.creditsApplied && fb.creditsApplied.amount) {
+    parts.push('Carbon credits &minus;₹' + Number(fb.creditsApplied.amount).toLocaleString('en-IN'));
+  }
+  recap.innerHTML = parts.length ? parts.join(' &middot; ') : 'No offers applied';
 }
 
 async function loadAvailableCoupons(bookingId) {
@@ -564,8 +621,8 @@ async function refreshPaymentQuote(candidateCode) {
     if (res.ok && data.fare) {
       currentFareBreakdown = data.fare;
       renderFareBreakdown('payment-fare-breakdown', data.fare);
-      var amt = document.getElementById('payment-amount');
-      if (amt) amt.textContent = '₹' + Math.round(data.fare.total).toLocaleString('en-IN');
+      updatePaymentTotals(data.fare.total);
+      updatePaymentRecap();
     }
     return data;
   } catch (e) {

@@ -1600,6 +1600,114 @@ a { text-decoration: none; color: inherit; }
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* ── Payment page (2-step full-screen checkout) ── */
+#payment-overlay { padding: 0; z-index: 6000; }
+.payment-page {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  width: 100%;
+  max-width: 520px;
+  height: 100dvh;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  #payment-overlay { padding: 20px; }
+  .payment-page {
+    height: auto;
+    max-height: 92vh;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
+  }
+}
+.payment-page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  flex-shrink: 0;
+}
+.payment-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 18px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.payment-back-btn:hover { background: var(--gray-200); }
+.payment-page-head-main { flex: 1; min-width: 0; }
+.payment-page-title { font-size: 17px; font-weight: 700; color: var(--gray-900); }
+.payment-page-sub { font-size: 12px; color: var(--gray-500); }
+.payment-step-dots { display: flex; gap: 6px; flex-shrink: 0; }
+.payment-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  transition: background 0.2s;
+}
+.payment-dot.on { background: var(--blue); }
+.payment-page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.payment-page-footer {
+  flex-shrink: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--gray-200);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.payment-footer-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--gray-600);
+}
+.payment-footer-total span:last-child {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+.payment-summary-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 18px 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.payment-summary-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.payment-summary-amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-top: 4px;
+}
+.payment-summary-offers {
+  font-size: 12px;
+  color: #15803d;
+  margin-top: 8px;
+  font-weight: 600;
+  line-height: 1.6;
+}
 .fb-coupon { color: #7c3aed !important; font-weight: 600; }
 .fb-coupon span:last-child { color: #7c3aed; }
 

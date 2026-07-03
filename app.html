@@ -39,7 +39,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=coupon0703">
+  <link rel="stylesheet" href="/css/app.css?v=paypage0703">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -587,13 +587,21 @@
      PAYMENT OVERLAY (dummy gateway)
      ════════════════════════════════════════════ -->
 <div class="confirm-overlay" id="payment-overlay">
-  <div class="confirm-card payment-card">
-    <div class="confirm-header">
-      <h2>Complete payment</h2>
-      <p>Secure checkout — demo only, no real charge</p>
-      <div class="confirm-id" id="payment-booking-id">IRG-00000</div>
+  <div class="payment-page">
+    <div class="payment-page-header">
+      <button type="button" class="payment-back-btn" onclick="paymentBack()" aria-label="Back">&#8592;</button>
+      <div class="payment-page-head-main">
+        <div class="payment-page-title" id="payment-step-title">Review &amp; Offers</div>
+        <div class="payment-page-sub"><span id="payment-booking-id">IRG-00000</span> &middot; demo only, no real charge</div>
+      </div>
+      <div class="payment-step-dots">
+        <span class="payment-dot on" id="payment-dot-1"></span>
+        <span class="payment-dot" id="payment-dot-2"></span>
+      </div>
     </div>
-    <div class="confirm-body">
+
+    <!-- Step 1: fare review, carbon credits, coupons -->
+    <div class="payment-page-body" id="payment-step-1">
       <div class="confirm-details" style="margin-bottom:12px;">
         <div class="confirm-detail">
           <div class="confirm-detail-label">Amount due</div>
@@ -631,6 +639,15 @@
         </div>
         <div class="coupon-msg" id="coupon-msg"></div>
       </div>
+    </div>
+
+    <!-- Step 2: payment method -->
+    <div class="payment-page-body" id="payment-step-2" style="display:none;">
+      <div class="payment-summary-card">
+        <div class="payment-summary-label">Amount to pay</div>
+        <div class="payment-summary-amount" id="payment-amount-2">—</div>
+        <div class="payment-summary-offers" id="payment-offers-recap"></div>
+      </div>
       <div class="payment-fields">
         <input type="text" id="payment-card" placeholder="Card number (demo)" value="4242 4242 4242 4242" autocomplete="off">
         <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="passenger@upi" autocomplete="off">
@@ -638,8 +655,14 @@
       <p class="payment-note">Tap Pay to confirm your ride and notify nearby pilots.</p>
       <div class="auth-error payment-error" id="payment-error" role="alert"></div>
     </div>
-    <div class="confirm-footer">
-      <button class="btn-confirm btn-confirm-primary" id="payment-pay-btn" onclick="payForBooking()">Pay now</button>
+
+    <div class="payment-page-footer">
+      <div class="payment-footer-total">
+        <span>Total payable</span>
+        <span id="payment-footer-total">—</span>
+      </div>
+      <button class="btn-confirm btn-confirm-primary" id="payment-continue-btn" onclick="paymentGoToStep(2)">Continue to payment &rarr;</button>
+      <button class="btn-confirm btn-confirm-primary" id="payment-pay-btn" onclick="payForBooking()" style="display:none;">Pay now</button>
       <button class="btn-confirm btn-confirm-ghost" onclick="closePayment()">Cancel</button>
     </div>
   </div>
@@ -1204,6 +1227,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=3e9de01a"></script>
+<script src="/js/app.bundle.js?v=9ced88e0"></script>
 </body>
 </html>
