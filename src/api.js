@@ -16,6 +16,7 @@ const mobileAuthRoutes = require("./mobile-auth-routes");
 const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
+const { fetchWeather } = require("./weather");
 
 const router = express.Router();
 
@@ -108,6 +109,22 @@ router.use("/auth/mobile", mobileAuthRoutes);
 
 // Flight / restricted airspace zones for map overlays.
 router.use("/zones", zoneRoutes);
+
+// Weather: live conditions + flight risk at a lat/lng.
+router.get("/weather", async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "lat and lng query params are required" });
+  }
+  try {
+    const weather = await fetchWeather(lat, lng);
+    res.json(weather);
+  } catch (err) {
+    console.error("[weather] fetch failed:", err.message);
+    res.status(500).json({ error: "Weather service unavailable" });
+  }
+});
 router.get("/me", requireAuth, async (req, res) => {
   const user = await queryOne(
     `SELECT id, name, email, phone, role, emailVerified, bannedAt, mustResetPassword FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,

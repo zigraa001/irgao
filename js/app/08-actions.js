@@ -25,10 +25,20 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.creditsApplied && fare.creditsApplied.amount) {
     creditsRow = '<div class="fb-row fb-credits"><span>' + escapeHtml(fare.creditsApplied.label) + '</span><span>-' + money(fare.creditsApplied.amount) + '</span></div>';
   }
+  var urgencyRow = '';
+  if (fare.urgencySurcharge && fare.urgencySurcharge.amount) {
+    urgencyRow = '<div class="fb-row fb-surcharge"><span>' + escapeHtml(fare.urgencySurcharge.label) + '</span><span>+' + money(fare.urgencySurcharge.amount) + '</span></div>';
+  }
+  var weatherRow = '';
+  if (fare.weatherSurcharge && fare.weatherSurcharge.amount) {
+    weatherRow = '<div class="fb-row fb-surcharge"><span>' + escapeHtml(fare.weatherSurcharge.label) + '</span><span>+' + money(fare.weatherSurcharge.amount) + '</span></div>';
+  }
   host.innerHTML =
     '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
     '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
     (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
+    urgencyRow +
+    weatherRow +
     '<div class="fb-row" style="color:#888"><span>Subtotal</span><span>' + money(fare.subtotal) + '</span></div>' +
     discountRow +
     creditsRow +

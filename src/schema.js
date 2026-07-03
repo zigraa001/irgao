@@ -351,6 +351,8 @@ async function initSchema() {
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await ensureColumn("bookings", "couponCode", "couponCode VARCHAR(32) NULL");
   await ensureColumn("bookings", "couponDiscount", "couponDiscount DOUBLE NOT NULL DEFAULT 0");
+  await ensureColumn("bookings", "bookingType", "bookingType VARCHAR(32) NULL");
+  await ensureColumn("bookings", "weatherRisk", "weatherRisk VARCHAR(16) NULL DEFAULT 'low'");
 
   // Seed demo coupons (idempotent).
   const demoCoupons = [
@@ -371,6 +373,62 @@ async function initSchema() {
       dbg("initSchema: seeded coupon " + c.code);
     }
   }
+
+  // Pricing config (admin-configurable surcharges, GST, commission).
+  await query(`CREATE TABLE IF NOT EXISTS pricing_config (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    settingKey      VARCHAR(64) NOT NULL UNIQUE,
+    settingValue    DOUBLE NOT NULL,
+    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updatedBy       VARCHAR(255) NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Seed default pricing config (idempotent).
+  const pricingDefaults = [
+    { key: "gstPercent", value: 18 },
+    { key: "platformCommissionPercent", value: 15 },
+    { key: "emergencySurchargePercent", value: 30 },
+    { key: "urgencySurchargePercent", value: 15 },
+    { key: "weatherHighSurchargePercent", value: 20 },
+    { key: "weatherMediumSurchargePercent", value: 10 },
+  ];
+  for (const p of pricingDefaults) {
+    await query(
+      `INSERT IGNORE INTO pricing_config (settingKey, settingValue) VALUES (?, ?)`,
+      [p.key, p.value]
+    );
+  }
+
+  // Pricing config changelog.
+  await query(`CREATE TABLE IF NOT EXISTS pricing_changelog (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    adminName   VARCHAR(255) NOT NULL,
+    changes     TEXT NOT NULL,
+    createdAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Pre-flight compliance checklists (owner submits before each flight).
+  await query(`CREATE TABLE IF NOT EXISTS compliance_checklists (
+    id                      INT AUTO_INCREMENT PRIMARY KEY,
+    operatorId              INT NOT NULL,
+    aircraftId              INT NULL,
+    firstAidKit             TINYINT(1) NOT NULL DEFAULT 0,
+    fireExtinguisher        TINYINT(1) NOT NULL DEFAULT 0,
+    emergencyLocator        TINYINT(1) NOT NULL DEFAULT 0,
+    pilotBriefingDone       TINYINT(1) NOT NULL DEFAULT 0,
+    aircraftInspected       TINYINT(1) NOT NULL DEFAULT 0,
+    weatherChecked          TINYINT(1) NOT NULL DEFAULT 0,
+    fuelSufficient          TINYINT(1) NOT NULL DEFAULT 0,
+    communicationEquipment  TINYINT(1) NOT NULL DEFAULT 0,
+    overallStatus           VARCHAR(16) NOT NULL DEFAULT 'fail',
+    notes                   TEXT NULL,
+    createdAt               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_compliance_operator (operatorId),
+    INDEX idx_compliance_aircraft (aircraftId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Operator earnings tracking: operator gets (100% - commission) of fare.
+  await ensureColumn("bookings", "operatorPayout", "operatorPayout DOUBLE NULL");
 
   // Seed operator companies and regional offices (idempotent).
   const { seedOperators } = require("./seed-operators");

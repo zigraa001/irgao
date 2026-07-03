@@ -54,15 +54,76 @@ function parseCoord(v, kind) {
 
 const GST_RATE = 0.18;
 
-function estimateFare(service, distanceKm) {
+const URGENCY_SURCHARGE = {
+  medical_emergency: 0.30,
+  urgency_travel: 0.15,
+};
+
+const WEATHER_SURCHARGE = {
+  high: 0.20,
+  medium: 0.10,
+  low: 0,
+};
+
+// Cached pricing config from DB. Refreshed every 60s so admin changes
+// propagate without a restart.
+let _cachedConfig = null;
+let _configLoadedAt = 0;
+const CONFIG_TTL_MS = 60_000;
+
+async function loadPricingConfig() {
+  if (_cachedConfig && Date.now() - _configLoadedAt < CONFIG_TTL_MS) return _cachedConfig;
+  try {
+    const { query: dbQuery } = require("./db");
+    const rows = await dbQuery("SELECT settingKey, settingValue FROM pricing_config");
+    const cfg = {};
+    for (const r of rows) cfg[r.settingKey] = Number(r.settingValue);
+    _cachedConfig = cfg;
+    _configLoadedAt = Date.now();
+    return cfg;
+  } catch {
+    return null;
+  }
+}
+
+function getSurchargeRates(cfg) {
+  if (!cfg) return { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
+  return {
+    urgency: {
+      medical_emergency: (cfg.emergencySurchargePercent ?? 30) / 100,
+      urgency_travel: (cfg.urgencySurchargePercent ?? 15) / 100,
+    },
+    weather: {
+      high: (cfg.weatherHighSurchargePercent ?? 20) / 100,
+      medium: (cfg.weatherMediumSurchargePercent ?? 10) / 100,
+      low: 0,
+    },
+    gst: (cfg.gstPercent ?? 18) / 100,
+  };
+}
+
+function estimateFare(service, distanceKm, opts = {}) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) {
     throw new Error(`Unknown service: ${service}`);
   }
   const km = Math.max(0, Number(distanceKm) || 0);
-  const subtotal = pricing.base + pricing.perKm * km;
-  const withGst = subtotal * (1 + GST_RATE);
+  const base = pricing.base + pricing.perKm * km;
+
+  const rates = opts._rates || { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
+  const urgencyRate = rates.urgency[opts.bookingType] || 0;
+  const weatherRate = rates.weather[opts.weatherRisk] || 0;
+  const subtotal = base + base * urgencyRate + base * weatherRate;
+
+  const gstRate = typeof rates.gst === "number" ? rates.gst : GST_RATE;
+  const withGst = subtotal * (1 + gstRate);
   return Math.round(withGst / 100) * 100;
+}
+
+async function estimateFareWithConfig(service, distanceKm, opts = {}) {
+  const cfg = await loadPricingConfig();
+  const rates = getSurchargeRates(cfg);
+  return estimateFare(service, distanceKm, { ...opts, _rates: rates });
 }
 
 const NEW_FLYER_DISCOUNT = 0.50;
@@ -85,8 +146,13 @@ module.exports = {
   SERVICES,
   haversineKm,
   estimateFare,
+  estimateFareWithConfig,
   parseCoord,
   applyNewFlyerDiscount,
   NEW_FLYER_DISCOUNT,
   NEW_FLYER_MAX_FLIGHTS,
+  URGENCY_SURCHARGE,
+  WEATHER_SURCHARGE,
+  loadPricingConfig,
+  getSurchargeRates,
 };

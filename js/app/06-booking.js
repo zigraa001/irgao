@@ -216,6 +216,7 @@ async function searchRides() {
         destLat: draft.dest.lat,
         destLng: draft.dest.lng,
         service: draft.service,
+        bookingType: draft.service === 'golden' ? 'medical_emergency' : null,
       }),
     });
     const fdata = await fres.json().catch(() => ({}));
@@ -416,6 +417,7 @@ async function bookRide() {
 
   setBusy('book-btn', true, 'Booking\u2026', 'Confirm Booking');
   try {
+    var bookingType = draft.service === 'golden' ? 'medical_emergency' : null;
     const res = await apiFetch('/api/bookings', {
       method: 'POST',
       body: JSON.stringify({
@@ -426,6 +428,7 @@ async function bookRide() {
         destLat: draft.dest.lat,
         destLng: draft.dest.lng,
         service: draft.service,
+        bookingType: bookingType,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -447,6 +450,7 @@ async function bookRide() {
     currentFareBreakdown = data.fare || null;
     currentCarbonCredits = data.carbonCredits || null;
     if (data.company) currentBooking._company = data.company;
+    if (data.weather) currentBooking._weather = data.weather;
     showPaymentOverlay(currentBooking);
   } catch (err) {
     showAuthError('booking-error', 'Network error \u2014 please check your connection and try again.');
@@ -468,6 +472,19 @@ function fillConfirmation(booking) {
   document.getElementById('confirm-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
 }
 
+function renderWeatherBar(w) {
+  var bar = document.getElementById('payment-weather-bar');
+  if (!bar || !w) { if (bar) bar.style.display = 'none'; return; }
+  var riskColors = { low: '#15803d', medium: '#b45309', high: '#dc2626' };
+  var riskLabels = { low: 'Good', medium: 'Caution', high: 'Adverse' };
+  var color = riskColors[w.riskLevel] || riskColors.low;
+  bar.style.display = 'flex';
+  bar.innerHTML =
+    '<span class="weather-condition">' + escapeHtml(w.condition) + ' &middot; ' + w.tempCelsius + '&deg;C</span>' +
+    '<span class="weather-wind">Wind ' + w.windSpeedKmh + ' km/h</span>' +
+    '<span class="weather-risk" style="color:' + color + '">' + (riskLabels[w.riskLevel] || 'Good') + ' for flight</span>';
+}
+
 function showPaymentOverlay(booking) {
   hideAuthError('payment-error');
   resetCoupon();
@@ -475,6 +492,7 @@ function showPaymentOverlay(booking) {
   updatePaymentTotals(booking.fareEstimate);
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+  renderWeatherBar(booking._weather || null);
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
 
   // Carbon credits section \u2014 always visible

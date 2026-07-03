@@ -101,9 +101,15 @@ async function operatorStats(userId) {
     [userId]
   );
 
-  // Earnings proxy: operator share of completed trip fares (60%).
   const completedRows = rows.filter((r) => r.status === "completed");
-  const earnings = Math.round(sumRows(completedRows, "fareEstimate") * 0.6);
+  let commRate = 0.15;
+  try {
+    const commRow = await queryOne(
+      "SELECT settingValue FROM pricing_config WHERE settingKey = 'platformCommissionPercent'"
+    );
+    if (commRow) commRate = commRow.settingValue / 100;
+  } catch {}
+  const earnings = Math.round(sumRows(completedRows, "fareEstimate") * (1 - commRate));
 
   const totals = {
     assigned: rows.length,

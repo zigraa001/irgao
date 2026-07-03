@@ -1360,6 +1360,8 @@ function routeForRole(user) {
       connectOperatorWebSocket();
       loadOperatorDuty();
       subscribeOperatorPush();
+      if (typeof loadOperatorEarnings === 'function') loadOperatorEarnings();
+      if (typeof loadComplianceHistory === 'function') loadComplianceHistory();
       break;
     }
     case 'customer':

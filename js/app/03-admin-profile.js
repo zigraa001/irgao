@@ -480,6 +480,15 @@ function showAdminSection(name) {
   if (name === 'companies') {
     loadAdminCompanies();
   }
+  if (name === 'pricing') {
+    loadAdminPricing();
+  }
+  if (name === 'revenue') {
+    loadAdminRevenue();
+  }
+  if (name === 'compliance') {
+    loadAdminCompliance();
+  }
 }
 
 async function loadAdminSettings() {
@@ -1090,5 +1099,363 @@ async function doAddUser() {
   } finally {
     setBusy('admin-add-submit', false, 'Adding…', 'Add Team Member');
   }
+}
+
+// ── Admin Pricing Config ─────────────────────────────────────────────────
+var _adminPricingData = null;
+
+var PRICING_FIELDS = [
+  { key: 'gstPercent', label: 'GST Rate', desc: 'Goods and Services Tax applied on all fares' },
+  { key: 'platformCommissionPercent', label: 'Platform Commission', desc: 'IraGo commission deducted from operator payouts' },
+  { key: 'emergencySurchargePercent', label: 'Medical Emergency Surcharge', desc: 'Added to Golden Hour (air ambulance) bookings' },
+  { key: 'urgencySurchargePercent', label: 'Urgency Travel Surcharge', desc: 'Added to urgency-flagged bookings' },
+  { key: 'weatherHighSurchargePercent', label: 'Adverse Weather Surcharge', desc: 'Applied when wind >40 km/h or visibility <3 km' },
+  { key: 'weatherMediumSurchargePercent', label: 'Weather Caution Surcharge', desc: 'Applied when wind >20 km/h or visibility <5 km' },
+];
+
+async function loadAdminPricing() {
+  var host = document.getElementById('admin-pricing-form');
+  if (!host) return;
+  host.innerHTML = '<div class="pd-loading">Loading pricing config…</div>';
+  try {
+    var res = await apiFetch('/api/admin/pricing');
+    var data = await res.json();
+    if (!res.ok) { host.innerHTML = '<div class="pd-error">Failed to load pricing.</div>'; return; }
+    _adminPricingData = data.config || {};
+    renderPricingForm(_adminPricingData);
+    renderPricingChangelog(data.changelog || []);
+  } catch (e) {
+    host.innerHTML = '<div class="pd-error">Could not reach server.</div>';
+  }
+}
+
+function renderPricingForm(config) {
+  var host = document.getElementById('admin-pricing-form');
+  if (!host) return;
+  var rows = PRICING_FIELDS.map(function (f) {
+    var val = config[f.key] ? config[f.key].value : 0;
+    return '<div style="margin-bottom:14px;">' +
+      '<label style="font-weight:600;font-size:14px;color:var(--gray-900);display:block;">' + escapeHtml(f.label) + '</label>' +
+      '<div style="font-size:12px;color:var(--gray-500);margin-bottom:4px;">' + escapeHtml(f.desc) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<input type="number" id="pricing-' + f.key + '" value="' + val + '" min="0" max="100" step="0.5" ' +
+          'style="width:80px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;">' +
+        '<span style="font-size:14px;color:var(--gray-600);">%</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = rows +
+    '<button type="button" class="btn-auth-primary" style="margin-top:8px;width:100%;" onclick="saveAdminPricing()">Save Pricing Config</button>' +
+    '<div id="admin-pricing-msg" style="margin-top:8px;font-size:13px;"></div>';
+}
+
+async function saveAdminPricing() {
+  var changes = {};
+  PRICING_FIELDS.forEach(function (f) {
+    var el = document.getElementById('pricing-' + f.key);
+    if (el) changes[f.key] = parseFloat(el.value) || 0;
+  });
+  var msg = document.getElementById('admin-pricing-msg');
+  if (msg) { msg.style.color = 'var(--gray-600)'; msg.textContent = 'Saving…'; }
+  try {
+    var res = await apiFetch('/api/admin/pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ changes: changes })
+    });
+    var data = await res.json();
+    if (res.ok && data.saved) {
+      if (msg) { msg.style.color = '#16A34A'; msg.textContent = 'Pricing config saved.'; }
+      _adminPricingData = data.config || {};
+      loadAdminPricing();
+    } else {
+      if (msg) { msg.style.color = '#DC2626'; msg.textContent = data.error || 'Save failed.'; }
+    }
+  } catch (e) {
+    if (msg) { msg.style.color = '#DC2626'; msg.textContent = 'Could not reach server.'; }
+  }
+}
+
+function renderPricingChangelog(changelog) {
+  var host = document.getElementById('admin-pricing-changelog');
+  if (!host || !changelog.length) { if (host) host.innerHTML = ''; return; }
+  var rows = changelog.map(function (entry) {
+    var d = new Date(entry.createdAt);
+    var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
+             d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+      '<span style="font-weight:600;">' + escapeHtml(entry.adminName) + '</span>' +
+      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
+      '<div style="color:var(--gray-700);margin-top:2px;">' + escapeHtml(entry.changes) + '</div>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
+    '<div class="op-section-title" style="font-size:14px;">Change History</div>' + rows + '</div>';
+}
+
+// ── Admin Revenue Dashboard ─────────────────────────────────────────────
+async function loadAdminRevenue() {
+  var kpiHost = document.getElementById('admin-revenue-kpis');
+  if (!kpiHost) return;
+  kpiHost.innerHTML = '<div class="pd-loading">Loading revenue data…</div>';
+  try {
+    var res = await apiFetch('/api/admin/revenue');
+    var data = await res.json();
+    if (!res.ok) { kpiHost.innerHTML = '<div class="pd-error">Failed to load revenue.</div>'; return; }
+    renderRevenueKPIs(data);
+    renderRevenueChart(data.dailyChart || []);
+    renderRevenuePayouts(data.operatorPayouts || [], data.commissionRate);
+  } catch (e) {
+    kpiHost.innerHTML = '<div class="pd-error">Could not reach server.</div>';
+  }
+}
+
+function renderRevenueKPIs(data) {
+  var host = document.getElementById('admin-revenue-kpis');
+  if (!host) return;
+  host.innerHTML =
+    pdStat('💰', INR(data.totalRevenue), 'Total Revenue') +
+    pdStat('📅', INR(data.monthRevenue), 'This Month') +
+    pdStat('🏢', INR(data.platformCommission), 'Platform Commission (' + data.commissionRate + '%)') +
+    pdStat('✈️', data.totalBookings || 0, 'Completed Trips');
+}
+
+function renderRevenueChart(daily) {
+  var host = document.getElementById('admin-revenue-chart');
+  if (!host) return;
+  if (!daily.length) { host.innerHTML = '<div class="admin-form-card" style="max-width:640px;"><p class="admin-users-meta">No revenue data for the last 30 days.</p></div>'; return; }
+  var maxRev = Math.max.apply(null, daily.map(function (d) { return d.revenue; })) || 1;
+  var bars = daily.map(function (d) {
+    var pct = Math.max((d.revenue / maxRev) * 100, 2);
+    var dayLabel = new Date(d.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px;" title="' + dayLabel + ': ' + INR(d.revenue) + '">' +
+      '<div style="width:100%;max-width:24px;background:var(--primary, #2563EB);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:2px;"></div>' +
+      '<div style="font-size:9px;color:var(--gray-500);margin-top:2px;writing-mode:vertical-rl;transform:rotate(180deg);height:40px;overflow:hidden;">' + dayLabel + '</div>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
+    '<div class="op-section-title" style="font-size:14px;">Daily Revenue (30 days)</div>' +
+    '<div style="display:flex;align-items:flex-end;height:120px;gap:2px;padding:0 4px;">' + bars + '</div>' +
+  '</div>';
+}
+
+function renderRevenuePayouts(payouts, commRate) {
+  var host = document.getElementById('admin-revenue-payouts');
+  if (!host) return;
+  if (!payouts.length) { host.innerHTML = ''; return; }
+  var rows = payouts.map(function (p) {
+    return '<tr>' +
+      '<td style="padding:6px 10px;font-size:13px;">' + escapeHtml(p.name) + '</td>' +
+      '<td style="padding:6px 10px;font-size:13px;">' + p.trips + '</td>' +
+      '<td style="padding:6px 10px;font-size:13px;">' + INR(p.grossRevenue) + '</td>' +
+      '<td style="padding:6px 10px;font-size:13px;color:#B45309;">' + INR(p.commission) + '</td>' +
+      '<td style="padding:6px 10px;font-size:13px;font-weight:600;">' + INR(p.netPayout) + '</td>' +
+    '</tr>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:800px;">' +
+    '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
+    '<div style="overflow-x:auto;">' +
+    '<table style="width:100%;border-collapse:collapse;">' +
+      '<thead><tr style="border-bottom:2px solid var(--gray-300);text-align:left;">' +
+        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Operator</th>' +
+        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Trips</th>' +
+        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Gross</th>' +
+        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Commission (' + commRate + '%)</th>' +
+        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Net Payout</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table></div></div>';
+}
+
+// ── Admin Compliance Monitor ────────────────────────────────────────────
+async function loadAdminCompliance() {
+  var summaryHost = document.getElementById('admin-compliance-summary');
+  if (!summaryHost) return;
+  summaryHost.innerHTML = '<div class="pd-loading">Loading compliance data…</div>';
+  try {
+    var res = await apiFetch('/api/admin/compliance');
+    var data = await res.json();
+    if (!res.ok) { summaryHost.innerHTML = '<div class="pd-error">Failed to load compliance data.</div>'; return; }
+    renderComplianceSummary(data.summary || {});
+    renderComplianceMissing(data.operatorsMissingChecklist || []);
+    renderComplianceFailed(data.failedChecklists || []);
+    renderComplianceRecent(data.recentChecklists || []);
+  } catch (e) {
+    summaryHost.innerHTML = '<div class="pd-error">Could not reach server.</div>';
+  }
+}
+
+function renderComplianceSummary(s) {
+  var host = document.getElementById('admin-compliance-summary');
+  if (!host) return;
+  host.innerHTML =
+    pdStat('👥', s.totalOperators || 0, 'Total Operators') +
+    pdStat('✅', s.withChecklist24h || 0, 'Checked In (24h)', 'green') +
+    pdStat('⚠️', s.missingChecklist24h || 0, 'Missing Checklist', 'amber') +
+    pdStat('❌', s.failedLast7d || 0, 'Failed (7 days)', 'red');
+}
+
+function renderComplianceMissing(operators) {
+  var host = document.getElementById('admin-compliance-missing');
+  if (!host) return;
+  if (!operators.length) { host.innerHTML = ''; return; }
+  var rows = operators.map(function (op) {
+    var lastStr = op.lastChecklist
+      ? new Date(op.lastChecklist).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+      : 'Never';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-200);">' +
+      '<div><span style="font-weight:600;font-size:14px;">' + escapeHtml(op.name) + '</span>' +
+        '<span style="color:var(--gray-500);font-size:12px;margin-left:8px;">' + escapeHtml(op.email) + '</span></div>' +
+      '<div style="font-size:12px;color:#B45309;">Last: ' + lastStr + '</div>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
+    '<div class="op-section-title" style="font-size:14px;color:#B45309;">Missing Checklist (24h)</div>' + rows + '</div>';
+}
+
+function renderComplianceFailed(checklists) {
+  var host = document.getElementById('admin-compliance-failed');
+  if (!host) return;
+  if (!checklists.length) { host.innerHTML = ''; return; }
+  var rows = checklists.slice(0, 10).map(function (c) {
+    var d = new Date(c.createdAt);
+    var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
+             d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+      '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
+      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
+      '<span style="color:#DC2626;margin-left:8px;font-weight:600;">FAIL</span>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
+    '<div class="op-section-title" style="font-size:14px;color:#DC2626;">Failed Checklists (7 days)</div>' + rows + '</div>';
+}
+
+function renderComplianceRecent(checklists) {
+  var host = document.getElementById('admin-compliance-recent');
+  if (!host) return;
+  if (!checklists.length) { host.innerHTML = ''; return; }
+  var rows = checklists.slice(0, 15).map(function (c) {
+    var d = new Date(c.createdAt);
+    var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
+             d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+      '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
+      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
+      '<span style="' + statusCls + ';margin-left:8px;font-weight:600;text-transform:uppercase;">' + c.overallStatus + '</span>' +
+    '</div>';
+  }).join('');
+  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;margin-top:16px;">' +
+    '<div class="op-section-title" style="font-size:14px;">Recent Checklists</div>' + rows + '</div>';
+}
+
+// ── Operator Earnings ────────────────────────────────────────────────────
+async function loadOperatorEarnings() {
+  var host = document.getElementById('op-earnings-body');
+  if (!host) return;
+  host.innerHTML = '<div class="op-empty-sub">Loading earnings…</div>';
+  try {
+    var res = await apiFetch('/api/operator/earnings');
+    var data = await res.json();
+    if (!res.ok) { host.innerHTML = '<div class="op-empty-sub">Could not load earnings.</div>'; return; }
+    renderOperatorEarnings(data);
+  } catch (e) {
+    host.innerHTML = '<div class="op-empty-sub">Could not reach server.</div>';
+  }
+}
+
+function renderOperatorEarnings(data) {
+  var host = document.getElementById('op-earnings-body');
+  if (!host) return;
+  var kpis = '<div class="profile-stats-grid" style="margin-bottom:12px;">' +
+    pdStat('💰', INR(data.totalGross), 'Total Gross') +
+    pdStat('✅', INR(data.totalNet), 'Net Earnings', 'green') +
+    pdStat('🏢', INR(data.totalCommission), 'Commission (' + data.commissionRate + '%)') +
+    pdStat('✈️', data.completedTrips || 0, 'Completed Trips') +
+  '</div>';
+  var monthKpis = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
+    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
+      '<div style="font-size:12px;color:var(--gray-500);">This Month</div>' +
+      '<div style="font-size:18px;font-weight:700;">' + INR(data.monthGross) + '</div>' +
+      '<div style="font-size:12px;color:#16A34A;">' + INR(data.monthNet) + ' net</div>' +
+    '</div>' +
+    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
+      '<div style="font-size:12px;color:var(--gray-500);">Month Trips</div>' +
+      '<div style="font-size:18px;font-weight:700;">' + (data.monthTrips || 0) + '</div>' +
+    '</div>' +
+  '</div>';
+  var recentHtml = '';
+  if (data.recentTrips && data.recentTrips.length) {
+    recentHtml = '<div style="margin-top:8px;"><div style="font-weight:600;font-size:13px;margin-bottom:6px;">Recent Trips</div>';
+    data.recentTrips.forEach(function (t) {
+      var d = new Date(t.createdAt);
+      var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      recentHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+        '<div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(t.route) + '</div>' +
+        '<div style="flex-shrink:0;margin-left:8px;">' + INR(t.net) + '<span style="color:var(--gray-400);margin-left:4px;">' + ts + '</span></div>' +
+      '</div>';
+    });
+    recentHtml += '</div>';
+  }
+  host.innerHTML = kpis + monthKpis + recentHtml;
+}
+
+// ── Operator Compliance Checklist ────────────────────────────────────────
+async function submitComplianceChecklist() {
+  var body = {
+    firstAidKit: document.getElementById('op-ck-firstAid').checked,
+    fireExtinguisher: document.getElementById('op-ck-fireExt').checked,
+    emergencyLocator: document.getElementById('op-ck-elt').checked,
+    pilotBriefingDone: document.getElementById('op-ck-briefing').checked,
+    aircraftInspected: document.getElementById('op-ck-inspect').checked,
+    weatherChecked: document.getElementById('op-ck-weather').checked,
+    fuelSufficient: document.getElementById('op-ck-fuel').checked,
+    communicationEquipment: document.getElementById('op-ck-comms').checked,
+    notes: (document.getElementById('op-ck-notes') || {}).value || '',
+  };
+  var statusEl = document.getElementById('op-compliance-status');
+  if (statusEl) { statusEl.style.color = 'var(--gray-600)'; statusEl.textContent = 'Submitting…'; }
+  try {
+    var res = await apiFetch('/api/operator/compliance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data = await res.json();
+    if (res.ok) {
+      var passed = data.overallStatus === 'pass';
+      if (statusEl) {
+        statusEl.style.color = passed ? '#16A34A' : '#DC2626';
+        statusEl.textContent = passed ? 'Checklist PASSED — you are cleared for flight.' : 'Checklist FAILED — not all critical items checked.';
+      }
+      loadComplianceHistory();
+    } else {
+      if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = data.error || 'Submission failed.'; }
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = 'Could not reach server.'; }
+  }
+}
+
+async function loadComplianceHistory() {
+  var host = document.getElementById('op-compliance-history');
+  if (!host) return;
+  try {
+    var res = await apiFetch('/api/operator/compliance');
+    var data = await res.json();
+    if (!res.ok || !data.checklists || !data.checklists.length) { host.innerHTML = ''; return; }
+    var rows = data.checklists.slice(0, 5).map(function (c) {
+      var d = new Date(c.createdAt);
+      var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
+               d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+        '<span>' + ts + '</span>' +
+        '<span style="' + statusCls + ';font-weight:600;text-transform:uppercase;">' + c.overallStatus + '</span>' +
+      '</div>';
+    }).join('');
+    host.innerHTML = '<div style="font-weight:600;font-size:13px;margin-bottom:4px;">Recent Submissions</div>' + rows;
+  } catch (e) { /* ignore */ }
 }
 

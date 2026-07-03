@@ -307,6 +307,14 @@ async function advanceTripStatus(req, res, fromStatus, toStatus) {
         [credits, booking.customerId]
       );
     }
+    try {
+      const commRow = await queryOne(
+        "SELECT settingValue FROM pricing_config WHERE settingKey = 'platformCommissionPercent'"
+      );
+      const commRate = commRow ? commRow.settingValue / 100 : 0.15;
+      const payout = Math.round(booking.fareEstimate * (1 - commRate));
+      await query("UPDATE bookings SET operatorPayout = ? WHERE id = ?", [payout, booking.id]);
+    } catch {}
   }
   const updated = await queryOne("SELECT * FROM bookings WHERE id = ?", [
     booking.id,
@@ -455,6 +463,138 @@ router.post(
       return res.status(result.status).json({ error: result.error });
     }
     res.json({ message: "Offer declined. Dispatching to next pilot." });
+  }
+);
+
+// ── Operator earnings ───────────────────────────────────────────────────
+// GET /api/operator/earnings — earnings summary for the logged-in operator.
+router.get(
+  "/earnings",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const { queryOne: qo } = require("./db");
+    const commRow = await qo(
+      "SELECT settingValue FROM pricing_config WHERE settingKey = 'platformCommissionPercent'"
+    );
+    const commissionRate = commRow ? commRow.settingValue / 100 : 0.15;
+
+    const [totalAgg, monthAgg, dailyRows, recentTrips] = await Promise.all([
+      queryOne(
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross, COUNT(*) AS trips
+         FROM bookings WHERE operatorId = ? AND status = 'completed'`,
+        [req.user.id]
+      ),
+      queryOne(
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross, COUNT(*) AS trips
+         FROM bookings WHERE operatorId = ? AND status = 'completed'
+           AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`,
+        [req.user.id]
+      ),
+      query(
+        `SELECT DATE(createdAt) AS day,
+                COALESCE(SUM(fareEstimate), 0) AS gross,
+                COUNT(*) AS trips
+         FROM bookings WHERE operatorId = ? AND status = 'completed'
+           AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+         GROUP BY DATE(createdAt) ORDER BY day`,
+        [req.user.id]
+      ),
+      query(
+        `SELECT id, service, distanceKm, fareEstimate, pickupName, destName, createdAt
+         FROM bookings WHERE operatorId = ? AND status = 'completed'
+         ORDER BY createdAt DESC LIMIT 10`,
+        [req.user.id]
+      ),
+    ]);
+
+    const totalGross = Number(totalAgg?.gross) || 0;
+    const monthGross = Number(monthAgg?.gross) || 0;
+
+    res.json({
+      totalGross: Math.round(totalGross),
+      totalNet: Math.round(totalGross * (1 - commissionRate)),
+      totalCommission: Math.round(totalGross * commissionRate),
+      completedTrips: Number(totalAgg?.trips) || 0,
+      monthGross: Math.round(monthGross),
+      monthNet: Math.round(monthGross * (1 - commissionRate)),
+      monthTrips: Number(monthAgg?.trips) || 0,
+      commissionRate: Math.round(commissionRate * 100),
+      dailyChart: dailyRows.map(r => ({
+        day: r.day,
+        gross: Math.round(Number(r.gross)),
+        net: Math.round(Number(r.gross) * (1 - commissionRate)),
+        trips: r.trips,
+      })),
+      recentTrips: recentTrips.map(r => ({
+        id: r.id,
+        service: r.service,
+        distanceKm: r.distanceKm,
+        fare: Math.round(r.fareEstimate),
+        net: Math.round(r.fareEstimate * (1 - commissionRate)),
+        route: `${r.pickupName} → ${r.destName}`,
+        createdAt: r.createdAt,
+      })),
+    });
+  }
+);
+
+// ── Compliance checklist ────────────────────────────────────────────────
+// POST /api/operator/compliance — submit pre-flight compliance checklist.
+router.post(
+  "/compliance",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const b = req.body || {};
+    const checks = {
+      firstAidKit: b.firstAidKit ? 1 : 0,
+      fireExtinguisher: b.fireExtinguisher ? 1 : 0,
+      emergencyLocator: b.emergencyLocator ? 1 : 0,
+      pilotBriefingDone: b.pilotBriefingDone ? 1 : 0,
+      aircraftInspected: b.aircraftInspected ? 1 : 0,
+      weatherChecked: b.weatherChecked ? 1 : 0,
+      fuelSufficient: b.fuelSufficient ? 1 : 0,
+      communicationEquipment: b.communicationEquipment ? 1 : 0,
+    };
+    const criticalChecks = [
+      checks.firstAidKit, checks.fireExtinguisher, checks.emergencyLocator,
+      checks.pilotBriefingDone, checks.aircraftInspected, checks.weatherChecked,
+      checks.fuelSufficient,
+    ];
+    const overallStatus = criticalChecks.every(c => c === 1) ? "pass" : "fail";
+
+    const result = await query(
+      `INSERT INTO compliance_checklists
+        (operatorId, aircraftId, firstAidKit, fireExtinguisher, emergencyLocator,
+         pilotBriefingDone, aircraftInspected, weatherChecked, fuelSufficient,
+         communicationEquipment, overallStatus, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        req.user.id, b.aircraftId || null,
+        checks.firstAidKit, checks.fireExtinguisher, checks.emergencyLocator,
+        checks.pilotBriefingDone, checks.aircraftInspected, checks.weatherChecked,
+        checks.fuelSufficient, checks.communicationEquipment, overallStatus,
+        b.notes || null,
+      ]
+    );
+
+    const checklist = await queryOne("SELECT * FROM compliance_checklists WHERE id = ?", [result.insertId]);
+    res.status(201).json({ checklist, overallStatus });
+  }
+);
+
+// GET /api/operator/compliance — get operator's recent compliance checklists.
+router.get(
+  "/compliance",
+  requireAuth,
+  requireRole("operator"),
+  async (req, res) => {
+    const rows = await query(
+      `SELECT * FROM compliance_checklists WHERE operatorId = ? ORDER BY createdAt DESC LIMIT 20`,
+      [req.user.id]
+    );
+    res.json({ checklists: rows });
   }
 );
 

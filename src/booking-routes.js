@@ -13,6 +13,8 @@ const {
   estimateFare,
   parseCoord,
   applyNewFlyerDiscount,
+  loadPricingConfig,
+  getSurchargeRates,
 } = require("./pricing");
 const { estimateCarbonSavedKg, carbonComparison, CREDITS_PER_KM } = require("./carbon");
 const { startDispatch, stopDispatch, setOperatorDuty } = require("./dispatch");
@@ -23,6 +25,7 @@ const { checkRouteFeasibility } = require("./route-feasibility");
 const { sendReceiptEmail, isEmailConfigured } = require("./receipt");
 const { autoRunDemoForBooking, isDemoRunning } = require("./demo-routes");
 const platformSettings = require("./platform-settings");
+const { fetchWeather } = require("./weather");
 
 const router = express.Router();
 
@@ -84,17 +87,20 @@ async function validateCoupon(code, userId, fare, service) {
 // Pre-GST fare base after the new-flyer discount — the amount coupons and
 // credits are computed against. Discounts never apply to GST; GST is charged
 // on whatever remains after all discounts.
-async function fareBaseForUser(booking, userId) {
+async function fareBaseForUser(booking, userId, surchargeOpts = {}) {
   const row = await queryOne(
     "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
     [userId]
   );
   const completedFlights = row ? Number(row.n) : 0;
-  const baseFare = estimateFare(booking.service, booking.distanceKm);
+  const cfg = await loadPricingConfig();
+  const rates = getSurchargeRates(cfg);
+  const optsWithRates = { ...surchargeOpts, _rates: rates };
+  const baseFare = estimateFare(booking.service, booking.distanceKm, optsWithRates);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
-  const fb = fareBreakdown(booking.service, booking.distanceKm, discountInfo);
+  const fb = fareBreakdown(booking.service, booking.distanceKm, discountInfo, 0, null, optsWithRates);
   const preGst = fb.subtotal - (fb.discount ? fb.discount.amount : 0);
-  return { discountInfo, preGst };
+  return { discountInfo, preGst, rates };
 }
 
 // One authoritative payment quote: new-flyer discount + optional coupon +
@@ -102,7 +108,11 @@ async function fareBaseForUser(booking, userId) {
 // Used by both /quote (live preview) and /pay (final charge) so the number
 // the customer sees is always the number they are charged.
 async function buildPaymentQuote(booking, userId, opts) {
-  const { discountInfo, preGst } = await fareBaseForUser(booking, userId);
+  const surchargeOpts = {
+    bookingType: booking.bookingType || null,
+    weatherRisk: booking.weatherRisk || "low",
+  };
+  const { discountInfo, preGst, rates } = await fareBaseForUser(booking, userId, surchargeOpts);
 
   let coupon = null;
   let couponError = null;
@@ -130,7 +140,8 @@ async function buildPaymentQuote(booking, userId, opts) {
     booking.distanceKm,
     discountInfo,
     creditsUsed,
-    coupon ? { code: coupon.code, discount: couponDiscount } : null
+    coupon ? { code: coupon.code, discount: couponDiscount } : null,
+    { ...surchargeOpts, _rates: rates }
   );
   return { fare, discountInfo, coupon, couponError, couponDiscount, creditsUsed, creditBalance };
 }
@@ -199,13 +210,20 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     });
   }
 
-  const [completedRow, userCredRow] = await Promise.all([
+  const bookingType = typeof b.bookingType === "string" ? b.bookingType : null;
+
+  const [completedRow, userCredRow, weather] = await Promise.all([
     queryOne("SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'", [req.user.id]),
     queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]),
+    fetchWeather(pickupLat, pickupLng),
   ]);
   const completedFlights = completedRow ? Number(completedRow.n) : 0;
   const creditBalance = userCredRow ? Number(userCredRow.carbonCredits) || 0 : 0;
-  const baseFare = estimateFare(service, distanceKm);
+  const weatherRisk = weather.riskLevel;
+  const cfg = await loadPricingConfig();
+  const rates = getSurchargeRates(cfg);
+  const surchargeOpts = { bookingType, weatherRisk, _rates: rates };
+  const baseFare = estimateFare(service, distanceKm, surchargeOpts);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   let fareEstimate = discountInfo.fare;
 
@@ -236,8 +254,8 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     `INSERT INTO bookings
        (customerId, pickupName, pickupLat, pickupLng, destName, destLat, destLng,
         service, distanceKm, fareEstimate, carbonSavedKg, paymentStatus, status,
-        companyId, officeId)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        companyId, officeId, bookingType, weatherRisk)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
     [
       req.user.id,
       pickupName,
@@ -253,6 +271,8 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
       "requested",
       bookingCompanyId,
       bookingOfficeId,
+      bookingType,
+      weatherRisk,
     ]
   );
 
@@ -266,8 +286,9 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
 
   res.status(201).json({
     booking,
-    fare: fareBreakdown(service, distanceKm, discountInfo),
+    fare: fareBreakdown(service, distanceKm, discountInfo, 0, null, surchargeOpts),
     discount: discountInfo,
+    weather,
     carbonCredits: { balance: creditBalance, willEarn: Math.round(creditsRate * distanceKm) },
     warnings: feasibility.warnings,
     emergencyBypass: feasibility.emergencyBypass || false,
@@ -408,15 +429,20 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     destLng,
     service,
   });
+  const bookingType = typeof b.bookingType === "string" ? b.bookingType : null;
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
-  const [completedRow, userRow] = await Promise.all([
+  const [completedRow, userRow, weather] = await Promise.all([
     queryOne("SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'", [req.user.id]),
     queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]),
+    fetchWeather(pickupLat, pickupLng),
   ]);
   const completedFlights = completedRow ? Number(completedRow.n) : 0;
   const creditBalance = userRow ? Number(userRow.carbonCredits) || 0 : 0;
-  const baseFare = estimateFare(service, distanceKm);
+  const cfgF = await loadPricingConfig();
+  const ratesF = getSurchargeRates(cfgF);
+  const surchargeOpts = { bookingType, weatherRisk: weather.riskLevel, _rates: ratesF };
+  const baseFare = estimateFare(service, distanceKm, surchargeOpts);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   const creditsRate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;
   const creditsWillEarn = Math.round(creditsRate * distanceKm);
@@ -427,8 +453,9 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     warnings: feasibility.warnings,
     blockedEndpoints: feasibility.blockedEndpoints,
     distanceKm,
-    fare: fareBreakdown(service, distanceKm, discountInfo),
+    fare: fareBreakdown(service, distanceKm, discountInfo, 0, null, surchargeOpts),
     discount: discountInfo,
+    weather,
     carbonComparison: carbonComparison(distanceKm, 1),
     carbonCredits: { balance: creditBalance, willEarn: creditsWillEarn },
     route: feasibility.route || null,

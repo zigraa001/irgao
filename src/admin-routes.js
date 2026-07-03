@@ -586,4 +586,194 @@ router.get(
   }
 );
 
+// ── Admin pricing configuration ─────────────────────────────────────────
+// GET /api/admin/pricing — all pricing config as key-value pairs.
+router.get(
+  "/pricing",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const rows = await query("SELECT settingKey, settingValue, updatedAt, updatedBy FROM pricing_config");
+    const config = {};
+    for (const r of rows) config[r.settingKey] = { value: r.settingValue, updatedAt: r.updatedAt, updatedBy: r.updatedBy };
+    const changelog = await query(
+      "SELECT adminName, changes, createdAt FROM pricing_changelog ORDER BY createdAt DESC LIMIT 10"
+    );
+    res.json({ config, changelog });
+  }
+);
+
+// POST /api/admin/pricing — update pricing config values.
+// Body: { changes: { gstPercent: 18, emergencySurchargePercent: 25, ... } }
+router.post(
+  "/pricing",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const { changes } = req.body || {};
+    if (!changes || typeof changes !== "object") {
+      return res.status(400).json({ error: "changes object is required" });
+    }
+    const VALID_KEYS = [
+      "gstPercent", "platformCommissionPercent",
+      "emergencySurchargePercent", "urgencySurchargePercent",
+      "weatherHighSurchargePercent", "weatherMediumSurchargePercent",
+    ];
+    const diffs = [];
+    for (const [key, val] of Object.entries(changes)) {
+      if (!VALID_KEYS.includes(key)) continue;
+      const numVal = Number(val);
+      if (!Number.isFinite(numVal) || numVal < 0 || numVal > 100) continue;
+      const old = await queryOne("SELECT settingValue FROM pricing_config WHERE settingKey = ?", [key]);
+      const oldVal = old ? old.settingValue : null;
+      await query(
+        `INSERT INTO pricing_config (settingKey, settingValue, updatedBy)
+         VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE settingValue = VALUES(settingValue), updatedBy = VALUES(updatedBy)`,
+        [key, numVal, req.user.email]
+      );
+      if (oldVal !== null && oldVal !== numVal) {
+        diffs.push(`${key}: ${oldVal}% → ${numVal}%`);
+      }
+    }
+    if (diffs.length > 0) {
+      await query(
+        "INSERT INTO pricing_changelog (adminName, changes) VALUES (?, ?)",
+        [req.user.name || req.user.email, diffs.join(", ")]
+      );
+    }
+    const rows = await query("SELECT settingKey, settingValue, updatedAt, updatedBy FROM pricing_config");
+    const config = {};
+    for (const r of rows) config[r.settingKey] = { value: r.settingValue, updatedAt: r.updatedAt, updatedBy: r.updatedBy };
+    res.json({ config, saved: true });
+  }
+);
+
+// ── Revenue dashboard ───────────────────────────────────────────────────
+// GET /api/admin/revenue — total/monthly revenue, daily chart, operator payouts.
+router.get(
+  "/revenue",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const commRow = await queryOne(
+      "SELECT settingValue FROM pricing_config WHERE settingKey = 'platformCommissionPercent'"
+    );
+    const commissionRate = commRow ? commRow.settingValue / 100 : 0.15;
+
+    const [totalAgg, monthAgg, dailyRows, operatorRows] = await Promise.all([
+      queryOne(
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS total,
+                COUNT(*) AS bookings
+         FROM bookings WHERE status = 'completed'`
+      ),
+      queryOne(
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS total,
+                COUNT(*) AS bookings
+         FROM bookings WHERE status = 'completed'
+           AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
+      ),
+      query(
+        `SELECT DATE(createdAt) AS day,
+                COALESCE(SUM(fareEstimate), 0) AS revenue,
+                COUNT(*) AS bookings
+         FROM bookings WHERE status = 'completed'
+           AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+         GROUP BY DATE(createdAt)
+         ORDER BY day`
+      ),
+      query(
+        `SELECT b.operatorId, u.name AS operatorName, u.email AS operatorEmail,
+                COUNT(*) AS trips,
+                COALESCE(SUM(b.fareEstimate), 0) AS grossRevenue
+         FROM bookings b
+         JOIN users u ON u.id = b.operatorId
+         WHERE b.status = 'completed' AND b.operatorId IS NOT NULL
+         GROUP BY b.operatorId
+         ORDER BY grossRevenue DESC
+         LIMIT 50`
+      ),
+    ]);
+
+    const totalRevenue = Number(totalAgg?.total) || 0;
+    const monthRevenue = Number(monthAgg?.total) || 0;
+    const platformCommission = Math.round(totalRevenue * commissionRate);
+    const monthlyCommission = Math.round(monthRevenue * commissionRate);
+
+    const operatorPayouts = operatorRows.map(r => ({
+      operatorId: r.operatorId,
+      name: r.operatorName,
+      email: r.operatorEmail,
+      trips: r.trips,
+      grossRevenue: Math.round(Number(r.grossRevenue)),
+      commission: Math.round(Number(r.grossRevenue) * commissionRate),
+      netPayout: Math.round(Number(r.grossRevenue) * (1 - commissionRate)),
+    }));
+
+    res.json({
+      totalRevenue: Math.round(totalRevenue),
+      totalBookings: Number(totalAgg?.bookings) || 0,
+      monthRevenue: Math.round(monthRevenue),
+      monthBookings: Number(monthAgg?.bookings) || 0,
+      platformCommission,
+      monthlyCommission,
+      commissionRate: Math.round(commissionRate * 100),
+      dailyChart: dailyRows.map(r => ({
+        day: r.day,
+        revenue: Math.round(Number(r.revenue)),
+        bookings: r.bookings,
+      })),
+      operatorPayouts,
+    });
+  }
+);
+
+// ── Compliance monitor ──────────────────────────────────────────────────
+// GET /api/admin/compliance — scan operators for compliance issues.
+router.get(
+  "/compliance",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const [recentChecklists, operatorsMissingChecklist, failedChecklists] = await Promise.all([
+      query(
+        `SELECT cc.*, u.name AS operatorName, u.email AS operatorEmail
+         FROM compliance_checklists cc
+         JOIN users u ON u.id = cc.operatorId
+         ORDER BY cc.createdAt DESC LIMIT 50`
+      ),
+      query(
+        `SELECT u.id, u.name, u.email, u.pilotLicense,
+                (SELECT MAX(cc2.createdAt) FROM compliance_checklists cc2 WHERE cc2.operatorId = u.id) AS lastChecklist
+         FROM users u
+         WHERE u.role = 'operator' AND u.deletedAt IS NULL
+           AND u.id NOT IN (
+             SELECT DISTINCT operatorId FROM compliance_checklists
+             WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+           )
+         ORDER BY u.name`
+      ),
+      query(
+        `SELECT cc.*, u.name AS operatorName, u.email AS operatorEmail
+         FROM compliance_checklists cc
+         JOIN users u ON u.id = cc.operatorId
+         WHERE cc.overallStatus = 'fail'
+           AND cc.createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+         ORDER BY cc.createdAt DESC`
+      ),
+    ]);
+
+    res.json({
+      recentChecklists,
+      operatorsMissingChecklist,
+      failedChecklists,
+      summary: {
+        totalOperators: operatorsMissingChecklist.length + recentChecklists.filter((c, i, arr) => arr.findIndex(x => x.operatorId === c.operatorId) === i).length,
+        withChecklist24h: recentChecklists.filter((c, i, arr) => arr.findIndex(x => x.operatorId === c.operatorId) === i).length,
+        missingChecklist24h: operatorsMissingChecklist.length,
+        failedLast7d: failedChecklists.length,
+      },
+    });
+  }
+);
+
 module.exports = router;
