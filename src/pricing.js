@@ -65,10 +65,28 @@ function estimateFare(service, distanceKm) {
   return Math.round(withGst / 100) * 100;
 }
 
+const NEW_FLYER_DISCOUNT = 0.50;
+const NEW_FLYER_MAX_FLIGHTS = 3;
+
+function applyNewFlyerDiscount(fare, completedFlights) {
+  const count = Number(completedFlights) || 0;
+  if (count >= NEW_FLYER_MAX_FLIGHTS) return { fare, discount: 0, eligible: false, remaining: 0 };
+  const discount = Math.round(fare * NEW_FLYER_DISCOUNT);
+  return {
+    fare: fare - discount,
+    discount,
+    eligible: true,
+    remaining: NEW_FLYER_MAX_FLIGHTS - count,
+  };
+}
+
 module.exports = {
   SERVICE_PRICING,
   SERVICES,
   haversineKm,
   estimateFare,
   parseCoord,
+  applyNewFlyerDiscount,
+  NEW_FLYER_DISCOUNT,
+  NEW_FLYER_MAX_FLIGHTS,
 };

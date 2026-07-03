@@ -12,8 +12,9 @@ const {
   haversineKm,
   estimateFare,
   parseCoord,
+  applyNewFlyerDiscount,
 } = require("./pricing");
-const { estimateCarbonSavedKg } = require("./carbon");
+const { estimateCarbonSavedKg, carbonComparison } = require("./carbon");
 const { startDispatch, stopDispatch, setOperatorDuty } = require("./dispatch");
 const { pushOperator, pushCustomer } = require("./dispatch-hub");
 const { rateLimit } = require("./rate-limit");
@@ -89,7 +90,14 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     });
   }
 
-  const fareEstimate = estimateFare(service, distanceKm);
+  const completedRow = await queryOne(
+    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
+    [req.user.id]
+  );
+  const completedFlights = completedRow ? Number(completedRow.n) : 0;
+  const baseFare = estimateFare(service, distanceKm);
+  const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
+  const fareEstimate = discountInfo.fare;
   const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
   // Find the nearest active regional office to the pickup point.
@@ -145,7 +153,8 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
 
   res.status(201).json({
     booking,
-    fare: fareBreakdown(service, distanceKm),
+    fare: fareBreakdown(service, distanceKm, discountInfo),
+    discount: discountInfo,
     warnings: feasibility.warnings,
     emergencyBypass: feasibility.emergencyBypass || false,
     route: feasibility.route || null,
@@ -287,6 +296,13 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
   });
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
+  const completedRow = await queryOne(
+    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
+    [req.user.id]
+  );
+  const completedFlights = completedRow ? Number(completedRow.n) : 0;
+  const baseFare = estimateFare(service, distanceKm);
+  const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   res.json({
     feasible: feasibility.feasible,
     emergencyBypass: feasibility.emergencyBypass || false,
@@ -294,7 +310,9 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     warnings: feasibility.warnings,
     blockedEndpoints: feasibility.blockedEndpoints,
     distanceKm,
-    fare: fareBreakdown(service, distanceKm),
+    fare: fareBreakdown(service, distanceKm, discountInfo),
+    discount: discountInfo,
+    carbonComparison: carbonComparison(distanceKm, 1),
     route: feasibility.route || null,
   });
 });
@@ -363,11 +381,20 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), rateLimit("booking
     }
   }
 
+  const payCompletedRow = await queryOne(
+    "SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'",
+    [req.user.id]
+  );
+  const payCompletedFlights = payCompletedRow ? Number(payCompletedRow.n) : 0;
+  const payBaseFare = estimateFare(updated.service, updated.distanceKm);
+  const payDiscountInfo = applyNewFlyerDiscount(payBaseFare, payCompletedFlights);
+
   res.json({
     booking: fresh,
     message: "Payment successful. Finding a nearby pilot…",
     carbonSavedKg: updated.carbonSavedKg,
-    fare: fareBreakdown(updated.service, updated.distanceKm),
+    fare: fareBreakdown(updated.service, updated.distanceKm, payDiscountInfo),
+    discount: payDiscountInfo,
     receiptEmailed,
     operator: demoOperator,
   });

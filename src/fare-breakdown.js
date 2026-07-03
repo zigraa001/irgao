@@ -5,7 +5,7 @@
 // taxes are wired through as zero today so the UI can show them later without
 // another schema change. `total` always equals estimateFare() so the displayed
 // total never drifts from the persisted booking.fareEstimate.
-const { SERVICE_PRICING, estimateFare } = require("./pricing");
+const { SERVICE_PRICING, estimateFare, NEW_FLYER_DISCOUNT } = require("./pricing");
 
 function round2(n) {
   return Math.round(Number(n) * 100) / 100;
@@ -13,15 +13,20 @@ function round2(n) {
 
 const GST_RATE = 0.18;
 
-function fareBreakdown(service, distanceKm) {
+function fareBreakdown(service, distanceKm, discountInfo) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
   const kmCharge = round2(pricing.perKm * km);
   const surge = 0;
   const subtotal = round2(pricing.base + kmCharge + surge);
-  const gst = round2(subtotal * GST_RATE);
-  const total = Math.round((subtotal + gst) / 100) * 100;
+
+  const hasDiscount = discountInfo && discountInfo.eligible;
+  const discountAmount = hasDiscount ? round2(subtotal * NEW_FLYER_DISCOUNT) : 0;
+  const afterDiscount = round2(subtotal - discountAmount);
+
+  const gst = round2(afterDiscount * GST_RATE);
+  const total = Math.round((afterDiscount + gst) / 100) * 100;
   return {
     service,
     base: pricing.base,
@@ -29,6 +34,10 @@ function fareBreakdown(service, distanceKm) {
     distanceKm: round2(km),
     kmCharge,
     surge,
+    discount: hasDiscount ? {
+      label: `New Flyer (50% off — ${discountInfo.remaining} flight${discountInfo.remaining === 1 ? '' : 's'} left)`,
+      amount: discountAmount,
+    } : null,
     taxes: gst,
     taxLabel: "GST (18%)",
     subtotal,

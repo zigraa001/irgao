@@ -27,6 +27,8 @@ let pickupCoord = null, destCoord = null;
 // truth for the confirmation screen and live tracking (US-007).
 let currentBooking = null;
 let currentRoute = null;
+let currentDiscount = null;
+let currentCarbonComparison = null;
 
 // ── Booking draft (US-005) ──
 // Single source of truth for the in-progress booking: the selected pickup and

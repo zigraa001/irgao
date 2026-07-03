@@ -220,6 +220,8 @@ async function searchRides() {
     });
     const fdata = await fres.json().catch(() => ({}));
     currentRoute = (fdata && fdata.route) ? fdata.route : null;
+    currentDiscount = (fdata && fdata.discount) ? fdata.discount : null;
+    currentCarbonComparison = (fdata && fdata.carbonComparison) ? fdata.carbonComparison : null;
     if (currentRoute && currentRoute.segments && currentRoute.segments.length) {
       drawRouteFromPlan();
     }
@@ -241,13 +243,27 @@ async function searchRides() {
     }
   } catch (e) { /* degrade: if feasibility call fails, fall through to rides */ }
 
+  var hasDiscount = currentDiscount && currentDiscount.eligible;
+  var discountRate = hasDiscount ? 0.50 : 0;
+  var discountRemaining = hasDiscount ? currentDiscount.remaining : 0;
+
   list.innerHTML = rides.map((r, i) => {
     const subtotal = r.base + r.perKm * dist;
-    const price = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
+    const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
+    const price = hasDiscount ? Math.round(fullPrice * (1 - discountRate) / 100) * 100 : fullPrice;
     const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
     const time = Math.round(r.baseTime * timeFactor);
     const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);
     const roadTime = Math.round(time * 3.5);
+    const discountBadge = hasDiscount
+      ? '<span class="ride-badge badge-discount">50% OFF</span>'
+      : '';
+    const priceHtml = hasDiscount
+      ? '<div class="ride-price-val">&#8377;' + price.toLocaleString('en-IN') + '</div>' +
+        '<div class="ride-price-original">&#8377;' + fullPrice.toLocaleString('en-IN') + '</div>' +
+        '<div class="ride-price-est">' + discountRemaining + ' discounted flight' + (discountRemaining === 1 ? '' : 's') + ' left</div>'
+      : '<div class="ride-price-val">&#8377;' + price.toLocaleString('en-IN') + '</div>' +
+        '<div class="ride-price-est">incl. 18% GST</div>';
     return `
       <div class="ride-card" data-idx="${i}" onclick="selectRideCard(this, ${i}, ${price}, ${time}, '${co2}')">
         <div class="ride-card-top">
@@ -257,13 +273,13 @@ async function searchRides() {
           <div class="ride-info">
             <div class="ride-name">
               ${r.name}
+              ${discountBadge}
               ${r.badge ? `<span class="ride-badge ${r.badgeCls}">${r.badge}</span>` : ''}
             </div>
             <div class="ride-desc">${r.desc}</div>
           </div>
           <div class="ride-price">
-            <div class="ride-price-val">&#8377;${price.toLocaleString('en-IN')}</div>
-            <div class="ride-price-est">incl. 18% GST</div>
+            ${priceHtml}
           </div>
         </div>
         <div class="ride-stats">
@@ -286,6 +302,20 @@ async function searchRides() {
         </div>
       </div>`;
   }).join('');
+
+  document.querySelectorAll('.new-flyer-banner').forEach(function(el) { el.remove(); });
+  if (hasDiscount) {
+    list.insertAdjacentHTML('beforebegin',
+      '<div class="new-flyer-banner">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' +
+        '<div><strong>New Flyer Offer!</strong> 50% off your first 3 flights — ' + discountRemaining + ' remaining</div>' +
+      '</div>'
+    );
+  }
+
+  if (currentCarbonComparison) {
+    list.innerHTML += renderCarbonComparison(currentCarbonComparison);
+  }
 
   if (currentRoute && currentRoute.feasible !== false) {
     var altProfile = currentRoute.altitudeProfile || {};
@@ -508,6 +538,55 @@ function closeConfirm() {
   resetBooking();
 }
 
+function renderCarbonComparison(cc) {
+  if (!cc || !cc.comparisons) return '';
+  var evKg = cc.electric.emissionsKg;
+  var maxKg = Math.max.apply(null, cc.comparisons.map(function(c) { return c.emissionsKg; }));
+  var barMax = maxKg || 1;
+
+  var rows = cc.comparisons.map(function(c) {
+    var pct = Math.round((c.emissionsKg / barMax) * 100);
+    var colorMap = { conventionalJet: '#ef4444', turboprop: '#f59e0b', groundTaxi: '#6b7280' };
+    var color = colorMap[c.key] || '#6b7280';
+    return '<div class="cc-row">' +
+      '<div class="cc-label">' + escapeHtml(c.label) + '</div>' +
+      '<div class="cc-bar-track"><div class="cc-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<div class="cc-val">' + c.emissionsKg + ' kg</div>' +
+      '<div class="cc-saved">-' + c.savedPercent + '%</div>' +
+    '</div>';
+  });
+
+  var evPct = Math.max(3, Math.round((evKg / barMax) * 100));
+  var evRow = '<div class="cc-row cc-row-ev">' +
+    '<div class="cc-label">' + escapeHtml(cc.electric.label) + '</div>' +
+    '<div class="cc-bar-track"><div class="cc-bar cc-bar-ev" style="width:' + evPct + '%"></div></div>' +
+    '<div class="cc-val cc-val-ev">' + evKg + ' kg</div>' +
+    '<div class="cc-saved cc-saved-ev">Your choice</div>' +
+  '</div>';
+
+  var bestSaving = cc.comparisons.reduce(function(best, c) {
+    return c.savedPercent > best.savedPercent ? c : best;
+  }, cc.comparisons[0]);
+
+  return '<div class="carbon-comparison-card">' +
+    '<div class="cc-header">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z"/><circle cx="12" cy="10" r="3"/></svg>' +
+      '<div>' +
+        '<div class="cc-title">Carbon Savings Comparison</div>' +
+        '<div class="cc-subtitle">CO&#8322; emissions for ' + cc.distanceKm + ' km flight</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="cc-body">' +
+      rows.join('') +
+      '<div class="cc-divider"></div>' +
+      evRow +
+    '</div>' +
+    '<div class="cc-footer">' +
+      '<span class="cc-highlight">Up to ' + bestSaving.savedPercent + '% less CO&#8322;</span> vs ' + escapeHtml(bestSaving.label) +
+    '</div>' +
+  '</div>';
+}
+
 function resetBooking() {
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
@@ -516,6 +595,8 @@ function resetBooking() {
   selectedRide = null;
   currentBooking = null;
   currentRoute = null;
+  currentDiscount = null;
+  currentCarbonComparison = null;
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };

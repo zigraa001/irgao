@@ -1397,6 +1397,94 @@ a { text-decoration: none; color: inherit; }
 .ride-stat.carbon { color: var(--green-dark); background: var(--green-50); }
 .ride-stat.carbon svg { color: var(--green); }
 
+/* ── Discount badge ── */
+.badge-discount {
+  background: #fef3c7; color: #92400e;
+  animation: discount-pulse 2s ease-in-out infinite;
+}
+@keyframes discount-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.ride-price-original {
+  font-size: 13px;
+  color: var(--gray-400);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+/* ── New Flyer banner ── */
+.new-flyer-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #78350f;
+}
+.new-flyer-banner svg { width: 20px; height: 20px; flex-shrink: 0; color: #f59e0b; }
+.new-flyer-banner strong { color: #92400e; }
+
+/* ── Carbon Comparison Card ── */
+.carbon-comparison-card {
+  margin-top: 10px;
+  border: 1px solid var(--green-light, #bbf7d0);
+  border-radius: 4px;
+  background: #f0fdf4;
+  overflow: hidden;
+}
+.cc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border-bottom: 1px solid var(--green-light, #bbf7d0);
+}
+.cc-header svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--green, #22c55e); }
+.cc-title { font-size: 13px; font-weight: 700; color: #14532d; }
+.cc-subtitle { font-size: 11px; color: #166534; margin-top: 1px; }
+.cc-body { padding: 10px 14px; }
+.cc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.cc-label { color: var(--gray-600); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-bar-track { height: 10px; background: var(--gray-100); border-radius: 99px; overflow: hidden; }
+.cc-bar { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.cc-bar-ev { background: var(--green, #22c55e); }
+.cc-val { font-weight: 600; color: var(--gray-700); text-align: right; font-size: 11px; white-space: nowrap; }
+.cc-val-ev { color: var(--green-dark, #166534); }
+.cc-saved { font-size: 10px; font-weight: 700; color: var(--gray-400); text-align: right; white-space: nowrap; }
+.cc-saved-ev { color: var(--green, #22c55e); }
+.cc-divider { height: 1px; background: var(--green-light, #bbf7d0); margin: 4px 0; }
+.cc-row-ev { background: rgba(34, 197, 94, 0.06); border-radius: 4px; padding: 5px 6px; }
+.cc-footer {
+  padding: 8px 14px;
+  background: #dcfce7;
+  font-size: 12px;
+  color: #166534;
+  text-align: center;
+}
+.cc-highlight { font-weight: 700; color: #15803d; }
+
+/* ── Fare breakdown discount row ── */
+.fb-discount { color: #15803d !important; font-weight: 600; }
+.fb-discount span:last-child { color: #15803d; }
+
+@media (max-width: 600px) {
+  .cc-row { grid-template-columns: 1fr 80px auto auto; gap: 4px; }
+  .cc-label { font-size: 11px; }
+}
+
 /* ═══════════════════════════════════════════
    BOOKING CONFIRMATION (overlay)
    ═══════════════════════════════════════════ */
