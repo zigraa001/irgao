@@ -8,6 +8,23 @@ function switchService(service) {
   document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`[data-service="${service}"]`).classList.add('active');
 
+  const bookingPanel = document.getElementById('booking-panel');
+  const dronePanel = document.getElementById('drone-panel');
+  const mapEl = document.getElementById('map');
+
+  if (service === 'drones') {
+    if (bookingPanel) bookingPanel.style.display = 'none';
+    if (mapEl) mapEl.style.display = 'none';
+    if (dronePanel) dronePanel.style.display = 'flex';
+    loadDroneServices();
+    loadDroneMyBookings();
+    return;
+  }
+
+  if (bookingPanel) bookingPanel.style.display = 'flex';
+  if (mapEl) mapEl.style.display = '';
+  if (dronePanel) dronePanel.style.display = 'none';
+
   const btn = document.getElementById('search-btn');
   const btnText = document.getElementById('search-btn-text');
   const banner = document.getElementById('service-banner-area');
@@ -25,13 +42,17 @@ function switchService(service) {
   if (service === 'taxi') {
     btn.classList.add('search-btn-blue');
     btnText.textContent = 'Find Available Rides';
+    banner.innerHTML = `
+      <div class="shuttle-info-banner">
+        <strong>Urgency &middot; HNWI &middot; VIP &middot; Diplomat.</strong> Rooftop to rooftop — IGI to your hotel in 18 min. Zero ground transport.
+      </div>`;
   } else if (service === 'golden') {
     btn.classList.add('search-btn-red');
     btnText.textContent = 'Dispatch Air Ambulance';
     banner.innerHTML = `
       <div class="emergency-banner" style="margin-bottom:4px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <div><strong>For emergencies, call 112 first.</strong> This dispatches DGCA-certified air ambulances.</div>
+        <div><strong>For emergencies, call 112 first.</strong> This dispatches DGCA-certified air ambulances &mdash; accident to trauma care within the Golden Hour (T+35 min protocol).</div>
       </div>`;
     extra.innerHTML = `
       <div class="extra-field">
@@ -47,7 +68,7 @@ function switchService(service) {
     btnText.textContent = 'Find Shuttle Routes';
     banner.innerHTML = `
       <div class="shuttle-info-banner">
-        <strong>All routes DGCA-certified.</strong> Select pickup &amp; destination to see matching shuttle routes.
+        <strong>Joy Rides &middot; Tourism &amp; Religious Circuits.</strong> HP scenic corridors, Vaishno Devi &amp; Char Dham — all DGCA-certified.
       </div>`;
   }
 
@@ -62,42 +83,41 @@ function switchService(service) {
 // ── Popular Routes per Service ──
 const popularRoutes = {
   taxi: [
+    { from: 'Aerocity Vertiport, Delhi', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128188;', meta: '18&ndash;25 min &middot; 2 pax &middot; &#8377;3,600&ndash;5,600', tag: 'Executive Shuttle' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Taj Mahal Vertiport, Agra', emoji: '&#128508;', meta: '55 min/way &middot; 4 pax &middot; &#8377;13,000&ndash;19,000', tag: 'Agra Express' },
+    { from: 'Embassy Vertiport, Chanakyapuri', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128737;&#65039;', meta: 'Custom &middot; 2&ndash;4 pax &middot; &#8377;9,000&ndash;16,000', tag: 'Diplomatic' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Chandigarh Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Dehradun Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
     { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km', tag: 'Inter-city' },
-    { from: 'Greater Noida Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#127973;', meta: '24 min &middot; 47 km', tag: 'Medical' },
     { from: 'Dwarka Sector 21 Vertiport', to: 'Faridabad Vertiport', emoji: '&#127747;', meta: '16 min &middot; 30 km', tag: 'Inter-city' },
-    { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', emoji: '&#127961;', meta: '14 min &middot; 28 km', tag: 'Inter-city' },
     { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km', tag: 'Business' },
     { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '16 min &middot; 28 km', tag: 'Tech Hub' },
-    { from: 'Noida Sec 62 Vertiport', to: 'Ghaziabad Vertiport', emoji: '&#9992;&#65039;', meta: '8 min &middot; 12 km', tag: 'Intra-city' },
     { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 25 km', tag: 'Airport Link' },
-    { from: 'OMR Vertiport, Chennai', to: 'Velachery Vertiport, Chennai', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km', tag: 'Tech Corridor' },
-    { from: 'Ghaziabad Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#127747;', meta: '18 min &middot; 35 km', tag: 'Inter-city' },
   ],
   golden: [
+    { from: 'Barmana Helipad, Bilaspur', to: 'AIIMS Bilaspur', emoji: '&#127973;', meta: '12 min &middot; Golden Hour corridor', tag: 'HP EMS' },
+    { from: 'Bharmour Helipad, Chamba', to: 'Pt. JLN Medical College, Chamba', emoji: '&#128657;', meta: '22 min &middot; 66% fatality district', tag: 'Critical' },
+    { from: 'Gagal Vertiport, Kangra', to: 'Dr. RPGMC Tanda, Kangra', emoji: '&#127973;', meta: '15 min &middot; max volume corridor', tag: 'HP EMS' },
+    { from: 'Annadale Helipad, Shimla', to: 'IGMC Hospital, Shimla', emoji: '&#128657;', meta: '18 min &middot; high urban corridor', tag: 'HP EMS' },
+    { from: 'Nalagarh Helipad, Baddi', to: 'MM Medical College, Solan', emoji: '&#127973;', meta: '14 min &middot; industrial corridor', tag: 'HP EMS' },
     { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
-    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#128657;', meta: '20 min &middot; 38 km', tag: 'Emergency' },
     { from: 'Thane Vertiport', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '14 min &middot; 26 km', tag: 'Emergency' },
-    { from: 'Navi Mumbai Vertiport', to: 'Lilavati Hospital, Mumbai', emoji: '&#128657;', meta: '16 min &middot; 30 km', tag: 'Emergency' },
-    { from: 'Navi Mumbai Apollo Hospital', to: 'Powai Vertiport, Mumbai', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
     { from: 'OMR Vertiport, Chennai', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
-    { from: 'OMR Vertiport, Chennai', to: 'MIOT Hospital, Chennai', emoji: '&#128657;', meta: '8 min &middot; 12 km', tag: 'Emergency' },
     { from: 'Sarjapur Vertiport', to: 'Narayana Health, Bengaluru', emoji: '&#128657;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
-    { from: 'Whitefield Vertiport', to: 'Manipal Hospital, Bengaluru', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
     { from: 'Hi-Tech City Vertiport', to: 'Yashoda Hospital, Hyderabad', emoji: '&#128657;', meta: '6 min &middot; 8 km', tag: 'Emergency' },
     { from: 'Dehradun Vertiport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
     { from: 'Leh Vertiport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
-    { from: 'Port Blair Vertiport, Andaman', to: 'GB Pant Hospital, Andaman', emoji: '&#127964;', meta: '5 min &middot; 6 km', tag: 'Remote' },
   ],
   shuttle: [
+    { from: 'Bhuntar Vertiport, Kullu', to: 'Manali Vertiport', emoji: '&#127956;', meta: '20 min &middot; &#8377;500&ndash;700 &middot; Pk &#8377;840', tag: 'Joy Ride' },
+    { from: 'Gagal Vertiport, Kangra', to: 'Dharamshala Vertiport', emoji: '&#127956;', meta: '12 min &middot; &#8377;400&ndash;560 &middot; Pk &#8377;700', tag: 'Joy Ride' },
+    { from: 'Shimla Vertiport', to: 'Kufri Helipad', emoji: '&#127794;', meta: '8 min &middot; &#8377;400&ndash;500 &middot; Pk &#8377;700', tag: 'Joy Ride' },
+    { from: 'Manali Vertiport', to: 'Rohtang Pass Helipad', emoji: '&#10052;&#65039;', meta: '15 min &middot; &#8377;700&ndash;1,000 &middot; Pk &#8377;1,300', tag: 'Scenic' },
+    { from: 'Katra Vertiport (Vaishno Devi)', to: 'Sanjichhat Helipad (Bhawan)', emoji: '&#128591;', meta: '8 min &middot; &#8377;350&ndash;550 per seat', tag: 'Vaishno Devi' },
+    { from: 'Phata Helipad (Char Dham)', to: 'Kedarnath Helipad', emoji: '&#128591;', meta: '10 min &middot; &#8377;2,500&ndash;4,500/sector', tag: 'Char Dham' },
     { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#128187;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Business' },
-    { from: 'Greater Noida Vertiport', to: 'Noida Sec 62 Vertiport', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 12 slots', tag: 'Commuter' },
-    { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km &middot; Daily 10 slots', tag: 'Commuter' },
     { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 28 km &middot; Daily 14 slots', tag: 'Commuter' },
-    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#127961;', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Business' },
-    { from: 'Whitefield Vertiport', to: 'Sarjapur Vertiport', emoji: '&#9992;&#65039;', meta: '6 min &middot; 10 km &middot; Daily 15 slots', tag: 'Commuter' },
     { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
-    { from: 'Greater Noida Vertiport', to: 'Ghaziabad Vertiport', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 6 slots', tag: 'Commuter' },
-    { from: 'OMR Vertiport, Chennai', to: 'Velachery Vertiport, Chennai', emoji: '&#9992;&#65039;', meta: '10 min &middot; 18 km &middot; Daily 8 slots', tag: 'Tech Corridor' },
     { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#128296;', meta: '14 min &middot; 25 km &middot; Daily 12 slots', tag: 'Commuter' },
   ],
 };

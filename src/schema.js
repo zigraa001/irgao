@@ -430,6 +430,130 @@ async function initSchema() {
   // Operator earnings tracking: operator gets (100% - commission) of fare.
   await ensureColumn("bookings", "operatorPayout", "operatorPayout DOUBLE NULL");
 
+  // ── Drone rental system ────────────────────────────────────────────────
+
+  await query(`CREATE TABLE IF NOT EXISTS drone_services (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(255) NOT NULL,
+    category        VARCHAR(64)  NOT NULL,
+    description     TEXT NOT NULL,
+    specs           TEXT NULL,
+    pricePerHour    DOUBLE NOT NULL,
+    operatorRequired TINYINT(1) NOT NULL DEFAULT 0,
+    operatorPricePerHour DOUBLE NOT NULL DEFAULT 0,
+    minHours        INT NOT NULL DEFAULT 1,
+    maxHours        INT NOT NULL DEFAULT 8,
+    imageEmoji      VARCHAR(16) NOT NULL DEFAULT '🛸',
+    active          TINYINT(1) NOT NULL DEFAULT 1,
+    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS drone_operators (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    name            VARCHAR(255) NOT NULL,
+    email           VARCHAR(255) NULL,
+    phone           VARCHAR(20) NULL,
+    specialization  VARCHAR(255) NULL,
+    experienceYears INT NOT NULL DEFAULT 1,
+    rating          DOUBLE NOT NULL DEFAULT 4.5,
+    available       TINYINT(1) NOT NULL DEFAULT 1,
+    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS drone_bookings (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    customerId      INT NOT NULL,
+    serviceId       INT NOT NULL,
+    operatorId      INT NULL,
+    hours           INT NOT NULL DEFAULT 1,
+    servicePrice    DOUBLE NOT NULL,
+    operatorPrice   DOUBLE NOT NULL DEFAULT 0,
+    gst             DOUBLE NOT NULL DEFAULT 0,
+    totalPrice      DOUBLE NOT NULL,
+    withOperator    TINYINT(1) NOT NULL DEFAULT 0,
+    scheduledDate   DATE NULL,
+    scheduledTime   VARCHAR(16) NULL,
+    location        VARCHAR(512) NULL,
+    locationLat     DOUBLE NULL,
+    locationLng     DOUBLE NULL,
+    notes           TEXT NULL,
+    status          VARCHAR(32) NOT NULL DEFAULT 'pending',
+    paymentStatus   VARCHAR(32) NOT NULL DEFAULT 'pending',
+    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_drone_bookings_customer (customerId),
+    INDEX idx_drone_bookings_service (serviceId),
+    INDEX idx_drone_bookings_operator (operatorId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  // Seed drone services (idempotent).
+  const droneServices = [
+    { name: "Agricultural Spraying Drone", category: "agriculture", emoji: "🌾",
+      desc: "Professional crop spraying with DJI Agras T40. Covers up to 20 acres/hour with precision nozzle system. Ideal for pesticide, fertilizer, and herbicide application.",
+      specs: "DJI Agras T40 · 40L tank · 20 acres/hr · RTK GPS · AI terrain sensing",
+      price: 1500, opRequired: 1, opPrice: 500, min: 2, max: 12 },
+    { name: "Aerial Photography Drone", category: "photography", emoji: "📸",
+      desc: "4K cinematic aerial photography and videography with Hasselblad camera. Perfect for real estate, events, and content creation.",
+      specs: "DJI Mavic 3 Pro · Hasselblad L2D-20c · 4K/120fps · 46 min flight · 3-axis gimbal",
+      price: 800, opRequired: 0, opPrice: 600, min: 1, max: 6 },
+    { name: "Land Survey & Mapping Drone", category: "surveying", emoji: "🗺️",
+      desc: "High-precision LiDAR surveying and 3D mapping for construction, mining, and land development projects.",
+      specs: "DJI Matrice 350 RTK · L2 LiDAR · 2cm accuracy · 250m range · 55 min flight",
+      price: 3000, opRequired: 1, opPrice: 1000, min: 2, max: 8 },
+    { name: "Wedding & Event Drone", category: "events", emoji: "💒",
+      desc: "Cinematic event coverage with licensed pilot. Stunning aerial shots for weddings, corporate events, and celebrations.",
+      specs: "DJI Inspire 3 · 8K camera · Waypoint flight · Live HD feed · Night capable",
+      price: 2000, opRequired: 1, opPrice: 800, min: 1, max: 6 },
+    { name: "Security Surveillance Drone", category: "surveillance", emoji: "🔒",
+      desc: "Autonomous patrol and real-time surveillance for industrial sites, farms, and large properties.",
+      specs: "Skydio X10 · Thermal + RGB · AI tracking · 35 min flight · Autonomous waypoints",
+      price: 2500, opRequired: 0, opPrice: 700, min: 1, max: 24 },
+    { name: "Seed Sowing Drone", category: "agriculture", emoji: "🌱",
+      desc: "Precision seed dispersal for paddy, wheat, and grassland restoration. Up to 15 acres/hour coverage.",
+      specs: "DJI T25 · 25kg payload · 15 acres/hr · Variable rate seeding · GPS mapping",
+      price: 1200, opRequired: 1, opPrice: 400, min: 2, max: 10 },
+    { name: "Delivery Drone", category: "delivery", emoji: "📦",
+      desc: "Small package delivery within 10 km radius. Ideal for medical supplies, documents, and lightweight cargo (up to 5 kg).",
+      specs: "Custom quad · 5kg payload · 10km range · Auto-land · GPS tracking",
+      price: 600, opRequired: 0, opPrice: 0, min: 1, max: 4 },
+    { name: "Solar Panel Inspection Drone", category: "inspection", emoji: "☀️",
+      desc: "Thermal imaging inspection for solar farms and rooftop installations. Detects hotspots, cracks, and underperforming panels.",
+      specs: "DJI Mavic 3T · FLIR thermal · AI defect detection · 45 min flight · Report gen",
+      price: 1800, opRequired: 1, opPrice: 600, min: 2, max: 8 },
+  ];
+  for (const ds of droneServices) {
+    const [exists] = await query("SELECT id FROM drone_services WHERE name = ? LIMIT 1", [ds.name]);
+    if (!exists) {
+      await query(
+        `INSERT INTO drone_services (name, category, description, specs, pricePerHour, operatorRequired, operatorPricePerHour, minHours, maxHours, imageEmoji)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [ds.name, ds.category, ds.desc, ds.specs, ds.price, ds.opRequired, ds.opPrice, ds.min, ds.max, ds.emoji]
+      );
+      dbg("initSchema: seeded drone service " + ds.name);
+    }
+  }
+
+  // Seed dummy drone operators (idempotent).
+  const droneOps = [
+    { name: "Rajesh Kumar", spec: "Agriculture & Spraying", exp: 5, rating: 4.8, email: "rajesh.drone@irago.in", phone: "9876543210" },
+    { name: "Priya Sharma", spec: "Photography & Events", exp: 3, rating: 4.9, email: "priya.drone@irago.in", phone: "9876543211" },
+    { name: "Amit Patel", spec: "Surveying & Mapping", exp: 7, rating: 4.7, email: "amit.drone@irago.in", phone: "9876543212" },
+    { name: "Sneha Reddy", spec: "Surveillance & Security", exp: 4, rating: 4.6, email: "sneha.drone@irago.in", phone: "9876543213" },
+    { name: "Vikram Singh", spec: "Agriculture & Seed Sowing", exp: 6, rating: 4.8, email: "vikram.drone@irago.in", phone: "9876543214" },
+    { name: "Kavita Nair", spec: "Solar Inspection", exp: 3, rating: 4.5, email: "kavita.drone@irago.in", phone: "9876543215" },
+  ];
+  for (const op of droneOps) {
+    const [exists] = await query("SELECT id FROM drone_operators WHERE name = ? LIMIT 1", [op.name]);
+    if (!exists) {
+      await query(
+        `INSERT INTO drone_operators (name, email, phone, specialization, experienceYears, rating)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [op.name, op.email, op.phone, op.spec, op.exp, op.rating]
+      );
+      dbg("initSchema: seeded drone operator " + op.name);
+    }
+  }
+
   // Seed operator companies and regional offices (idempotent).
   const { seedOperators } = require("./seed-operators");
   await seedOperators().catch(err => dbg("seedOperators: " + err.message));

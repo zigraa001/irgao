@@ -94,11 +94,8 @@
       /* ── Use cases grid ── */
       .use-cases-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: var(--space-6);
-      }
-      @media (max-width: 1024px) {
-        .use-cases-grid { grid-template-columns: repeat(2, 1fr); }
       }
       @media (max-width: 768px) {
         .use-cases-grid { grid-template-columns: 1fr; }
@@ -199,7 +196,7 @@
     <section class="hero" id="home">
       <!-- Video Background -->
       <div class="hero-image-bg">
-        <video autoplay muted loop playsinline preload="auto" poster="assets/images/hero-evtol.png" aria-hidden="true">
+        <video autoplay muted loop playsinline preload="auto" poster="assets/images/hero-poster.jpg" aria-hidden="true">
           <source src="assets/videos/hero-bg.mp4" type="video/mp4" />
         </video>
         <div class="hero-image-overlay"></div>

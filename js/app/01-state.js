@@ -129,5 +129,36 @@ const demoLocations = {
   'GB Pant Hospital, Andaman':    [11.6683, 92.7358],
   'Dibrugarh Vertiport, Assam':   [27.4950, 95.0300],
   'AMCH Hospital, Dibrugarh':     [27.4728, 94.9120],
+
+  // B2B Delhi-NCR premium (Executive Shuttle · Agra Express · Diplomatic)
+  'Aerocity Vertiport, Delhi':    [28.5535, 77.1220],
+  'Hotel Leela Rooftop, Delhi':   [28.5983, 77.1892],
+  'Embassy Vertiport, Chanakyapuri': [28.5900, 77.1850],
+  'Taj Mahal Vertiport, Agra':    [27.1680, 78.0500],
+  'Chandigarh Vertiport':         [30.7046, 76.7179],
+
+  // HP tourism corridors (B2C joy rides)
+  'Bhuntar Vertiport, Kullu':     [31.8763, 77.1550],
+  'Manali Vertiport':             [32.2396, 77.1887],
+  'Gagal Vertiport, Kangra':      [32.1650, 76.2634],
+  'Dharamshala Vertiport':        [32.2190, 76.3234],
+  'Kufri Helipad':                [31.0976, 77.2674],
+  'Rohtang Pass Helipad':         [32.3667, 77.2484],
+
+  // Religious circuits (Vaishno Devi · Char Dham)
+  'Katra Vertiport (Vaishno Devi)': [32.9917, 74.9310],
+  'Sanjichhat Helipad (Bhawan)':  [33.0245, 74.9440],
+  'Phata Helipad (Char Dham)':    [30.5533, 78.9877],
+  'Kedarnath Helipad':            [30.7346, 79.0669],
+
+  // HP EMS trauma network (B2G Golden Hour corridors)
+  'Barmana Helipad, Bilaspur':    [31.4404, 76.8420],
+  'AIIMS Bilaspur':               [31.3260, 76.7050],
+  'Bharmour Helipad, Chamba':     [32.4420, 76.5390],
+  'Pt. JLN Medical College, Chamba': [32.5534, 76.1258],
+  'Dr. RPGMC Tanda, Kangra':      [32.1109, 76.2800],
+  'Annadale Helipad, Shimla':     [31.1030, 77.1550],
+  'Nalagarh Helipad, Baddi':      [31.0430, 76.7220],
+  'MM Medical College, Solan':    [30.8577, 77.0966],
 };
 

@@ -13,6 +13,7 @@ const { router: routeRoutes } = require("./route-routes");
 const trackingRoutes = require("./tracking-routes");
 const demoRoutes = require("./demo-routes");
 const mobileAuthRoutes = require("./mobile-auth-routes");
+const droneRoutes = require("./drone-routes");
 const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
@@ -109,6 +110,9 @@ router.use("/auth/mobile", mobileAuthRoutes);
 
 // Flight / restricted airspace zones for map overlays.
 router.use("/zones", zoneRoutes);
+
+// Drone rental services.
+router.use("/drones", droneRoutes);
 
 // Weather: live conditions + flight risk at a lat/lng.
 router.get("/weather", async (req, res) => {

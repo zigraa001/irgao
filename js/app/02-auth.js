@@ -1341,14 +1341,18 @@ function routeForRole(user) {
   switch (user && user.role) {
     case 'admin': {
       const adminWelcome = document.getElementById('admin-welcome');
-      if (adminWelcome) adminWelcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Admin');
+      if (adminWelcome) adminWelcome.textContent = 'Dashboard';
+      const adminSub = document.getElementById('admin-welcome-sub');
+      if (adminSub) adminSub.textContent = (user && user.name) || 'Admin';
       showView('admin-view');
       showAdminSection('dashboard');
       break;
     }
     case 'operator': {
       const welcome = document.getElementById('op-welcome');
-      if (welcome) welcome.textContent = 'Welcome back, ' + ((user && user.name) || 'Pilot');
+      if (welcome) welcome.textContent = 'Pilot Console';
+      const opSub = document.getElementById('op-welcome-sub');
+      if (opSub) opSub.textContent = (user && user.name) || 'Pilot';
       flightZoneFetchCache.clear();
       showView('operator-view');
       closeTripDetails();

@@ -489,6 +489,12 @@ function showAdminSection(name) {
   if (name === 'compliance') {
     loadAdminCompliance();
   }
+  if (name === 'drones') {
+    droneAdminServicesLoaded = false;
+    droneAdminOperatorsLoaded = false;
+    droneAdminBookingsLoaded = false;
+    showDroneAdminTab('services');
+  }
 }
 
 async function loadAdminSettings() {

@@ -207,11 +207,7 @@ a { text-decoration: none; color: inherit; }
   border: 1px solid rgba(59, 130, 246, 0.06);
   position: relative;
   z-index: 1;
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+
 }
 .auth-card h2 {
   font-size: 22px;
@@ -973,41 +969,44 @@ a { text-decoration: none; color: inherit; }
 .profile-dashboard-title .pd-refresh:hover { background: var(--blue-light); }
 .profile-stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
-@media (min-width: 420px) {
-  .profile-stats-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 420px) {
+  .profile-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 .pd-stat {
   background: #fff;
-  border: 1px solid var(--gray-100);
-  border-radius: 4px;
-  padding: 12px 12px 11px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-height: 78px;
+  gap: 2px;
+  min-height: 0;
 }
 .pd-stat--green { background: #fff; border-color: rgba(16,185,129,0.18); }
 .pd-stat--amber { background: #fff; border-color: rgba(245,158,11,0.20); }
 .pd-stat--red   { background: #fff; border-color: rgba(239,68,68,0.18); }
 .pd-stat--purple{ background: #fff; border-color: rgba(68,85,122,0.20); }
-.pd-stat-emoji { font-size: 15px; line-height: 1; }
-.pd-stat-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--gray-900);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-.pd-stat-value small { font-size: 12px; font-weight: 700; color: var(--gray-500); margin-left: 2px; }
+.pd-stat-emoji { display: none; }
 .pd-stat-label {
   font-size: 11px;
   font-weight: 600;
   color: var(--gray-500);
   line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
+.pd-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.pd-stat-value small { font-size: 12px; font-weight: 700; color: var(--gray-500); margin-left: 2px; }
 .pd-breakdown {
   margin-top: 14px;
   display: grid;
@@ -1420,7 +1419,7 @@ a { text-decoration: none; color: inherit; }
   gap: 8px;
   padding: 10px 14px;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: #fef3c7;
   border: 1px solid #f59e0b;
   border-radius: 4px;
   font-size: 13px;
@@ -1442,7 +1441,7 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  background: #dcfce7;
   border-bottom: 1px solid var(--green-light, #bbf7d0);
 }
 .cc-header svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--green, #22c55e); }
@@ -1459,7 +1458,7 @@ a { text-decoration: none; color: inherit; }
 }
 .cc-label { color: var(--gray-600); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc-bar-track { height: 10px; background: var(--gray-100); border-radius: 99px; overflow: hidden; }
-.cc-bar { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.cc-bar { height: 100%; border-radius: var(--radius-full); transition: width 0.6s ease; }
 .cc-bar-ev { background: var(--green, #22c55e); }
 .cc-val { font-weight: 600; color: var(--gray-700); text-align: right; font-size: 11px; white-space: nowrap; }
 .cc-val-ev { color: var(--green-dark, #166534); }
@@ -1486,9 +1485,9 @@ a { text-decoration: none; color: inherit; }
 
 /* ── Carbon credits section in payment overlay ── */
 .payment-credits-section {
-  background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+  background: #fefce8;
   border: 1px solid #fde68a;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   padding: 12px 14px;
   margin: 10px 0;
 }
@@ -1529,7 +1528,7 @@ a { text-decoration: none; color: inherit; }
 .credits-earn-preview {
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 10px 14px;
   margin: 8px 0;
   font-size: 13px;
@@ -1553,7 +1552,7 @@ a { text-decoration: none; color: inherit; }
   flex: 1;
   padding: 10px 12px;
   border: 1.5px solid var(--gray-300);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1572,7 +1571,7 @@ a { text-decoration: none; color: inherit; }
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1619,7 +1618,7 @@ a { text-decoration: none; color: inherit; }
   .payment-page {
     height: auto;
     max-height: 92vh;
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
     box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
   }
 }
@@ -1738,7 +1737,7 @@ a { text-decoration: none; color: inherit; }
   text-align: left;
   padding: 10px 12px;
   border: 1.5px dashed var(--blue);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--blue-50);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
@@ -2059,7 +2058,7 @@ a { text-decoration: none; color: inherit; }
 .profile-qs-label { font-size: 9px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
 .profile-hero-enhanced .profile-avatar { width: 72px; height: 72px; font-size: 28px; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
 .pd-stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-.pd-stat-card { background: var(--gray-50); border-radius: var(--radius); padding: 10px; text-align: center; border: 1px solid var(--gray-100); }
+.pd-stat-card { background: #fff; border-radius: var(--radius-lg); padding: 10px; text-align: center; border: 1px solid var(--gray-200); }
 .pd-stat-card-val { font-size: 20px; font-weight: 800; color: var(--gray-800); }
 .pd-stat-card-label { font-size: 10px; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
 
@@ -2578,10 +2577,10 @@ a { text-decoration: none; color: inherit; }
   padding: 28px 20px 48px;
 }
 .op-welcome {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--gray-900);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 .op-welcome-sub {
   font-size: 14px;
@@ -2604,7 +2603,7 @@ a { text-decoration: none; color: inherit; }
   text-align: center;
   box-shadow: var(--shadow-sm);
 }
-.op-empty-icon { font-size: 40px; margin-bottom: 8px; }
+.op-empty-icon { font-size: 20px; margin-bottom: 8px; color: var(--gray-400); }
 .op-empty-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
 .op-empty-sub { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
 
@@ -2782,29 +2781,29 @@ a { text-decoration: none; color: inherit; }
   background: #fff;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  margin-top: 16px;
-  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  margin-top: 12px;
 }
 .dashboard-intro p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--gray-600);
   line-height: 1.5;
 }
 .dashboard-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 .dashboard-pill {
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: var(--radius-sm);
-  background: var(--gray-100);
-  color: var(--gray-700);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
 }
 .admin-user-actions {
   display: flex;
@@ -3322,11 +3321,25 @@ body.admin-map-fs { overflow: hidden; }
   color: var(--blue-dark);
   border-color: var(--blue-light);
 }
-.admin-nav-icon { font-size: 16px; line-height: 1; }
+.admin-nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.admin-nav-icon svg { width: 18px; height: 18px; display: block; }
 .admin-main { min-width: 0; }
-.admin-section { animation: adminFade 0.18s ease; }
-@keyframes adminFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.admin-section { }
 .admin-platform-stats { min-height: 60px; }
+.admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.admin-page-header .op-welcome { font-size: 20px; margin: 0; }
+.admin-page-header .op-welcome-sub { margin-top: 2px; }
+.admin-summary-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
 
 /* User-detail slide-in drawer */
 .admin-user-drawer {
@@ -3660,24 +3673,24 @@ body.admin-map-fs { overflow: hidden; }
   flex-direction: column;
   align-items: center;
   padding: 24px 20px 18px;
-  background: #0057B8;
+  background: var(--gray-900);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   margin: -24px -24px 20px;
   color: #fff;
   position: relative;
 }
 .profile-hero-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: #fff;
-  border: 3px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255,255,255,0.15);
   margin-bottom: 10px;
 }
 .profile-hero-name {
@@ -3699,12 +3712,12 @@ body.admin-map-fs { overflow: hidden; }
   font-weight: 600;
   padding: 3px 10px;
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.2);
-  
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
 }
-.profile-hero-badge.verified { background: rgba(16,185,129,0.3); }
-.profile-hero-badge.role-admin { background: rgba(139,92,246,0.3); }
-.profile-hero-badge.role-operator { background: rgba(59,130,246,0.3); }
+.profile-hero-badge.verified { background: rgba(255,255,255,0.1); }
+.profile-hero-badge.role-admin { background: rgba(255,255,255,0.1); }
+.profile-hero-badge.role-operator { background: rgba(255,255,255,0.1); }
 
 .profile-quick-stats {
   display: grid;
@@ -3748,4 +3761,303 @@ body.admin-map-fs { overflow: hidden; }
 
 .op-route-info {
   animation: adminFade 0.2s ease;
+}
+
+/* ── Drone Rental Styles ── */
+
+.drone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.drone-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.drone-card:hover {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-md);
+}
+.drone-card-emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.drone-card-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gray-900);
+}
+.drone-card-cat {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+.drone-card-price {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--blue);
+  margin-top: 6px;
+}
+.drone-op-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: 600;
+}
+.drone-op-badge.drone-op-optional {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.drone-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.drone-detail-emoji {
+  font-size: 36px;
+}
+.drone-detail-name {
+  font-weight: 700;
+  font-size: 17px;
+}
+.drone-desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin: 6px 0 10px;
+  line-height: 1.5;
+}
+.drone-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.drone-spec-item {
+  font-size: 12px;
+  background: var(--gray-100);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--gray-700);
+}
+
+.drone-form {
+  margin-top: 12px;
+}
+.drone-form-row {
+  margin-bottom: 10px;
+}
+.drone-form-row label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 4px;
+}
+.drone-hour-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drone-hour-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drone-hour-btn:hover {
+  background: var(--gray-100);
+}
+.drone-hour-picker input {
+  width: 50px;
+  text-align: center;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.drone-hour-range {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.drone-quote {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  margin: 12px 0;
+}
+.drone-quote-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--gray-600);
+  padding: 3px 0;
+}
+.drone-quote-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.drone-book-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+}
+
+.drone-booking-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.drone-booking-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.drone-booking-emoji {
+  font-size: 24px;
+}
+.drone-booking-info {
+  flex: 1;
+}
+.drone-booking-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+.drone-booking-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+.drone-status {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+.drone-status-confirmed { background: #e8f5e9; color: #2e7d32; }
+.drone-status-completed { background: #e3f2fd; color: #1565c0; }
+.drone-status-cancelled { background: #fbe9e7; color: #c62828; }
+.drone-status-pending { background: #fff3e0; color: #e65100; }
+.drone-booking-details {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.drone-booking-price {
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-top: 4px;
+}
+.drone-cancel-btn {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid #c62828;
+  color: #c62828;
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.drone-cancel-btn:hover {
+  background: #fbe9e7;
+}
+
+/* Admin drone styles */
+.drone-admin-form {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.drone-form-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.drone-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.drone-edit-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.drone-edit-btn:hover {
+  opacity: 0.85;
+}
+.drone-status-select {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.drone-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.drone-stat-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  text-align: center;
+}
+.drone-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.drone-stat-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+@media (max-width: 600px) {
+  .drone-grid {
+    grid-template-columns: 1fr;
+  }
+  .drone-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
