@@ -85,7 +85,7 @@ textarea:focus-visible, a:focus-visible {
   min-height: 100vh;
   justify-content: center;
   align-items: center;
-  background: #F6F8FB;
+  background: radial-gradient(ellipse at 50% 0%, var(--blue-50) 0%, #F6F8FB 60%);
 }
 .login-left {
   width: 100%;
@@ -122,25 +122,25 @@ textarea:focus-visible, a:focus-visible {
   margin-top: 2px;
 }
 .auth-card {
-  background: #fff;
-  border-radius: 24px;
-  padding: 44px 40px 36px;
+  background: var(--surface);
+  border-radius: var(--radius-2xl);
+  padding: 36px 36px 32px;
   width: 100%;
-  max-width: 440px;
-  box-shadow: none;
-  border: 1px solid var(--gray-200);
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  border: none;
   position: relative;
   z-index: 1;
 }
 .auth-card h2 {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   color: var(--gray-900);
   margin-bottom: 24px;
 }
 #login-card h2 { text-align: center; margin-bottom: 6px; }
 .auth-subtext {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--gray-500);
   margin-top: -16px;
   margin-bottom: 24px;
@@ -148,7 +148,7 @@ textarea:focus-visible, a:focus-visible {
 }
 #login-card .auth-subtext {
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   margin-top: 0;
   margin-bottom: 32px;
 }
@@ -178,18 +178,20 @@ textarea:focus-visible, a:focus-visible {
 }
 .auth-field input {
   width: 100%;
+  min-height: 48px;
   background: #fff;
-  border: 1.5px solid var(--gray-300);
-  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   font-size: 14px;
   color: var(--gray-800);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 .auth-field input::placeholder { color: var(--gray-400); }
 .auth-field input:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-glow);
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 .btn-auth-primary {
   width: 100%;
@@ -197,21 +199,22 @@ textarea:focus-visible, a:focus-visible {
   color: #fff;
   font-weight: 600;
   font-size: 14px;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
   margin-top: 4px;
 }
-.btn-auth-primary:hover { background: var(--blue-dark); transform: translateY(-1px); }
-.btn-auth-primary:active { transform: scale(0.98); }
-.btn-auth-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
+.btn-auth-primary:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-auth-primary:active { transform: none; box-shadow: none; }
+.btn-auth-primary:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
 .auth-error {
   display: none;
   margin-top: 14px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(239,68,68,0.10);
-  border: 1px solid rgba(239,68,68,0.35);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--red-50);
+  border: none;
   color: #B91C1C;
   font-size: 13px;
   line-height: 1.4;
@@ -220,10 +223,10 @@ textarea:focus-visible, a:focus-visible {
 .auth-success {
   display: none;
   margin-bottom: 16px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--green-50);
+  border: none;
   color: #166534;
   font-size: 13px;
   line-height: 1.5;
@@ -340,33 +343,35 @@ textarea:focus-visible, a:focus-visible {
   flex: 1;
   min-width: 0;
   width: auto;
-  background: var(--gray-50);
-  border: 1.5px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px;
+  min-height: 48px;
+  background: #fff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
   font-size: 14px;
   color: var(--gray-800);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 .auth-email-otp-row input::placeholder { color: var(--gray-400); }
 .auth-email-otp-row input:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-glow);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 .btn-send-otp {
   flex-shrink: 0;
   align-self: stretch;
+  min-height: 48px;
   background: #22c55e;
   color: #fff;
   font-weight: 600;
   font-size: 14px;
   padding: 0 18px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background var(--transition), transform var(--transition);
 }
 .btn-send-otp:hover { background: #16a34a; }
 .btn-send-otp:active { transform: scale(0.98); }
@@ -385,11 +390,11 @@ textarea:focus-visible, a:focus-visible {
 .auth-switch-btn:hover { text-decoration: underline; }
 .auth-switch-btn:disabled { color: var(--gray-400); cursor: default; text-decoration: none; }
 .auth-card select {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300);
-  border-radius: 4px; font-size: 14px; background: #fff;
+  width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); font-size: 14px; background: #fff;
   color: var(--gray-800); appearance: auto;
 }
-.auth-card select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.auth-card select:focus { border-color: var(--blue); box-shadow: var(--focus-ring); outline: none; }
 
 .auth-divider {
   display: flex;
@@ -407,18 +412,19 @@ textarea:focus-visible, a:focus-visible {
 }
 .btn-google {
   width: 100%;
+  height: 48px;
   background: #fff;
-  border: 1.5px solid var(--gray-300);
+  border: 1px solid var(--border-subtle);
   color: var(--gray-700);
   font-weight: 500;
   font-size: 14px;
-  padding: 11px;
-  border-radius: 999px;
+  padding: 0 16px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all 0.2s;
+  transition: background var(--transition), border-color var(--transition);
 }
 .btn-google:hover { background: var(--gray-50); border-color: var(--gray-300); }
 .btn-google svg { width: 18px; height: 18px; }
@@ -535,8 +541,8 @@ textarea:focus-visible, a:focus-visible {
   width: auto;
   margin-top: 0;
   margin-left: auto;
-  padding: 10px 28px;
-  border-radius: 999px;
+  padding: 0 28px;
+  border-radius: var(--radius-full);
 }
 .auth-create-link {
   background: none;
@@ -554,27 +560,31 @@ textarea:focus-visible, a:focus-visible {
 
 .auth-role-switcher {
   margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--gray-100);
+  padding: 3px;
+  border-top: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 2px;
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
 }
-.auth-role-sep { color: var(--gray-300); font-size: 12px; }
+.auth-role-sep { display: none; }
 .auth-role-btn {
   background: none;
   border: none;
-  padding: 4px 6px;
+  padding: 7px 16px;
   color: var(--gray-500);
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
+  border-radius: var(--radius-full);
+  transition: color var(--transition), background var(--transition), box-shadow var(--transition);
+  flex: 1;
+  text-align: center;
 }
-.auth-role-btn:hover { color: var(--blue); background: var(--blue-50); }
-.auth-role-btn.active { color: var(--blue); font-weight: 700; }
+.auth-role-btn:hover { color: var(--gray-700); }
+.auth-role-btn.active { color: var(--blue); font-weight: 600; background: var(--surface); box-shadow: var(--shadow-sm); }
 
 /* ═══════════════════════════════════════════
    MAP BOOKING VIEW

@@ -20,7 +20,7 @@
         "Verify in browser using dev-browser skill (screenshot login and booking views)"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -42,7 +42,7 @@
         "Verify in browser using dev-browser skill (login, register, forgot cards)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
