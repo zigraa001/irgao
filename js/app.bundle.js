@@ -3808,9 +3808,8 @@ async function restoreSession() {
     return;
   }
 
-  if (params.has('register')) return;
-
   const cached = AUTH.user;
+  if (params.has('register') && !cached) return;
   if (cached && cached.mustResetPassword) {
     showForcedResetOverlay(cached);
   } else if (cached) {
