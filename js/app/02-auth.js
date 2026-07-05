@@ -108,7 +108,7 @@ function applyPortalLabels(role) {
   const hint = document.getElementById('login-role-hint');
   const regBtn = document.getElementById('login-register-btn');
   const regRow = document.getElementById('login-register-row');
-  const forgotRow = document.getElementById('login-forgot-row');
+  const forgotLink = document.getElementById('login-forgot-link');
   const loginOnly = Boolean(cfg.loginOnly);
   const signupDisabled = Boolean(cfg.signupDisabled);
   if (title) title.textContent = cfg.loginTitle;
@@ -116,7 +116,7 @@ function applyPortalLabels(role) {
   if (hint) hint.textContent = cfg.loginHint;
   if (regBtn && cfg.registerBtn) regBtn.textContent = cfg.registerBtn;
   if (regRow) regRow.style.display = loginOnly || signupDisabled ? 'none' : '';
-  if (forgotRow) forgotRow.style.display = loginOnly ? 'none' : '';
+  if (forgotLink) forgotLink.style.display = loginOnly ? 'none' : '';
   var googleBtn = document.querySelector('#login-card .btn-google');
   if (googleBtn) googleBtn.style.display = role === 'passenger' ? '' : 'none';
   document.title = cfg.loginTitle + ' — IraGo';
@@ -201,6 +201,8 @@ function resetPassengerRegForm() {
     var el = document.getElementById(id);
     if (el) el.disabled = false;
   });
+  var nameEl = document.getElementById('register-passenger-name');
+  if (nameEl) setTimeout(function() { nameEl.focus(); }, 50);
 }
 
 function setRegisterSignupFieldsVisible(role, visible) {
@@ -264,6 +266,9 @@ function showLoginCard() {
   applyPortalLabels(authRole || 'passenger');
   clearOtpTimers();
   hideLoginSuccess();
+  clearLoginFieldHints();
+  var emailEl = document.getElementById('login-email');
+  if (emailEl) setTimeout(function() { emailEl.focus(); }, 50);
 }
 
 function authFetchErrorMessage(res) {
@@ -436,6 +441,52 @@ function setBusy(btnId, busy, busyLabel, idleLabel) {
   if (!btn) return;
   btn.disabled = busy;
   btn.textContent = busy ? busyLabel : idleLabel;
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  var input = document.getElementById(inputId);
+  if (!input) return;
+  var showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  if (btn) {
+    var showIcon = btn.querySelector('.eye-show');
+    var hideIcon = btn.querySelector('.eye-hide');
+    if (showIcon) showIcon.style.display = showing ? '' : 'none';
+    if (hideIcon) hideIcon.style.display = showing ? 'none' : '';
+    btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  }
+}
+
+function validateLoginField(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var val = el.value.trim();
+  var hintEl = document.getElementById(id + '-hint');
+  if (!hintEl) return;
+  if (id === 'login-email') {
+    if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      hintEl.textContent = 'Enter a valid email address';
+      hintEl.classList.add('show');
+    } else {
+      hintEl.textContent = '';
+      hintEl.classList.remove('show');
+    }
+  } else if (id === 'login-password') {
+    if (val && val.length < 6) {
+      hintEl.textContent = 'Password must be at least 6 characters';
+      hintEl.classList.add('show');
+    } else {
+      hintEl.textContent = '';
+      hintEl.classList.remove('show');
+    }
+  }
+}
+
+function clearLoginFieldHints() {
+  ['login-email-hint', 'login-password-hint'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = ''; el.classList.remove('show'); }
+  });
 }
 
 // ── Google OAuth ────────────────────────────────────────────────────────
@@ -648,7 +699,8 @@ async function doLogin() {
         switchLoginRole(data.portal);
         return showAuthError('login-error', 'Switched to ' + data.portal + ' login — try again.');
       }
-      return showAuthError('login-error', data.error || 'Invalid email or password.');
+      var loginMsg = (res.status === 401 || res.status === 400) ? 'Incorrect email or password.' : (data.error || 'Incorrect email or password.');
+      return showAuthError('login-error', loginMsg);
     }
     onAuthSuccess(data.user, data.token);
   } catch (e) {
