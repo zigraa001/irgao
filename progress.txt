@@ -30,6 +30,9 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.admin-list-row` + `.admin-list-name` + `.admin-list-meta` for any list-of-items rows in admin sections
 - Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
+- WCAG AA contrast: never use var(--gray-400) for readable text labels — use var(--gray-500) minimum; gray-400 is OK only for placeholders/icons/decorative
+- Touch targets on mobile: set min-height: 40-44px on interactive elements at ≤768px via media query
+- Spacing rhythm: use 4px multiples (4, 8, 12, 16, 20, 24, 32, 40, 48) for padding/margin/gap
 
 ---
 
@@ -140,4 +143,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.auth-input` and `.auth-btn` CSS classes now exist — used by the Companies section form in app.html
   - Revenue chart bars changed from `var(--primary, #2563EB)` to `var(--blue)` for design token consistency
   - Manual browser verification was not possible — recommend visual QA
+---
+
+## 2026-07-05 - US-010
+- What was implemented: Responsive and interaction polish sweep — comprehensive responsive breakpoints (360px, 480px, 768px, 1024px, 1440px), WCAG AA contrast fixes (gray-400→gray-500 for text labels), touch target enforcement (≥40px for buttons/stars/chips on mobile), 4px-based spacing rhythm across panel sections/card paddings/gaps, custom scrollbar (already present from US-001), expanded prefers-reduced-motion block, additional disabled states
+- Files changed: css/app.css (contrast fixes on ~12 text label selectors, spacing rhythm fixes on ~20 structural elements, new responsive media queries for 360px/480px/768px/1024px/1440px, touch targets for tracking rate stars/operator rate stars/feas-chip/btn-end-tracking/loc-suggest-item/route-chip/admin-nav-item, expanded reduced-motion block), app.html (CSS cache-bust)
+- **Learnings for future iterations:**
+  - WCAG AA requires 4.5:1 contrast for normal text; var(--gray-400) (#94A3B8) on white is only 3.6:1 — always use var(--gray-500) (#64748B, 5.5:1) or darker for readable text; gray-400 is OK for placeholders, decorative elements, and icons
+  - Multiple @media blocks at the same breakpoint cascade correctly — no need to merge them; later ones override earlier for same-specificity selectors
+  - Touch target minimum for mobile (WCAG 2.5.8): 44px is ideal, 40px is acceptable — set min-height/min-width on buttons and interactive chips at ≤768px
+  - 4px grid rhythm: stick to multiples of 4 (4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48) for padding/margin/gap — values like 10, 14, 18, 22 create visual inconsistency
+  - The prefers-reduced-motion block should list ALL animated elements; the `* { transition-duration: 0.01ms !important }` catch-all handles transitions but explicit animation: none is needed for each @keyframes user
+  - Manual browser verification was not possible — recommend visual QA at 360px, 768px, 1024px, and 1440px
 ---

@@ -205,7 +205,7 @@
         "Verify in browser using dev-browser skill (360px and 1440px screenshots of all four views)"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -362,6 +362,25 @@
         "Verify in browser using dev-browser skill (Companies section with counts and expanded offices)"
       ],
       "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Admin dashboard visual overhaul \u2014 verified with screenshots",
+      "description": "As an admin, I want the admin console to actually look modern (not stone-age), because US-008/US-009 restyled the CSS but were marked passing WITHOUT any browser verification, so the real rendered result was never confirmed.",
+      "acceptanceCriteria": [
+        "BEFORE any change: launch the app, sign in as admin, and capture a baseline screenshot of the admin dashboard AND the Users table/Add Member form; save to tasks/screenshots/us019-admin-before-*.png",
+        "Diagnose from the baseline why it looks dated: check for (a) stale cache serving old css/app.css or js/app.bundle.js, (b) admin sections still using legacy inline styles or pre-redesign classes that US-008/US-009 never touched, (c) design tokens applied but visually weak spacing/hierarchy",
+        "Fix the root cause: ensure .admin-drawer, .admin-nav-item active state, .pd-stat dashboard cards, .admin-page-header, .admin-table, .pd-input and all admin section wrappers actually render with the modern token-based styling (--surface, --shadow-sm/md, --radius-lg, --blue-50 accents, uppercase labels, bold navy metrics)",
+        "Every admin section (Dashboard, Users, Add Member, Pricing, Revenue, Compliance, Drones, Logs, Settings, Companies) must visually match the same modern card language \u2014 no section left with flat/borderless/table-grid stone-age styling",
+        "Bump the ?v= cache-buster on css/app.css and app.bundle.js so the new styles are guaranteed to load",
+        "AFTER the change: capture matching after-screenshots to tasks/screenshots/us019-admin-after-*.png and confirm a visible, clear improvement over baseline",
+        "Record in notes: the root cause found, what changed, and the before/after screenshot filenames as evidence",
+        "MANDATORY: do NOT set passes:true unless the after-screenshots were actually captured and reviewed. If browser verification is not possible in this environment, leave passes:false and note the blocker instead of self-certifying",
+        "Typecheck passes"
+      ],
+      "priority": 19,
       "passes": false,
       "notes": ""
     }
