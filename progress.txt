@@ -98,3 +98,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - prefers-reduced-motion: reduce block disables all entrance animations (confirmIn, checkPop, overlayFadeIn, toastSlideIn) with animation: none !important
   - Manual browser verification was not possible — recommend visual QA
 ---
+
+## 2026-07-05 - US-007
+- What was implemented: Operator (pilot) console redesign — 22px bold navy page header (.op-welcome), rounded duty card with shadow (--radius-lg, --shadow-md), green/gray duty status text via CSS :has() selector, iOS-style 48x28px pill toggle switch with smooth knob transition, rounded pill status badges (--radius-full), trip cards with design tokens (--surface, --border-subtle) and blue hover border, rounded back button with hover bg instead of underline, muted centered empty states, detail card with --shadow-md, accept button with hover lift + shadow + active press state, reject button with hover border-color, blue-themed OTP verify section (dashed blue border, monospace digits), dispatch overlay with backdrop blur and gradient header (navy to blue), rounded dispatch tags, modernized map badge (pill shape + blur) and map legend (--radius-lg + blur), compliance checklist with subtle dividers, eyebrow-style section titles (12px, --gray-400)
+- Files changed: css/app.css (operator section styles), app.html (CSS cache-bust v=operator0705)
+- **Learnings for future iterations:**
+  - The duty card uses CSS `:has()` selector to color duty status text green when the toggle aria-pressed="true" — no JS changes needed; supported in all modern browsers
+  - `.op-duty-switch` is now an iOS-style pill toggle (48x28px, border-radius: 14px) — the knob translateX is 20px (48 - 24 knob - 4 margin)
+  - `.op-section-title` is shared between operator and admin views — changing it to 12px/gray-400 eyebrow style affects both
+  - `.op-empty` styling is shared across operator and admin views — design token changes cascade to admin empty states too
+  - The dispatch overlay now has backdrop-filter blur like other overlays (confirm, profile) with the same @supports fallback pattern
+  - `.op-welcome` color changed from --gray-900 to --navy, and admin-page-header .op-welcome size bumped to 22px — these cascade to admin dashboard header too
+  - Manual browser verification was not possible — recommend visual QA
+---
