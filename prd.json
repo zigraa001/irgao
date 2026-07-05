@@ -388,8 +388,8 @@
     {
       "id": "US-020",
       "priority": 20,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Grouped nav: OVERVIEW (Dashboard, Live Map), MANAGEMENT (Users, Companies, Drones), FINANCE (Pricing, Revenue), GOVERNANCE (Compliance), SYSTEM (Settings, Logs) pinned to bottom. Add Member demoted to button in Users section header.",
       "title": "Admin console information architecture: grouped nav + demoted System zone",
       "description": "As an admin, the left nav is 11 flat equally-weighted items (Dashboard, Users, Live Map, Add Member, Logs, Companies, Pricing, Revenue, Compliance, Drones, Settings) with no grouping or hierarchy, mixing a one-off action (Add Member) and dev/technical items (Logs, Settings) with core destinations \u2014 it's cluttered and confusing.",
       "acceptanceCriteria": [

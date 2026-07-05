@@ -30,6 +30,7 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.admin-list-row` + `.admin-list-name` + `.admin-list-meta` for any list-of-items rows in admin sections
 - Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
 - `.partner-card` is the rich card pattern for admin Companies section -- monogram, stats row, expand/collapse offices; use `.partner-grid` as container
+- `.admin-nav-group-label` is the group header pattern for nav drawers (11px uppercase, gray-400); `.admin-nav-group-system` pins the System zone to drawer bottom via margin-top:auto
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
 - WCAG AA contrast: never use var(--gray-400) for readable text labels — use var(--gray-500) minimum; gray-400 is OK only for placeholders/icons/decorative
 - Touch targets on mobile: set min-height: 40-44px on interactive elements at ≤768px via media query
@@ -254,4 +255,26 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - After adding a company, _addMemberCompanies is set to null so the Add Member dropdown re-fetches the updated list
   - The `.partner-chevron` rotation uses CSS `:has(~ .partner-offices.open)` -- the toggle button must be a sibling before the offices container
   - Manual browser verification was not possible -- recommend visual QA of Companies section with partner cards and expanded offices
+---
+
+## 2026-07-05 - US-020
+- What was implemented: Admin console information architecture -- reorganized 11 flat nav items into 5 labeled groups (Overview, Management, Finance, Governance, System). System group (Settings, Logs) pinned to bottom of drawer with margin-top:auto and visually muted. Add Member demoted from top-level nav item to a "+ Add member" primary action button inside the Users section header. showAdminSection('add') now highlights the Users nav item. All 11 sections remain reachable.
+- Files changed: app.html (admin drawer nav reorganized into groups with .admin-nav-group-label headers, Add Member nav item removed, .admin-section-header + .admin-add-member-btn added to Users section), css/app.css (.admin-nav-group-label 11px uppercase style, .admin-nav-group-system margin-top:auto + border-top + muted colors, .admin-section-header flex layout, .admin-add-member-btn blue primary button, .admin-drawer display:flex + min-height, mobile min-height:auto override), js/app/03-admin-profile.js (navHighlight maps 'add' to 'users' for active state), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - `.admin-nav-group-label` is a reusable group header pattern -- 11px uppercase, gray-400, with 12px side padding; first-child gets reduced top padding
+  - `.admin-nav-group-system` wraps the bottom group with margin-top:auto (flex child in flex column) + border-top divider + muted gray-400 text; items still get blue when active
+  - The drawer needs `display:flex; flex-direction:column; min-height:480px` for margin-top:auto to work on desktop; mobile overrides min-height:auto
+  - When demoting a nav item to an inline button, update showAdminSection's active-state logic to highlight the parent section instead (navHighlight = name === 'add' ? 'users' : name)
+  - The final grouping: OVERVIEW (Dashboard, Live Map), MANAGEMENT (Users, Companies, Drones), FINANCE (Pricing, Revenue), GOVERNANCE (Compliance), SYSTEM (Settings, Logs)
+- **Browser-free verification evidence:**
+  - Groups confirmed: 5 .admin-nav-group-label elements in drawer (Overview, Management, Finance, Governance, System)
+  - All 10 .admin-nav-item buttons in drawer with correct data-admin-section values (dashboard, live, users, companies, drones, pricing, revenue, compliance, settings, logs)
+  - Add Member is NOT an .admin-nav-item (grep returns empty)
+  - admin-section-add (id) still exists in app.html (line 1003)
+  - .admin-add-member-btn in Users section (line 950) calls showAdminSection('add')
+  - navHighlight logic in JS (line 448) maps 'add' to 'users' for active state
+  - .admin-nav-group-system is the last group in the drawer nav (wraps Settings + Logs)
+  - All 11 admin sections (admin-section-*) still exist (count: 11)
+  - toggleAdminDrawer() unchanged
+  - CSS rules exist for all new classes: admin-nav-group-label, admin-nav-group-system, admin-section-header, admin-add-member-btn
 ---
