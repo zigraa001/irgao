@@ -81,7 +81,6 @@ const passengerHandlers = mountRoleSignup(
 );
 
 router.post("/passenger/signup-request", passengerHandlers.signupRequest);
-router.post("/passenger/send-phone-otp", passengerHandlers.sendPhoneOtp);
 router.post("/passenger/verify-signup", passengerHandlers.verifySignup);
 
 // Operator & admin accounts are admin-provisioned only — a logged-in admin
