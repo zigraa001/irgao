@@ -32,6 +32,8 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.partner-card` is the rich card pattern for admin Companies section -- monogram, stats row, expand/collapse offices; use `.partner-grid` as container
 - `.admin-nav-group-label` is the group header pattern for nav drawers (11px uppercase, gray-400); `.admin-nav-group-system` pins the System zone to drawer bottom via margin-top:auto
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
+- `.disclosure-toggle` + `.disclosure-content` is the reusable progressive disclosure pattern -- toggle button (12px uppercase) gets `.open` class for chevron rotation, content container toggles display:none/block with slideUp animation; use `.disclosure-count` for a count badge
+- `.service-details-area:empty` auto-hides via CSS -- no JS needed to manage visibility of empty containers
 - WCAG AA contrast: never use var(--gray-400) for readable text labels — use var(--gray-500) minimum; gray-400 is OK only for placeholders/icons/decorative
 - Touch targets on mobile: set min-height: 40-44px on interactive elements at ≤768px via media query
 - Spacing rhythm: use 4px multiples (4, 8, 12, 16, 20, 24, 32, 40, 48) for padding/margin/gap
@@ -277,4 +279,39 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - All 11 admin sections (admin-section-*) still exist (count: 11)
   - toggleAdminDrawer() unchanged
   - CSS rules exist for all new classes: admin-nav-group-label, admin-nav-group-system, admin-section-header, admin-add-member-btn
+---
+
+## 2026-07-05 - US-021
+- What was implemented: Route & flight search UX overhaul -- progressive disclosure pattern applied throughout the booking search flow, single primary CTA structure, ride card hierarchy restructured for scannability
+- **Current flow friction points identified (before):**
+  - Service banners and extra fields (Golden Hour emergency fields) shown above the search CTA, competing for attention
+  - 10+ popular route chips displayed all at once before user types anything -- visual clutter
+  - Ride cards showed company chip above everything, then icon/name/price, then 4 equal-weight stat pills -- no clear hierarchy
+  - Carbon comparison and route info cards appended inline to rides list -- too much secondary info at same visual weight
+  - No progressive disclosure -- all controls visible simultaneously
+- **Redesigned flow (after):**
+  - Step 1: Location inputs are the first and only thing above the CTA (destination-first from US-014)
+  - Step 2: Single dominant search CTA immediately after inputs -- no competing actions
+  - Step 3: Service banners and extra fields placed BELOW the CTA as `.service-details-area` -- visually subordinate, auto-hidden when empty
+  - Step 4: Popular routes behind a collapsible toggle with count badge (`togglePopularRoutes()`) -- not shown all at once
+  - Step 5: Ride results lead with decision-driving info: price (18px bold navy) + time/distance inline (`ride-meta-line`) at card top; company chip secondary below; stats row subdued (10px, transparent bg, thin top border)
+  - Step 6: Carbon comparison and route info cards in collapsible "Flight details" section (`toggleRidesDetails()`) -- revealed on demand
+- Files changed: app.html (panel-locations restructured: CTA before banners/extras, disclosure containers for rides details), js/app/06-booking.js (renderPopularRoutes with toggle, togglePopularRoutes/toggleRidesDetails functions, searchRides places supplementary cards in disclosure content, ride card template restructured, resetBooking clears disclosure), css/app.css (disclosure-toggle/chevron/count/content styles, service-details-area auto-hide, rides-details-toggle, popular-routes-toggle, ride-stats subdued, ride-meta-line, ride-company-chip repositioned, extra-field 44px/radius-md/focus-ring), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The `.disclosure-toggle` + `.disclosure-content` pattern is reusable for any collapsible section -- toggle gets `.open` class for chevron rotation, content toggles display:none/block
+  - `.service-details-area:empty { display: none }` auto-hides the container when JS has not populated it -- no JS needed to manage visibility
+  - Ride card hierarchy for scannable results: top row = icon + name + key metric (time/dist) + price; middle = trust signal (company chip); bottom = subordinate stats separated by border-top
+  - The `ride-meta-line` class provides inline time + distance summary without needing to scan the stats row -- decision-driving info at a glance
+  - Supplementary cards (carbon, route info) should go in a disclosure section so they do not push the "Confirm Booking" CTA below the fold
+  - The `resetBooking()` function must clear disclosure content and hide toggles to avoid stale state across searches
+- **Browser-free verification evidence:**
+  - Single primary CTA: #search-btn is the only visible button in panel-locations before rides-area (book-btn starts display:none)
+  - Service details subordinate: #service-banner-area and #extra-fields-area placed AFTER #search-btn with class="service-details-area"
+  - Progressive disclosure: popular-routes-toggle with disclosure-chevron + popular-routes-list display:none; rides-details-toggle with disclosure-content display:none
+  - Results hierarchy: ride-card-top contains icon+ride-info(name+ride-meta-line)+ride-price; then companyChipHtml; then ride-stats (subdued)
+  - Disclosure CSS: .disclosure-toggle (12px uppercase, gray-500), .disclosure-chevron (rotate 90deg on .open), .disclosure-content (slideUp animation)
+  - All element IDs preserved (18/18 verified), all onclick handlers intact (switchService 4, searchRides 1, bookRide 1, selectRoute 2, swapLocations 1)
+  - Extra-field inputs upgraded: min-height 44px, border-radius var(--radius-md), focus uses box-shadow var(--focus-ring)
+  - No smart quotes in JS
+  - Typecheck passes, bundle rebuilt, server boots clean
 ---
