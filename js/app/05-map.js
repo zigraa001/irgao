@@ -79,6 +79,36 @@ function initMap() {
       mapResizeObserver.observe(mapEl);
     }
   }
+
+  // Auto-detect GPS for pickup on load (user can still edit)
+  if (navigator.geolocation && !pickupCoord) {
+    navigator.geolocation.getCurrentPosition(
+      async function (pos) {
+        if (pickupCoord) return; // user already picked something
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        var name = 'My Location (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ')';
+        try {
+          var r = await fetch(
+            'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          var d = await r.json();
+          if (d && d.display_name) {
+            var a = d.address || {};
+            name = a.suburb || a.neighbourhood || a.village || a.town || a.city || d.display_name.split(',')[0];
+            name = name + ', ' + (a.city || a.town || a.county || '');
+            name = name.trim().replace(/,\s*$/, '');
+          }
+        } catch (e) { /* keep coords as name */ }
+        if (pickupCoord) return;
+        setPickup([lat, lng], name);
+        map.setView([lat, lng], 14);
+      },
+      function () { /* silent fail — user can enter manually */ },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  }
 }
 
 // Small on-map pill showing whether the map is auto-following the plane or
@@ -501,7 +531,7 @@ function startMapPick(target) {
 }
 
 var MAP_PICK_OPTION = '__map_pick__';
-var GPS_CURRENT_OPTION = '__gps_current__';
+var PHOTON_SEARCH_OPTION = '__photon__';
 
 function setupAutocomplete(inputId, suggestId, callback, target) {
   var input = document.getElementById(inputId);
@@ -509,6 +539,9 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   if (!input || !dropdown) return;
   var activeIdx = -1;
   var currentMatches = [];
+  var photonTimer = null;
+  var photonAbort = null;
+  var lastPhotonQuery = '';
 
   function highlightMatch(name, query) {
     if (!query) return escapeHtml(name);
@@ -541,13 +574,77 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     return score;
   }
 
-  function render(query) {
+  var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
+  var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
+  var searchSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+  var globeSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
+  function renderDropdown(vertiports, photonResults, query) {
     activeIdx = -1;
+    var q = (query || '').trim();
+    currentMatches = [];
+
+    currentMatches.push({ name: MAP_PICK_OPTION });
+
+    vertiports.forEach(function (v) { currentMatches.push(v); });
+
+    if (photonResults && photonResults.length) {
+      currentMatches.push({ name: PHOTON_SEARCH_OPTION });
+      photonResults.forEach(function (r) { currentMatches.push(r); });
+    }
+
+    var html = '';
+    currentMatches.forEach(function (m, idx) {
+      if (m.name === MAP_PICK_OPTION) {
+        html += '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
+          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>';
+        if (q.length < 1) {
+          html += '<div class="loc-suggest-label">Popular vertiports</div>';
+        } else if (vertiports.length) {
+          html += '<div class="loc-suggest-label">IraGo vertiports</div>';
+        }
+        return;
+      }
+      if (m.name === PHOTON_SEARCH_OPTION) {
+        html += '<div class="loc-suggest-label loc-suggest-label-search">' + searchSvg + ' Search results</div>';
+        return;
+      }
+      if (m.photon) {
+        html += '<div class="loc-suggest-item loc-suggest-photon" data-idx="' + idx + '">' +
+          globeSvg +
+          '<div class="loc-suggest-text"><span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span>' +
+          (m.address ? '<span class="loc-suggest-addr">' + escapeHtml(m.address) + '</span>' : '') +
+          '</div></div>';
+      } else {
+        html += '<div class="loc-suggest-item" data-idx="' + idx + '">' +
+          pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
+      }
+    });
+
+    if (q.length >= 2 && !vertiports.length && (!photonResults || !photonResults.length)) {
+      html += '<div class="loc-suggest-empty">No matching places</div>';
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+
+    var items = dropdown.querySelectorAll('.loc-suggest-item');
+    for (var j = 0; j < items.length; j++) {
+      (function (el) {
+        var idx = parseInt(el.getAttribute('data-idx'));
+        el.onmousedown = function (e) {
+          e.preventDefault();
+          pickItem(idx);
+        };
+      })(items[j]);
+    }
+  }
+
+  function getLocalMatches(query) {
     var q = (query || '').trim();
     var names = Object.keys(demoLocations);
     var scored = [];
     if (q.length < 1) {
-      // Empty field: offer a few popular places under the map option
       scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
     } else {
       var keywords = q.toLowerCase().split(/\s+/);
@@ -556,51 +653,72 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         if (s > 0) scored.push({ name: names[i], score: s });
       }
       scored.sort(function (a, b) { return b.score - a.score; });
-      scored = scored.slice(0, 7);
+      scored = scored.slice(0, 5);
     }
-    var topItems = [{ name: MAP_PICK_OPTION }];
-    if (target === 'pickup' && navigator.geolocation) {
-      topItems.unshift({ name: GPS_CURRENT_OPTION });
-    }
-    currentMatches = topItems.concat(scored);
-    var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
-    var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
-    var gpsSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>';
-    dropdown.innerHTML = currentMatches.map(function (m, idx) {
-      if (m.name === GPS_CURRENT_OPTION) {
-        return '<div class="loc-suggest-item loc-suggest-gps" data-idx="' + idx + '">' +
-          gpsSvg + '<span class="loc-suggest-name">Use current location</span></div>';
-      }
-      if (m.name === MAP_PICK_OPTION) {
-        return '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
-          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>' +
-          (q.length < 1 ? '<div class="loc-suggest-label">Popular vertiports</div>' : '') +
-          (q.length >= 1 && scored.length === 0 ? '<div class="loc-suggest-empty">No matching places</div>' : '');
-      }
-      return '<div class="loc-suggest-item" data-idx="' + idx + '">' +
-        pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
-    }).join('');
-    dropdown.style.display = 'block';
+    return scored;
+  }
 
-    var items = dropdown.querySelectorAll('.loc-suggest-item');
-    for (var j = 0; j < items.length; j++) {
-      (function (el, idx) {
-        el.onmousedown = function (e) {
-          e.preventDefault();
-          pickItem(idx);
-        };
-      })(items[j], j);
+  function searchPhoton(query) {
+    var q = (query || '').trim();
+    if (q.length < 2) return;
+    if (q === lastPhotonQuery) return;
+    lastPhotonQuery = q;
+
+    if (photonTimer) clearTimeout(photonTimer);
+    if (photonAbort) { photonAbort.abort(); photonAbort = null; }
+
+    photonTimer = setTimeout(function () {
+      var center = map ? map.getCenter() : { lat: 20.5937, lng: 78.9629 };
+      var controller = new AbortController();
+      photonAbort = controller;
+
+      var url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) +
+        '&lat=' + center.lat + '&lon=' + center.lng + '&limit=5&lang=en';
+
+      fetch(url, { signal: controller.signal })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          photonAbort = null;
+          if (!data.features || !data.features.length) return;
+          if (input.value.trim() !== q) return;
+
+          var results = data.features.map(function (feat) {
+            var props = feat.properties;
+            var name = props.name || props.street || 'Unknown';
+            var addrParts = [props.street, props.city || props.town, props.state, props.country].filter(Boolean);
+            var address = addrParts.join(', ');
+            var coords = feat.geometry.coordinates;
+            return { name: name, address: address, coord: [coords[1], coords[0]], photon: true };
+          });
+
+          var localMatches = getLocalMatches(q);
+          renderDropdown(localMatches, results, q);
+        })
+        .catch(function () { photonAbort = null; });
+    }, 350);
+  }
+
+  function render(query) {
+    var q = (query || '').trim();
+    var localMatches = getLocalMatches(q);
+    renderDropdown(localMatches, [], q);
+
+    if (q.length >= 2) {
+      searchPhoton(q);
     }
   }
 
   function pickItem(idx) {
     if (idx < 0 || idx >= currentMatches.length) return;
-    var name = currentMatches[idx].name;
+    var match = currentMatches[idx];
+    if (match.name === MAP_PICK_OPTION) { dropdown.style.display = 'none'; currentMatches = []; startMapPick(target); return; }
+    if (match.name === PHOTON_SEARCH_OPTION) return;
+
     dropdown.style.display = 'none';
+    var name = match.name;
+    var coord = match.photon ? match.coord : demoLocations[name];
+    if (!coord) return;
     currentMatches = [];
-    if (name === GPS_CURRENT_OPTION) { useCurrentLocation(); return; }
-    if (name === MAP_PICK_OPTION) { startMapPick(target); return; }
-    var coord = demoLocations[name];
     input.value = name;
     input.classList.add('has-value');
     callback(name, coord);
@@ -627,10 +745,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     if (dropdown.style.display === 'none' || !currentMatches.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive(activeIdx < currentMatches.length - 1 ? activeIdx + 1 : 0);
+      var next = activeIdx + 1;
+      while (next < currentMatches.length && (currentMatches[next].name === PHOTON_SEARCH_OPTION)) next++;
+      if (next < currentMatches.length) setActive(next); else setActive(0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive(activeIdx > 0 ? activeIdx - 1 : currentMatches.length - 1);
+      var prev = activeIdx - 1;
+      while (prev >= 0 && (currentMatches[prev].name === PHOTON_SEARCH_OPTION)) prev--;
+      if (prev >= 0) setActive(prev); else setActive(currentMatches.length - 1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (activeIdx >= 0) pickItem(activeIdx);
@@ -638,6 +760,290 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     } else if (e.key === 'Escape') {
       dropdown.style.display = 'none';
     }
+  });
+}
+
+// ── Landing Point Picker (Overpass API) ──
+var landingZoneLayers = [];
+var landingZoneCache = new Map();
+var landingZoneFetchAbort = null;
+var pendingLandingPick = null;
+
+var LANDING_ZONE_CATEGORIES = {
+  helipad:    { label: 'Helipad',       color: '#10B981', icon: 'H', priority: 1 },
+  park:       { label: 'Park / Garden', color: '#22C55E', icon: 'P', priority: 2 },
+  pitch:      { label: 'Sports Field',  color: '#3B82F6', icon: 'S', priority: 3 },
+  parking:    { label: 'Parking Lot',   color: '#8B5CF6', icon: 'K', priority: 4 },
+  ground:     { label: 'Open Ground',   color: '#F59E0B', icon: 'G', priority: 5 },
+  rooftop:    { label: 'Rooftop',       color: '#EC4899', icon: 'R', priority: 6 },
+};
+
+function classifyOsmElement(tags) {
+  if (!tags) return null;
+  if (tags.aeroway === 'helipad') return 'helipad';
+  if (tags.leisure === 'pitch' || tags.leisure === 'recreation_ground') return 'pitch';
+  if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.leisure === 'playground' || tags.leisure === 'common') return 'park';
+  if (tags.amenity === 'parking' && tags.parking !== 'underground' && tags.parking !== 'multi-storey') return 'parking';
+  if (tags.landuse === 'grass' || tags.landuse === 'meadow' || tags.landuse === 'village_green' ||
+      tags.landuse === 'recreation_ground' || tags.landuse === 'brownfield' || tags.landuse === 'greenfield' ||
+      tags.natural === 'grassland' || tags.natural === 'heath' || tags.natural === 'sand') return 'ground';
+  if (tags.building === 'hospital' || tags.building === 'commercial' || tags.building === 'retail' ||
+      tags.building === 'industrial' || tags.building === 'warehouse' || tags.building === 'civic' ||
+      tags.building === 'stadium' || tags.building === 'university' || tags.building === 'office' ||
+      tags.building === 'public') return 'rooftop';
+  return null;
+}
+
+function getElementCenter(el) {
+  if (el.center) return [el.center.lat, el.center.lon];
+  if (el.lat != null && el.lon != null) return [el.lat, el.lon];
+  if (el.bounds) return [(el.bounds.minlat + el.bounds.maxlat) / 2, (el.bounds.minlon + el.bounds.maxlon) / 2];
+  if (el.geometry && el.geometry.length) {
+    var sumLat = 0, sumLon = 0;
+    el.geometry.forEach(function (p) { sumLat += p.lat; sumLon += p.lon; });
+    return [sumLat / el.geometry.length, sumLon / el.geometry.length];
+  }
+  return null;
+}
+
+function getElementName(el) {
+  if (!el.tags) return '';
+  return el.tags.name || el.tags['name:en'] || el.tags.description || '';
+}
+
+function estimateArea(el) {
+  if (!el.geometry || el.geometry.length < 3) return 0;
+  var coords = el.geometry;
+  var area = 0;
+  for (var i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    area += (coords[j].lon + coords[i].lon) * (coords[j].lat - coords[i].lat);
+  }
+  area = Math.abs(area) / 2;
+  var midLat = coords[0].lat * Math.PI / 180;
+  return area * (111320 * Math.cos(midLat)) * 111320;
+}
+
+function buildOverpassQuery(lat, lon, radius) {
+  return '[out:json][timeout:25];(' +
+    'node["aeroway"="helipad"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["aeroway"="helipad"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["leisure"~"park|garden|playground|pitch|recreation_ground|common"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'relation["leisure"~"park|garden|playground|pitch|recreation_ground|common"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["landuse"~"grass|meadow|village_green|brownfield|greenfield|recreation_ground"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["natural"~"grassland|heath|sand"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["amenity"="parking"]["parking"!~"underground|multi-storey"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["building"~"hospital|commercial|retail|industrial|warehouse|civic|stadium|university|office|public"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    ');out center body geom;';
+}
+
+function clearLandingZones() {
+  landingZoneLayers.forEach(function (layer) { if (map) map.removeLayer(layer); });
+  landingZoneLayers = [];
+}
+
+function hideLandingPicker() {
+  var picker = document.getElementById('landing-point-picker');
+  if (picker) picker.style.display = 'none';
+  clearLandingZones();
+  pendingLandingPick = null;
+}
+
+function skipLandingPick() {
+  hideLandingPicker();
+}
+
+function selectLandingPoint(lat, lon, name, target) {
+  hideLandingPicker();
+  if (target === 'pickup') {
+    pickupCoord = [lat, lon];
+    document.getElementById('pickup-input').value = name;
+    document.getElementById('pickup-input').classList.add('has-value');
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
+    map.setView(pickupCoord, 16);
+  } else {
+    destCoord = [lat, lon];
+    document.getElementById('dest-input').value = name;
+    document.getElementById('dest-input').classList.add('has-value');
+    if (destMarker) map.removeLayer(destMarker);
+    destMarker = createMarker(destCoord, 'dest').addTo(map);
+    map.setView(destCoord, 16);
+  }
+  captureBookingDraft();
+  if (pickupCoord && destCoord) {
+    drawRoute();
+    refreshNearbyTaxis();
+  }
+}
+
+async function showLandingPicker(lat, lon, target, locationName) {
+  if (!map) return;
+
+  pendingLandingPick = { target: target, origCoord: [lat, lon], origName: locationName };
+
+  var picker = document.getElementById('landing-point-picker');
+  var loading = document.getElementById('lp-picker-loading');
+  var list = document.getElementById('lp-picker-list');
+  var empty = document.getElementById('lp-picker-empty');
+  var label = document.getElementById('lp-picker-label');
+
+  if (!picker) return;
+  label.textContent = target === 'pickup'
+    ? 'Choose landing point near your pickup'
+    : 'Choose landing point near destination';
+  picker.style.display = 'block';
+  loading.style.display = 'flex';
+  list.innerHTML = '';
+  list.style.display = 'none';
+  empty.style.display = 'none';
+
+  var cacheKey = lat.toFixed(3) + ',' + lon.toFixed(3);
+  var zones;
+
+  if (landingZoneCache.has(cacheKey)) {
+    zones = landingZoneCache.get(cacheKey);
+  } else {
+    if (landingZoneFetchAbort) { landingZoneFetchAbort.abort(); landingZoneFetchAbort = null; }
+    var controller = new AbortController();
+    landingZoneFetchAbort = controller;
+    var query = buildOverpassQuery(lat, lon, 2000);
+
+    try {
+      var res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: controller.signal,
+      });
+      var data = await res.json();
+      landingZoneFetchAbort = null;
+
+      zones = [];
+      if (data.elements && data.elements.length) {
+        data.elements.forEach(function (el) {
+          var cat = classifyOsmElement(el.tags);
+          if (!cat) return;
+          var center = getElementCenter(el);
+          if (!center) return;
+          var name = getElementName(el);
+          var area = estimateArea(el);
+          var catInfo = LANDING_ZONE_CATEGORIES[cat];
+          if (cat === 'rooftop' && area < 500) return;
+          if (cat !== 'helipad' && cat !== 'rooftop' && area < 200) return;
+          zones.push({
+            cat: cat,
+            name: name || catInfo.label,
+            center: center,
+            area: area,
+            priority: catInfo.priority,
+            geometry: el.geometry,
+          });
+        });
+      }
+
+      zones.sort(function (a, b) {
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        var distA = haversineKmClient(lat, lon, a.center[0], a.center[1]);
+        var distB = haversineKmClient(lat, lon, b.center[0], b.center[1]);
+        return distA - distB;
+      });
+
+      var seen = new Set();
+      zones = zones.filter(function (z) {
+        var key = z.center[0].toFixed(4) + ',' + z.center[1].toFixed(4);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (zones.length > 15) zones = zones.slice(0, 15);
+
+      if (landingZoneCache.size > 20) {
+        var oldest = landingZoneCache.keys().next().value;
+        landingZoneCache.delete(oldest);
+      }
+      landingZoneCache.set(cacheKey, zones);
+
+    } catch (e) {
+      landingZoneFetchAbort = null;
+      if (e.name === 'AbortError') return;
+      loading.style.display = 'none';
+      empty.textContent = 'Could not scan landing points. Using selected location.';
+      empty.style.display = 'block';
+      setTimeout(hideLandingPicker, 3000);
+      return;
+    }
+  }
+
+  loading.style.display = 'none';
+
+  if (!zones.length) {
+    empty.style.display = 'block';
+    setTimeout(hideLandingPicker, 2500);
+    return;
+  }
+
+  clearLandingZones();
+  var bounds = [pendingLandingPick.origCoord];
+
+  zones.forEach(function (z) {
+    var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
+    var iconHtml =
+      '<div class="lz-marker" style="background:' + catInfo.color + ';">' +
+        '<span class="lz-marker-letter">' + catInfo.icon + '</span>' +
+      '</div>';
+    var marker = L.marker(z.center, {
+      icon: L.divIcon({
+        html: iconHtml, className: 'lz-marker-wrap',
+        iconSize: [28, 28], iconAnchor: [14, 14],
+      }),
+    }).addTo(map);
+    landingZoneLayers.push(marker);
+    bounds.push(z.center);
+  });
+
+  if (bounds.length > 1) {
+    programmaticMapMove = true;
+    map.fitBounds(L.latLngBounds(bounds).pad(0.15));
+    setTimeout(function () { programmaticMapMove = false; }, 400);
+  }
+
+  list.innerHTML = zones.map(function (z, idx) {
+    var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
+    var dist = haversineKmClient(lat, lon, z.center[0], z.center[1]);
+    var distLabel = dist < 1 ? Math.round(dist * 1000) + ' m away' : dist.toFixed(1) + ' km away';
+    var areaLabel = z.area > 0 ? (z.area > 10000 ? (z.area / 10000).toFixed(1) + ' ha' : Math.round(z.area) + ' m²') : '';
+    var safeName = escapeHtml(z.name).replace(/'/g, "\\'");
+
+    return '<div class="lp-item" data-idx="' + idx + '" ' +
+      'onclick="selectLandingPoint(' + z.center[0] + ',' + z.center[1] + ',\'' + safeName + '\',\'' + target + '\')">' +
+      '<div class="lp-item-icon" style="background:' + catInfo.color + ';">' + catInfo.icon + '</div>' +
+      '<div class="lp-item-info">' +
+        '<div class="lp-item-name">' + escapeHtml(z.name) + '</div>' +
+        '<div class="lp-item-meta">' +
+          '<span class="lp-item-cat" style="color:' + catInfo.color + ';">' + catInfo.label + '</span>' +
+          '<span class="lp-item-dot">·</span>' +
+          '<span>' + distLabel + '</span>' +
+          (areaLabel ? '<span class="lp-item-dot">·</span><span>' + areaLabel + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<svg class="lp-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>' +
+    '</div>';
+  }).join('');
+  list.style.display = 'block';
+
+  var items = list.querySelectorAll('.lp-item');
+  items.forEach(function (el, i) {
+    el.addEventListener('mouseenter', function () {
+      if (landingZoneLayers[i]) {
+        landingZoneLayers[i].setZIndexOffset(500);
+      }
+    });
+    el.addEventListener('mouseleave', function () {
+      if (landingZoneLayers[i]) {
+        landingZoneLayers[i].setZIndexOffset(0);
+      }
+    });
   });
 }
 
@@ -657,9 +1063,10 @@ function setPickup(latlng, name) {
   if (pickupMarker) map.removeLayer(pickupMarker);
   pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
-  else map.setView(pickupCoord, 13);
+  else map.setView(pickupCoord, 15);
   captureBookingDraft();
   refreshNearbyTaxis();
+  showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', name);
 }
 
 function setDest(latlng, name) {
@@ -669,9 +1076,10 @@ function setDest(latlng, name) {
   if (destMarker) map.removeLayer(destMarker);
   destMarker = createMarker(destCoord, 'dest').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
-  else map.setView(destCoord, 13);
+  else map.setView(destCoord, 15);
   captureBookingDraft();
   if (pickupCoord && destCoord) refreshNearbyTaxis();
+  showLandingPicker(destCoord[0], destCoord[1], 'dest', name);
 }
 
 function drawRoute() {

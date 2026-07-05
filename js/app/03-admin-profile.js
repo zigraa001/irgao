@@ -477,6 +477,9 @@ function showAdminSection(name) {
   if (name === 'settings') {
     loadAdminSettings();
   }
+  if (name === 'add') {
+    toggleAddMemberCompany();
+  }
   if (name === 'companies') {
     loadAdminCompanies();
   }
