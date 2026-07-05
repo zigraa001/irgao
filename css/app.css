@@ -471,6 +471,23 @@ a { text-decoration: none; color: inherit; }
   height: 1px;
   background: var(--gray-200);
 }
+.btn-google {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  color: var(--gray-700);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+.btn-google:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.btn-google svg { width: 18px; height: 18px; }
 
 /* ── Phone number input ── */
 .mobile-phone-input {
