@@ -3773,6 +3773,9 @@ body.admin-map-fs { overflow: hidden; }
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
 }
 .admin-drawer-toggle {
   display: none;
@@ -3788,7 +3791,47 @@ body.admin-map-fs { overflow: hidden; }
 }
 .admin-drawer-toggle:hover { background: var(--gray-50); border-color: var(--gray-300); }
 .admin-drawer-toggle svg { width: 20px; height: 20px; display: block; margin: 0 auto; }
-.admin-drawer-nav { display: flex; flex-direction: column; gap: 2px; }
+.admin-drawer-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.admin-nav-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+  padding: 12px 12px 4px;
+}
+.admin-nav-group-label:first-child { padding-top: 4px; }
+.admin-nav-group-system {
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 8px;
+}
+.admin-nav-group-system .admin-nav-item { color: var(--gray-400); }
+.admin-nav-group-system .admin-nav-item:hover { color: var(--gray-600); }
+.admin-nav-group-system .admin-nav-item.active { color: var(--blue); }
+.admin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.admin-add-member-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--surface);
+  background: var(--blue);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.admin-add-member-btn:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.admin-add-member-btn:active { transform: translateY(0); box-shadow: none; }
 .admin-nav-item {
   position: relative;
   display: flex;
@@ -3961,6 +4004,7 @@ body.admin-map-fs { overflow: hidden; }
     top: auto;
     padding: 8px;
     border-radius: var(--radius-lg);
+    min-height: auto;
   }
   .admin-drawer-toggle { display: block; }
   .admin-drawer-nav {

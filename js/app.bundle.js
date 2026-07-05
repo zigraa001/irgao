@@ -1820,8 +1820,9 @@ function showAdminSection(name) {
   if (!section) return;
   document.querySelectorAll('.admin-section').forEach(function (s) { s.hidden = true; });
   section.hidden = false;
+  var navHighlight = name === 'add' ? 'users' : name;
   document.querySelectorAll('.admin-nav-item').forEach(function (btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-admin-section') === name);
+    btn.classList.toggle('active', btn.getAttribute('data-admin-section') === navHighlight);
   });
   adminCurrentSection = name;
   // Collapse the rail on mobile after picking a section.
