@@ -421,8 +421,8 @@
     {
       "id": "US-022",
       "priority": 22,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Step-by-step flow: search panel hides when results show, back button added to rides-header, clear headings at each step (Where are you going? / Choose your flight / Live Tracking / Review & Offers / Payment / Booking Confirmed!), one primary CTA per step.",
       "title": "Passenger booking end-to-end flow & wayfinding",
       "description": "As a passenger, the booking journey across search -> results -> details -> payment -> tracking should feel like one guided flow with clear progress, not disconnected screens.",
       "acceptanceCriteria": [

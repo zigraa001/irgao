@@ -315,3 +315,25 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - No smart quotes in JS
   - Typecheck passes, bundle rebuilt, server boots clean
 ---
+
+## 2026-07-05 - US-022
+- What was implemented: Passenger booking end-to-end flow & wayfinding -- step-by-step progression where search panel hides when results show, back button in rides-header to return to search, clear heading at each step, single primary CTA per step, tracking panel title for wayfinding
+- **Full journey mapped (before → after):**
+  - BEFORE: panel-locations and rides-area both visible simultaneously; no way back from results without full reset; no heading on search step; tracking panel had no title
+  - AFTER: Step-by-step flow: (1) Search: "Where are you going?" heading + single CTA "Search flights" → (2) Results: panel-locations hidden, "Choose your flight" heading + back button + single CTA "Confirm Booking" (appears on card select) → (3) Payment: "Review & Offers" / "Payment" titles + step dots + back button + single CTA per step → (4) Confirmation: "Booking Confirmed!" + primary "Track My Ride" + ghost "Back to Home" → (5) Tracking: "Live Tracking" title + status + single action (Cancel/Done/Rate)
+- **Dead-ends fixed:** rides-area now has a back button (backToSearch) that returns to the search step without full reset (keeps coordinates); previously only resetBooking could get back
+- Files changed: app.html (panel-step-heading on search, rides-back-btn in rides header, tracking-panel-title, CSS cache-bust), js/app/06-booking.js (backToSearch function, panel-locations hide on search results show, panel-locations restore in resetBooking), css/app.css (panel-step-heading, rides-back-btn, rides-header gap, tracking-panel-title), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The panel-locations hide/show pattern creates a step-by-step feel without needing a router or state machine -- just show/hide sibling panel-sections
+  - backToSearch() preserves pickup/dest coordinates so the user can immediately re-search without re-entering locations; this is different from resetBooking() which clears everything
+  - The rides-header now uses gap:10px instead of justify-content:space-between to accommodate the back button as a third flex child; h3 gets flex:1 to push the live-dot span to the right
+  - .panel-step-heading is 16px/700/navy -- a lightweight wayfinding heading that doesn't compete with the inputs; good for any panel section that needs a title
+  - .tracking-panel-title is an uppercase 13px/gray-500 label at the top of the tracking panel -- subdued because the tracking status text is the real headline
+- **Browser-free verification evidence:**
+  - Headings: panel-step-heading "Where are you going?" (search), rides-title h3 "Choose your flight" (results), payment-step-title "Review & Offers"/"Payment" (payment steps), confirm-header h2 "Booking Confirmed!" (confirmation), tracking-panel-title "Live Tracking" (tracking)
+  - Single primary CTA per step: search-btn (search), book-btn display:none until selectRideCard (results), payment-continue-btn/payment-pay-btn toggled by paymentGoToStep (payment), btn-confirm-primary "Track My Ride" (confirmation), tracking-cancel-btn/tracking-end-btn toggled by status (tracking)
+  - Back navigation: rides-back-btn onclick=backToSearch() (results→search), payment-back-btn onclick=paymentBack() (payment→review/close), btn-confirm-ghost onclick=closeConfirm() (confirmation→home), btn-end-tracking onclick=endTracking() (tracking→booking)
+  - No dead-ends: every step has at least one way back + one forward action
+  - panel-locations hidden when rides-area shown (line 422 in 06-booking.js); restored in backToSearch (line 876) and resetBooking (line 937)
+  - All element IDs preserved; all onclick handlers intact; no smart quotes; typecheck passes; bundle rebuilt
+---
