@@ -73,3 +73,15 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The responsive rule at 900px now uses `var(--shadow-xl)` instead of hardcoded shadow, and removes `border-right` to avoid double border on mobile
   - Manual browser verification was not possible — recommend visual QA
 ---
+
+## 2026-07-05 - US-005
+- What was implemented: Live tracking panel and map overlay redesign — updated tracking panel to use design tokens (--surface, --border-subtle, --radius-xl), slim rounded gradient progress bar (blue to sky-blue), 28px step dots with blue done state + soft pulse animation on active, rounded gray-50 pilot card with gradient avatar, blue-50 OTP card with dashed blue border and monospace digits, soft pulse animation on tracking-status-dot, gold hover/selected stars with scale transition, route-info-bar and booking-map-legend as floating rounded chips with shadow and backdrop blur, btn-end-tracking as outline secondary buttons and #tracking-cancel-btn as danger variant
+- Files changed: css/app.css (tracking-panel, tracking-header, tracking-status-dot + softPulse keyframe, tracking-eta-val, tracking-progress + progress-bar gradient, tracking-steps + 28px dots + stepPulse keyframe, tracking-pilot-card + avatar gradient, tracking-otp-card blue theme, tracking-rate + stars + input focus, btn-end-tracking outline style, #tracking-cancel-btn danger variant, route-info-bar rounded + shadow, booking-map-legend rounded + shadow + blur), app.html (CSS cache-bust)
+- **Learnings for future iterations:**
+  - tracking-status-dot now uses a dedicated `softPulse` keyframe with box-shadow instead of the generic `pulse` opacity animation — this gives a ring-expand effect that looks more premium
+  - tracking-step connector lines (.tracking-step::before) use `top: 13px` to vertically center with the new 28px dots (was 10px for 20px dots)
+  - OTP card was changed from green theme to blue theme (var(--blue-50) bg, dashed var(--blue) border, var(--navy) digits) for consistency with the tracking panel's blue accent
+  - .tracking-step.done::before connector line now uses var(--blue) instead of var(--green) — the whole step timeline uses blue as the primary color
+  - route-info-bar and booking-map-legend both use `backdrop-filter: blur(6px)` — this creates a frosted glass effect when floating over the map
+  - Manual browser verification was not possible — recommend visual QA
+---
