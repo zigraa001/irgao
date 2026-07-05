@@ -23,6 +23,8 @@ textarea:focus-visible, a:focus-visible {
    CSS VARIABLES
    ═══════════════════════════════════════════ */
 :root {
+  --navy: #0B1F3A;
+
   --blue: #0057B8;
   --blue-dark: #004494;
   --blue-light: #D6E4F5;
@@ -594,13 +596,13 @@ textarea:focus-visible, a:focus-visible {
   height: 100vh;
 }
 .booking-nav {
-  height: 56px;
+  height: 64px;
   background: #fff;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   flex-shrink: 0;
   position: relative;
   z-index: 5000;
@@ -623,23 +625,24 @@ textarea:focus-visible, a:focus-visible {
   display: flex;
   gap: 4px;
   background: var(--gray-100);
-  border-radius: var(--radius-sm);
-  padding: 3px;
+  border-radius: var(--radius-full);
+  padding: 4px;
 }
 .service-tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 18px;
-  border-radius: var(--radius-sm);
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-500);
-  transition: all 0.25s;
+  transition: all var(--transition);
 }
-.service-tab:hover { color: var(--gray-700); }
-.service-tab.active { background: #fff; color: var(--gray-800); box-shadow: var(--shadow-sm); }
-.service-tab svg { width: 16px; height: 16px; }
+.service-tab:hover { color: var(--gray-700); background: rgba(255,255,255,.5); }
+.service-tab.active { background: #fff; color: var(--blue); box-shadow: var(--shadow-sm); }
+.service-tab.active svg { color: var(--blue); }
+.service-tab svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 .nav-profile {
   display: flex;
@@ -650,10 +653,11 @@ textarea:focus-visible, a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 12px;
+  height: 38px;
+  padding: 0 14px;
   font-size: 13px;
   font-weight: 600;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1.5px solid var(--gray-200);
   background: #fff;
   color: var(--gray-700);
@@ -661,10 +665,10 @@ textarea:focus-visible, a:focus-visible {
   cursor: pointer;
   line-height: 1.2;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 .nav-text-btn:hover {
-  background: var(--gray-50);
+  background: var(--gray-100);
   border-color: var(--gray-300);
   color: var(--gray-900);
 }
@@ -678,20 +682,20 @@ textarea:focus-visible, a:focus-visible {
   border-color: rgba(239, 68, 68, 0.5);
 }
 .nav-bell {
-  width: 36px; height: 36px;
-  border-radius: var(--radius-md);
+  width: 40px; height: 40px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--gray-400);
-  transition: background 0.2s;
+  transition: background var(--transition), color var(--transition);
 }
-.nav-bell:hover { background: var(--gray-100); }
+.nav-bell:hover { background: var(--gray-100); color: var(--gray-600); }
 .nav-bell svg { width: 20px; height: 20px; }
 .nav-avatar {
-  width: 34px; height: 34px;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  background: var(--blue);
+  background: linear-gradient(135deg, var(--navy), var(--blue));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -702,9 +706,9 @@ textarea:focus-visible, a:focus-visible {
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: box-shadow var(--transition), transform var(--transition);
 }
-.nav-avatar:hover { box-shadow: 0 0 0 3px var(--blue-glow); }
+.nav-avatar:hover { box-shadow: 0 0 0 3px rgba(0,87,184,.2); }
 .nav-profile-avatar { cursor: pointer; }
 .nav-avatar[aria-expanded="true"] { box-shadow: 0 0 0 3px var(--blue-glow); }
 .nav-profile-menu { position: relative; }
@@ -2079,9 +2083,13 @@ textarea:focus-visible, a:focus-visible {
    ═══════════════════════════════════════════ */
 @media (max-width: 900px) {
   .booking-panel, .op-panel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; max-height: 55vh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 600; }
-  .service-tabs { display: none; }
   .op-map-badge { left: 12px; top: 12px; }
   .op-map-legend { font-size: 10px; bottom: auto; top: 12px; right: 12px; left: auto; max-width: 200px; }
+}
+@media (max-width: 768px) {
+  .service-tab span { display: none; }
+  .service-tab { padding: 8px 12px; gap: 0; }
+  .customer-role-badge, .op-role-badge, .admin-role-badge { display: none; }
 }
 @media (max-width: 600px) {
   .booking-panel, .op-panel { max-height: 65vh; }
@@ -2546,15 +2554,14 @@ textarea:focus-visible, a:focus-visible {
   margin-top: 0;
 }
 .op-role-badge {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--blue-dark);
   background: var(--blue-50);
-  border: 1px solid var(--blue-light);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
 }
 
 /* ═══════════════════════════════════════════
@@ -2565,17 +2572,15 @@ textarea:focus-visible, a:focus-visible {
   flex-direction: column;
   background: var(--gray-50);
 }
-/* Slate badge distinguishes the admin console from the operator (blue) one. */
 .admin-role-badge {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #35507A;
   background: #E8EDF4;
-  border: 1px solid #C9D5E6;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
 }
 .admin-avatar {
   background: var(--blue-dark);
@@ -2778,15 +2783,14 @@ textarea:focus-visible, a:focus-visible {
 }
 .admin-add-success.show { display: block; }
 .customer-role-badge {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #047857;
-  background: #D1FAE5;
-  border: 1px solid #A7F3D0;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  color: var(--blue-dark);
+  background: var(--blue-50);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
 }
 .dashboard-intro {
   background: #fff;
