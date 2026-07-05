@@ -2554,17 +2554,16 @@ a { text-decoration: none; color: inherit; }
   flex-direction: column;
   background: var(--gray-50);
 }
-/* Slate badge distinguishes the admin console from the operator (blue) one. */
+/* Ink badge matches the admin rail; the operator one stays blue. */
 .admin-role-badge {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #35507A;
-  background: #E8EDF4;
-  border: 1px solid #C9D5E6;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
+  color: #E2E8F0;
+  background: var(--gray-900);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
 }
 .admin-avatar {
   background: var(--blue-dark);
@@ -3266,39 +3265,50 @@ body.admin-map-fs { overflow: hidden; }
 }
 .op-otp-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
 
-/* ===== Admin drawer-based panel ===== */
+/* ===== Admin drawer-based panel =====
+   Dark ink rail against the gray canvas; grouped nav with a single
+   light-blue accent marking the active section. */
 .admin-shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 236px 1fr;
   align-items: start;
-  max-width: 1180px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 18px 20px 60px;
-  gap: 24px;
+  padding: 20px 24px 64px;
+  gap: 28px;
 }
 .admin-drawer {
   position: sticky;
   top: 78px;
   align-self: start;
-  background: #fff;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: 12px;
+  background: var(--gray-900);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  padding: 6px 10px 14px;
 }
 .admin-drawer-toggle {
   display: none;
   width: 100%;
-  border: 1px solid var(--gray-200);
-  background: var(--gray-50);
-  border-radius: var(--radius-md);
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
   padding: 8px;
-  color: var(--gray-700);
+  color: var(--gray-300);
   cursor: pointer;
-  margin-bottom: 8px;
+  margin: 6px 0 2px;
 }
 .admin-drawer-toggle svg { width: 20px; height: 20px; display: block; margin: 0 auto; }
-.admin-drawer-nav { display: flex; flex-direction: column; gap: 4px; }
+.admin-drawer-nav { display: flex; flex-direction: column; gap: 2px; }
+.admin-nav-group {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(148, 163, 184, 0.6);
+  padding: 18px 12px 6px;
+  user-select: none;
+}
+.admin-drawer-nav .admin-nav-group:first-child { padding-top: 12px; }
 .admin-nav-item {
   display: flex;
   align-items: center;
@@ -3306,23 +3316,27 @@ body.admin-map-fs { overflow: hidden; }
   width: 100%;
   text-align: left;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 12px;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-600);
+  font-weight: 500;
+  color: rgba(203, 213, 225, 0.78);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.admin-nav-item:hover { background: var(--gray-50); color: var(--gray-900); }
+.admin-nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.admin-nav-item:focus-visible { outline: 2px solid #7FB2F0; outline-offset: -2px; }
 .admin-nav-item.active {
-  background: var(--blue-50);
-  color: var(--blue-dark);
-  border-color: var(--blue-light);
+  background: rgba(127, 178, 240, 0.13);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 #7FB2F0;
 }
-.admin-nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.admin-nav-icon svg { width: 18px; height: 18px; display: block; }
+.admin-nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
+.admin-nav-item:hover .admin-nav-icon,
+.admin-nav-item.active .admin-nav-icon { opacity: 1; }
+.admin-nav-icon svg { width: 17px; height: 17px; display: block; }
 .admin-main { min-width: 0; }
 .admin-section { }
 .admin-platform-stats { min-height: 60px; }
@@ -3330,15 +3344,86 @@ body.admin-map-fs { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
-.admin-page-header .op-welcome { font-size: 20px; margin: 0; }
-.admin-page-header .op-welcome-sub { margin-top: 2px; }
+.admin-page-header .op-welcome { font-size: 24px; letter-spacing: -0.02em; margin: 0; }
+.admin-page-header .op-welcome-sub { margin-top: 3px; }
 .admin-summary-bar {
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+.admin-summary-bar:empty { display: none; }
+
+/* Admin surfaces: softer geometry than the passenger app — cards at
+   10px, controls at 6px — with quieter section labels and ink-colored
+   accents instead of blue fills. */
+#admin-view .op-section-title {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--gray-400);
+  margin: 30px 0 14px;
+}
+#admin-view .admin-form-card,
+#admin-view .op-empty,
+#admin-view .admin-live-panel,
+#admin-view .admin-live-map,
+#admin-view .admin-flight-card,
+#admin-view .admin-user-card,
+#admin-view .pd-stat,
+#admin-view .pd-recent,
+#admin-view .pd-breakdown-card { border-radius: 10px; }
+#admin-view .admin-btn-sm,
+#admin-view .admin-load-more,
+#admin-view .admin-form-select,
+#admin-view .auth-field input,
+#admin-view .auth-input,
+#admin-view .admin-live-map-fs { border-radius: 6px; }
+#admin-view .admin-user-id { border-radius: 8px; }
+#admin-view .admin-form-card { padding: 20px; }
+#admin-view .pd-stat { padding: 16px 16px 14px; }
+#admin-view .pd-stat-value { font-size: 26px; }
+#admin-view .pd-stat--green .pd-stat-value { color: var(--green-dark); }
+#admin-view .pd-stat--amber .pd-stat-value { color: #B45309; }
+#admin-view .pd-stat--red .pd-stat-value { color: var(--red-dark); }
+#admin-view .pd-stat--purple .pd-stat-value { color: var(--purple); }
+#admin-view .pd-stat--green,
+#admin-view .pd-stat--amber,
+#admin-view .pd-stat--red,
+#admin-view .pd-stat--purple { border-color: var(--gray-200); }
+#admin-view .admin-user-card { padding: 15px 18px; }
+#admin-view .admin-user-card:hover {
+  border-color: var(--gray-300);
+  transform: translateY(-1px);
+}
+#admin-view .admin-user-tabs {
+  gap: 22px;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 14px;
+}
+#admin-view .admin-tab {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 2px 10px;
+  color: var(--gray-500);
+}
+#admin-view .admin-tab:hover { color: var(--gray-800); }
+#admin-view .admin-tab.active {
+  background: transparent;
+  color: var(--gray-900);
+  box-shadow: inset 0 -2px 0 var(--blue);
+}
+#admin-view .dashboard-pill {
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+}
+#admin-view .dashboard-pill.active {
+  background: var(--gray-900);
+  border-color: var(--gray-900);
+  color: #fff;
 }
 
 /* User-detail slide-in drawer */
@@ -3377,7 +3462,7 @@ body.admin-map-fs { overflow: hidden; }
   position: relative;
   padding: 22px 22px 16px;
   border-bottom: 1px solid var(--gray-200);
-  background: var(--blue-50);
+  background: var(--gray-50);
 }
 .admin-user-drawer-close {
   position: absolute;
@@ -3388,7 +3473,7 @@ body.admin-map-fs { overflow: hidden; }
   color: var(--gray-700);
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -3397,7 +3482,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-user-drawer-avatar {
   width: 52px;
   height: 52px;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
