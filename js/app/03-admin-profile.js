@@ -449,7 +449,7 @@ function showAdminSection(name) {
   adminCurrentSection = name;
   // Collapse the rail on mobile after picking a section.
   const drawer = document.getElementById('admin-drawer');
-  if (drawer && window.innerWidth <= 900) drawer.classList.remove('open');
+  if (drawer && window.innerWidth <= 768) drawer.classList.remove('open');
 
   // Stop the live-flights poll when leaving the live section (saves compute).
   if (name !== 'live' && adminLivePollInterval) {

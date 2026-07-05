@@ -111,3 +111,15 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.op-welcome` color changed from --gray-900 to --navy, and admin-page-header .op-welcome size bumped to 22px — these cascade to admin dashboard header too
   - Manual browser verification was not possible — recommend visual QA
 ---
+
+## 2026-07-05 - US-008
+- What was implemented: Admin console navigation drawer and dashboard redesign — admin drawer with subtle border-subtle edge and comfortable spacing, nav items with rounded hover bg and active state (blue-50 bg + blue text/icon + 3px left accent bar), drawer toggle with rounded hover state, page header with clear title/subtitle hierarchy and bottom border separator, dashboard stat cards (pd-stat) with --surface bg, --shadow-sm, hover --shadow-md, 24px bold navy metrics and 11px uppercase labels, colored left-accent borders for stat variants (green/amber/red/purple), breakdown cards with design tokens, drone stat cards matched to same card language, responsive breakpoint moved from 900px to 768px in both CSS and JS, admin-user-drawer backdrop gets blur(4px), avatar gets gradient bg and rounded corners
+- Files changed: css/app.css (admin drawer/nav/page-header/summary-bar/stat cards/breakdown/drone-stat-card/user-drawer styles, responsive breakpoint), app.html (CSS cache-bust), js/app/03-admin-profile.js (breakpoint 900->768), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - Admin nav items now use a `::before` pseudo-element for the left accent bar on active state — positioned absolutely inside the relatively-positioned nav item
+  - The 900px to 768px breakpoint change in CSS must be matched in js/app/03-admin-profile.js line 452 (showAdminSection collapses drawer on mobile after section pick)
+  - pd-stat cards are shared between the admin dashboard (via #admin-platform-stats) and the profile modal (via .profile-dashboard-body) — style changes affect both contexts
+  - drone-stat-card/drone-stat-val/drone-stat-label are rendered by js/app/09-drones.js and appear in the admin Drones section — updated to match the same card language
+  - .admin-nav-item.active .admin-nav-icon svg { stroke: var(--blue); } colors the SVG icons blue on active state without needing JS changes
+  - Manual browser verification was not possible — recommend visual QA
+---

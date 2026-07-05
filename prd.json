@@ -167,7 +167,7 @@
         "Verify in browser using dev-browser skill (dashboard)"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -265,6 +265,27 @@
         "Verify in browser using dev-browser skill (operator console + 2-3 admin sections)"
       ],
       "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Google Maps style route search: destination-first, current location as default source",
+      "description": "As a passenger, I want to just type where I am going - like Google Maps - with my current location assumed as the pickup point, so booking takes one step instead of two.",
+      "acceptanceCriteria": [
+        "On entering the booking view logged in (and no active/restored ride), keyboard focus lands in the destination input (#dest-input), not the pickup input - it is the primary action",
+        "Pickup auto-fill from GPS already exists in js/app/02-auth.js (silent getCurrentPosition after map load) - verify it works and, when it fills, the pickup input visually reads as 'Your location' state: blue dot indicator and the reverse-geocoded name (keep existing setPickup naming)",
+        "If geolocation is denied/unavailable, pickup input placeholder becomes 'Choose pickup location' and no error toast/alert is shown on load; the inline GPS button remains as the retry affordance",
+        "Add a 'Use current location' row pinned at the top of the pickup suggestions dropdown (#pickup-suggest) whenever it opens, with a GPS icon, wired to the existing useCurrentLocation() - grep js/app/05-map.js for how suggestion rows are rendered and follow that pattern",
+        "Searching with a destination set but no pickup shows a friendly inline prompt ('Set your pickup point') and focuses/highlights the pickup input instead of failing silently",
+        "When destination is chosen first and pickup is auto-filled, the map fits the route bounds automatically (existing drawRoute behavior verified, not rewritten)",
+        "Visual order stays pickup-above-destination (route metaphor); only focus priority and defaults change - no element ids, handlers, or swapLocations()/startMapPick() wiring changed",
+        "Autofocus must not steal focus when a tracking session is restored or when an overlay (payment/confirm/profile) is open",
+        "Changes in js/app/*.js followed by npm run build:js; no smart quotes",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (fresh load with geolocation granted and denied)"
+      ],
+      "priority": 14,
       "passes": false,
       "notes": ""
     }
