@@ -1,0 +1,165 @@
+{
+  "project": "IraGo",
+  "branchName": "ralph/simplify-auth-login",
+  "description": "Simplify Auth - Remove Google sign-in and phone OTP verification, make login full-page, single-form passenger registration with email-only OTP, prominent signup CTA, and login UX polish. Full PRD: tasks/prd-simplify-auth-login.md",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Remove Google sign-in from the client",
+      "description": "As a passenger, I should not see a 'Continue with Google' option that doesn't work, so that I'm never dead-ended.",
+      "acceptanceCriteria": [
+        "Remove .btn-google button from app.html (lines ~75-78)",
+        "Remove #google-phone-card markup from app.html (lines ~273-306)",
+        "Remove client JS: doGoogleSignIn, googlePhoneSendOtp, googlePhoneVerify, googlePhoneResendOtp, googlePending state, and google_success/google_error/google_pending URL-param handling from js/app/02-auth.js AND js/app.bundle.js (bundle is a concatenation of js/app/*.js modules - keep both in sync, check scripts/ for a build script first)",
+        "Remove 'google-phone-card' and 'google-phone-error' entries from the auth card/error id arrays in the JS",
+        "Remove .btn-google CSS rules from css/app.css (lines ~474-490)",
+        "Bump the ?v= cache-buster on the app.bundle.js script tag in app.html",
+        "No console errors on page load",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "ROLLED BACK 2026-07-05: Google sign-in is now working in production. Commit reverted (see d2f1d95/1353e4a). Google sign-in code must be KEPT. Do not re-implement this story. passes=true only to prevent re-execution."
+    },
+    {
+      "id": "US-002",
+      "title": "Remove Google OAuth server routes",
+      "description": "As a maintainer, I want dead Google OAuth endpoints removed so the maintenance surface shrinks.",
+      "acceptanceCriteria": [
+        "Remove GET /api/auth/google, GET /api/auth/google/callback, POST /api/auth/google/send-phone-otp and any other google routes from src/auth-routes.js",
+        "Delete src/google-auth.js and remove all imports/references to it",
+        "Remove GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET entries from .env.example",
+        "Server starts without errors (node server.js boots or npm start)",
+        "Existing email/password login endpoint still responds (POST /api/auth/login returns 400/401 for bad creds, not 500)",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "ROLLED BACK 2026-07-05: Google sign-in is now working in production. Commit reverted (see d2f1d95/1353e4a). Google sign-in code must be KEPT. Do not re-implement this story. passes=true only to prevent re-execution."
+    },
+    {
+      "id": "US-003",
+      "title": "Server accepts email-only signup (remove phone OTP endpoints)",
+      "description": "As a maintainer, I want signup endpoints to create accounts with email OTP alone so phone verification is fully retired.",
+      "acceptanceCriteria": [
+        "In src/role-signup.js, verify-signup creates the account when the email OTP is valid; phone and phoneOtp params are ignored (not rejected) if sent",
+        "Remove the send-phone-otp endpoint registration and its handler from src/role-signup.js",
+        "Remove the phone-uniqueness check from signup-request (no phone collected at signup)",
+        "Remove now-unused createAndSendMobileOtp/normalizePhone imports from src/role-signup.js if nothing else in the file uses them",
+        "New accounts persist with phone NULL; existing accounts with phone numbers are unaffected",
+        "Manual API test: signup-request with name/email/password sends email OTP, verify-signup with correct emailOtp creates account, login with new credentials succeeds",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Single-form passenger registration with inline email OTP",
+      "description": "As a new passenger, I want to register on one page with just my email verified so signup takes under a minute.",
+      "acceptanceCriteria": [
+        "Replace #register-passenger-card and #register-verify-card in app.html with ONE card containing: Full Name, Gender (optional select), Age (optional number), Email, Password, and inline email OTP verification",
+        "Remove the step indicator (auth-steps markup: '1 Personal details / 2 Verify')",
+        "Flow: fill fields, click 'Send verification code', OTP input appears inline on same card, enter 6-digit code, click 'Create account'",
+        "Remove all phone fields, phone OTP inputs, and regSendPhoneOtp/regResendPhoneOtp client code from js/app/02-auth.js and js/app.bundle.js",
+        "Client-side validation before sending OTP: name non-empty, valid email format, password >= 6 chars; errors shown inline",
+        "Resend-code button uses the existing 30s cooldown pattern with countdown hint",
+        "'Already have an account? Sign in' link at the bottom of the card",
+        "Bump the ?v= cache-buster on app.bundle.js script tag",
+        "Full round-trip works: register, receive OTP, verify, land in booking view",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Full-page login layout (remove right hero panel)",
+      "description": "As a passenger, I want a focused full-page sign-in screen so login feels clean and direct.",
+      "acceptanceCriteria": [
+        "Remove .login-right markup (dark hero with 'Sky is no longer the limit') from app.html",
+        "#login-view renders logo, tagline, and auth card centered horizontally and vertically on the full viewport",
+        "Remove .login-right*, .login-features, .login-feature* CSS from css/app.css; restyle .login-left to fill the page; remove the now-dead '.login-right { display: none; }' mobile rule (~line 2069)",
+        "Auth card max-width approximately 420px with a subtle non-distracting page background",
+        "No horizontal scroll at 360px, 768px, and 1440px viewport widths",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Prominent 'Create passenger account' button on login card",
+      "description": "As a new passenger, I want an obvious signup button on the login page so I don't hunt for a small text link.",
+      "acceptanceCriteria": [
+        "Replace the 'Don't have an account? Register' text-link row (#login-register-row) with: a thin divider labeled 'New to IraGo?' followed by a full-width secondary button labeled 'Create passenger account'",
+        "Button styled as secondary (outlined, similar to .btn-profile-outline), visually distinct from the primary Sign In button",
+        "Clicking the button navigates to /app.html?register=1",
+        "Button and divider are hidden when the Operator or Admin role tab is selected (switchLoginRole hides them, same as current register-row behavior)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "register=1 deep link opens the registration form",
+      "description": "As a passenger following a marketing link, I want /app.html?register=1 to land directly on the create-account form.",
+      "acceptanceCriteria": [
+        "Loading /app.html?register=1 while logged out shows the single registration card immediately",
+        "Loading /app.html?register=1 while logged in goes to the normal logged-in view (preserve current behavior)",
+        "goToSignupPortal() and the landing page signupUrl ('/app.html?register=1') still work",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Login card UX polish",
+      "description": "As a passenger, I want a smoother, clearer sign-in experience.",
+      "acceptanceCriteria": [
+        "Password fields on login AND registration cards have a show/hide (eye icon) toggle",
+        "Sign In button shows a loading state ('Signing in...') and is disabled while the login request is in flight; same pattern for registration submit buttons",
+        "Failed login shows friendly inline error 'Incorrect email or password' (map server error text) without clearing the email field",
+        "Email field autofocuses when the login card is shown; name field autofocuses when the registration card is shown",
+        "Invalid email format and password shorter than 6 chars show per-field inline hints on blur, before submit",
+        "'Forgot password?' link moved to the right of the Password label (right-aligned in the label row), removed from below the submit button",
+        "Role switcher (Passenger/Operator/Admin) still works and sits visually de-emphasized at the bottom of the card",
+        "Bump the ?v= cache-buster on app.bundle.js script tag",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Clean up phone verification remnants in profile modal",
+      "description": "As a signed-in passenger, I should not be pushed to verify a phone number the platform no longer verifies.",
+      "acceptanceCriteria": [
+        "First grep operator/admin/dispatch render code for passenger phone display: if passenger phone is shown anywhere, reduce #profile-phone-block to an optional plain phone-number field (no OTP flow); otherwise remove #profile-phone-block entirely",
+        "Remove doProfilePhoneSendOtp/doProfilePhoneVerifyOtp/doProfilePhoneResendOtp OTP flow code from the client JS (js/app/*.js and js/app.bundle.js)",
+        "No 'Verify phone' CTA remains anywhere in the passenger UI",
+        "Record the chosen option (remove vs plain field) and the grep evidence in notes",
+        "Bump the ?v= cache-buster on app.bundle.js script tag",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Removed #profile-phone-block entirely (grep confirmed no operator/admin/dispatch code displays passenger phone). Kept Google phone card (.btn-google, #google-phone-card) per rollback decision."
+    }
+  ]
+}

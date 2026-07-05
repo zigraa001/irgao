@@ -1,0 +1,167 @@
+# Ralph Progress Log
+Started: Sun Jul  5 08:23:11 UTC 2026
+---
+
+## Codebase Patterns
+- JS bundle is auto-generated from js/app/*.js via `npm run build:js` (scripts/build-app-js.js); never edit js/app.bundle.js directly
+- Build script auto-bumps the ?v= cache-buster on CSS/JS links in app.html based on content hash
+- Typecheck: `npm run typecheck` (requires `npm install` first if node_modules missing)
+- Auth card visibility managed by hideAllAuthCards() which hides all IDs in a hardcoded array; when removing a card, also remove its ID from that array and its error ID from the error array
+- Frontend is plain vanilla JS with ~75 top-level let/const globals shared across features in a single concatenated scope
+- auth-routes.js manually re-registers routes from mountRoleSignup — when changing role-signup.js handlers, also update auth-routes.js
+- Passenger registration is now a single card (#register-passenger-card) with inline email OTP — no separate verify card
+- Watch for smart/curly quotes (' ') in JS — they pass typecheck but crash at runtime; always use ASCII quotes
+- Google button is hidden for non-passenger roles via applyPortalLabels; keep this in sync when modifying role switching
+
+---
+
+## 2026-07-05 - US-001
+- Removed Google sign-in button (.btn-google) from app.html
+- Removed #google-phone-card markup from app.html
+- Removed all Google OAuth client code from js/app/02-auth.js: doGoogleSignIn, googlePending state, clearGoogleTimers, startGoogleResendTimer, showGooglePhoneCard, googlePhoneSendOtp, googlePhoneResendOtp, googlePhoneVerify, handleGoogleAuthOnLoad, and the google URL param handling in initAuth
+- Removed 'google-phone-card' and 'google-phone-error' from the hideAllAuthCards arrays
+- Removed .btn-google CSS rules from css/app.css
+- Rebuilt bundle (auto-bumped cache-buster)
+- Files changed: app.html, js/app/02-auth.js, js/app.bundle.js, css/app.css
+- **Learnings for future iterations:**
+  - The build script handles cache-busting automatically — just run `npm run build:js` after editing source modules
+  - TypeScript is declared as a dep but must be installed with `npm install` before `npm run typecheck` works
+  - formatResendCountdown is shared across multiple OTP flows (email signup, profile phone, forgot password) — don't remove it when removing Google
+---
+
+## 2026-07-05 - US-002
+- Removed Google OAuth imports from src/auth-routes.js (google-auth require block)
+- Removed all Google OAuth routes: GET /google, GET /google/callback, POST /google/send-phone-otp, POST /google/verify-phone, GET /google/status
+- Deleted src/google-auth.js entirely
+- Removed GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI from .env.example
+- Removed "google_phone_verify" purpose from src/otp.js PURPOSES array
+- Removed google_phone_verify email template from src/email.js
+- Files changed: src/auth-routes.js, src/google-auth.js (deleted), .env.example, src/email.js, src/otp.js
+- **Learnings for future iterations:**
+  - When removing an auth provider, also clean up its OTP purpose from otp.js PURPOSES and its email template from email.js
+  - The server starts fine without a DB connection (warns but doesn't crash) — useful for smoke-testing import paths
+  - smtp-transport.js has a Gmail reference that's about SMTP transport config, not OAuth — don't remove it
+---
+
+## 2026-07-05 - US-003
+- Removed sendPhoneOtp handler and its route registration from role-signup.js and auth-routes.js
+- Removed phone-uniqueness check from signupRequest
+- Simplified verifySignup to ignore phone/phoneOtp params — new accounts get phone=NULL
+- Removed unused imports: createAndSendMobileOtp from otp.js, normalizePhone from otp-channel.js
+- Removed PHONE_RE constant and phone validation from validateSignupBody
+- Files changed: src/role-signup.js, src/auth-routes.js
+- **Learnings for future iterations:**
+  - auth-routes.js manually re-registers routes from mountRoleSignup (passenger/signup-request etc.) — when removing a handler from role-signup.js, also check auth-routes.js for manual route registrations
+  - phone_verify OTP purpose is still used by mobile-auth-routes.js — don't remove it from otp.js even though signup no longer uses it
+  - verifySignup still accepts `otp` as a fallback for `emailOtp` for legacy client compatibility
+---
+
+## 2026-07-05 - ROLLBACK of US-001 and US-002 (by user request)
+- Google sign-in is WORKING in production now. Both Google-removal commits were reverted:
+  - d2f1d95 reverts US-001 (client Google button + google-phone-card restored)
+  - 1353e4a reverts US-002 (server OAuth routes, src/google-auth.js, .env.example entries, google_phone_verify OTP purpose + email template restored)
+- IMPORTANT for all future iterations: Google sign-in code (.btn-google, doGoogleSignIn, #google-phone-card, /api/auth/google* routes, src/google-auth.js) must be KEPT. Ignore earlier learnings about removing it.
+- US-003 (email-only role signup) remains in effect: role-signup.js has no phone OTP; that is separate from the Google flow's own phone collection and both coexist.
+- When implementing US-005 (full-page layout) and US-008 (UX polish), style AROUND the Google button - it stays on the login card between the Sign In button and the signup CTA.
+---
+
+## 2026-07-05 - US-004
+- Replaced two-page registration (#register-passenger-card + #register-verify-card) with a single-form card
+- Removed auth-steps step indicator from the registration card
+- Added inline email OTP: fill all fields → click "Send verification code" → OTP input appears inline → "Create account"
+- Removed all phone OTP registration code: regSendPhoneOtp, regResendPhoneOtp, #reg-phone-section markup, phone state in regState
+- Removed phoneOtpPath from SIGNUP_CONFIG.passenger
+- Added client-side validation (regValidateFields): name non-empty, valid email format, password >= 6 chars
+- Added resetPassengerRegForm() to reset single-form state when showing registration
+- Resend-code button uses 30s cooldown pattern via regStartResendTimer (simplified from channel-based to email-only)
+- Removed register-verify-card from hideAllAuthCards arrays; removed reg-phone-error/register-verify-error from error arrays
+- Added .auth-optional CSS class for "(optional)" labels on gender/age
+- Fields lock (disabled) after "Send verification code" to prevent mid-OTP edits
+- Files changed: app.html, js/app/02-auth.js, js/app.bundle.js, css/app.css
+- **Learnings for future iterations:**
+  - The email field is now `#register-passenger-email` (on the single card) instead of `#register-verify-email` (on the old verify card)
+  - regState no longer has phone/phoneOtpSent/phoneResendTimerId — simplified to email-only
+  - doRoleSignup/doVerifySignup are legacy functions still used by the OTP card for operator flows — don't remove them
+  - regStartResendTimer no longer takes a channel param — it's always email
+---
+
+## 2026-07-05 - US-005
+- Removed .login-right hero panel markup from app.html (dark panel with "Sky is no longer the limit", service icons)
+- Removed all .login-right*, .login-features, .login-feature* CSS rules (~60 lines)
+- Removed dead `.login-right { display: none; }` mobile media query rule
+- Restyled #login-view to center content full-page (justify-content/align-items: center)
+- Simplified .login-left to width:100% with padding instead of flex:1 with decorative pseudo-elements
+- Bumped auth-card max-width from 400px to 420px
+- Background stays #F0F4F8 (subtle, non-distracting)
+- Files changed: app.html, css/app.css
+- **Learnings for future iterations:**
+  - The .login-left::before and ::after had `background: none` — they were decorative dead code, safe to remove
+  - #login-view uses `display: flex` (from `.view.active { display: flex }`), so justify-content/align-items work directly
+  - No JS references login-right — it was purely HTML+CSS, clean removal
+---
+
+## 2026-07-05 - US-006
+- Replaced #login-register-row "Don't have an account? Register" text-link with a "New to IraGo?" divider (reusing .auth-divider pattern) and a full-width secondary "Create passenger account" button (.btn-signup-cta)
+- Button styled as outlined secondary (white bg, gray border, 600 weight) matching .btn-profile-outline pattern
+- Button navigates to /app.html?register=1 via existing goToSignupPortal()
+- Button and divider hidden when Operator or Admin role is selected (existing regRow.style.display logic in applyPortalLabels)
+- Also hides Google button for non-passenger roles (added to applyPortalLabels)
+- Cleared redundant passenger loginHint (the CTA divider replaces the "New passenger?" hint)
+- Fixed 67 smart quote characters (curly ' and ') introduced in US-004 that broke JS parsing — replaced with ASCII single quotes
+- Fixed smart ellipsis characters (…) → ASCII (...)
+- Files changed: app.html, css/app.css, js/app/02-auth.js, js/app.bundle.js
+- **Learnings for future iterations:**
+  - Watch for smart/curly quotes in JS source files — they cause "Invalid or unexpected token" errors at runtime but pass typecheck (tsc doesn't catch them)
+  - The .auth-divider CSS class creates a centered label with horizontal lines on each side via ::before/::after pseudo-elements — reuse it for labeled section dividers
+  - Google button should be hidden for non-passenger roles; applyPortalLabels now handles this via querySelector('#login-card .btn-google')
+  - The empty box at the top of the login card when loginHint is empty is the #login-role-hint div — it collapses visually when textContent is empty
+---
+
+## 2026-07-05 - US-007
+- Fixed register=1 deep link so it correctly shows registration card when logged out, and routes to normal logged-in view when logged in
+- The bug was in restoreSession(): `if (params.has('register')) return;` unconditionally bailed, preventing logged-in users from being routed to their view
+- Fix: moved `const cached = AUTH.user` above the guard and changed to `if (params.has('register') && !cached) return;`
+- goToSignupPortal() and showPassengerRegister() both use '/app.html?register=1' — unchanged, still work
+- Server redirect /signup/passenger → /app.html?register=1 also unchanged
+- Files changed: js/app/04-operator.js, js/app.bundle.js, app.html (cache-buster only)
+- **Learnings for future iterations:**
+  - restoreSession() is async and runs AFTER initAuthPortal() — any early return in restoreSession means initAuthPortal's view decision sticks
+  - AUTH.user reads from sessionStorage — it's truthy only when a session was previously saved (login succeeded), not just when a cookie exists
+  - When adding URL param guards in restoreSession, always consider both logged-in and logged-out cases
+---
+
+## 2026-07-05 - US-008
+- Added password show/hide (eye icon) toggle on login and registration password fields
+- Moved "Forgot password?" link to right-aligned position in the Password label row (removed standalone #login-forgot-row div)
+- Login error now shows friendly "Incorrect email or password." for 400/401 responses (maps server error text)
+- Email field autofocuses when login card is shown; name field autofocuses when registration card is shown
+- Per-field inline hints on blur: invalid email format and password < 6 chars show red hints below the field
+- Sign In button already had loading state (setBusy pattern from prior iterations) — confirmed working
+- Email field is not cleared on failed login (was already correct behavior)
+- Role switcher remains at bottom, visually de-emphasized (existing styling confirmed adequate)
+- applyPortalLabels now hides forgot-link (not old forgot-row) for loginOnly roles
+- clearLoginFieldHints() clears per-field hints when switching cards
+- Files changed: app.html, css/app.css, js/app/02-auth.js, js/app.bundle.js
+- **Learnings for future iterations:**
+  - The .password-input-wrap uses position:relative + absolute positioning for the toggle — same pattern as .loc-gps-btn on map inputs
+  - .auth-label-row creates a flex row for label + right-aligned link — reusable for any field that needs a label-row action
+  - validateLoginField() only shows hints when value is non-empty — empty fields don't trigger hints (avoids noise on page load focus)
+  - The forgot password link is now id="login-forgot-link" (was id="login-forgot-row") — update any JS that references it
+---
+
+## 2026-07-05 - US-009
+- Removed #profile-phone-block entirely from app.html (the whole profile-section-card with phone number, OTP input, verify/resend buttons, error/success divs)
+- Decision: REMOVE (not reduce to plain field) — grep confirmed no operator/admin/dispatch code displays passenger phone; only profile OTP flow used it
+- Removed all profile phone OTP client code from js/app/02-auth.js: profilePhone state, clearProfilePhoneTimers, initProfilePhoneBlock, showProfilePhoneChange, startProfilePhoneResendTimer, cancelProfilePhoneOtp, doProfilePhoneSendOtp, doProfilePhoneVerifyOtp, doProfilePhoneResendOtp (~180 lines)
+- Removed dead phone capture in doRoleSignup (register-{role}-phone input was already removed in US-004, code was a no-op)
+- Removed dead showSignupPhoneVerify code path (server no longer sends phoneVerifyNeeded since US-003)
+- Removed phoneBlock/initProfilePhoneBlock references from js/app/03-admin-profile.js syncProfileUI()
+- Rebuilt bundle (auto-bumped cache-buster)
+- Kept Google phone card (#google-phone-card, googlePhoneVerify, etc.) per rollback decision
+- Kept .mobile-phone-input / .mobile-country-code CSS (still used by Google phone card)
+- Files changed: app.html, js/app/02-auth.js, js/app/03-admin-profile.js, js/app.bundle.js
+- **Learnings for future iterations:**
+  - .mobile-phone-input and .mobile-country-code CSS is shared between Google phone card and the (now removed) profile phone block — don't remove those CSS rules while Google auth exists
+  - The booking "Contact Phone" (06-booking.js:63) is a standalone input for emergency air ambulance bookings, not related to profile phone
+  - drones module (09-drones.js:473) has a phone input for drone operator form — also unrelated to passenger profile phone
+---
