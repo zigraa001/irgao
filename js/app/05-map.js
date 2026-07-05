@@ -397,7 +397,7 @@ async function refreshAdminLiveFlights() {
         dispatching.length + ' dispatching · updates every 5s';
     }
     if (!flights.length) {
-      listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No flights in transit right now.</div></div>';
+      listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No flights in transit right now. Active trips will appear here.</div></div>';
     } else {
       listEl.innerHTML = flights.map(function (f) {
         const op = f.operator;
@@ -422,7 +422,7 @@ async function refreshAdminLiveFlights() {
     }
     if (fleetEl) {
       if (!fleet.length) {
-        fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No pilots reporting GPS yet.</div></div>';
+        fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No pilots reporting GPS yet. On-duty pilots will appear here.</div></div>';
       } else {
         fleetEl.innerHTML = fleet.map(function (p) {
           const gps = p.lat != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : '—';

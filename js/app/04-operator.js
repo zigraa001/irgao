@@ -43,7 +43,7 @@ function fmtINR(n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); 
 async function loadOperatorTrips() {
   const host = document.getElementById('op-trips');
   if (!host) return;
-  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading your trips…</div></div>';
+  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Fetching your assigned trips...</div></div>';
   try {
     const res = await apiFetch('/api/operator/trips');
     if (!res.ok) throw new Error('load failed');
@@ -66,7 +66,7 @@ function renderOperatorTrips() {
       '<div class="op-empty" id="op-empty">' +
       '<div class="op-empty-icon">🛩️</div>' +
       '<div class="op-empty-title">No trips assigned yet</div>' +
-      '<div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>' +
+      '<div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>' +
       '</div>';
     return;
   }

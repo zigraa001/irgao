@@ -147,7 +147,7 @@ function pdBreakdown(title, map, totalLabel) {
 
 function pdRecent(recent) {
   if (!recent || !recent.length) {
-    return '<div class="pd-recent"><h5>Recent trips</h5><div class="pd-recent-empty">No trips yet — your first booking will appear here.</div></div>';
+    return '<div class="pd-recent"><h5>Recent trips</h5><div class="pd-recent-empty">No trips yet -- your first booking will show up here.</div></div>';
   }
   const rows = recent.map(function (r) {
     const statusCls = 'pd-status--' + (r.status || '').replace(/_/g, '');
@@ -232,7 +232,7 @@ function statsDashboardHtml(stats) {
 async function loadProfileDashboard() {
   const body = document.getElementById('profile-dashboard-body');
   if (!body) return;
-  body.innerHTML = '<div class="pd-loading">Loading your dashboard…</div>';
+  body.innerHTML = '<div class="pd-loading">Fetching your dashboard...</div>';
   try {
     const res = await apiFetch('/api/me/stats');
     const data = await res.json().catch(function () { return {}; });
@@ -581,7 +581,7 @@ async function loadAdminCompanies() {
   try {
     var res = await apiFetch('/api/admin/companies');
     var data = await res.json();
-    if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div style="color:var(--gray-500);">Could not load companies.</div>'; return; }
+    if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div style="color:var(--gray-500);">Could not load companies. Please try again.</div>'; return; }
     if (listEl) {
       listEl.innerHTML = data.companies.map(function (c) {
         return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;">' +
@@ -650,17 +650,17 @@ function toggleAdminDrawer() {
 async function loadAdminPlatformStats() {
   const host = document.getElementById('admin-platform-stats');
   if (!host) return;
-  host.innerHTML = '<div class="pd-loading">Loading platform stats…</div>';
+  host.innerHTML = '<div class="pd-loading">Fetching platform stats...</div>';
   try {
     const res = await apiFetch('/api/me/stats');
     const data = await res.json().catch(function () { return {}; });
     if (res.ok && data.stats) {
       host.innerHTML = statsDashboardHtml(data.stats);
     } else {
-      host.innerHTML = '<div class="pd-error">Could not load platform stats.</div>';
+      host.innerHTML = '<div class="pd-error">Could not load platform stats. Please try again.</div>';
     }
   } catch (e) {
-    host.innerHTML = '<div class="pd-error">Could not reach the server.</div>';
+    host.innerHTML = '<div class="pd-error">Could not reach the server. Please check your connection.</div>';
   }
 }
 
@@ -695,7 +695,7 @@ async function loadAdminUserDetail(userId) {
   const nameEl = document.getElementById('admin-ud-name');
   const emailEl = document.getElementById('admin-ud-email');
   const tagsEl = document.getElementById('admin-ud-tags');
-  if (body) body.innerHTML = '<div class="pd-loading">Loading user…</div>';
+  if (body) body.innerHTML = '<div class="pd-loading">Fetching user details...</div>';
   if (actionsHost) actionsHost.innerHTML = '';
   if (avatarEl) avatarEl.textContent = '?';
   if (nameEl) nameEl.textContent = '—';
@@ -800,7 +800,7 @@ async function loadAdminUsersChunk(showInitialLoading) {
   if (!listHost || adminUsersLoading) return;
 
   if (showInitialLoading && adminUsers.length === 0) {
-    listHost.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>';
+    listHost.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Fetching users...</div></div>';
   }
 
   const fetchOffset = adminPageStartOffset() + adminUsers.length;
@@ -889,8 +889,8 @@ function renderAdminUsers() {
     listHost.innerHTML =
       '<div class="op-empty">' +
       '<div class="op-empty-icon">👥</div>' +
-      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' yet</div>' +
-      '<div class="op-empty-sub">Accounts will appear here when they register or are added.</div>' +
+      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' found</div>' +
+      '<div class="op-empty-sub">New accounts will show up here once they register or are added by an admin.</div>' +
       '</div>';
   } else {
     listHost.innerHTML = adminUsers.map(function (u) {
@@ -1119,11 +1119,11 @@ var PRICING_FIELDS = [
 async function loadAdminPricing() {
   var host = document.getElementById('admin-pricing-form');
   if (!host) return;
-  host.innerHTML = '<div class="pd-loading">Loading pricing config…</div>';
+  host.innerHTML = '<div class="pd-loading">Fetching pricing configuration...</div>';
   try {
     var res = await apiFetch('/api/admin/pricing');
     var data = await res.json();
-    if (!res.ok) { host.innerHTML = '<div class="pd-error">Failed to load pricing.</div>'; return; }
+    if (!res.ok) { host.innerHTML = '<div class="pd-error">Could not load pricing configuration. Please try again.</div>'; return; }
     _adminPricingData = data.config || {};
     renderPricingForm(_adminPricingData);
     renderPricingChangelog(data.changelog || []);
@@ -1199,11 +1199,11 @@ function renderPricingChangelog(changelog) {
 async function loadAdminRevenue() {
   var kpiHost = document.getElementById('admin-revenue-kpis');
   if (!kpiHost) return;
-  kpiHost.innerHTML = '<div class="pd-loading">Loading revenue data…</div>';
+  kpiHost.innerHTML = '<div class="pd-loading">Fetching revenue data...</div>';
   try {
     var res = await apiFetch('/api/admin/revenue');
     var data = await res.json();
-    if (!res.ok) { kpiHost.innerHTML = '<div class="pd-error">Failed to load revenue.</div>'; return; }
+    if (!res.ok) { kpiHost.innerHTML = '<div class="pd-error">Could not load revenue data. Please try again.</div>'; return; }
     renderRevenueKPIs(data);
     renderRevenueChart(data.dailyChart || []);
     renderRevenuePayouts(data.operatorPayouts || [], data.commissionRate);
@@ -1225,7 +1225,7 @@ function renderRevenueKPIs(data) {
 function renderRevenueChart(daily) {
   var host = document.getElementById('admin-revenue-chart');
   if (!host) return;
-  if (!daily.length) { host.innerHTML = '<div class="admin-form-card" style="max-width:640px;"><p class="admin-users-meta">No revenue data for the last 30 days.</p></div>'; return; }
+  if (!daily.length) { host.innerHTML = '<div class="admin-form-card" style="max-width:640px;"><p class="admin-users-meta">No revenue data for the last 30 days. Revenue will appear here once bookings are completed.</p></div>'; return; }
   var maxRev = Math.max.apply(null, daily.map(function (d) { return d.revenue; })) || 1;
   var bars = daily.map(function (d) {
     var pct = Math.max((d.revenue / maxRev) * 100, 2);
@@ -1272,11 +1272,11 @@ function renderRevenuePayouts(payouts, commRate) {
 async function loadAdminCompliance() {
   var summaryHost = document.getElementById('admin-compliance-summary');
   if (!summaryHost) return;
-  summaryHost.innerHTML = '<div class="pd-loading">Loading compliance data…</div>';
+  summaryHost.innerHTML = '<div class="pd-loading">Fetching compliance data...</div>';
   try {
     var res = await apiFetch('/api/admin/compliance');
     var data = await res.json();
-    if (!res.ok) { summaryHost.innerHTML = '<div class="pd-error">Failed to load compliance data.</div>'; return; }
+    if (!res.ok) { summaryHost.innerHTML = '<div class="pd-error">Could not load compliance data. Please try again.</div>'; return; }
     renderComplianceSummary(data.summary || {});
     renderComplianceMissing(data.operatorsMissingChecklist || []);
     renderComplianceFailed(data.failedChecklists || []);
@@ -1355,11 +1355,11 @@ function renderComplianceRecent(checklists) {
 async function loadOperatorEarnings() {
   var host = document.getElementById('op-earnings-body');
   if (!host) return;
-  host.innerHTML = '<div class="op-empty-sub">Loading earnings…</div>';
+  host.innerHTML = '<div class="op-empty-sub">Fetching your earnings...</div>';
   try {
     var res = await apiFetch('/api/operator/earnings');
     var data = await res.json();
-    if (!res.ok) { host.innerHTML = '<div class="op-empty-sub">Could not load earnings.</div>'; return; }
+    if (!res.ok) { host.innerHTML = '<div class="op-empty-sub">Could not load earnings. Please try again.</div>'; return; }
     renderOperatorEarnings(data);
   } catch (e) {
     host.innerHTML = '<div class="op-empty-sub">Could not reach server.</div>';

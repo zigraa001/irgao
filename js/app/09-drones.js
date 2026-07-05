@@ -25,7 +25,7 @@ async function loadDroneServices() {
     renderDroneCategoryFilter(cats);
     renderDroneServices();
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load drone services.</div>';
+    list.innerHTML = '<div class="op-empty-sub">Could not load drone services. Please try again.</div>';
   }
 }
 
@@ -52,7 +52,7 @@ function renderDroneServices() {
   if (!list) return;
   const filtered = droneCurrentCategory === 'all' ? droneServices : droneServices.filter(s => s.category === droneCurrentCategory);
   if (!filtered.length) {
-    list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet.</div>';
+    list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet. Check back soon.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
@@ -252,7 +252,7 @@ async function loadDroneMyBookings() {
     droneMyBookings = data.bookings || [];
     renderDroneMyBookings();
   } catch (e) {
-    wrap.innerHTML = '<div class="op-empty-sub">Could not load your drone bookings.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">Could not load your drone bookings. Please try again.</div>';
   }
 }
 
@@ -260,7 +260,7 @@ function renderDroneMyBookings() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse services above to get started.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse the services above to book your first drone.</div>';
     return;
   }
   let html = '';
@@ -335,13 +335,13 @@ async function loadDroneAdminServices() {
     if (!res.ok) throw new Error(data.error || 'Failed');
     renderDroneAdminServices(data.services || []);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load services.</div>';
+    list.innerHTML = '<div class="op-empty-sub">Could not load services. Please try again.</div>';
   }
 }
 
 function renderDroneAdminServices(services) {
   const list = document.getElementById('drone-admin-services-list');
-  if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No services configured.</div>'; return; }
+  if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No drone services configured yet. Add one to get started.</div>'; return; }
   let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
   services.forEach(s => {
     html += '<tr>' +
@@ -437,13 +437,13 @@ async function loadDroneAdminOperators() {
     if (!res.ok) throw new Error(data.error || 'Failed');
     renderDroneAdminOperators(data.operators || []);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load operators.</div>';
+    list.innerHTML = '<div class="op-empty-sub">Could not load operators. Please try again.</div>';
   }
 }
 
 function renderDroneAdminOperators(operators) {
   const list = document.getElementById('drone-admin-operators-list');
-  if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No operators found.</div>'; return; }
+  if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No drone operators registered yet. Add one to get started.</div>'; return; }
   let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
   operators.forEach(op => {
     html += '<tr>' +
@@ -538,13 +538,13 @@ async function loadDroneAdminBookings() {
     }
     renderDroneAdminBookings(data.bookings || []);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load bookings.</div>';
+    list.innerHTML = '<div class="op-empty-sub">Could not load bookings. Please try again.</div>';
   }
 }
 
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
-  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings found.</div>'; return; }
+  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Bookings will appear here once customers start booking.</div>'; return; }
   let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +

@@ -145,13 +145,13 @@ async function loadRideHistory() {
   const user = AUTH && AUTH.user;
   if (!user || user.role !== 'customer') { box.style.display = 'none'; return; }
   box.style.display = 'block';
-  body.innerHTML = '<div class="pd-loading">Loading your rides...</div>';
+  body.innerHTML = '<div class="pd-loading">Fetching your ride history...</div>';
   try {
     const res = await apiFetch('/api/bookings/history');
     const data = await res.json().catch(() => ({}));
     const rides = Array.isArray(data.rides) ? data.rides : [];
     if (!rides.length) {
-      body.innerHTML = '<div class="pd-loading">No rides yet -- your trips will appear here.</div>';
+      body.innerHTML = '<div class="pd-loading">No rides yet -- your trips will show up here after your first booking.</div>';
       return;
     }
     body.innerHTML = rides.map(function (r) {
@@ -197,15 +197,15 @@ function renderOperatorDuty(onDuty, hasGps) {
   const statusEl = document.getElementById('op-duty-status');
   const subEl = document.getElementById('op-duty-sub');
   const btn = document.getElementById('op-duty-toggle');
-  if (statusEl) statusEl.textContent = onDuty ? 'On duty' : 'Off duty';
+  if (statusEl) statusEl.textContent = onDuty ? 'You are on duty' : 'You are off duty';
   if (btn) {
     btn.setAttribute('aria-pressed', onDuty ? 'true' : 'false');
     btn.disabled = false;
   }
   if (subEl) {
-    if (!hasGps) subEl.textContent = 'Share your GPS to receive nearby offers.';
-    else if (onDuty) subEl.textContent = 'You will receive dispatch offers.';
-    else subEl.textContent = 'Toggle on to start receiving offers.';
+    if (!hasGps) subEl.textContent = 'Enable GPS to receive nearby dispatch offers.';
+    else if (onDuty) subEl.textContent = 'Receiving dispatch offers -- stay tuned.';
+    else subEl.textContent = 'Go on duty to start receiving trip offers.';
   }
 }
 
@@ -225,9 +225,9 @@ async function toggleOperatorDuty() {
       renderOperatorDuty(!!data.onDuty, true);
       if (data.onDuty) {
         requestNotificationPermission();
-        showToast('You are on duty — dispatch offers will arrive', 'success');
+        showToast('You are on duty -- dispatch offers will arrive.', 'success');
       } else {
-        showToast('Off duty — no dispatch offers', 'info');
+        showToast('You are off duty -- no dispatch offers.', 'info');
       }
     } else {
       btn.disabled = false;

@@ -736,7 +736,7 @@
           <div class="op-duty-card" id="op-duty-card">
             <div class="op-duty-info">
               <div class="op-duty-label">Availability</div>
-              <div class="op-duty-status" id="op-duty-status">Loading…</div>
+              <div class="op-duty-status" id="op-duty-status">Checking status...</div>
               <div class="op-duty-sub" id="op-duty-sub"></div>
             </div>
             <button type="button" id="op-duty-toggle" class="op-duty-switch" onclick="toggleOperatorDuty()" aria-pressed="false">
@@ -769,8 +769,8 @@
           <div class="op-section-title" style="margin-top:0;">Assigned trips</div>
           <div id="op-trips">
             <div class="op-empty" id="op-empty">
-              <div class="op-empty-title">No trips assigned</div>
-              <div class="op-empty-sub">Assigned missions will appear here.</div>
+              <div class="op-empty-title">No trips assigned yet</div>
+              <div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>
             </div>
           </div>
         </div>
@@ -779,14 +779,14 @@
           <div class="op-section-title" style="margin-top:0;">Altitude bands</div>
           <div id="operator-zone-altitude" class="admin-zone-altitude">
             <h4>Altitude (3D)</h4>
-            <div class="op-empty-sub">Loading zones…</div>
+            <div class="op-empty-sub">Fetching altitude zones...</div>
           </div>
         </div>
 
         <div class="panel-section">
           <div class="op-section-title" style="margin-top:0;">Earnings</div>
           <div id="op-earnings-body">
-            <div class="op-empty-sub">Loading earnings…</div>
+            <div class="op-empty-sub">Fetching your earnings...</div>
           </div>
         </div>
 
@@ -923,12 +923,12 @@
         <div class="admin-page-header">
           <div>
             <div class="op-welcome" id="admin-welcome">Dashboard</div>
-            <div class="op-welcome-sub" id="admin-welcome-sub">Overview</div>
+            <div class="op-welcome-sub" id="admin-welcome-sub">Everything happening across IraGo right now</div>
           </div>
         </div>
         <div class="admin-summary-bar" id="admin-summary-bar"></div>
         <div class="op-section-title">Platform overview</div>
-        <div id="admin-platform-stats" class="admin-platform-stats"><div class="pd-loading">Loading platform stats…</div></div>
+        <div id="admin-platform-stats" class="admin-platform-stats"><div class="pd-loading">Fetching platform stats...</div></div>
       </section>
 
       <!-- Active Users section -->
@@ -941,7 +941,7 @@
           </div>
           <div id="admin-users-meta" class="admin-users-meta"></div>
           <div id="admin-users-list">
-            <div class="op-empty"><div class="op-empty-sub">Loading users…</div></div>
+            <div class="op-empty"><div class="op-empty-sub">Fetching users...</div></div>
           </div>
           <div id="admin-users-pager" class="admin-users-pager"></div>
         </div>
@@ -964,13 +964,13 @@
           <div class="admin-live-panel">
             <h4>In transit &amp; dispatching</h4>
             <div id="admin-live-list" class="admin-live-list">
-              <div class="op-empty"><div class="op-empty-sub">Loading live flights…</div></div>
+              <div class="op-empty"><div class="op-empty-sub">Fetching live flights...</div></div>
             </div>
           </div>
           <div class="admin-live-panel">
             <h4>All pilots (GPS)</h4>
             <div id="admin-fleet-list" class="admin-live-list">
-              <div class="op-empty"><div class="op-empty-sub">Loading fleet…</div></div>
+              <div class="op-empty"><div class="op-empty-sub">Fetching fleet data...</div></div>
             </div>
           </div>
         </div>
@@ -1032,7 +1032,7 @@
         <div class="op-section-title">Pricing Configuration</div>
         <p class="admin-users-meta" style="margin-top:-6px;">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
         <div id="admin-pricing-form" class="admin-form-card" style="max-width:640px;margin-bottom:20px;">
-          <div class="pd-loading">Loading pricing config…</div>
+          <div class="pd-loading">Fetching pricing configuration...</div>
         </div>
         <div id="admin-pricing-changelog" style="max-width:640px;"></div>
       </section>
@@ -1042,7 +1042,7 @@
         <div class="op-section-title">Revenue Dashboard</div>
         <p class="admin-users-meta" style="margin-top:-6px;">Platform revenue overview with daily trends and operator payout breakdown.</p>
         <div id="admin-revenue-kpis" class="profile-stats-grid" style="margin-bottom:20px;">
-          <div class="pd-loading">Loading revenue data…</div>
+          <div class="pd-loading">Fetching revenue data...</div>
         </div>
         <div id="admin-revenue-chart" style="margin-bottom:20px;"></div>
         <div id="admin-revenue-payouts"></div>
@@ -1053,7 +1053,7 @@
         <div class="op-section-title">Compliance Monitor</div>
         <p class="admin-users-meta" style="margin-top:-6px;">Pre-flight safety checklist status across all operators. Operators without a checklist in 24h are flagged.</p>
         <div id="admin-compliance-summary" class="profile-stats-grid" style="margin-bottom:20px;">
-          <div class="pd-loading">Loading compliance data…</div>
+          <div class="pd-loading">Fetching compliance data...</div>
         </div>
         <div id="admin-compliance-missing" style="margin-bottom:20px;"></div>
         <div id="admin-compliance-failed" style="margin-bottom:20px;"></div>
@@ -1114,7 +1114,7 @@
             <button type="button" class="op-btn" onclick="showDroneServiceForm()">+ Add Service</button>
           </div>
           <div id="drone-admin-service-form" style="display:none;"></div>
-          <div id="drone-admin-services-list"><div class="pd-loading">Loading…</div></div>
+          <div id="drone-admin-services-list"><div class="pd-loading">Fetching drone services...</div></div>
         </div>
 
         <!-- Operators sub-tab -->
@@ -1124,13 +1124,13 @@
             <button type="button" class="op-btn" onclick="showDroneOperatorForm()">+ Add Operator</button>
           </div>
           <div id="drone-admin-operator-form" style="display:none;"></div>
-          <div id="drone-admin-operators-list"><div class="pd-loading">Loading…</div></div>
+          <div id="drone-admin-operators-list"><div class="pd-loading">Fetching drone operators...</div></div>
         </div>
 
         <!-- Bookings sub-tab -->
         <div id="drone-admin-bookings" style="display:none;">
           <div id="drone-admin-bookings-stats"></div>
-          <div id="drone-admin-bookings-list" style="margin-top:10px;"><div class="pd-loading">Loading…</div></div>
+          <div id="drone-admin-bookings-list" style="margin-top:10px;"><div class="pd-loading">Fetching drone bookings...</div></div>
         </div>
       </section>
 
@@ -1139,7 +1139,7 @@
         <p class="admin-users-meta" style="margin-top:-6px;">Most recent server logs (since this process started). Scroll up to load older entries — 50 at a time.</p>
         <div id="admin-logs-meta" class="admin-users-meta"></div>
         <div id="admin-logs-scroll" class="admin-logs-scroll">
-          <div id="admin-logs-loading" class="pd-loading" style="display:none;">Loading older logs…</div>
+          <div id="admin-logs-loading" class="pd-loading" style="display:none;">Fetching older logs...</div>
           <div id="admin-logs-list" class="admin-logs-list"></div>
         </div>
       </section>
@@ -1232,6 +1232,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=6466095b"></script>
+<script src="/js/app.bundle.js?v=444775da"></script>
 </body>
 </html>
