@@ -242,6 +242,12 @@ a { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.auth-optional {
+  font-weight: 400;
+  text-transform: none;
+  color: var(--gray-400);
+  letter-spacing: 0;
+}
 .auth-field input {
   width: 100%;
   background: var(--gray-50);

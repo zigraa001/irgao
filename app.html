@@ -99,21 +99,16 @@
       </div>
     </div>
 
-    <!-- ── Page 1: Personal Details ── -->
+    <!-- ── Passenger Registration (single-form with inline email OTP) ── -->
     <div class="auth-card" id="register-passenger-card" style="display:none">
-      <div class="auth-steps" id="register-passenger-steps">
-        <span class="auth-step active"><span class="auth-step-num">1</span> Personal details</span>
-        <span class="auth-step-line"></span>
-        <span class="auth-step"><span class="auth-step-num">2</span> Verify</span>
-      </div>
       <h2>Create passenger account</h2>
-      <p class="auth-subtext">Step 1 &mdash; enter your personal details.</p>
+      <p class="auth-subtext">Enter your details and verify your email to get started.</p>
       <div class="auth-field">
         <label>Full Name</label>
         <input id="register-passenger-name" type="text" placeholder="Priya Sharma" autocomplete="name">
       </div>
       <div class="auth-field">
-        <label>Gender</label>
+        <label>Gender <span class="auth-optional">(optional)</span></label>
         <select id="register-passenger-gender">
           <option value="">Select gender</option>
           <option value="male">Male</option>
@@ -123,82 +118,34 @@
         </select>
       </div>
       <div class="auth-field">
-        <label>Age</label>
+        <label>Age <span class="auth-optional">(optional)</span></label>
         <input id="register-passenger-age" type="number" min="1" max="120" placeholder="25" inputmode="numeric">
+      </div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input id="register-passenger-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="auth-field">
         <label>Password</label>
         <input id="register-passenger-password" type="password" placeholder="Min 6 chars" autocomplete="new-password">
       </div>
-      <button type="button" class="btn-auth-primary" onclick="goToRegisterVerify('passenger')">Next &rarr;</button>
+
+      <div id="reg-email-section">
+        <button id="reg-email-send-btn" type="button" class="btn-auth-primary" onclick="regSendEmailOtp()">Send verification code</button>
+        <div id="reg-email-otp-row" style="display:none">
+          <div class="auth-field" style="margin-top:14px">
+            <label>Verification code</label>
+            <input id="reg-email-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6-digit code" autocomplete="one-time-code">
+          </div>
+          <p id="reg-email-resend-hint" class="otp-resend-hint"></p>
+          <button id="reg-email-resend-btn" type="button" class="auth-switch-btn" onclick="regResendEmailOtp()" disabled style="display:none">Resend code</button>
+          <button id="reg-create-btn" type="button" class="btn-auth-primary" onclick="regCreateAccount()" style="margin-top:14px">Create account</button>
+        </div>
+      </div>
+
       <div id="register-passenger-error" class="auth-error" role="alert"></div>
       <div class="auth-switch" style="margin-top:14px;">
         Already have an account? <button type="button" onclick="goToLoginPortal()">Sign in</button>
-      </div>
-    </div>
-
-    <!-- ── Page 2: Email + Phone Verification (inline OTPs) ── -->
-    <div class="auth-card" id="register-verify-card" style="display:none">
-      <div class="auth-steps">
-        <span class="auth-step done"><span class="auth-step-num">1</span> Personal details</span>
-        <span class="auth-step-line done"></span>
-        <span class="auth-step active"><span class="auth-step-num">2</span> Verify</span>
-      </div>
-      <h2>Verify email &amp; phone</h2>
-      <p class="auth-subtext">Step 2 &mdash; verify your email and phone number to create your account.</p>
-
-      <!-- Email verification -->
-      <div class="reg-verify-section" id="reg-email-section">
-        <div class="auth-field auth-email-otp-field">
-          <label>Email Address</label>
-          <div class="auth-email-otp-row">
-            <input id="register-verify-email" type="email" placeholder="you@example.com" autocomplete="email">
-            <button id="reg-email-send-btn" type="button" class="btn-send-otp" onclick="regSendEmailOtp()">Send OTP</button>
-          </div>
-        </div>
-        <div id="reg-email-otp-row" style="display:none">
-          <div class="auth-field">
-            <label>Email verification code</label>
-            <input id="reg-email-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code">
-          </div>
-          <p id="reg-email-resend-hint" class="otp-resend-hint"></p>
-          <button id="reg-email-resend-btn" type="button" class="auth-switch-btn" onclick="regResendEmailOtp()" disabled style="display:none">Resend</button>
-        </div>
-        <div id="reg-email-verified" class="reg-verified-badge" style="display:none">&#10003; Email verified</div>
-        <div id="reg-email-error" class="auth-error" role="alert"></div>
-      </div>
-
-      <!-- Phone verification -->
-      <div class="reg-verify-section" id="reg-phone-section" style="margin-top:18px">
-        <div class="auth-field">
-          <label>Mobile Number</label>
-          <div class="auth-email-otp-row">
-            <div class="mobile-phone-input" style="flex:1">
-              <span class="mobile-country-code">+91</span>
-              <input id="register-verify-phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="9876543210" autocomplete="tel-national">
-            </div>
-            <button id="reg-phone-send-btn" type="button" class="btn-send-otp" onclick="regSendPhoneOtp()">Send OTP</button>
-          </div>
-        </div>
-        <div id="reg-phone-otp-row" style="display:none">
-          <div class="auth-field">
-            <label>Phone verification code</label>
-            <input id="reg-phone-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code">
-          </div>
-          <p id="reg-phone-resend-hint" class="otp-resend-hint"></p>
-          <button id="reg-phone-resend-btn" type="button" class="auth-switch-btn" onclick="regResendPhoneOtp()" disabled style="display:none">Resend</button>
-        </div>
-        <div id="reg-phone-verified" class="reg-verified-badge" style="display:none">&#10003; Phone verified</div>
-        <div id="reg-phone-error" class="auth-error" role="alert"></div>
-      </div>
-
-      <button id="reg-create-btn" type="button" class="btn-auth-primary" onclick="regCreateAccount()" disabled style="margin-top:18px">Create Account</button>
-      <div id="register-verify-error" class="auth-error" role="alert"></div>
-      <div class="auth-switch" style="margin-top:14px;">
-        <button type="button" onclick="backToRegisterPage1()">&larr; Back to details</button>
-      </div>
-      <div class="auth-switch" style="margin-top:8px;">
-        <button type="button" onclick="goToLoginPortal()">Back to sign in</button>
       </div>
     </div>
 
@@ -1337,6 +1284,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=00d53630"></script>
+<script src="/js/app.bundle.js?v=b246ca60"></script>
 </body>
 </html>
