@@ -309,7 +309,7 @@ function showDroneAdminTab(tab) {
   ['services', 'operators', 'bookings'].forEach(t => {
     const el = document.getElementById('drone-admin-' + t);
     const btn = document.getElementById('drone-admin-tab-' + t);
-    if (el) el.style.display = t === tab ? '' : 'none';
+    if (el) el.hidden = t !== tab;
     if (btn) btn.classList.toggle('active', t === tab);
   });
   if (tab === 'services' && !droneAdminServicesLoaded) {
@@ -342,7 +342,7 @@ async function loadDroneAdminServices() {
 function renderDroneAdminServices(services) {
   const list = document.getElementById('drone-admin-services-list');
   if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No drone services configured yet. Add one to get started.</div>'; return; }
-  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
   services.forEach(s => {
     html += '<tr>' +
       '<td>' + (s.imageEmoji || '🛸') + '</td>' +
@@ -363,7 +363,7 @@ function showDroneServiceForm(service) {
   const wrap = document.getElementById('drone-admin-service-form');
   const isEdit = !!service;
   const s = service || {};
-  wrap.style.display = 'block';
+  wrap.hidden = false;
   wrap.innerHTML =
     '<div class="drone-admin-form">' +
       '<div class="drone-form-title">' + (isEdit ? 'Edit Service' : 'Add New Service') + '</div>' +
@@ -377,8 +377,8 @@ function showDroneServiceForm(service) {
         '<input id="dsf-maxH" class="pd-input" type="number" placeholder="Max hrs" value="' + (s.maxHours || 8) + '">' +
         '<label><input type="checkbox" id="dsf-opReq"' + (s.operatorRequired ? ' checked' : '') + '> Operator required</label>' +
       '</div>' +
-      '<input id="dsf-desc" class="pd-input" placeholder="Description" value="' + escapeHtml(s.description || '') + '" style="width:100%;margin-top:6px;">' +
-      '<div style="display:flex;gap:8px;margin-top:8px;">' +
+      '<input id="dsf-desc" class="pd-input drone-form-desc" placeholder="Description" value="' + escapeHtml(s.description || '') + '">' +
+      '<div class="drone-form-actions">' +
         '<button type="button" class="op-btn" onclick="saveDroneService(' + (s.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
         '<button type="button" class="op-btn-secondary" onclick="hideDroneServiceForm()">Cancel</button>' +
       '</div>' +
@@ -387,7 +387,7 @@ function showDroneServiceForm(service) {
 
 function hideDroneServiceForm() {
   const wrap = document.getElementById('drone-admin-service-form');
-  wrap.style.display = 'none';
+  wrap.hidden = true;
   wrap.innerHTML = '';
 }
 
@@ -444,10 +444,10 @@ async function loadDroneAdminOperators() {
 function renderDroneAdminOperators(operators) {
   const list = document.getElementById('drone-admin-operators-list');
   if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No drone operators registered yet. Add one to get started.</div>'; return; }
-  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
   operators.forEach(op => {
     html += '<tr>' +
-      '<td><strong>' + escapeHtml(op.name) + '</strong><br><span style="font-size:12px;color:var(--gray-500);">' + escapeHtml(op.email || '—') + '</span></td>' +
+      '<td><strong>' + escapeHtml(op.name) + '</strong><br><span class="table-meta">' + escapeHtml(op.email || '—') + '</span></td>' +
       '<td>' + escapeHtml(op.specialization || '—') + '</td>' +
       '<td>' + op.experienceYears + ' yr</td>' +
       '<td>⭐ ' + Number(op.rating).toFixed(1) + '</td>' +
@@ -463,7 +463,7 @@ function showDroneOperatorForm(op) {
   const wrap = document.getElementById('drone-admin-operator-form');
   const isEdit = !!op;
   const o = op || {};
-  wrap.style.display = 'block';
+  wrap.hidden = false;
   wrap.innerHTML =
     '<div class="drone-admin-form">' +
       '<div class="drone-form-title">' + (isEdit ? 'Edit Operator' : 'Add New Operator') + '</div>' +
@@ -475,7 +475,7 @@ function showDroneOperatorForm(op) {
         '<input id="dof-exp" class="pd-input" type="number" placeholder="Years exp" value="' + (o.experienceYears || 1) + '">' +
         '<input id="dof-rating" class="pd-input" type="number" step="0.1" placeholder="Rating" value="' + (o.rating || 4.5) + '">' +
       '</div>' +
-      '<div style="display:flex;gap:8px;margin-top:8px;">' +
+      '<div class="drone-form-actions">' +
         '<button type="button" class="op-btn" onclick="saveDroneOperator(' + (o.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
         '<button type="button" class="op-btn-secondary" onclick="hideDroneOperatorForm()">Cancel</button>' +
       '</div>' +
@@ -484,7 +484,7 @@ function showDroneOperatorForm(op) {
 
 function hideDroneOperatorForm() {
   const wrap = document.getElementById('drone-admin-operator-form');
-  wrap.style.display = 'none';
+  wrap.hidden = true;
   wrap.innerHTML = '';
 }
 
@@ -545,7 +545,7 @@ async function loadDroneAdminBookings() {
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
   if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Bookings will appear here once customers start booking.</div>'; return; }
-  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +
       '<td>#' + b.id + '</td>' +

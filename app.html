@@ -1014,8 +1014,8 @@
             <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
             <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Pilots</button>
           </div>
-          <div id="admin-users-company-filter" style="display:none;margin:8px 0;">
-            <select id="admin-users-company-select" class="admin-form-select" style="max-width:260px;font-size:13px;" onchange="filterAdminUsersByCompany()">
+          <div id="admin-users-company-filter" class="admin-company-filter" hidden
+            <select id="admin-users-company-select" class="admin-form-select admin-company-filter-select" onchange="filterAdminUsersByCompany()">
               <option value="">All companies</option>
             </select>
           </div>
@@ -1025,13 +1025,13 @@
           </div>
           <div id="admin-users-pager" class="admin-users-pager"></div>
         </div>
-        <p class="admin-users-meta" style="margin-top:14px">Tap any user to open their profile, trips and fare breakdown.</p>
+        <p class="admin-users-meta admin-meta-footer">Tap any user to open their profile, trips and fare breakdown.</p>
       </section>
 
       <!-- Operators Live Map section -->
       <section class="admin-section" id="admin-section-live" hidden>
         <div class="op-section-title">Pilots Live Map</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
+        <p class="admin-users-meta admin-meta-hint">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
         <div id="admin-live-meta" class="admin-users-meta"></div>
         <div id="admin-live-map-wrap" class="admin-live-map-wrap">
           <div id="admin-live-map" class="admin-live-map"></div>
@@ -1081,7 +1081,7 @@
               </select>
             </div>
             <div class="auth-field" id="admin-add-company-field">
-              <label>Operator Company <span style="color:var(--red)">*</span></label>
+              <label>Operator Company <span class="required-asterisk">*</span></label>
               <select id="admin-add-company" class="admin-form-select" onchange="onAddMemberCompanyChange()">
                 <option value="">Select a company</option>
               </select>
@@ -1093,7 +1093,7 @@
               </select>
             </div>
           </div>
-          <p class="admin-add-note" style="font-size:12px;color:var(--gray-500);margin:6px 0 12px">
+          <p class="admin-add-note">
             A temporary password is set here — the new member must change it on first login.
           </p>
           <button id="admin-add-submit" class="btn-auth-primary admin-add-submit" onclick="doAddUser()">Add Team Member</button>
@@ -1106,13 +1106,13 @@
            older pages load on scroll-up to avoid rendering everything at once. -->
       <section class="admin-section" id="admin-section-companies" hidden>
         <div class="op-section-title">Operator Companies</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Operator companies employ the pilots who fly IraGo trips. Manage companies and their regional offices across metro cities.</p>
+        <p class="admin-users-meta admin-meta-hint">Operator companies employ the pilots who fly IraGo trips. Manage companies and their regional offices across metro cities.</p>
         <div id="admin-companies-list" class="partner-grid"></div>
         <div class="admin-form-card partner-add-form">
-          <div class="op-section-title" style="font-size:14px;">Add Company</div>
+          <div class="op-section-title drone-sub-title">Add Company</div>
           <div class="partner-add-fields">
             <input type="text" id="admin-company-name" class="pd-input" placeholder="Company name (e.g. SkyTaxi India)">
-            <input type="text" id="admin-company-code" class="pd-input" placeholder="Code (e.g. SKT)" maxlength="32" style="max-width:160px;">
+            <input type="text" id="admin-company-code" class="pd-input admin-company-code-input" placeholder="Code (e.g. SKT)" maxlength="32">
           </div>
           <button type="button" class="auth-btn" onclick="addOperatorCompany()">Add Company</button>
           <div class="auth-error" id="admin-company-error"></div>
@@ -1122,40 +1122,40 @@
       <!-- Pricing Config section -->
       <section class="admin-section" id="admin-section-pricing" hidden>
         <div class="op-section-title">Pricing Configuration</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
-        <div id="admin-pricing-form" class="admin-form-card" style="max-width:640px;margin-bottom:20px;">
+        <p class="admin-users-meta admin-meta-hint">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
+        <div id="admin-pricing-form" class="admin-form-card admin-section-card">
           <div class="pd-loading">Fetching pricing configuration...</div>
         </div>
-        <div id="admin-pricing-changelog" style="max-width:640px;"></div>
+        <div id="admin-pricing-changelog" class="admin-section-card"></div>
       </section>
 
       <!-- Revenue Dashboard section -->
       <section class="admin-section" id="admin-section-revenue" hidden>
         <div class="op-section-title">Revenue Dashboard</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Platform revenue overview with daily trends and operator payout breakdown.</p>
-        <div id="admin-revenue-kpis" class="profile-stats-grid" style="margin-bottom:20px;">
+        <p class="admin-users-meta admin-meta-hint">Platform revenue overview with daily trends and operator payout breakdown.</p>
+        <div id="admin-revenue-kpis" class="profile-stats-grid admin-section-card">
           <div class="pd-loading">Fetching revenue data...</div>
         </div>
-        <div id="admin-revenue-chart" style="margin-bottom:20px;"></div>
+        <div id="admin-revenue-chart" class="admin-section-card"></div>
         <div id="admin-revenue-payouts"></div>
       </section>
 
       <!-- Compliance Monitor section -->
       <section class="admin-section" id="admin-section-compliance" hidden>
         <div class="op-section-title">Compliance Monitor</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Pre-flight safety checklist status across all pilots. Pilots without a checklist in 24h are flagged.</p>
-        <div id="admin-compliance-summary" class="profile-stats-grid" style="margin-bottom:20px;">
+        <p class="admin-users-meta admin-meta-hint">Pre-flight safety checklist status across all pilots. Pilots without a checklist in 24h are flagged.</p>
+        <div id="admin-compliance-summary" class="profile-stats-grid admin-section-card">
           <div class="pd-loading">Fetching compliance data...</div>
         </div>
-        <div id="admin-compliance-missing" style="margin-bottom:20px;"></div>
-        <div id="admin-compliance-failed" style="margin-bottom:20px;"></div>
+        <div id="admin-compliance-missing" class="admin-section-card"></div>
+        <div id="admin-compliance-failed" class="admin-section-card"></div>
         <div id="admin-compliance-recent"></div>
       </section>
 
       <section class="admin-section" id="admin-section-settings" hidden>
         <div class="op-section-title">Platform Settings</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Runtime toggles for platform behaviour. Changes take effect immediately.</p>
-        <div class="admin-form-card" style="max-width:560px;">
+        <p class="admin-users-meta admin-meta-hint">Runtime toggles for platform behaviour. Changes take effect immediately.</p>
+        <div class="admin-form-card admin-section-card--narrow">
           <div class="admin-toggle-row">
             <div>
               <div class="admin-toggle-title">Emergency No-Fly Bypass</div>
@@ -1172,7 +1172,7 @@
           <div id="admin-bypass-status" class="admin-toggle-status"></div>
         </div>
 
-        <div class="admin-form-card" style="max-width:560px;margin-top:16px;">
+        <div class="admin-form-card admin-section-card--narrow admin-section-card--spaced">
           <div class="admin-toggle-row">
             <div>
               <div class="admin-toggle-title">Demo Mode</div>
@@ -1193,7 +1193,7 @@
       <section class="admin-section" id="admin-section-drones" hidden>
         <div class="op-section-title">Drone Management</div>
 
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="drone-tab-bar">
           <button type="button" class="dashboard-pill active" id="drone-admin-tab-services" onclick="showDroneAdminTab('services')">Services</button>
           <button type="button" class="dashboard-pill" id="drone-admin-tab-operators" onclick="showDroneAdminTab('operators')">Operators</button>
           <button type="button" class="dashboard-pill" id="drone-admin-tab-bookings" onclick="showDroneAdminTab('bookings')">Bookings</button>
@@ -1201,37 +1201,37 @@
 
         <!-- Services sub-tab -->
         <div id="drone-admin-services">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-weight:600;font-size:14px;">All Drone Services</span>
+          <div class="drone-sub-header">
+            <span class="drone-sub-title">All Drone Services</span>
             <button type="button" class="op-btn" onclick="showDroneServiceForm()">+ Add Service</button>
           </div>
-          <div id="drone-admin-service-form" style="display:none;"></div>
+          <div id="drone-admin-service-form" hidden></div>
           <div id="drone-admin-services-list"><div class="pd-loading">Fetching drone services...</div></div>
         </div>
 
         <!-- Operators sub-tab -->
-        <div id="drone-admin-operators" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-weight:600;font-size:14px;">Drone Operators</span>
+        <div id="drone-admin-operators" hidden>
+          <div class="drone-sub-header">
+            <span class="drone-sub-title">Drone Operators</span>
             <button type="button" class="op-btn" onclick="showDroneOperatorForm()">+ Add Operator</button>
           </div>
-          <div id="drone-admin-operator-form" style="display:none;"></div>
+          <div id="drone-admin-operator-form" hidden></div>
           <div id="drone-admin-operators-list"><div class="pd-loading">Fetching drone operators...</div></div>
         </div>
 
         <!-- Bookings sub-tab -->
-        <div id="drone-admin-bookings" style="display:none;">
+        <div id="drone-admin-bookings" hidden>
           <div id="drone-admin-bookings-stats"></div>
-          <div id="drone-admin-bookings-list" style="margin-top:10px;"><div class="pd-loading">Fetching drone bookings...</div></div>
+          <div id="drone-admin-bookings-list" class="drone-bookings-list-wrap"><div class="pd-loading">Fetching drone bookings...</div></div>
         </div>
       </section>
 
       <section class="admin-section" id="admin-section-logs" hidden>
         <div class="op-section-title">Logs</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Most recent server logs (since this process started). Scroll up to load older entries — 50 at a time.</p>
+        <p class="admin-users-meta admin-meta-hint">Most recent server logs (since this process started). Scroll up to load older entries -- 50 at a time.</p>
         <div id="admin-logs-meta" class="admin-users-meta"></div>
         <div id="admin-logs-scroll" class="admin-logs-scroll">
-          <div id="admin-logs-loading" class="pd-loading" style="display:none;">Fetching older logs...</div>
+          <div id="admin-logs-loading" class="pd-loading" hidden>Fetching older logs...</div>
           <div id="admin-logs-list" class="admin-logs-list"></div>
         </div>
       </section>
@@ -1324,6 +1324,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=a6145508"></script>
+<script src="/js/app.bundle.js?v=9deee3bd"></script>
 </body>
 </html>

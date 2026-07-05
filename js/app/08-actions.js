@@ -317,7 +317,7 @@ async function fetchAdminLogsPage(firstPage) {
   if (adminLogsLoading || (!firstPage && !adminLogsHasMore)) return;
   adminLogsLoading = true;
   const loadingEl = document.getElementById('admin-logs-loading');
-  if (loadingEl) loadingEl.style.display = 'block';
+  if (loadingEl) loadingEl.hidden = false;
   try {
     const url = '/api/admin/logs?limit=50' + (adminLogsOldestTs ? '&before=' + encodeURIComponent(adminLogsOldestTs) : '');
     const res = await apiFetch(url);
@@ -345,7 +345,7 @@ async function fetchAdminLogsPage(firstPage) {
       adminLogsOldestTs = logs[logs.length - 1].ts;
     }
   } catch (e) { /* ignore transient */ }
-  if (loadingEl) loadingEl.style.display = 'none';
+  if (loadingEl) loadingEl.hidden = true;
   adminLogsLoading = false;
 }
 

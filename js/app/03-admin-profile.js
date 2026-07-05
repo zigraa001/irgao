@@ -595,7 +595,7 @@ async function loadAdminCompanies() {
         var ratingHtml = '';
         if (c.rating) {
           var stars = '';
-          for (var s = 0; s < 5; s++) stars += '<span style="color:' + (s < Math.round(c.rating) ? 'var(--amber)' : 'var(--gray-200)') + ';">&#9733;</span>';
+          for (var s = 0; s < 5; s++) stars += '<span class="' + (s < Math.round(c.rating) ? 'star-active' : 'star-inactive') + '">&#9733;</span>';
           ratingHtml = '<span class="partner-rating">' + stars + ' <span class="partner-rating-val">' + Number(c.rating).toFixed(1) + '</span></span>';
         }
         var statusClass = c.active ? 'op-badge--green' : 'op-badge--gray';
@@ -650,7 +650,7 @@ async function toggleCompanyOffices(btn, companyId) {
             (o.address ? '<span>' + escapeHtml(o.address) + '</span>' : '') +
             (o.contactPhone ? '<span>' + escapeHtml(o.contactPhone) + '</span>' : '') +
           '</div>' +
-          '<span class="op-status-badge ' + (o.active ? 'op-badge--green' : 'op-badge--gray') + '" style="font-size:11px;">' + (o.active ? 'Active' : 'Inactive') + '</span>' +
+          '<span class="op-status-badge ' + (o.active ? 'op-badge--green' : 'op-badge--gray') + ' op-status-badge-sm">' + (o.active ? 'Active' : 'Inactive') + '</span>' +
         '</div>';
       }).join('');
     }
@@ -830,7 +830,7 @@ function switchAdminUserTab(tab) {
   });
   var filterWrap = document.getElementById('admin-users-company-filter');
   if (filterWrap) {
-    filterWrap.style.display = tab === 'operator' ? '' : 'none';
+    filterWrap.hidden = tab !== 'operator';
     if (tab === 'operator') populateCompanyFilter();
   }
   loadAdminUsersChunk(true);
@@ -1036,7 +1036,7 @@ function renderAdminUsers() {
       '</div>' +
       (loadMore
         ? '<button type="button" class="admin-load-more" onclick="loadAdminUsersChunk(false)">Load 6 more on this page</button>'
-        : '<span class="admin-users-meta" style="margin:0;">All loaded for this page</span>');
+        : '<span class="admin-users-meta admin-users-meta--flush">All loaded for this page</span>');
   }
 }
 
@@ -1304,14 +1304,14 @@ function renderPricingForm(config) {
       '<label class="pricing-field-label">' + escapeHtml(f.label) + '</label>' +
       '<div class="pricing-field-desc">' + escapeHtml(f.desc) + '</div>' +
       '<div class="pricing-field-input">' +
-        '<input type="number" id="pricing-' + f.key + '" class="pd-input" value="' + val + '" min="0" max="100" step="0.5" style="width:80px;min-height:38px;">' +
+        '<input type="number" id="pricing-' + f.key + '" class="pd-input pricing-input-sm" value="' + val + '" min="0" max="100" step="0.5">' +
         '<span class="pricing-field-unit">%</span>' +
       '</div>' +
     '</div>';
   }).join('');
   host.innerHTML = rows +
-    '<button type="button" class="btn-auth-primary" style="margin-top:8px;width:100%;" onclick="saveAdminPricing()">Save Pricing Config</button>' +
-    '<div id="admin-pricing-msg" style="margin-top:8px;font-size:13px;"></div>';
+    '<button type="button" class="btn-auth-primary pricing-save-btn" onclick="saveAdminPricing()">Save Pricing Config</button>' +
+    '<div id="admin-pricing-msg" class="pricing-msg"></div>';
 }
 
 async function saveAdminPricing() {
@@ -1330,14 +1330,14 @@ async function saveAdminPricing() {
     });
     var data = await res.json();
     if (res.ok && data.saved) {
-      if (msg) { msg.style.color = '#16A34A'; msg.textContent = 'Pricing config saved.'; }
+      if (msg) { msg.style.color = 'var(--green-dark)'; msg.textContent = 'Pricing config saved.'; }
       _adminPricingData = data.config || {};
       loadAdminPricing();
     } else {
-      if (msg) { msg.style.color = '#DC2626'; msg.textContent = data.error || 'Save failed.'; }
+      if (msg) { msg.style.color = 'var(--red-dark)'; msg.textContent = data.error || 'Save failed.'; }
     }
   } catch (e) {
-    if (msg) { msg.style.color = '#DC2626'; msg.textContent = 'Could not reach server.'; }
+    if (msg) { msg.style.color = 'var(--red-dark)'; msg.textContent = 'Could not reach server.'; }
   }
 }
 
@@ -1348,14 +1348,14 @@ function renderPricingChangelog(changelog) {
     var d = new Date(entry.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return '<div class="admin-list-row" style="flex-direction:column;align-items:stretch;">' +
+    return '<div class="admin-list-row admin-changelog-row">' +
       '<div><span class="admin-list-name">' + escapeHtml(entry.adminName) + '</span>' +
-      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span></div>' +
-      '<div class="admin-list-meta" style="margin-top:2px;">' + escapeHtml(entry.changes) + '</div>' +
+      '<span class="admin-list-meta">' + ts + '</span></div>' +
+      '<div class="admin-list-meta">' + escapeHtml(entry.changes) + '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;">Change History</div>' + rows + '</div>';
+  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
+    '<div class="op-section-title drone-sub-title">Change History</div>' + rows + '</div>';
 }
 
 // ── Admin Revenue Dashboard ─────────────────────────────────────────────
@@ -1388,19 +1388,19 @@ function renderRevenueKPIs(data) {
 function renderRevenueChart(daily) {
   var host = document.getElementById('admin-revenue-chart');
   if (!host) return;
-  if (!daily.length) { host.innerHTML = '<div class="admin-form-card" style="max-width:640px;"><p class="admin-users-meta">No revenue data for the last 30 days. Revenue will appear here once bookings are completed.</p></div>'; return; }
+  if (!daily.length) { host.innerHTML = '<div class="admin-form-card admin-section-card"><p class="admin-users-meta">No revenue data for the last 30 days. Revenue will appear here once bookings are completed.</p></div>'; return; }
   var maxRev = Math.max.apply(null, daily.map(function (d) { return d.revenue; })) || 1;
   var bars = daily.map(function (d) {
     var pct = Math.max((d.revenue / maxRev) * 100, 2);
     var dayLabel = new Date(d.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px;" title="' + dayLabel + ': ' + INR(d.revenue) + '">' +
-      '<div style="width:100%;max-width:24px;background:var(--blue);border-radius:4px 4px 0 0;height:' + pct + '%;min-height:2px;"></div>' +
-      '<div style="font-size:9px;color:var(--gray-500);margin-top:2px;writing-mode:vertical-rl;transform:rotate(180deg);height:40px;overflow:hidden;">' + dayLabel + '</div>' +
+    return '<div class="admin-bar-col" title="' + dayLabel + ': ' + INR(d.revenue) + '">' +
+      '<div class="admin-bar-fill" style="height:' + pct + '%;"></div>' +
+      '<div class="admin-bar-label">' + dayLabel + '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;">Daily Revenue (30 days)</div>' +
-    '<div style="display:flex;align-items:flex-end;height:120px;gap:2px;padding:0 4px;">' + bars + '</div>' +
+  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
+    '<div class="op-section-title drone-sub-title">Daily Revenue (30 days)</div>' +
+    '<div class="admin-bar-chart">' + bars + '</div>' +
   '</div>';
 }
 
@@ -1413,12 +1413,12 @@ function renderRevenuePayouts(payouts, commRate) {
       '<td><strong>' + escapeHtml(p.name) + '</strong></td>' +
       '<td>' + p.trips + '</td>' +
       '<td>' + INR(p.grossRevenue) + '</td>' +
-      '<td style="color:#B45309;">' + INR(p.commission) + '</td>' +
-      '<td style="font-weight:600;">' + INR(p.netPayout) + '</td>' +
+      '<td class="td-commission">' + INR(p.commission) + '</td>' +
+      '<td class="td-bold">' + INR(p.netPayout) + '</td>' +
     '</tr>';
   }).join('');
-  host.innerHTML = '<div class="op-section-title" style="font-size:14px;">Pilot Payouts</div>' +
-    '<div class="admin-table-wrap" style="overflow-x:auto;max-width:800px;">' +
+  host.innerHTML = '<div class="op-section-title drone-sub-title">Pilot Payouts</div>' +
+    '<div class="admin-table-wrap admin-payouts-wrap">' +
     '<table class="admin-table">' +
       '<thead><tr>' +
         '<th>Pilot</th>' +
@@ -1469,12 +1469,12 @@ function renderComplianceMissing(operators) {
       : 'Never';
     return '<div class="admin-list-row">' +
       '<div><span class="admin-list-name">' + escapeHtml(op.name) + '</span>' +
-        '<span class="admin-list-meta" style="margin-left:8px;">' + escapeHtml(op.email) + '</span></div>' +
-      '<div class="admin-list-meta" style="color:#B45309;">Last: ' + lastStr + '</div>' +
+        '<span class="admin-list-meta badge-ml">' + escapeHtml(op.email) + '</span></div>' +
+      '<div class="admin-list-meta admin-missing-meta">Last: ' + lastStr + '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;color:#B45309;">Missing Checklist (24h)</div>' + rows + '</div>';
+  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
+    '<div class="op-section-title drone-sub-title admin-missing-meta">Missing Checklist (24h)</div>' + rows + '</div>';
 }
 
 function renderComplianceFailed(checklists) {
@@ -1487,12 +1487,12 @@ function renderComplianceFailed(checklists) {
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     return '<div class="admin-list-row">' +
       '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span>' +
-      '<span class="op-status-badge op-badge--red" style="margin-left:8px;">FAIL</span>' +
+      '<span class="admin-list-meta badge-ml">' + ts + '</span>' +
+      '<span class="op-status-badge op-badge--red badge-ml">FAIL</span>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;color:#DC2626;">Failed Checklists (7 days)</div>' + rows + '</div>';
+  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
+    '<div class="op-section-title drone-sub-title admin-failed-title">Failed Checklists (7 days)</div>' + rows + '</div>';
 }
 
 function renderComplianceRecent(checklists) {
@@ -1506,12 +1506,12 @@ function renderComplianceRecent(checklists) {
     var badgeCls = c.overallStatus === 'pass' ? 'op-badge--green' : 'op-badge--red';
     return '<div class="admin-list-row">' +
       '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span>' +
-      '<span class="op-status-badge ' + badgeCls + '" style="margin-left:8px;">' + c.overallStatus.toUpperCase() + '</span>' +
+      '<span class="admin-list-meta badge-ml">' + ts + '</span>' +
+      '<span class="op-status-badge ' + badgeCls + ' badge-ml">' + c.overallStatus.toUpperCase() + '</span>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:640px;margin-top:16px;">' +
-    '<div class="op-section-title" style="font-size:14px;">Recent Checklists</div>' + rows + '</div>';
+  host.innerHTML = '<div class="admin-form-card admin-section-card admin-section-card--spaced">' +
+    '<div class="op-section-title drone-sub-title">Recent Checklists</div>' + rows + '</div>';
 }
 
 // ── Operator Earnings ────────────────────────────────────────────────────
@@ -1532,32 +1532,32 @@ async function loadOperatorEarnings() {
 function renderOperatorEarnings(data) {
   var host = document.getElementById('op-earnings-body');
   if (!host) return;
-  var kpis = '<div class="profile-stats-grid" style="margin-bottom:12px;">' +
+  var kpis = '<div class="profile-stats-grid earnings-kpis">' +
     pdStat('💰', INR(data.totalGross), 'Total Gross') +
     pdStat('✅', INR(data.totalNet), 'Net Earnings', 'green') +
     pdStat('🏢', INR(data.totalCommission), 'Commission (' + data.commissionRate + '%)') +
     pdStat('✈️', data.completedTrips || 0, 'Completed Trips') +
   '</div>';
-  var monthKpis = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
-    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
-      '<div style="font-size:12px;color:var(--gray-500);">This Month</div>' +
-      '<div style="font-size:18px;font-weight:700;">' + INR(data.monthGross) + '</div>' +
-      '<div style="font-size:12px;color:#16A34A;">' + INR(data.monthNet) + ' net</div>' +
+  var monthKpis = '<div class="earnings-month-grid">' +
+    '<div class="earnings-month-card">' +
+      '<div class="earnings-month-label">This Month</div>' +
+      '<div class="earnings-month-val">' + INR(data.monthGross) + '</div>' +
+      '<div class="earnings-month-net">' + INR(data.monthNet) + ' net</div>' +
     '</div>' +
-    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
-      '<div style="font-size:12px;color:var(--gray-500);">Month Trips</div>' +
-      '<div style="font-size:18px;font-weight:700;">' + (data.monthTrips || 0) + '</div>' +
+    '<div class="earnings-month-card">' +
+      '<div class="earnings-month-label">Month Trips</div>' +
+      '<div class="earnings-month-val">' + (data.monthTrips || 0) + '</div>' +
     '</div>' +
   '</div>';
   var recentHtml = '';
   if (data.recentTrips && data.recentTrips.length) {
-    recentHtml = '<div style="margin-top:8px;"><div style="font-weight:600;font-size:13px;margin-bottom:6px;">Recent Trips</div>';
+    recentHtml = '<div class="earnings-recent"><div class="earnings-recent-title">Recent Trips</div>';
     data.recentTrips.forEach(function (t) {
       var d = new Date(t.createdAt);
       var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      recentHtml += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
-        '<div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(t.route) + '</div>' +
-        '<div style="flex-shrink:0;margin-left:8px;">' + INR(t.net) + '<span style="color:var(--gray-400);margin-left:4px;">' + ts + '</span></div>' +
+      recentHtml += '<div class="earnings-trip-row">' +
+        '<div class="earnings-trip-route">' + escapeHtml(t.route) + '</div>' +
+        '<div class="earnings-trip-amount">' + INR(t.net) + '<span class="earnings-trip-date">' + ts + '</span></div>' +
       '</div>';
     });
     recentHtml += '</div>';
@@ -1590,15 +1590,15 @@ async function submitComplianceChecklist() {
     if (res.ok) {
       var passed = data.overallStatus === 'pass';
       if (statusEl) {
-        statusEl.style.color = passed ? '#16A34A' : '#DC2626';
+        statusEl.style.color = passed ? 'var(--green-dark)' : 'var(--red-dark)';
         statusEl.textContent = passed ? 'Checklist PASSED — you are cleared for flight.' : 'Checklist FAILED — not all critical items checked.';
       }
       loadComplianceHistory();
     } else {
-      if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = data.error || 'Submission failed.'; }
+      if (statusEl) { statusEl.style.color = 'var(--red-dark)'; statusEl.textContent = data.error || 'Submission failed.'; }
     }
   } catch (e) {
-    if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = 'Could not reach server.'; }
+    if (statusEl) { statusEl.style.color = 'var(--red-dark)'; statusEl.textContent = 'Could not reach server.'; }
   }
 }
 
@@ -1613,13 +1613,13 @@ async function loadComplianceHistory() {
       var d = new Date(c.createdAt);
       var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
                d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
-      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
+      var statusCls = c.overallStatus === 'pass' ? 'compliance-status--pass' : 'compliance-status--fail';
+      return '<div class="compliance-history-row">' +
         '<span>' + ts + '</span>' +
-        '<span style="' + statusCls + ';font-weight:600;text-transform:uppercase;">' + c.overallStatus + '</span>' +
+        '<span class="compliance-status ' + statusCls + '">' + c.overallStatus + '</span>' +
       '</div>';
     }).join('');
-    host.innerHTML = '<div style="font-weight:600;font-size:13px;margin-bottom:4px;">Recent Submissions</div>' + rows;
+    host.innerHTML = '<div class="compliance-recent-title">Recent Submissions</div>' + rows;
   } catch (e) { /* ignore */ }
 }
 
