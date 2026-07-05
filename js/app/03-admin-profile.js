@@ -579,56 +579,102 @@ async function toggleEmergencyBypass(on) {
 
 async function loadAdminCompanies() {
   var listEl = document.getElementById('admin-companies-list');
-  var officesEl = document.getElementById('admin-offices-list');
   try {
     var res = await apiFetch('/api/admin/companies');
     var data = await res.json();
-    if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div style="color:var(--gray-500);">Could not load companies. Please try again.</div>'; return; }
+    if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div class="op-empty-sub">Could not load companies. Please try again.</div>'; return; }
+    if (!data.companies.length) {
+      if (listEl) listEl.innerHTML = '<div class="partner-empty"><div class="partner-empty-icon"><svg width="40" height="40" fill="none" viewBox="0 0 24 24"><path stroke="var(--gray-300)" stroke-width="1.5" stroke-linecap="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><div class="partner-empty-title">No operator companies yet</div><div class="partner-empty-sub">Add your first operator company to start onboarding pilots.</div></div>';
+      return;
+    }
     if (listEl) {
       listEl.innerHTML = data.companies.map(function (c) {
-        return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;">' +
-          '<div style="font-weight:700;font-size:15px;color:var(--gray-900);">' + escapeHtml(c.name) + '</div>' +
-          '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">' + escapeHtml(c.headquarters || '') + '</div>' +
-          '<div style="font-size:12px;color:var(--blue);margin-top:4px;">' + (c.officeCount || 0) + ' regional offices</div>' +
-          '<div style="font-size:11px;margin-top:4px;color:' + (c.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (c.active ? 'Active' : 'Inactive') + '</div>' +
+        var code = escapeHtml(c.code || '');
+        var monogram = code ? code.substring(0, 2) : escapeHtml(c.name || '').substring(0, 2).toUpperCase();
+        var ratingHtml = '';
+        if (c.rating) {
+          var stars = '';
+          for (var s = 0; s < 5; s++) stars += '<span style="color:' + (s < Math.round(c.rating) ? 'var(--amber)' : 'var(--gray-200)') + ';">&#9733;</span>';
+          ratingHtml = '<span class="partner-rating">' + stars + ' <span class="partner-rating-val">' + Number(c.rating).toFixed(1) + '</span></span>';
+        }
+        var statusClass = c.active ? 'op-badge--green' : 'op-badge--gray';
+        var statusText = c.active ? 'Active' : 'Inactive';
+        return '<div class="partner-card" data-company-id="' + c.id + '">' +
+          '<div class="partner-card-header">' +
+            '<div class="partner-monogram">' + monogram + '</div>' +
+            '<div class="partner-info">' +
+              '<div class="partner-name">' + escapeHtml(c.name) + (code ? ' <span class="partner-code">' + code + '</span>' : '') + '</div>' +
+              ratingHtml +
+            '</div>' +
+            '<span class="op-status-badge ' + statusClass + '">' + statusText + '</span>' +
+          '</div>' +
+          '<div class="partner-stats">' +
+            '<div class="partner-stat"><span class="partner-stat-val">' + (c.pilotCount || 0) + '</span><span class="partner-stat-label">Pilots</span></div>' +
+            '<div class="partner-stat"><span class="partner-stat-val">' + (c.officeCount || 0) + '</span><span class="partner-stat-label">Offices</span></div>' +
+            '<div class="partner-stat"><span class="partner-stat-val">' + (c.fleetSize || 0) + '</span><span class="partner-stat-label">Fleet</span></div>' +
+          '</div>' +
+          '<button type="button" class="partner-offices-toggle" onclick="toggleCompanyOffices(this,' + c.id + ')">' +
+            '<span>View offices</span><svg class="partner-chevron" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>' +
+          '</button>' +
+          '<div class="partner-offices" id="partner-offices-' + c.id + '"></div>' +
         '</div>';
       }).join('');
     }
-    var offRes = await apiFetch('/api/admin/offices');
-    var offData = await offRes.json();
-    if (officesEl && offRes.ok && offData.offices) {
-      officesEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;border-bottom:2px solid var(--gray-200);">' +
-        '<th style="padding:6px 8px;">City</th><th style="padding:6px 8px;">Company</th><th style="padding:6px 8px;">Lat</th><th style="padding:6px 8px;">Lng</th><th style="padding:6px 8px;">Status</th>' +
-        '</tr></thead><tbody>' +
-        offData.offices.map(function (o) {
-          return '<tr style="border-bottom:1px solid var(--gray-100);">' +
-            '<td style="padding:6px 8px;font-weight:600;">' + escapeHtml(o.city) + '</td>' +
-            '<td style="padding:6px 8px;">' + escapeHtml(o.companyName || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lat || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lng || '') + '</td>' +
-            '<td style="padding:6px 8px;color:' + (o.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (o.active ? 'Active' : 'Inactive') + '</td>' +
-          '</tr>';
-        }).join('') +
-        '</tbody></table>';
-    }
   } catch (e) {
-    if (listEl) listEl.innerHTML = '<div style="color:var(--red);">Network error loading companies.</div>';
+    if (listEl) listEl.innerHTML = '<div class="op-empty-sub">Network error loading companies.</div>';
+  }
+}
+
+async function toggleCompanyOffices(btn, companyId) {
+  var container = document.getElementById('partner-offices-' + companyId);
+  if (!container) return;
+  if (container.classList.contains('open')) {
+    container.classList.remove('open');
+    container.innerHTML = '';
+    btn.querySelector('span').textContent = 'View offices';
+    return;
+  }
+  btn.querySelector('span').textContent = 'Loading...';
+  try {
+    var res = await apiFetch('/api/admin/companies/' + companyId + '/offices');
+    var data = await res.json();
+    if (!res.ok || !data.offices) { container.innerHTML = '<div class="op-empty-sub">Could not load offices.</div>'; return; }
+    if (!data.offices.length) {
+      container.innerHTML = '<div class="partner-offices-empty">No regional offices yet.</div>';
+    } else {
+      container.innerHTML = data.offices.map(function (o) {
+        return '<div class="partner-office-row">' +
+          '<div class="partner-office-city">' + escapeHtml(o.city) + '</div>' +
+          '<div class="partner-office-meta">' +
+            (o.address ? '<span>' + escapeHtml(o.address) + '</span>' : '') +
+            (o.contactPhone ? '<span>' + escapeHtml(o.contactPhone) + '</span>' : '') +
+          '</div>' +
+          '<span class="op-status-badge ' + (o.active ? 'op-badge--green' : 'op-badge--gray') + '" style="font-size:11px;">' + (o.active ? 'Active' : 'Inactive') + '</span>' +
+        '</div>';
+      }).join('');
+    }
+    container.classList.add('open');
+    btn.querySelector('span').textContent = 'Hide offices';
+  } catch (e) {
+    container.innerHTML = '<div class="op-empty-sub">Network error.</div>';
+    container.classList.add('open');
+    btn.querySelector('span').textContent = 'Hide offices';
   }
 }
 
 async function addOperatorCompany() {
   var name = (document.getElementById('admin-company-name') || {}).value || '';
-  var hq = (document.getElementById('admin-company-hq') || {}).value || '';
+  var code = (document.getElementById('admin-company-code') || {}).value || '';
   var errEl = document.getElementById('admin-company-error');
-  if (!name.trim()) {
-    if (errEl) { errEl.textContent = 'Company name is required.'; errEl.style.display = 'block'; }
+  if (!name.trim() || !code.trim()) {
+    if (errEl) { errEl.textContent = 'Company name and code are required.'; errEl.style.display = 'block'; }
     return;
   }
   if (errEl) errEl.style.display = 'none';
   try {
     var res = await apiFetch('/api/admin/companies', {
       method: 'POST',
-      body: JSON.stringify({ name: name.trim(), headquarters: hq.trim() || null }),
+      body: JSON.stringify({ name: name.trim(), code: code.trim().toUpperCase() }),
     });
     var data = await res.json();
     if (!res.ok) {
@@ -637,7 +683,8 @@ async function addOperatorCompany() {
     }
     showToast('Company "' + name.trim() + '" added', 'success');
     document.getElementById('admin-company-name').value = '';
-    document.getElementById('admin-company-hq').value = '';
+    document.getElementById('admin-company-code').value = '';
+    _addMemberCompanies = null;
     loadAdminCompanies();
   } catch (e) {
     if (errEl) { errEl.textContent = 'Network error.'; errEl.style.display = 'block'; }

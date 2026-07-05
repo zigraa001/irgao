@@ -499,7 +499,8 @@ router.get(
   async (req, res) => {
     const rows = await query(
       `SELECT oc.*,
-              (SELECT COUNT(*) FROM regional_offices ro WHERE ro.companyId = oc.id) AS officeCount
+              (SELECT COUNT(*) FROM regional_offices ro WHERE ro.companyId = oc.id) AS officeCount,
+              (SELECT COUNT(*) FROM users u WHERE u.companyId = oc.id AND u.role = 'operator') AS pilotCount
        FROM operator_companies oc
        ORDER BY oc.name`
     );
