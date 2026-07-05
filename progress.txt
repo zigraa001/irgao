@@ -204,3 +204,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The highlight-pickup animation on .location-inputs adds blue-50 background to the first .loc-input-group for 2 seconds when search is attempted without a pickup
   - Manual browser verification was not possible -- recommend visual QA of dest-first flow with geolocation granted and denied
 ---
+
+## 2026-07-05 - US-015
+- What was implemented: Marketplace-style ride results with operator company as the trust signal -- extended feasibility endpoint to return nearby operator companies (reusing listAvailableOperatorsNear from dispatch.js), ride cards now show a company chip (monogram + name + rating) above the card content, tracking pilot card upgraded from plain text to a chip/badge with monogram, booking confirmation card now includes an "Operator" row showing company name and office city, CSS added for .ride-company-chip and .pilot-company-chip styling
+- Files changed: src/booking-routes.js (imported listAvailableOperatorsNear, added nearbyOperators to feasibility response), js/app/01-state.js (added currentNearbyOperators global), js/app/06-booking.js (capture nearbyOperators from feasibility, render company chips on ride cards, fill confirm-company in fillConfirmation, reset in resetBooking), js/app/07-tracking.js (showPilotCard renders company as chip/badge with innerHTML), css/app.css (ride-company-chip, pilot-company-chip, monogram, rating styles, updated tracking-pilot-company to flexbox), app.html (added #confirm-company element in confirmation card), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The feasibility endpoint already runs before ride cards are shown -- it's the natural place to attach operator company data without adding a new API call
+  - Ride options are STATIC client-side data (rideOptions object in 06-booking.js) -- they are vehicle tiers, not individual operator offers; company chips are assigned by cycling through available operators nearby
+  - listAvailableOperatorsNear() from src/dispatch.js is the canonical way to get nearby operators with company JOINs -- it filters by onDuty=1, within DISPATCH_RADIUS_KM, not busy
+  - The company chip uses escapeHtml() for all server-originated text injected via innerHTML -- escapeHtml is defined in 04-operator.js and available globally in the concatenated bundle
+  - currentNearbyOperators is reset in resetBooking() to avoid stale data across searches
+  - The tracking-pilot-company element now uses innerHTML (not textContent) when a company chip is rendered -- fallback to textContent when no company name is available
+  - Manual browser verification was not possible -- recommend visual QA of ride cards with company chips
+---
