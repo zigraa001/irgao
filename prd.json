@@ -84,7 +84,7 @@
         "Verify in browser using dev-browser skill (booking panel with results)"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

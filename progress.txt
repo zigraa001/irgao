@@ -22,6 +22,9 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Service tab text labels are wrapped in `<span>` elements — use `.service-tab span { display: none; }` for icon-only responsive mode
 - Role badges (.customer-role-badge, .op-role-badge, .admin-role-badge) are hidden at <=768px via media query
 - The global :focus-visible rule in the RESET section applies to button, input, select, textarea, a — specific components can override with their own focus styles
+- Location inputs are a connected container (.location-inputs) — inner .loc-input elements are borderless; the container itself holds border/radius/:focus-within
+- For card-language consistency: use var(--surface) bg, var(--border-subtle) border, var(--radius-lg) corners, var(--shadow-sm) or var(--shadow-md) elevation
+- dashboard-pill already has hover + .active state CSS — no need to add those when using it in new contexts
 
 ---
 
@@ -54,4 +57,19 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The old @media 900px rule had `.service-tabs { display: none }` — replaced with a 768px rule that hides labels but keeps icon-only tabs visible
   - All three role badges (.customer/.op/.admin-role-badge) were unified to the same chip pattern (radius-full, no border) — they're hidden entirely below 768px since they take too much space
   - Operator and admin navs inherit the .booking-nav treatment automatically — no separate styling needed
+---
+
+## 2026-07-05 - US-004
+- What was implemented: Booking panel redesign — connected location input container with inner divider, borderless inputs with :focus-within highlight, floating circular swap button with shadow, redesigned suggestion dropdown (radius-lg, shadow-xl, padded rounded rows), 50px search button, white rounded ride cards with hover/selected states (navy price, card language), modernized route chips, profile-account-card and drone-panel cards/pills updated to match new card language
+- Files changed: css/app.css (.booking-panel, .panel-section, .location-inputs, .loc-input-group, .loc-dot, .loc-input, .swap-btn, .search-btn, .ride-card, .ride-price-val, .ride-stat, .ride-badge, .route-chip, .loc-suggest, .profile-account-card, .profile-account-detail, .btn-profile-outline, .btn-profile-logout, .dashboard-pill, .dashboard-intro, .drone-card, .drone-op-badge, .drone-spec-item, .drone-booking-card, .drone-quote, responsive 900px rule), app.html (removed wrapper div around swap-btn, removed margin-bottom inline style from first loc-input-group, CSS cache-bust)
+- **Learnings for future iterations:**
+  - The location inputs are now a connected container — `.location-inputs` is the container with border/radius/focus-within; inner `.loc-input` elements are borderless. The divider between pickup/destination is created by `border-bottom` on the first `.loc-input-group`
+  - The `.loc-dot-pickup::after` pseudo-element creates the vertical connector line between dots — no HTML element needed
+  - `.swap-btn` is now a direct child of `.location-inputs` (no wrapper div) — its absolute positioning is fully handled by CSS
+  - `.ride-price-val` uses `var(--navy)` for bold navy pricing as specified
+  - `.ride-badge` now uses `var(--radius-full)` for pill-shaped badges
+  - `.dashboard-pill` has hover and `.active` state styles — the active class was already being toggled by JS in drone category filters
+  - `.drone-booking-card` and `.drone-quote` use design tokens (--surface, --border-subtle, --shadow-sm) for consistency
+  - The responsive rule at 900px now uses `var(--shadow-xl)` instead of hardcoded shadow, and removes `border-right` to avoid double border on mobile
+  - Manual browser verification was not possible — recommend visual QA
 ---
