@@ -105,10 +105,10 @@ function updateFollowPill() {
   }
   var remaining = RIDE_FOLLOW_RESUME_MS - (Date.now() - userMovedMapAt);
   if (remaining > 0) {
-    pill.textContent = '🗺️ Map paused · auto-follow in ' + Math.ceil(remaining / 1000) + 's';
+    pill.textContent = 'Map paused · auto-follow in ' + Math.ceil(remaining / 1000) + 's';
     pill.style.background = 'rgba(180,83,9,0.92)';
   } else {
-    pill.textContent = '✈️ Following your plane';
+    pill.textContent = 'Following your plane';
     pill.style.background = 'rgba(30,58,95,0.92)';
   }
   pill.style.display = 'block';

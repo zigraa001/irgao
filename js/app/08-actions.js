@@ -122,7 +122,7 @@ async function submitRating() {
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       const box = document.getElementById('tracking-rate');
-      if (box) box.innerHTML = '<div class="tracking-rate-title" style="font-size:20px;padding:12px 0;">Thanks for flying with IraGo! ⭐</div>';
+      if (box) box.innerHTML = '<div class="tracking-rate-title" style="font-size:20px;padding:12px 0;">Thanks for flying with IraGo!</div>';
       showToast('Rating submitted — thank you!', 'success');
       setTimeout(function () { endTracking(); }, 2500);
     } else {

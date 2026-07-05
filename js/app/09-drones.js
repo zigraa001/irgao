@@ -1,6 +1,15 @@
 // IraGo app — 09-drones.js
 // Drone rental catalog, booking, and admin management.
 
+// Monochrome drone mark used wherever a service needs a visual (matches the
+// admin drawer icon; inherits currentColor from its tile).
+const DRONE_ICON_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>' +
+    '<path d="M4 4l4 4M16 4l-4 4M4 20l4 -4M16 20l-4 -4"/>' +
+    '<circle cx="4" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="20" r="2"/>' +
+  '</svg>';
+
 let droneServices = [];
 let droneCategories = [];
 let droneCurrentCategory = 'all';
@@ -59,7 +68,7 @@ function renderDroneServices() {
   filtered.forEach(s => {
     const opBadge = s.operatorRequired ? '<span class="drone-op-badge">Operator included</span>' : '<span class="drone-op-badge drone-op-optional">Operator optional</span>';
     html += '<div class="drone-card" onclick="selectDroneService(' + s.id + ')">' +
-      '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
+      '<div class="drone-card-icon">' + DRONE_ICON_SVG + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
         '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
@@ -109,7 +118,7 @@ function renderDroneBookingCard(s) {
 
   card.innerHTML =
     '<div class="drone-detail-head">' +
-      '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
+      '<span class="drone-detail-icon">' + DRONE_ICON_SVG + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
         '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
@@ -269,7 +278,7 @@ function renderDroneMyBookings() {
     const canCancel = b.status === 'confirmed' || b.status === 'pending';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
-        '<span class="drone-booking-emoji">' + (b.imageEmoji || '🛸') + '</span>' +
+        '<span class="drone-booking-icon">' + DRONE_ICON_SVG + '</span>' +
         '<div class="drone-booking-info">' +
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
           '<div class="drone-booking-meta">' + escapeHtml(b.category) + ' · ' + b.hours + ' hr' + (b.hours > 1 ? 's' : '') + (b.withOperator ? ' · With operator' : '') + '</div>' +
@@ -277,8 +286,8 @@ function renderDroneMyBookings() {
         '<span class="drone-status ' + statusCls + '">' + b.status + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
-        (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
-        (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
+        (b.location ? '<div>' + escapeHtml(b.location) + '</div>' : '') +
+        (b.scheduledDate ? '<div>' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
@@ -342,20 +351,19 @@ async function loadDroneAdminServices() {
 function renderDroneAdminServices(services) {
   const list = document.getElementById('drone-admin-services-list');
   if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No services configured.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Category</th><th>₹/hr</th><th>Operator ₹/hr</th><th>Operator</th><th>Status</th><th></th></tr></thead><tbody>';
   services.forEach(s => {
     html += '<tr>' +
-      '<td>' + (s.imageEmoji || '🛸') + '</td>' +
-      '<td>' + escapeHtml(s.name) + '</td>' +
+      '<td class="cell-strong">' + escapeHtml(s.name) + '</td>' +
       '<td>' + escapeHtml(s.category) + '</td>' +
-      '<td>₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (s.operatorRequired ? '✓' : '—') + '</td>' +
-      '<td>' + (s.active ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
+      '<td class="cell-num">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
+      '<td class="cell-num">₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
+      '<td>' + (s.operatorRequired ? '<span class="cell-check">✓ Required</span>' : '<span class="cell-dash">Optional</span>') + '</td>' +
+      '<td><span class="op-status-badge ' + (s.active ? 'op-badge--green">Active' : 'op-badge--gray">Off') + '</span></td>' +
+      '<td><button type="button" class="admin-btn-sm" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -372,7 +380,6 @@ function showDroneServiceForm(service) {
         '<input id="dsf-category" class="pd-input" placeholder="Category" value="' + escapeHtml(s.category || '') + '">' +
         '<input id="dsf-price" class="pd-input" type="number" placeholder="Price/hr" value="' + (s.pricePerHour || '') + '">' +
         '<input id="dsf-opPrice" class="pd-input" type="number" placeholder="Operator ₹/hr" value="' + (s.operatorPricePerHour || 0) + '">' +
-        '<input id="dsf-emoji" class="pd-input" placeholder="Emoji" value="' + (s.imageEmoji || '🛸') + '">' +
         '<input id="dsf-minH" class="pd-input" type="number" placeholder="Min hrs" value="' + (s.minHours || 1) + '">' +
         '<input id="dsf-maxH" class="pd-input" type="number" placeholder="Max hrs" value="' + (s.maxHours || 8) + '">' +
         '<label><input type="checkbox" id="dsf-opReq"' + (s.operatorRequired ? ' checked' : '') + '> Operator required</label>' +
@@ -406,7 +413,6 @@ async function saveDroneService(id) {
     category: document.getElementById('dsf-category').value.trim(),
     pricePerHour: Number(document.getElementById('dsf-price').value),
     operatorPricePerHour: Number(document.getElementById('dsf-opPrice').value) || 0,
-    imageEmoji: document.getElementById('dsf-emoji').value.trim() || '🛸',
     minHours: Number(document.getElementById('dsf-minH').value) || 1,
     maxHours: Number(document.getElementById('dsf-maxH').value) || 8,
     operatorRequired: document.getElementById('dsf-opReq').checked,
@@ -444,18 +450,18 @@ async function loadDroneAdminOperators() {
 function renderDroneAdminOperators(operators) {
   const list = document.getElementById('drone-admin-operators-list');
   if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No operators found.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Experience</th><th>Rating</th><th>Status</th><th></th></tr></thead><tbody>';
   operators.forEach(op => {
     html += '<tr>' +
-      '<td><strong>' + escapeHtml(op.name) + '</strong><br><span style="font-size:12px;color:var(--gray-500);">' + escapeHtml(op.email || '—') + '</span></td>' +
+      '<td><span class="cell-strong">' + escapeHtml(op.name) + '</span><br><span class="cell-sub">' + escapeHtml(op.email || '—') + '</span></td>' +
       '<td>' + escapeHtml(op.specialization || '—') + '</td>' +
-      '<td>' + op.experienceYears + ' yr</td>' +
-      '<td>⭐ ' + Number(op.rating).toFixed(1) + '</td>' +
-      '<td>' + (op.available ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
+      '<td class="cell-num">' + op.experienceYears + ' yr</td>' +
+      '<td class="cell-num">' + Number(op.rating).toFixed(1) + ' ★</td>' +
+      '<td><span class="op-status-badge ' + (op.available ? 'op-badge--green">Available' : 'op-badge--gray">Off duty') + '</span></td>' +
+      '<td><button type="button" class="admin-btn-sm" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -545,24 +551,24 @@ async function loadDroneAdminBookings() {
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
   if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th>Operator</th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +
-      '<td>#' + b.id + '</td>' +
-      '<td>' + escapeHtml(b.customerName || '—') + '</td>' +
-      '<td>' + (b.imageEmoji || '🛸') + ' ' + escapeHtml(b.serviceName) + '</td>' +
-      '<td>' + b.hours + 'h</td>' +
-      '<td>₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (b.scheduledDate || '—') + '</td>' +
+      '<td class="cell-num">#' + b.id + '</td>' +
+      '<td class="cell-strong">' + escapeHtml(b.customerName || '—') + '</td>' +
+      '<td>' + escapeHtml(b.serviceName) + '</td>' +
+      '<td class="cell-num">' + b.hours + ' h</td>' +
+      '<td class="cell-num">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</td>' +
+      '<td class="cell-num">' + (b.scheduledDate || '—') + '</td>' +
       '<td><select class="drone-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
         ['pending','confirmed','in_progress','completed','cancelled'].map(st =>
-          '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>'
+          '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st.replace('_', ' ') + '</option>'
         ).join('') +
       '</select></td>' +
-      '<td>' + (b.operatorName ? '👤 ' + escapeHtml(b.operatorName) : '') + '</td>' +
+      '<td>' + (b.operatorName ? escapeHtml(b.operatorName) : '<span class="cell-dash">—</span>') + '</td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 

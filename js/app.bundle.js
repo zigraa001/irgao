@@ -1704,11 +1704,11 @@ const CO2 = function (n) {
   return (Math.round(v * 10) / 10).toLocaleString('en-IN') + ' kg';
 };
 
-function pdStat(emoji, value, label, variant) {
+// First arg kept for call-site compatibility; stat cards are text-only.
+function pdStat(_icon, value, label, variant) {
   const cls = 'pd-stat' + (variant ? ' pd-stat--' + variant : '');
   return (
     '<div class="' + cls + '">' +
-      '<div class="pd-stat-emoji">' + emoji + '</div>' +
       '<div class="pd-stat-value">' + value + '</div>' +
       '<div class="pd-stat-label">' + escapeHtml(label) + '</div>' +
     '</div>'
@@ -2174,30 +2174,30 @@ async function loadAdminCompanies() {
     if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div style="color:var(--gray-500);">Could not load companies.</div>'; return; }
     if (listEl) {
       listEl.innerHTML = data.companies.map(function (c) {
-        return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;">' +
+        return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;margin-bottom:0;">' +
           '<div style="font-weight:700;font-size:15px;color:var(--gray-900);">' + escapeHtml(c.name) + '</div>' +
           '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">' + escapeHtml(c.headquarters || '') + '</div>' +
-          '<div style="font-size:12px;color:var(--blue);margin-top:4px;">' + (c.officeCount || 0) + ' regional offices</div>' +
-          '<div style="font-size:11px;margin-top:4px;color:' + (c.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (c.active ? 'Active' : 'Inactive') + '</div>' +
+          '<div style="font-size:12px;color:var(--gray-600);margin-top:8px;">' + (c.officeCount || 0) + ' regional offices</div>' +
+          '<div style="margin-top:8px;"><span class="op-status-badge ' + (c.active ? 'op-badge--green">Active' : 'op-badge--gray">Inactive') + '</span></div>' +
         '</div>';
       }).join('');
     }
     var offRes = await apiFetch('/api/admin/offices');
     var offData = await offRes.json();
     if (officesEl && offRes.ok && offData.offices) {
-      officesEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;border-bottom:2px solid var(--gray-200);">' +
-        '<th style="padding:6px 8px;">City</th><th style="padding:6px 8px;">Company</th><th style="padding:6px 8px;">Lat</th><th style="padding:6px 8px;">Lng</th><th style="padding:6px 8px;">Status</th>' +
+      officesEl.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+        '<th>City</th><th>Company</th><th>Lat</th><th>Lng</th><th>Status</th>' +
         '</tr></thead><tbody>' +
         offData.offices.map(function (o) {
-          return '<tr style="border-bottom:1px solid var(--gray-100);">' +
-            '<td style="padding:6px 8px;font-weight:600;">' + escapeHtml(o.city) + '</td>' +
-            '<td style="padding:6px 8px;">' + escapeHtml(o.companyName || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lat || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lng || '') + '</td>' +
-            '<td style="padding:6px 8px;color:' + (o.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (o.active ? 'Active' : 'Inactive') + '</td>' +
+          return '<tr>' +
+            '<td class="cell-strong">' + escapeHtml(o.city) + '</td>' +
+            '<td>' + escapeHtml(o.companyName || '') + '</td>' +
+            '<td class="cell-num">' + (o.lat || '') + '</td>' +
+            '<td class="cell-num">' + (o.lng || '') + '</td>' +
+            '<td><span class="op-status-badge ' + (o.active ? 'op-badge--green">Active' : 'op-badge--gray">Inactive') + '</span></td>' +
           '</tr>';
         }).join('') +
-        '</tbody></table>';
+        '</tbody></table></div>';
     }
   } catch (e) {
     if (listEl) listEl.innerHTML = '<div style="color:var(--red);">Network error loading companies.</div>';
@@ -2419,7 +2419,6 @@ async function loadAdminUsersChunk(showInitialLoading) {
       adminUsersTotal = 0;
       listHost.innerHTML =
         '<div class="op-empty">' +
-        '<div class="op-empty-icon">🔒</div>' +
         '<div class="op-empty-title">Tailscale required</div>' +
         '<div class="op-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
         '</div>';
@@ -2478,7 +2477,6 @@ function renderAdminUsers() {
   if (!adminUsers.length) {
     listHost.innerHTML =
       '<div class="op-empty">' +
-      '<div class="op-empty-icon">👥</div>' +
       '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' yet</div>' +
       '<div class="op-empty-sub">Accounts will appear here when they register or are added.</div>' +
       '</div>';
@@ -3122,7 +3120,6 @@ function renderOperatorTrips() {
   if (!operatorTrips.length) {
     host.innerHTML =
       '<div class="op-empty" id="op-empty">' +
-      '<div class="op-empty-icon">🛩️</div>' +
       '<div class="op-empty-title">No trips assigned yet</div>' +
       '<div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>' +
       '</div>';
@@ -3143,7 +3140,7 @@ function renderOperatorTrips() {
         '<div class="op-trip-meta">' +
           '<span><b>' + escapeHtml(customer) + '</b></span>' +
           '<span>' + escapeHtml(service) + '</span>' +
-          '<span>✈️ ' + escapeHtml(aircraft) + '</span>' +
+          '<span>' + escapeHtml(aircraft) + '</span>' +
         '</div>' +
       '</div>'
     );
@@ -3175,7 +3172,7 @@ function renderTripDetailsBody(t, fuelPlan) {
           '<div class="op-detail-value">' + fuelPlan.fuelKg + ' kg (' + fuelPlan.fuelLiters + ' L)</div>' +
           '<div class="op-detail-sub">Cruise ' + fuelPlan.cruiseAltitudeM + ' m AGL' +
             (fuelPlan.corridor ? ' · ' + escapeHtml(fuelPlan.corridor) : '') +
-            (fuelPlan.warnings && fuelPlan.warnings.length ? '<br>⚠ ' + escapeHtml(fuelPlan.warnings.join('; ')) : '') +
+            (fuelPlan.warnings && fuelPlan.warnings.length ? '<br>Warning: ' + escapeHtml(fuelPlan.warnings.join('; ')) : '') +
           '</div>' +
         '</div>';
     }
@@ -3260,7 +3257,7 @@ async function submitOperatorRating(id) {
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       const block = document.getElementById('op-rate-block');
-      if (block) block.innerHTML = '<div class="op-detail-label">Thanks — rating submitted. ⭐</div>';
+      if (block) block.innerHTML = '<div class="op-detail-label">Thanks — rating submitted.</div>';
     } else {
       if (errEl) { errEl.textContent = (data && data.error) || 'Could not submit rating.'; errEl.classList.add('show'); }
       if (btn) btn.disabled = false;
@@ -4065,10 +4062,10 @@ function updateFollowPill() {
   }
   var remaining = RIDE_FOLLOW_RESUME_MS - (Date.now() - userMovedMapAt);
   if (remaining > 0) {
-    pill.textContent = '🗺️ Map paused · auto-follow in ' + Math.ceil(remaining / 1000) + 's';
+    pill.textContent = 'Map paused · auto-follow in ' + Math.ceil(remaining / 1000) + 's';
     pill.style.background = 'rgba(180,83,9,0.92)';
   } else {
-    pill.textContent = '✈️ Following your plane';
+    pill.textContent = 'Following your plane';
     pill.style.background = 'rgba(30,58,95,0.92)';
   }
   pill.style.display = 'block';
@@ -4866,42 +4863,42 @@ function switchService(service) {
 // ── Popular Routes per Service ──
 const popularRoutes = {
   taxi: [
-    { from: 'Aerocity Vertiport, Delhi', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128188;', meta: '18&ndash;25 min &middot; 2 pax &middot; &#8377;3,600&ndash;5,600', tag: 'Executive Shuttle' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Taj Mahal Vertiport, Agra', emoji: '&#128508;', meta: '55 min/way &middot; 4 pax &middot; &#8377;13,000&ndash;19,000', tag: 'Agra Express' },
-    { from: 'Embassy Vertiport, Chanakyapuri', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128737;&#65039;', meta: 'Custom &middot; 2&ndash;4 pax &middot; &#8377;9,000&ndash;16,000', tag: 'Diplomatic' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Chandigarh Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Dehradun Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
-    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km', tag: 'Inter-city' },
-    { from: 'Dwarka Sector 21 Vertiport', to: 'Faridabad Vertiport', emoji: '&#127747;', meta: '16 min &middot; 30 km', tag: 'Inter-city' },
-    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km', tag: 'Business' },
-    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '16 min &middot; 28 km', tag: 'Tech Hub' },
-    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 25 km', tag: 'Airport Link' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Hotel Leela Rooftop, Delhi', meta: '18&ndash;25 min &middot; 2 pax &middot; &#8377;3,600&ndash;5,600', tag: 'Executive Shuttle' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Taj Mahal Vertiport, Agra', meta: '55 min/way &middot; 4 pax &middot; &#8377;13,000&ndash;19,000', tag: 'Agra Express' },
+    { from: 'Embassy Vertiport, Chanakyapuri', to: 'Hotel Leela Rooftop, Delhi', meta: 'Custom &middot; 2&ndash;4 pax &middot; &#8377;9,000&ndash;16,000', tag: 'Diplomatic' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Chandigarh Vertiport', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Dehradun Vertiport', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
+    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', meta: '22 min &middot; 40 km', tag: 'Inter-city' },
+    { from: 'Dwarka Sector 21 Vertiport', to: 'Faridabad Vertiport', meta: '16 min &middot; 30 km', tag: 'Inter-city' },
+    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', meta: '12 min &middot; 22 km', tag: 'Business' },
+    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', meta: '16 min &middot; 28 km', tag: 'Tech Hub' },
+    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', meta: '14 min &middot; 25 km', tag: 'Airport Link' },
   ],
   golden: [
-    { from: 'Barmana Helipad, Bilaspur', to: 'AIIMS Bilaspur', emoji: '&#127973;', meta: '12 min &middot; Golden Hour corridor', tag: 'HP EMS' },
-    { from: 'Bharmour Helipad, Chamba', to: 'Pt. JLN Medical College, Chamba', emoji: '&#128657;', meta: '22 min &middot; 66% fatality district', tag: 'Critical' },
-    { from: 'Gagal Vertiport, Kangra', to: 'Dr. RPGMC Tanda, Kangra', emoji: '&#127973;', meta: '15 min &middot; max volume corridor', tag: 'HP EMS' },
-    { from: 'Annadale Helipad, Shimla', to: 'IGMC Hospital, Shimla', emoji: '&#128657;', meta: '18 min &middot; high urban corridor', tag: 'HP EMS' },
-    { from: 'Nalagarh Helipad, Baddi', to: 'MM Medical College, Solan', emoji: '&#127973;', meta: '14 min &middot; industrial corridor', tag: 'HP EMS' },
-    { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Medanta Hospital', emoji: '&#127973;', meta: '12 min &middot; 22 km', tag: 'Emergency' },
-    { from: 'Thane Vertiport', to: 'Kokilaben Hospital, Mumbai', emoji: '&#127973;', meta: '14 min &middot; 26 km', tag: 'Emergency' },
-    { from: 'OMR Vertiport, Chennai', to: 'Apollo Hospital, Chennai', emoji: '&#127973;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
-    { from: 'Sarjapur Vertiport', to: 'Narayana Health, Bengaluru', emoji: '&#128657;', meta: '10 min &middot; 18 km', tag: 'Emergency' },
-    { from: 'Hi-Tech City Vertiport', to: 'Yashoda Hospital, Hyderabad', emoji: '&#128657;', meta: '6 min &middot; 8 km', tag: 'Emergency' },
-    { from: 'Dehradun Vertiport', to: 'AIIMS Rishikesh', emoji: '&#127956;', meta: '12 min &middot; 22 km', tag: 'Remote' },
-    { from: 'Leh Vertiport, Ladakh', to: 'SNM Hospital, Leh', emoji: '&#127956;', meta: '3 min &middot; 4 km', tag: 'Remote' },
+    { from: 'Barmana Helipad, Bilaspur', to: 'AIIMS Bilaspur', meta: '12 min &middot; Golden Hour corridor', tag: 'HP EMS' },
+    { from: 'Bharmour Helipad, Chamba', to: 'Pt. JLN Medical College, Chamba', meta: '22 min &middot; 66% fatality district', tag: 'Critical' },
+    { from: 'Gagal Vertiport, Kangra', to: 'Dr. RPGMC Tanda, Kangra', meta: '15 min &middot; max volume corridor', tag: 'HP EMS' },
+    { from: 'Annadale Helipad, Shimla', to: 'IGMC Hospital, Shimla', meta: '18 min &middot; high urban corridor', tag: 'HP EMS' },
+    { from: 'Nalagarh Helipad, Baddi', to: 'MM Medical College, Solan', meta: '14 min &middot; industrial corridor', tag: 'HP EMS' },
+    { from: 'Dwarka Sector 21 Vertiport', to: 'Gurugram Medanta Hospital', meta: '12 min &middot; 22 km', tag: 'Emergency' },
+    { from: 'Thane Vertiport', to: 'Kokilaben Hospital, Mumbai', meta: '14 min &middot; 26 km', tag: 'Emergency' },
+    { from: 'OMR Vertiport, Chennai', to: 'Apollo Hospital, Chennai', meta: '10 min &middot; 18 km', tag: 'Emergency' },
+    { from: 'Sarjapur Vertiport', to: 'Narayana Health, Bengaluru', meta: '10 min &middot; 18 km', tag: 'Emergency' },
+    { from: 'Hi-Tech City Vertiport', to: 'Yashoda Hospital, Hyderabad', meta: '6 min &middot; 8 km', tag: 'Emergency' },
+    { from: 'Dehradun Vertiport', to: 'AIIMS Rishikesh', meta: '12 min &middot; 22 km', tag: 'Remote' },
+    { from: 'Leh Vertiport, Ladakh', to: 'SNM Hospital, Leh', meta: '3 min &middot; 4 km', tag: 'Remote' },
   ],
   shuttle: [
-    { from: 'Bhuntar Vertiport, Kullu', to: 'Manali Vertiport', emoji: '&#127956;', meta: '20 min &middot; &#8377;500&ndash;700 &middot; Pk &#8377;840', tag: 'Joy Ride' },
-    { from: 'Gagal Vertiport, Kangra', to: 'Dharamshala Vertiport', emoji: '&#127956;', meta: '12 min &middot; &#8377;400&ndash;560 &middot; Pk &#8377;700', tag: 'Joy Ride' },
-    { from: 'Shimla Vertiport', to: 'Kufri Helipad', emoji: '&#127794;', meta: '8 min &middot; &#8377;400&ndash;500 &middot; Pk &#8377;700', tag: 'Joy Ride' },
-    { from: 'Manali Vertiport', to: 'Rohtang Pass Helipad', emoji: '&#10052;&#65039;', meta: '15 min &middot; &#8377;700&ndash;1,000 &middot; Pk &#8377;1,300', tag: 'Scenic' },
-    { from: 'Katra Vertiport (Vaishno Devi)', to: 'Sanjichhat Helipad (Bhawan)', emoji: '&#128591;', meta: '8 min &middot; &#8377;350&ndash;550 per seat', tag: 'Vaishno Devi' },
-    { from: 'Phata Helipad (Char Dham)', to: 'Kedarnath Helipad', emoji: '&#128591;', meta: '10 min &middot; &#8377;2,500&ndash;4,500/sector', tag: 'Char Dham' },
-    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#128187;', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Business' },
-    { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 28 km &middot; Daily 14 slots', tag: 'Commuter' },
-    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
-    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#128296;', meta: '14 min &middot; 25 km &middot; Daily 12 slots', tag: 'Commuter' },
+    { from: 'Bhuntar Vertiport, Kullu', to: 'Manali Vertiport', meta: '20 min &middot; &#8377;500&ndash;700 &middot; Pk &#8377;840', tag: 'Joy Ride' },
+    { from: 'Gagal Vertiport, Kangra', to: 'Dharamshala Vertiport', meta: '12 min &middot; &#8377;400&ndash;560 &middot; Pk &#8377;700', tag: 'Joy Ride' },
+    { from: 'Shimla Vertiport', to: 'Kufri Helipad', meta: '8 min &middot; &#8377;400&ndash;500 &middot; Pk &#8377;700', tag: 'Joy Ride' },
+    { from: 'Manali Vertiport', to: 'Rohtang Pass Helipad', meta: '15 min &middot; &#8377;700&ndash;1,000 &middot; Pk &#8377;1,300', tag: 'Scenic' },
+    { from: 'Katra Vertiport (Vaishno Devi)', to: 'Sanjichhat Helipad (Bhawan)', meta: '8 min &middot; &#8377;350&ndash;550 per seat', tag: 'Vaishno Devi' },
+    { from: 'Phata Helipad (Char Dham)', to: 'Kedarnath Helipad', meta: '10 min &middot; &#8377;2,500&ndash;4,500/sector', tag: 'Char Dham' },
+    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', meta: '22 min &middot; 40 km &middot; Daily 8 slots', tag: 'Business' },
+    { from: 'Thane Vertiport', to: 'Navi Mumbai Vertiport', meta: '14 min &middot; 28 km &middot; Daily 14 slots', tag: 'Commuter' },
+    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', meta: '14 min &middot; 28 km &middot; Daily 10 slots', tag: 'Tech Corridor' },
+    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', meta: '14 min &middot; 25 km &middot; Daily 12 slots', tag: 'Commuter' },
   ],
 };
 
@@ -4927,7 +4924,7 @@ function renderPopularRoutes(service) {
     </div>
     ${routes.map(r => `
       <button class="route-chip ${hoverCls}" onclick="selectRoute('${r.from}','${r.to}')">
-        <div class="route-chip-icon ${iconCls}">${r.emoji}</div>
+        <div class="route-chip-icon ${iconCls}">${titleIcon}</div>
         <div class="route-chip-info">
           <div class="route-chip-name">${r.from} &rarr; ${r.to}</div>
           <div class="route-chip-meta">
@@ -5570,7 +5567,7 @@ async function payForBooking() {
     if (statusEl) statusEl.textContent = 'Aircraft dispatched!';
     if (subEl) subEl.textContent = 'Your pilot is on the way — arriving in about ' + pickupEtaMin + ' min';
     if (etaEl) etaEl.textContent = pickupEtaMin;
-    showToast('✈️ Aircraft dispatched! Arriving in ~' + pickupEtaMin + ' min', 'success');
+    showToast('Aircraft dispatched! Arriving in ~' + pickupEtaMin + ' min', 'success');
   } catch (e) {
     showAuthError('payment-error', 'Network error — please try again.');
   } finally {
@@ -6549,7 +6546,7 @@ async function submitRating() {
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       const box = document.getElementById('tracking-rate');
-      if (box) box.innerHTML = '<div class="tracking-rate-title" style="font-size:20px;padding:12px 0;">Thanks for flying with IraGo! ⭐</div>';
+      if (box) box.innerHTML = '<div class="tracking-rate-title" style="font-size:20px;padding:12px 0;">Thanks for flying with IraGo!</div>';
       showToast('Rating submitted — thank you!', 'success');
       setTimeout(function () { endTracking(); }, 2500);
     } else {
@@ -6824,6 +6821,15 @@ function updateAdminMapZoomHint() {
 // IraGo app — 09-drones.js
 // Drone rental catalog, booking, and admin management.
 
+// Monochrome drone mark used wherever a service needs a visual (matches the
+// admin drawer icon; inherits currentColor from its tile).
+const DRONE_ICON_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>' +
+    '<path d="M4 4l4 4M16 4l-4 4M4 20l4 -4M16 20l-4 -4"/>' +
+    '<circle cx="4" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="20" r="2"/>' +
+  '</svg>';
+
 let droneServices = [];
 let droneCategories = [];
 let droneCurrentCategory = 'all';
@@ -6882,7 +6888,7 @@ function renderDroneServices() {
   filtered.forEach(s => {
     const opBadge = s.operatorRequired ? '<span class="drone-op-badge">Operator included</span>' : '<span class="drone-op-badge drone-op-optional">Operator optional</span>';
     html += '<div class="drone-card" onclick="selectDroneService(' + s.id + ')">' +
-      '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
+      '<div class="drone-card-icon">' + DRONE_ICON_SVG + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
         '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
@@ -6932,7 +6938,7 @@ function renderDroneBookingCard(s) {
 
   card.innerHTML =
     '<div class="drone-detail-head">' +
-      '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
+      '<span class="drone-detail-icon">' + DRONE_ICON_SVG + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
         '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
@@ -7092,7 +7098,7 @@ function renderDroneMyBookings() {
     const canCancel = b.status === 'confirmed' || b.status === 'pending';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
-        '<span class="drone-booking-emoji">' + (b.imageEmoji || '🛸') + '</span>' +
+        '<span class="drone-booking-icon">' + DRONE_ICON_SVG + '</span>' +
         '<div class="drone-booking-info">' +
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
           '<div class="drone-booking-meta">' + escapeHtml(b.category) + ' · ' + b.hours + ' hr' + (b.hours > 1 ? 's' : '') + (b.withOperator ? ' · With operator' : '') + '</div>' +
@@ -7100,8 +7106,8 @@ function renderDroneMyBookings() {
         '<span class="drone-status ' + statusCls + '">' + b.status + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
-        (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
-        (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
+        (b.location ? '<div>' + escapeHtml(b.location) + '</div>' : '') +
+        (b.scheduledDate ? '<div>' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
@@ -7165,20 +7171,19 @@ async function loadDroneAdminServices() {
 function renderDroneAdminServices(services) {
   const list = document.getElementById('drone-admin-services-list');
   if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No services configured.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Category</th><th>₹/hr</th><th>Operator ₹/hr</th><th>Operator</th><th>Status</th><th></th></tr></thead><tbody>';
   services.forEach(s => {
     html += '<tr>' +
-      '<td>' + (s.imageEmoji || '🛸') + '</td>' +
-      '<td>' + escapeHtml(s.name) + '</td>' +
+      '<td class="cell-strong">' + escapeHtml(s.name) + '</td>' +
       '<td>' + escapeHtml(s.category) + '</td>' +
-      '<td>₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (s.operatorRequired ? '✓' : '—') + '</td>' +
-      '<td>' + (s.active ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
+      '<td class="cell-num">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
+      '<td class="cell-num">₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
+      '<td>' + (s.operatorRequired ? '<span class="cell-check">✓ Required</span>' : '<span class="cell-dash">Optional</span>') + '</td>' +
+      '<td><span class="op-status-badge ' + (s.active ? 'op-badge--green">Active' : 'op-badge--gray">Off') + '</span></td>' +
+      '<td><button type="button" class="admin-btn-sm" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -7195,7 +7200,6 @@ function showDroneServiceForm(service) {
         '<input id="dsf-category" class="pd-input" placeholder="Category" value="' + escapeHtml(s.category || '') + '">' +
         '<input id="dsf-price" class="pd-input" type="number" placeholder="Price/hr" value="' + (s.pricePerHour || '') + '">' +
         '<input id="dsf-opPrice" class="pd-input" type="number" placeholder="Operator ₹/hr" value="' + (s.operatorPricePerHour || 0) + '">' +
-        '<input id="dsf-emoji" class="pd-input" placeholder="Emoji" value="' + (s.imageEmoji || '🛸') + '">' +
         '<input id="dsf-minH" class="pd-input" type="number" placeholder="Min hrs" value="' + (s.minHours || 1) + '">' +
         '<input id="dsf-maxH" class="pd-input" type="number" placeholder="Max hrs" value="' + (s.maxHours || 8) + '">' +
         '<label><input type="checkbox" id="dsf-opReq"' + (s.operatorRequired ? ' checked' : '') + '> Operator required</label>' +
@@ -7229,7 +7233,6 @@ async function saveDroneService(id) {
     category: document.getElementById('dsf-category').value.trim(),
     pricePerHour: Number(document.getElementById('dsf-price').value),
     operatorPricePerHour: Number(document.getElementById('dsf-opPrice').value) || 0,
-    imageEmoji: document.getElementById('dsf-emoji').value.trim() || '🛸',
     minHours: Number(document.getElementById('dsf-minH').value) || 1,
     maxHours: Number(document.getElementById('dsf-maxH').value) || 8,
     operatorRequired: document.getElementById('dsf-opReq').checked,
@@ -7267,18 +7270,18 @@ async function loadDroneAdminOperators() {
 function renderDroneAdminOperators(operators) {
   const list = document.getElementById('drone-admin-operators-list');
   if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No operators found.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Experience</th><th>Rating</th><th>Status</th><th></th></tr></thead><tbody>';
   operators.forEach(op => {
     html += '<tr>' +
-      '<td><strong>' + escapeHtml(op.name) + '</strong><br><span style="font-size:12px;color:var(--gray-500);">' + escapeHtml(op.email || '—') + '</span></td>' +
+      '<td><span class="cell-strong">' + escapeHtml(op.name) + '</span><br><span class="cell-sub">' + escapeHtml(op.email || '—') + '</span></td>' +
       '<td>' + escapeHtml(op.specialization || '—') + '</td>' +
-      '<td>' + op.experienceYears + ' yr</td>' +
-      '<td>⭐ ' + Number(op.rating).toFixed(1) + '</td>' +
-      '<td>' + (op.available ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
+      '<td class="cell-num">' + op.experienceYears + ' yr</td>' +
+      '<td class="cell-num">' + Number(op.rating).toFixed(1) + ' ★</td>' +
+      '<td><span class="op-status-badge ' + (op.available ? 'op-badge--green">Available' : 'op-badge--gray">Off duty') + '</span></td>' +
+      '<td><button type="button" class="admin-btn-sm" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -7368,24 +7371,24 @@ async function loadDroneAdminBookings() {
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
   if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th>Operator</th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +
-      '<td>#' + b.id + '</td>' +
-      '<td>' + escapeHtml(b.customerName || '—') + '</td>' +
-      '<td>' + (b.imageEmoji || '🛸') + ' ' + escapeHtml(b.serviceName) + '</td>' +
-      '<td>' + b.hours + 'h</td>' +
-      '<td>₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (b.scheduledDate || '—') + '</td>' +
+      '<td class="cell-num">#' + b.id + '</td>' +
+      '<td class="cell-strong">' + escapeHtml(b.customerName || '—') + '</td>' +
+      '<td>' + escapeHtml(b.serviceName) + '</td>' +
+      '<td class="cell-num">' + b.hours + ' h</td>' +
+      '<td class="cell-num">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</td>' +
+      '<td class="cell-num">' + (b.scheduledDate || '—') + '</td>' +
       '<td><select class="drone-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
         ['pending','confirmed','in_progress','completed','cancelled'].map(st =>
-          '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>'
+          '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st.replace('_', ' ') + '</option>'
         ).join('') +
       '</select></td>' +
-      '<td>' + (b.operatorName ? '👤 ' + escapeHtml(b.operatorName) : '') + '</td>' +
+      '<td>' + (b.operatorName ? escapeHtml(b.operatorName) : '<span class="cell-dash">—</span>') + '</td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 

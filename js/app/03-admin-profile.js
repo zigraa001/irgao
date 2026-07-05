@@ -117,11 +117,11 @@ const CO2 = function (n) {
   return (Math.round(v * 10) / 10).toLocaleString('en-IN') + ' kg';
 };
 
-function pdStat(emoji, value, label, variant) {
+// First arg kept for call-site compatibility; stat cards are text-only.
+function pdStat(_icon, value, label, variant) {
   const cls = 'pd-stat' + (variant ? ' pd-stat--' + variant : '');
   return (
     '<div class="' + cls + '">' +
-      '<div class="pd-stat-emoji">' + emoji + '</div>' +
       '<div class="pd-stat-value">' + value + '</div>' +
       '<div class="pd-stat-label">' + escapeHtml(label) + '</div>' +
     '</div>'
@@ -587,30 +587,30 @@ async function loadAdminCompanies() {
     if (!res.ok || !data.companies) { if (listEl) listEl.innerHTML = '<div style="color:var(--gray-500);">Could not load companies.</div>'; return; }
     if (listEl) {
       listEl.innerHTML = data.companies.map(function (c) {
-        return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;">' +
+        return '<div class="admin-form-card" style="min-width:200px;flex:1;max-width:300px;margin-bottom:0;">' +
           '<div style="font-weight:700;font-size:15px;color:var(--gray-900);">' + escapeHtml(c.name) + '</div>' +
           '<div style="font-size:12px;color:var(--gray-500);margin-top:2px;">' + escapeHtml(c.headquarters || '') + '</div>' +
-          '<div style="font-size:12px;color:var(--blue);margin-top:4px;">' + (c.officeCount || 0) + ' regional offices</div>' +
-          '<div style="font-size:11px;margin-top:4px;color:' + (c.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (c.active ? 'Active' : 'Inactive') + '</div>' +
+          '<div style="font-size:12px;color:var(--gray-600);margin-top:8px;">' + (c.officeCount || 0) + ' regional offices</div>' +
+          '<div style="margin-top:8px;"><span class="op-status-badge ' + (c.active ? 'op-badge--green">Active' : 'op-badge--gray">Inactive') + '</span></div>' +
         '</div>';
       }).join('');
     }
     var offRes = await apiFetch('/api/admin/offices');
     var offData = await offRes.json();
     if (officesEl && offRes.ok && offData.offices) {
-      officesEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;border-bottom:2px solid var(--gray-200);">' +
-        '<th style="padding:6px 8px;">City</th><th style="padding:6px 8px;">Company</th><th style="padding:6px 8px;">Lat</th><th style="padding:6px 8px;">Lng</th><th style="padding:6px 8px;">Status</th>' +
+      officesEl.innerHTML = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr>' +
+        '<th>City</th><th>Company</th><th>Lat</th><th>Lng</th><th>Status</th>' +
         '</tr></thead><tbody>' +
         offData.offices.map(function (o) {
-          return '<tr style="border-bottom:1px solid var(--gray-100);">' +
-            '<td style="padding:6px 8px;font-weight:600;">' + escapeHtml(o.city) + '</td>' +
-            '<td style="padding:6px 8px;">' + escapeHtml(o.companyName || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lat || '') + '</td>' +
-            '<td style="padding:6px 8px;">' + (o.lng || '') + '</td>' +
-            '<td style="padding:6px 8px;color:' + (o.active ? 'var(--green-dark)' : 'var(--red)') + ';">' + (o.active ? 'Active' : 'Inactive') + '</td>' +
+          return '<tr>' +
+            '<td class="cell-strong">' + escapeHtml(o.city) + '</td>' +
+            '<td>' + escapeHtml(o.companyName || '') + '</td>' +
+            '<td class="cell-num">' + (o.lat || '') + '</td>' +
+            '<td class="cell-num">' + (o.lng || '') + '</td>' +
+            '<td><span class="op-status-badge ' + (o.active ? 'op-badge--green">Active' : 'op-badge--gray">Inactive') + '</span></td>' +
           '</tr>';
         }).join('') +
-        '</tbody></table>';
+        '</tbody></table></div>';
     }
   } catch (e) {
     if (listEl) listEl.innerHTML = '<div style="color:var(--red);">Network error loading companies.</div>';
@@ -832,7 +832,6 @@ async function loadAdminUsersChunk(showInitialLoading) {
       adminUsersTotal = 0;
       listHost.innerHTML =
         '<div class="op-empty">' +
-        '<div class="op-empty-icon">🔒</div>' +
         '<div class="op-empty-title">Tailscale required</div>' +
         '<div class="op-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
         '</div>';
@@ -891,7 +890,6 @@ function renderAdminUsers() {
   if (!adminUsers.length) {
     listHost.innerHTML =
       '<div class="op-empty">' +
-      '<div class="op-empty-icon">👥</div>' +
       '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' yet</div>' +
       '<div class="op-empty-sub">Accounts will appear here when they register or are added.</div>' +
       '</div>';

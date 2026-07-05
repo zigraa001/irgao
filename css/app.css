@@ -989,7 +989,6 @@ a { text-decoration: none; color: inherit; }
 .pd-stat--amber { background: #fff; border-color: rgba(245,158,11,0.20); }
 .pd-stat--red   { background: #fff; border-color: rgba(239,68,68,0.18); }
 .pd-stat--purple{ background: #fff; border-color: rgba(68,85,122,0.20); }
-.pd-stat-emoji { display: none; }
 .pd-stat-label {
   font-size: 11px;
   font-weight: 600;
@@ -1722,7 +1721,8 @@ a { text-decoration: none; color: inherit; }
   color: var(--gray-800);
   margin-bottom: 8px;
 }
-.coupon-header-icon { font-size: 18px; }
+.coupon-header-icon { display: inline-flex; color: var(--gray-600); }
+.coupon-header-icon svg { width: 16px; height: 16px; display: block; }
 .coupon-chips {
   display: flex;
   flex-direction: column;
@@ -2132,11 +2132,11 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
 }
-.route-chip-icon-blue { background: var(--blue-light); }
-.route-chip-icon-red { background: var(--red-light); }
-.route-chip-icon-green { background: var(--green-light); }
+.route-chip-icon svg { width: 16px; height: 16px; display: block; }
+.route-chip-icon-blue { background: var(--blue-light); color: var(--blue-dark); }
+.route-chip-icon-red { background: var(--red-light); color: var(--red-dark); }
+.route-chip-icon-green { background: var(--green-light); color: var(--green-dark); }
 
 .route-chip-info { flex: 1; min-width: 0; }
 .route-chip-name {
@@ -3373,7 +3373,9 @@ body.admin-map-fs { overflow: hidden; }
 #admin-view .admin-user-card,
 #admin-view .pd-stat,
 #admin-view .pd-recent,
-#admin-view .pd-breakdown-card { border-radius: 10px; }
+#admin-view .pd-breakdown-card,
+#admin-view .drone-admin-form,
+#admin-view .drone-stat-card { border-radius: 10px; }
 #admin-view .admin-btn-sm,
 #admin-view .admin-load-more,
 #admin-view .admin-form-select,
@@ -3425,6 +3427,44 @@ body.admin-map-fs { overflow: hidden; }
   border-color: var(--gray-900);
   color: #fff;
 }
+
+/* Admin data tables (drone management, offices, …) */
+.admin-table-wrap {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700);
+  vertical-align: middle;
+}
+.admin-table tbody tr:last-child td { border-bottom: none; }
+.admin-table tbody tr:hover td { background: var(--gray-50); }
+.admin-table .cell-strong { font-weight: 600; color: var(--gray-900); }
+.admin-table .cell-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.admin-table .cell-sub { font-size: 12px; color: var(--gray-500); }
+.admin-table .cell-check { color: var(--green-dark); font-weight: 700; }
+.admin-table .cell-dash { color: var(--gray-400); }
 
 /* User-detail slide-in drawer */
 .admin-user-drawer {
@@ -3867,10 +3907,18 @@ body.admin-map-fs { overflow: hidden; }
   border-color: var(--blue);
   box-shadow: var(--shadow-md);
 }
-.drone-card-emoji {
-  font-size: 28px;
-  margin-bottom: 6px;
+.drone-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--blue-50);
+  color: var(--blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
 }
+.drone-card-icon svg { width: 20px; height: 20px; display: block; }
 .drone-card-name {
   font-weight: 700;
   font-size: 14px;
@@ -3893,13 +3941,15 @@ body.admin-map-fs { overflow: hidden; }
   font-size: 11px;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--green-50);
+  color: var(--green-dark);
+  border: 1px solid var(--green-light);
   font-weight: 600;
 }
 .drone-op-badge.drone-op-optional {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--blue-50);
+  color: var(--blue-dark);
+  border-color: var(--blue-light);
 }
 
 .drone-detail-head {
@@ -3908,9 +3958,18 @@ body.admin-map-fs { overflow: hidden; }
   gap: 12px;
   margin-bottom: 10px;
 }
-.drone-detail-emoji {
-  font-size: 36px;
+.drone-detail-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--blue-50);
+  color: var(--blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
+.drone-detail-icon svg { width: 24px; height: 24px; display: block; }
 .drone-detail-name {
   font-weight: 700;
   font-size: 17px;
@@ -4026,9 +4085,18 @@ body.admin-map-fs { overflow: hidden; }
   align-items: center;
   gap: 10px;
 }
-.drone-booking-emoji {
-  font-size: 24px;
+.drone-booking-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--blue-50);
+  color: var(--blue-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
+.drone-booking-icon svg { width: 18px; height: 18px; display: block; }
 .drone-booking-info {
   flex: 1;
 }
@@ -4047,10 +4115,10 @@ body.admin-map-fs { overflow: hidden; }
   padding: 3px 8px;
   border-radius: var(--radius-sm);
 }
-.drone-status-confirmed { background: #e8f5e9; color: #2e7d32; }
-.drone-status-completed { background: #e3f2fd; color: #1565c0; }
-.drone-status-cancelled { background: #fbe9e7; color: #c62828; }
-.drone-status-pending { background: #fff3e0; color: #e65100; }
+.drone-status-confirmed { background: var(--green-50); color: var(--green-dark); border: 1px solid var(--green-light); }
+.drone-status-completed { background: var(--blue-50); color: var(--blue-dark); border: 1px solid var(--blue-light); }
+.drone-status-cancelled { background: var(--red-50); color: var(--red-dark); border: 1px solid var(--red-light); }
+.drone-status-pending { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
 .drone-booking-details {
   margin-top: 8px;
   font-size: 13px;
@@ -4064,8 +4132,8 @@ body.admin-map-fs { overflow: hidden; }
 .drone-cancel-btn {
   margin-top: 8px;
   background: none;
-  border: 1px solid #c62828;
-  color: #c62828;
+  border: 1px solid #FECACA;
+  color: #B91C1C;
   border-radius: var(--radius-sm);
   padding: 5px 12px;
   font-size: 12px;
@@ -4073,7 +4141,7 @@ body.admin-map-fs { overflow: hidden; }
   cursor: pointer;
 }
 .drone-cancel-btn:hover {
-  background: #fbe9e7;
+  background: var(--red-50);
 }
 
 /* Admin drone styles */
@@ -4094,24 +4162,14 @@ body.admin-map-fs { overflow: hidden; }
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
-.drone-edit-btn {
-  background: var(--blue);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.drone-edit-btn:hover {
-  opacity: 0.85;
-}
 .drone-status-select {
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  padding: 3px 6px;
+  border-radius: 6px;
+  padding: 4px 8px;
   font-size: 12px;
+  background: #fff;
+  color: var(--gray-700);
+  cursor: pointer;
 }
 
 .drone-admin-stats {

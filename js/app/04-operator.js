@@ -64,7 +64,6 @@ function renderOperatorTrips() {
   if (!operatorTrips.length) {
     host.innerHTML =
       '<div class="op-empty" id="op-empty">' +
-      '<div class="op-empty-icon">🛩️</div>' +
       '<div class="op-empty-title">No trips assigned yet</div>' +
       '<div class="op-empty-sub">When dispatch assigns you a mission, it will show up here.</div>' +
       '</div>';
@@ -85,7 +84,7 @@ function renderOperatorTrips() {
         '<div class="op-trip-meta">' +
           '<span><b>' + escapeHtml(customer) + '</b></span>' +
           '<span>' + escapeHtml(service) + '</span>' +
-          '<span>✈️ ' + escapeHtml(aircraft) + '</span>' +
+          '<span>' + escapeHtml(aircraft) + '</span>' +
         '</div>' +
       '</div>'
     );
@@ -117,7 +116,7 @@ function renderTripDetailsBody(t, fuelPlan) {
           '<div class="op-detail-value">' + fuelPlan.fuelKg + ' kg (' + fuelPlan.fuelLiters + ' L)</div>' +
           '<div class="op-detail-sub">Cruise ' + fuelPlan.cruiseAltitudeM + ' m AGL' +
             (fuelPlan.corridor ? ' · ' + escapeHtml(fuelPlan.corridor) : '') +
-            (fuelPlan.warnings && fuelPlan.warnings.length ? '<br>⚠ ' + escapeHtml(fuelPlan.warnings.join('; ')) : '') +
+            (fuelPlan.warnings && fuelPlan.warnings.length ? '<br>Warning: ' + escapeHtml(fuelPlan.warnings.join('; ')) : '') +
           '</div>' +
         '</div>';
     }
@@ -202,7 +201,7 @@ async function submitOperatorRating(id) {
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       const block = document.getElementById('op-rate-block');
-      if (block) block.innerHTML = '<div class="op-detail-label">Thanks — rating submitted. ⭐</div>';
+      if (block) block.innerHTML = '<div class="op-detail-label">Thanks — rating submitted.</div>';
     } else {
       if (errEl) { errEl.textContent = (data && data.error) || 'Could not submit rating.'; errEl.classList.add('show'); }
       if (btn) btn.disabled = false;
