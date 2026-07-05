@@ -1205,34 +1205,6 @@
       </div>
       <div id="profile-rides-body"><div class="pd-loading">Loading your rides…</div></div>
     </div>
-    <div class="profile-section-card" id="profile-phone-block">
-      <h4>Phone number</h4>
-      <p class="profile-phone-status" id="profile-phone-status"></p>
-      <button type="button" id="profile-phone-change-btn" class="auth-switch-btn" style="display:none" onclick="showProfilePhoneChange()">Change number</button>
-      <div id="profile-phone-input-section">
-        <div class="auth-field">
-          <label for="profile-phone-input">Mobile Number</label>
-          <div class="mobile-phone-input">
-            <span class="mobile-country-code">+91</span>
-            <input id="profile-phone-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="9876543210" autocomplete="tel-national" onkeydown="if(event.key==='Enter')doProfilePhoneSendOtp()">
-          </div>
-        </div>
-        <button type="button" class="btn-auth-primary" onclick="doProfilePhoneSendOtp()">Verify phone</button>
-      </div>
-      <div id="profile-phone-otp-section" style="display:none">
-        <p class="auth-subtext" id="profile-phone-otp-hint">Enter the 6-digit code sent to your email.</p>
-        <div class="auth-field">
-          <label>Verification code</label>
-          <input id="profile-phone-otp-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')doProfilePhoneVerifyOtp()">
-        </div>
-        <button type="button" class="btn-auth-primary" onclick="doProfilePhoneVerifyOtp()">Verify</button>
-        <p id="profile-phone-resend-hint" class="otp-resend-hint"></p>
-        <button id="profile-phone-resend-btn" type="button" class="auth-switch-btn" onclick="doProfilePhoneResendOtp()" disabled style="display:none">Resend code</button>
-        <div style="margin-top:8px"><button type="button" class="auth-switch-btn" onclick="cancelProfilePhoneOtp()">Cancel</button></div>
-      </div>
-      <div id="profile-phone-error" class="auth-error" role="alert"></div>
-      <div id="profile-phone-success" class="admin-add-success" role="status" style="display:none;margin-top:10px;"></div>
-    </div>
     <div class="profile-section-card profile-change-block" id="profile-change-block">
       <h4>Change password</h4>
       <div class="auth-field">
@@ -1268,6 +1240,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=1462ba5d"></script>
+<script src="/js/app.bundle.js?v=4c072e4e"></script>
 </body>
 </html>

@@ -899,13 +899,6 @@ async function doRoleSignup(role) {
     return showAuthError(cfg.errorId, 'Password must be at least 6 characters.');
   }
   const body = { name, email, password };
-  // Capture phone number if present (passenger registration).
-  const phoneInput = document.getElementById('register-' + role + '-phone');
-  if (phoneInput && phoneInput.value.trim()) {
-    const ph = phoneInput.value.trim();
-    if (ph.length < 10) return showAuthError(cfg.errorId, 'Enter a valid 10-digit mobile number.');
-    body.phone = ph;
-  }
   setBusy(cfg.submitId, true, 'Sending...', 'Send OTP');
   try {
     const res = await fetch(cfg.requestPath, AUTH.fetchOpts({
@@ -948,14 +941,6 @@ async function doVerifySignup() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       return showAuthError('otp-error', data.error || 'Invalid or expired code.');
-    }
-    // If the user entered a phone during registration, verify it before
-    // proceeding. The token is already set (cookie + response), so the
-    // phone verification API calls will be authenticated.
-    if (data.phoneVerifyNeeded && data.pendingPhone) {
-      AUTH.save(data.user, data.token);
-      showSignupPhoneVerify(data.pendingPhone, data.user, data.token);
-      return;
     }
     onAuthSuccess(data.user, data.token);
   } catch (e) {
@@ -1282,187 +1267,6 @@ function logoutForcedReset() {
 }
 
 // ── Profile Phone Verification ──────────────────────────────────────────
-// Add or change phone number on the profile, verified via OTP.
-const profilePhone = { raw: '', resendTimerId: null };
-
-function clearProfilePhoneTimers() {
-  if (profilePhone.resendTimerId) {
-    clearInterval(profilePhone.resendTimerId);
-    profilePhone.resendTimerId = null;
-  }
-}
-
-function initProfilePhoneBlock(user) {
-  const status = document.getElementById('profile-phone-status');
-  const inputSection = document.getElementById('profile-phone-input-section');
-  const otpSection = document.getElementById('profile-phone-otp-section');
-  const errEl = document.getElementById('profile-phone-error');
-  const succEl = document.getElementById('profile-phone-success');
-  const changeBtn = document.getElementById('profile-phone-change-btn');
-  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
-  if (succEl) succEl.style.display = 'none';
-  if (otpSection) otpSection.style.display = 'none';
-  clearProfilePhoneTimers();
-
-  profilePhone.verified = !!(user && user.phone);
-  if (profilePhone.verified) {
-    const masked = user.phone.length > 6
-      ? user.phone.slice(0, 4) + '****' + user.phone.slice(-2)
-      : user.phone;
-    if (status) status.textContent = 'Verified: +' + masked;
-    const inp = document.getElementById('profile-phone-input');
-    if (inp) inp.value = '';
-    // Already verified — collapse the form; offer "Change number" instead.
-    if (inputSection) inputSection.style.display = 'none';
-    if (changeBtn) changeBtn.style.display = '';
-  } else {
-    if (status) status.textContent = 'No phone number linked. Add one below.';
-    if (inputSection) inputSection.style.display = '';
-    if (changeBtn) changeBtn.style.display = 'none';
-  }
-}
-
-function showProfilePhoneChange() {
-  const changeBtn = document.getElementById('profile-phone-change-btn');
-  const inputSection = document.getElementById('profile-phone-input-section');
-  if (changeBtn) changeBtn.style.display = 'none';
-  if (inputSection) inputSection.style.display = '';
-  const inp = document.getElementById('profile-phone-input');
-  if (inp) inp.focus();
-}
-
-function startProfilePhoneResendTimer(timing) {
-  clearProfilePhoneTimers();
-  const cooldown = (timing && timing.resendCooldownSeconds) || 30;
-  const btn = document.getElementById('profile-phone-resend-btn');
-  const hintEl = document.getElementById('profile-phone-resend-hint');
-  if (!hintEl) return;
-  let remaining = cooldown;
-  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
-  const tick = () => {
-    if (remaining <= 0) {
-      clearProfilePhoneTimers();
-      hintEl.textContent = "Didn't receive the code?";
-      if (btn) { btn.disabled = false; btn.style.display = ''; }
-      return;
-    }
-    hintEl.textContent = "Didn't receive the code? Resend in " + formatResendCountdown(remaining);
-    remaining -= 1;
-  };
-  tick();
-  profilePhone.resendTimerId = setInterval(tick, 1000);
-}
-
-function cancelProfilePhoneOtp() {
-  clearProfilePhoneTimers();
-  const otpSection = document.getElementById('profile-phone-otp-section');
-  const inputSection = document.getElementById('profile-phone-input-section');
-  const changeBtn = document.getElementById('profile-phone-change-btn');
-  if (otpSection) otpSection.style.display = 'none';
-  // Back out to the collapsed "verified" state when a number is already
-  // linked; only show the input form again for users with no phone yet.
-  if (inputSection) inputSection.style.display = profilePhone.verified ? 'none' : '';
-  if (changeBtn) changeBtn.style.display = profilePhone.verified ? '' : 'none';
-  hideAuthError('profile-phone-error');
-}
-
-async function doProfilePhoneSendOtp() {
-  const rawPhone = document.getElementById('profile-phone-input').value.trim();
-  hideAuthError('profile-phone-error');
-  const succEl = document.getElementById('profile-phone-success');
-  if (succEl) succEl.style.display = 'none';
-
-  if (!rawPhone || rawPhone.length < 10) {
-    return showAuthError('profile-phone-error', 'Enter a valid 10-digit mobile number.');
-  }
-
-  profilePhone.raw = rawPhone;
-
-  try {
-    const res = await apiFetch('/api/auth/mobile/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: rawPhone })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = data.retryAfterSeconds
-        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
-        : (data.error || 'Could not send OTP.');
-      return showAuthError('profile-phone-error', msg);
-    }
-
-    document.getElementById('profile-phone-input-section').style.display = 'none';
-    document.getElementById('profile-phone-otp-section').style.display = '';
-    document.getElementById('profile-phone-otp-code').value = '';
-    document.getElementById('profile-phone-otp-code').focus();
-    startProfilePhoneResendTimer(data);
-  } catch (e) {
-    showAuthError('profile-phone-error', 'Could not reach the server.');
-  }
-}
-
-async function doProfilePhoneVerifyOtp() {
-  const otp = document.getElementById('profile-phone-otp-code').value.trim();
-  hideAuthError('profile-phone-error');
-
-  if (!otp || otp.length < 6) {
-    return showAuthError('profile-phone-error', 'Enter the 6-digit code.');
-  }
-
-  try {
-    const res = await apiFetch('/api/auth/mobile/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: profilePhone.raw, otp: otp })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return showAuthError('profile-phone-error', data.error || 'Invalid or expired code.');
-    }
-
-    clearProfilePhoneTimers();
-    profilePhone.verified = true;
-    document.getElementById('profile-phone-otp-section').style.display = 'none';
-    document.getElementById('profile-phone-input-section').style.display = 'none';
-    const changeBtn = document.getElementById('profile-phone-change-btn');
-    if (changeBtn) changeBtn.style.display = '';
-    const succEl = document.getElementById('profile-phone-success');
-    if (succEl) { succEl.textContent = 'Phone number verified and saved.'; succEl.style.display = ''; }
-    const status = document.getElementById('profile-phone-status');
-    if (status) status.textContent = 'Verified: +' + (data.phone || profilePhone.raw);
-    // Refresh user state.
-    const meRes = await apiFetch('/api/me');
-    if (meRes.ok) { const me = await meRes.json(); if (me.user) syncProfileUI(me.user); }
-  } catch (e) {
-    showAuthError('profile-phone-error', 'Could not reach the server.');
-  }
-}
-
-async function doProfilePhoneResendOtp() {
-  hideAuthError('profile-phone-error');
-  if (!profilePhone.raw) return;
-  const btn = document.getElementById('profile-phone-resend-btn');
-  if (btn) btn.disabled = true;
-
-  try {
-    const res = await apiFetch('/api/auth/mobile/resend-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: profilePhone.raw })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      showAuthError('profile-phone-error', data.error || 'Could not resend code.');
-      if (btn) btn.disabled = false;
-      return;
-    }
-    startProfilePhoneResendTimer(data);
-  } catch (e) {
-    showAuthError('profile-phone-error', 'Could not reach the server.');
-    if (btn) btn.disabled = false;
-  }
-}
 
 // Customers land on the booking view; operators on the pilot console (US-008);
 // admins on the Admin Dashboard (US-004).
@@ -1637,13 +1441,10 @@ function syncProfileUI(user) {
   const changeBlock = document.getElementById('profile-change-block');
   const deleteBlock = document.getElementById('profile-delete-block');
   const adminNote = document.getElementById('profile-admin-note');
-  const phoneBlock = document.getElementById('profile-phone-block');
   const isAdmin = user.role === 'admin';
   if (changeBlock) changeBlock.style.display = isAdmin ? 'none' : '';
   if (deleteBlock) deleteBlock.style.display = isAdmin ? 'none' : '';
-  if (phoneBlock) phoneBlock.style.display = isAdmin ? 'none' : '';
   if (adminNote) adminNote.style.display = isAdmin ? '' : 'none';
-  if (typeof initProfilePhoneBlock === 'function') initProfilePhoneBlock(user);
 }
 
 // ── Profile dashboard (total overview) ────────────────────────────────

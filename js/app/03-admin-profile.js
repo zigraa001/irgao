@@ -93,13 +93,10 @@ function syncProfileUI(user) {
   const changeBlock = document.getElementById('profile-change-block');
   const deleteBlock = document.getElementById('profile-delete-block');
   const adminNote = document.getElementById('profile-admin-note');
-  const phoneBlock = document.getElementById('profile-phone-block');
   const isAdmin = user.role === 'admin';
   if (changeBlock) changeBlock.style.display = isAdmin ? 'none' : '';
   if (deleteBlock) deleteBlock.style.display = isAdmin ? 'none' : '';
-  if (phoneBlock) phoneBlock.style.display = isAdmin ? 'none' : '';
   if (adminNote) adminNote.style.display = isAdmin ? '' : 'none';
-  if (typeof initProfilePhoneBlock === 'function') initProfilePhoneBlock(user);
 }
 
 // ── Profile dashboard (total overview) ────────────────────────────────
