@@ -344,7 +344,7 @@
         "Verify in browser using dev-browser skill (Add Member with company select, Users list with company chips)"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

@@ -229,3 +229,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - All data-role attributes, option values, API paths, function names, and variable names stay 'operator' -- only user-visible text labels changed
   - Manual browser verification was not possible -- recommend visual QA of login tabs, admin Users tabs, Add Member form, and profile cards
 ---
+
+## 2026-07-05 - US-017
+- What was implemented: Pilot-to-company assignment in admin -- Add Member form now shows Operator Company (required) and Regional Office (optional) selects when role is Pilot, hidden when role is Admin. Company select loads from existing /api/admin/companies endpoint, office select filters by chosen company via /api/admin/companies/:id/offices. Server POST /api/admin/users extended to accept and persist companyId/officeId with company existence validation. Admin Users list query JOINs operator_companies for company name; pilot rows show a blue company chip or amber 'Unassigned' chip. Company filter dropdown added to Users section (visible on Pilots tab) for client-side filtering by company.
+- Files changed: src/admin-routes.js (POST /api/admin/users accepts companyId/officeId with validation, GET /api/admin/users JOINs operator_companies, listUser includes companyId/companyName), js/app/03-admin-profile.js (new globals _addMemberCompanies/adminUserCompanyFilter, new functions toggleAddMemberCompany/loadAddMemberCompanyOptions/onAddMemberCompanyChange/ensureAddMemberCompanies/populateCompanyFilter/filterAdminUsersByCompany, doAddUser sends companyId/officeId, renderAdminUsers shows company chips and supports filtering), app.html (company/office selects in Add Member form, company filter in Users section), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The companies endpoint /api/admin/companies returns companies with officeCount -- cache in _addMemberCompanies to avoid re-fetching
+  - The offices endpoint /api/admin/companies/:id/offices returns offices filtered by companyId -- use for cascading office select
+  - companyId and officeId columns already exist on the users table (added via ensureColumn in schema.js) as nullable INT -- no migration needed
+  - The userListWhere() SQL uses bare column names; when JOINing, prefix with table alias via regex replace on the WHERE clause
+  - Client-side company filtering works per-page over the loaded adminUsers array -- '_unassigned' is a special sentinel for filtering pilots with no company
+  - The admin-form-select CSS class provides consistent select styling (44px, rounded, focus ring)
+  - Manual browser verification was not possible -- recommend visual QA of Add Member form with company select and Users list with company chips
+---
