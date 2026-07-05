@@ -468,8 +468,8 @@ router.get("/google/callback", async (req, res) => {
       }
       const auth = googleAuthResponse(res, existing);
       // Store in a temp cookie so the frontend can pick it up.
-      const payload = encodeURIComponent(JSON.stringify(auth));
-      res.cookie("irago_google_auth", payload, { maxAge: 60000, path: "/" });
+      // res.cookie URL-encodes the value itself — do not pre-encode.
+      res.cookie("irago_google_auth", JSON.stringify(auth), { maxAge: 60000, path: "/" });
       return res.redirect("/app.html?google_success=1");
     }
 
@@ -503,8 +503,8 @@ router.get("/google/callback", async (req, res) => {
       );
       const user = await queryOne("SELECT * FROM users WHERE id = ?", [insert.insertId]);
       const auth = googleAuthResponse(res, user);
-      const payload = encodeURIComponent(JSON.stringify(auth));
-      res.cookie("irago_google_auth", payload, { maxAge: 60000, path: "/" });
+      // res.cookie URL-encodes the value itself — do not pre-encode.
+      res.cookie("irago_google_auth", JSON.stringify(auth), { maxAge: 60000, path: "/" });
       return res.redirect("/app.html?google_success=1");
     }
 

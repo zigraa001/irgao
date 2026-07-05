@@ -825,9 +825,11 @@ function handleGoogleAuthOnLoad() {
   // Google success — pick up the auth data from the cookie.
   if (params.has('google_success')) {
     try {
-      const raw = decodeURIComponent(
+      let raw = decodeURIComponent(
         document.cookie.split('; ').find(c => c.startsWith('irago_google_auth='))?.split('=').slice(1).join('=') || ''
       );
+      // Older servers double-encoded the payload — decode until it's JSON.
+      while (raw && raw[0] === '%') raw = decodeURIComponent(raw);
       if (raw) {
         const auth = JSON.parse(raw);
         // Clear the temp cookie.
