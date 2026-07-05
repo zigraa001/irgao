@@ -52,7 +52,7 @@ const SIGNUP_CONFIG = {
     otpTitle: 'Verify passenger account',
     loginTitle: 'Passenger sign in',
     loginSub: 'Book Air Taxi, Golden Hour, and Air Shuttle rides.',
-    loginHint: 'New passenger? Create an account below.',
+    loginHint: '',
     registerBtn: 'Create passenger account',
   },
   operator: {
@@ -117,6 +117,8 @@ function applyPortalLabels(role) {
   if (regBtn && cfg.registerBtn) regBtn.textContent = cfg.registerBtn;
   if (regRow) regRow.style.display = loginOnly || signupDisabled ? 'none' : '';
   if (forgotRow) forgotRow.style.display = loginOnly ? 'none' : '';
+  var googleBtn = document.querySelector('#login-card .btn-google');
+  if (googleBtn) googleBtn.style.display = role === 'passenger' ? '' : 'none';
   document.title = cfg.loginTitle + ' — IraGo';
 }
 
@@ -494,7 +496,7 @@ async function googlePhoneSendOtp() {
   googlePending.phone = rawPhone;
 
   const btn = document.getElementById('google-phone-send-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
   try {
     const res = await fetch('/api/auth/google/send-phone-otp', {
@@ -554,7 +556,7 @@ async function googlePhoneVerify() {
     return showAuthError('google-phone-error', 'Enter the 6-digit code from your email.');
   }
   const btn = document.getElementById('google-phone-verify-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
   try {
     const res = await fetch('/api/auth/google/verify-phone', {
       method: 'POST',
@@ -633,7 +635,7 @@ async function doLogin() {
   if (!email || !password) {
     return showAuthError('login-error', 'Enter your email and password.');
   }
-  setBusy('login-submit', true, 'Signing in…', 'Sign In');
+  setBusy('login-submit', true, 'Signing in...', 'Sign In');
   try {
     const res = await fetch(cfg.loginPath, AUTH.fetchOpts({
       method: 'POST',
@@ -652,7 +654,7 @@ async function doLogin() {
   } catch (e) {
     showAuthError('login-error', 'Could not reach the server. Please try again.');
   } finally {
-    setBusy('login-submit', false, 'Signing in…', 'Sign In');
+    setBusy('login-submit', false, 'Signing in...', 'Sign In');
   }
 }
 
@@ -677,7 +679,7 @@ async function doRoleSignup(role) {
     if (ph.length < 10) return showAuthError(cfg.errorId, 'Enter a valid 10-digit mobile number.');
     body.phone = ph;
   }
-  setBusy(cfg.submitId, true, 'Sending…', 'Send OTP');
+  setBusy(cfg.submitId, true, 'Sending...', 'Send OTP');
   try {
     const res = await fetch(cfg.requestPath, AUTH.fetchOpts({
       method: 'POST',
@@ -698,7 +700,7 @@ async function doRoleSignup(role) {
   } catch (e) {
     showAuthError(cfg.errorId, authFetchErrorMessage());
   } finally {
-    setBusy(cfg.submitId, false, 'Sending…', 'Send OTP');
+    setBusy(cfg.submitId, false, 'Sending...', 'Send OTP');
   }
 }
 
@@ -709,7 +711,7 @@ async function doVerifySignup() {
   if (!pendingOtp.email || !otp) {
     return showAuthError('otp-error', 'Enter the 6-digit code from your email.');
   }
-  setBusy('otp-submit', true, 'Verifying…', 'Verify & Create Account');
+  setBusy('otp-submit', true, 'Verifying...', 'Verify & Create Account');
   try {
     const res = await fetch(cfg.verifyPath, AUTH.fetchOpts({
       method: 'POST',
@@ -732,15 +734,15 @@ async function doVerifySignup() {
   } catch (e) {
     showAuthError('otp-error', 'Could not reach the server. Please try again.');
   } finally {
-    setBusy('otp-submit', false, 'Verifying…', 'Verify & Create Account');
+    setBusy('otp-submit', false, 'Verifying...', 'Verify & Create Account');
   }
 }
 
 // ── Single-form registration flow ─────────────────────────────────────
 // All fields + inline email OTP on one card
 const regState = {
-  role: ‘passenger’,
-  name: ‘’, gender: ‘’, age: ‘’, password: ‘’, email: ‘’,
+  role: 'passenger',
+  name: '', gender: '', age: '', password: '', email: '',
   emailOtpSent: false,
   emailResendTimerId: null,
 };
@@ -751,21 +753,21 @@ function clearRegTimers() {
 
 function regStartResendTimer(timing) {
   const cooldown = (timing && timing.resendCooldownSeconds) || 30;
-  const btn = document.getElementById(‘reg-email-resend-btn’);
-  const hintEl = document.getElementById(‘reg-email-resend-hint’);
+  const btn = document.getElementById('reg-email-resend-btn');
+  const hintEl = document.getElementById('reg-email-resend-hint');
   if (!hintEl) return;
   if (regState.emailResendTimerId) clearInterval(regState.emailResendTimerId);
   let remaining = cooldown;
-  if (btn) { btn.disabled = true; btn.style.display = ‘none’; }
+  if (btn) { btn.disabled = true; btn.style.display = 'none'; }
   const tick = () => {
     if (remaining <= 0) {
       clearInterval(regState.emailResendTimerId);
       regState.emailResendTimerId = null;
-      hintEl.textContent = "Didn’t receive the code?";
-      if (btn) { btn.disabled = false; btn.style.display = ‘’; }
+      hintEl.textContent = "Didn't receive the code?";
+      if (btn) { btn.disabled = false; btn.style.display = ''; }
       return;
     }
-    hintEl.textContent = "Didn’t receive the code? Resend in " + formatResendCountdown(remaining);
+    hintEl.textContent = "Didn't receive the code? Resend in " + formatResendCountdown(remaining);
     remaining -= 1;
   };
   tick();
@@ -773,25 +775,25 @@ function regStartResendTimer(timing) {
 }
 
 function regValidateFields() {
-  const errId = ‘register-passenger-error’;
+  const errId = 'register-passenger-error';
   hideAuthError(errId);
-  const name = document.getElementById(‘register-passenger-name’).value.trim();
-  const email = document.getElementById(‘register-passenger-email’).value.trim();
-  const password = document.getElementById(‘register-passenger-password’).value;
-  if (!name) { showAuthError(errId, ‘Enter your full name.’); return null; }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthError(errId, ‘Enter a valid email address.’); return null; }
-  if (!password || password.length < 6) { showAuthError(errId, ‘Password must be at least 6 characters.’); return null; }
+  const name = document.getElementById('register-passenger-name').value.trim();
+  const email = document.getElementById('register-passenger-email').value.trim();
+  const password = document.getElementById('register-passenger-password').value;
+  if (!name) { showAuthError(errId, 'Enter your full name.'); return null; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthError(errId, 'Enter a valid email address.'); return null; }
+  if (!password || password.length < 6) { showAuthError(errId, 'Password must be at least 6 characters.'); return null; }
   return { name, email, password };
 }
 
 async function regSendEmailOtp() {
   const fields = regValidateFields();
   if (!fields) return;
-  const gender = document.getElementById(‘register-passenger-gender’).value;
-  const age = document.getElementById(‘register-passenger-age’).value.trim();
-  hideAuthError(‘register-passenger-error’);
+  const gender = document.getElementById('register-passenger-gender').value;
+  const age = document.getElementById('register-passenger-age').value.trim();
+  hideAuthError('register-passenger-error');
 
-  regState.role = ‘passenger’;
+  regState.role = 'passenger';
   regState.name = fields.name;
   regState.gender = gender;
   regState.age = age;
@@ -804,78 +806,78 @@ async function regSendEmailOtp() {
     age: age || undefined,
   };
 
-  const btn = document.getElementById(‘reg-email-send-btn’);
-  if (btn) { btn.disabled = true; btn.textContent = ‘Sending…’; }
+  const btn = document.getElementById('reg-email-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
   try {
     const res = await fetch(cfg.requestPath, AUTH.fetchOpts({
-      method: ‘POST’,
-      headers: { ‘Content-Type’: ‘application/json’ },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (btn) { btn.disabled = false; btn.textContent = ‘Send verification code’; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Send verification code'; }
       const msg = data.retryAfterSeconds
-        ? (data.error || ‘Could not send code.’) + ‘ Try again in ‘ + data.retryAfterSeconds + ‘s.’
-        : (data.error || ‘Could not send verification code.’);
-      return showAuthError(‘register-passenger-error’, msg);
+        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
+        : (data.error || 'Could not send verification code.');
+      return showAuthError('register-passenger-error', msg);
     }
 
     regState.email = fields.email;
     regState.emailOtpSent = true;
-    document.getElementById(‘register-passenger-email’).disabled = true;
-    document.getElementById(‘register-passenger-name’).disabled = true;
-    document.getElementById(‘register-passenger-password’).disabled = true;
-    if (btn) btn.style.display = ‘none’;
-    document.getElementById(‘reg-email-otp-row’).style.display = ‘’;
-    document.getElementById(‘reg-email-otp’).value = ‘’;
-    document.getElementById(‘reg-email-otp’).focus();
+    document.getElementById('register-passenger-email').disabled = true;
+    document.getElementById('register-passenger-name').disabled = true;
+    document.getElementById('register-passenger-password').disabled = true;
+    if (btn) btn.style.display = 'none';
+    document.getElementById('reg-email-otp-row').style.display = '';
+    document.getElementById('reg-email-otp').value = '';
+    document.getElementById('reg-email-otp').focus();
     regStartResendTimer(data);
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = ‘Send verification code’; }
-    showAuthError(‘register-passenger-error’, ‘Could not reach the server.’);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send verification code'; }
+    showAuthError('register-passenger-error', 'Could not reach the server.');
   }
 }
 
 async function regResendEmailOtp() {
-  hideAuthError(‘register-passenger-error’);
+  hideAuthError('register-passenger-error');
   if (!regState.email) return;
-  const btn = document.getElementById(‘reg-email-resend-btn’);
+  const btn = document.getElementById('reg-email-resend-btn');
   if (btn) btn.disabled = true;
   try {
     const cfg = SIGNUP_CONFIG.passenger;
-    const res = await fetch(‘/api/auth/resend-otp’, AUTH.fetchOpts({
-      method: ‘POST’,
-      headers: { ‘Content-Type’: ‘application/json’ },
+    const res = await fetch('/api/auth/resend-otp', AUTH.fetchOpts({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: regState.email, purpose: cfg.purpose })
     }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      showAuthError(‘register-passenger-error’, data.error || ‘Could not resend code.’);
+      showAuthError('register-passenger-error', data.error || 'Could not resend code.');
       if (btn) btn.disabled = false;
       return;
     }
     regStartResendTimer(data);
   } catch (e) {
-    showAuthError(‘register-passenger-error’, ‘Could not reach the server.’);
+    showAuthError('register-passenger-error', 'Could not reach the server.');
     if (btn) btn.disabled = false;
   }
 }
 
 async function regCreateAccount() {
-  hideAuthError(‘register-passenger-error’);
-  const emailOtp = document.getElementById(‘reg-email-otp’).value.trim();
-  if (!emailOtp || emailOtp.length < 6) return showAuthError(‘register-passenger-error’, ‘Enter the 6-digit verification code.’);
+  hideAuthError('register-passenger-error');
+  const emailOtp = document.getElementById('reg-email-otp').value.trim();
+  if (!emailOtp || emailOtp.length < 6) return showAuthError('register-passenger-error', 'Enter the 6-digit verification code.');
 
   const cfg = SIGNUP_CONFIG.passenger;
-  const btn = document.getElementById(‘reg-create-btn’);
-  if (btn) { btn.disabled = true; btn.textContent = ‘Creating account…’; }
+  const btn = document.getElementById('reg-create-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating account...'; }
 
   try {
     const res = await fetch(cfg.verifyPath, AUTH.fetchOpts({
-      method: ‘POST’,
-      headers: { ‘Content-Type’: ‘application/json’ },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: regState.email,
         emailOtp: emailOtp,
@@ -883,8 +885,8 @@ async function regCreateAccount() {
     }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (btn) { btn.disabled = false; btn.textContent = ‘Create account’; }
-      return showAuthError(‘register-passenger-error’, data.error || ‘Could not create account.’);
+      if (btn) { btn.disabled = false; btn.textContent = 'Create account'; }
+      return showAuthError('register-passenger-error', data.error || 'Could not create account.');
     }
     clearRegTimers();
     onAuthSuccess(data.user, data.token);
@@ -900,7 +902,7 @@ async function doForgotPassword() {
   if (!email) {
     return showAuthError('forgot-error', 'Enter your email address.');
   }
-  setBusy('forgot-submit', true, 'Sending…', 'Send OTP');
+  setBusy('forgot-submit', true, 'Sending...', 'Send OTP');
   try {
     const res = await fetch('/api/auth/forgot-password', AUTH.fetchOpts({
       method: 'POST',
@@ -923,7 +925,7 @@ async function doForgotPassword() {
   } catch (e) {
     showAuthError('forgot-error', authFetchErrorMessage());
   } finally {
-    setBusy('forgot-submit', false, 'Sending…', 'Send OTP');
+    setBusy('forgot-submit', false, 'Sending...', 'Send OTP');
   }
 }
 
@@ -937,7 +939,7 @@ async function doResetPassword() {
   if (newPassword.length < 6) {
     return showAuthError('reset-error', 'Password must be at least 6 characters.');
   }
-  setBusy('reset-submit', true, 'Resetting…', 'Reset password');
+  setBusy('reset-submit', true, 'Resetting...', 'Reset password');
   try {
     const res = await fetch('/api/auth/reset-password', AUTH.fetchOpts({
       method: 'POST',
@@ -952,7 +954,7 @@ async function doResetPassword() {
   } catch (e) {
     showAuthError('reset-error', 'Could not reach the server. Please try again.');
   } finally {
-    setBusy('reset-submit', false, 'Resetting…', 'Reset password');
+    setBusy('reset-submit', false, 'Resetting...', 'Reset password');
   }
 }
 
@@ -1021,7 +1023,7 @@ async function doForcedReset() {
   if (newPassword.length < 6) {
     return showAuthError('must-reset-error', 'New password must be at least 6 characters.');
   }
-  setBusy('must-reset-submit', true, 'Updating…', 'Update & continue');
+  setBusy('must-reset-submit', true, 'Updating...', 'Update & continue');
   try {
     const res = await fetch('/api/auth/change-password', AUTH.fetchOpts({
       method: 'POST',
@@ -1041,7 +1043,7 @@ async function doForcedReset() {
   } catch (e) {
     showAuthError('must-reset-error', 'Network error — please try again.');
   } finally {
-    setBusy('must-reset-submit', false, 'Updating…', 'Update & continue');
+    setBusy('must-reset-submit', false, 'Updating...', 'Update & continue');
   }
 }
 
