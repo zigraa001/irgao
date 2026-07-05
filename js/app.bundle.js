@@ -225,8 +225,8 @@ const SIGNUP_CONFIG = {
     submitId: 'register-passenger-submit',
     submitLabel: 'Send OTP',
     otpTitle: 'Verify passenger account',
-    loginTitle: 'Sign in',
-    loginSub: 'to continue to IraGo',
+    loginTitle: 'Welcome back',
+    loginSub: 'Sign in to book your next flight',
     loginHint: '',
     registerBtn: 'Create account',
   },
@@ -243,7 +243,7 @@ const SIGNUP_CONFIG = {
     submitLabel: 'Send OTP',
     otpTitle: 'Verify operator account',
     loginTitle: 'Sign in',
-    loginSub: 'to continue to the IraGo Pilot Console',
+    loginSub: 'Sign in to your Pilot Console',
     loginHint: 'Operator accounts are created by an admin only. Contact your administrator to be provisioned.',
     // Public self-signup is closed — only admins create operator accounts.
     signupDisabled: true,
@@ -252,7 +252,7 @@ const SIGNUP_CONFIG = {
     loginPath: '/api/auth/admin/login',
     loginUrl: '/login/admin',
     loginTitle: 'Sign in',
-    loginSub: 'to continue to the IraGo Admin Console',
+    loginSub: 'Sign in to the Admin Console',
     loginHint: '',
     loginOnly: true,
   },
@@ -464,7 +464,7 @@ function showOtpCard(email, role, timing) {
   const titleEl = document.getElementById('otp-card-title');
   const subEl = document.getElementById('otp-card-sub');
   if (titleEl) titleEl.textContent = cfg.otpTitle;
-  if (subEl) subEl.textContent = 'Step 2 — enter the code from your email to create your account.';
+  if (subEl) subEl.textContent = 'We emailed you a 6-digit code. It expires in 5 minutes.';
   document.getElementById('otp-email-display').textContent = email;
   document.getElementById('otp-code').value = '';
   hideAuthError('otp-error');

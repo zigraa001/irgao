@@ -57,8 +57,8 @@
     </div>
 
     <div class="auth-card" id="login-card">
-      <h2 id="login-card-title">Sign in</h2>
-      <p class="auth-subtext" id="login-card-sub">to continue to IraGo</p>
+      <h2 id="login-card-title">Welcome back</h2>
+      <p class="auth-subtext" id="login-card-sub">Sign in to book your next flight</p>
       <div class="auth-helper" id="login-role-hint"></div>
       <div id="login-success" class="auth-success" role="status"></div>
       <div class="auth-field">
@@ -101,7 +101,7 @@
     <!-- ── Passenger Registration (single-form with inline email OTP) ── -->
     <div class="auth-card" id="register-passenger-card" style="display:none">
       <h2>Create passenger account</h2>
-      <p class="auth-subtext">Enter your details and verify your email to get started.</p>
+      <p class="auth-subtext">Book eVTOL air taxis across India in minutes.</p>
       <div class="auth-field">
         <label>Full Name</label>
         <input id="register-passenger-name" type="text" placeholder="Priya Sharma" autocomplete="name">
@@ -127,7 +127,7 @@
       <div class="auth-field">
         <label for="register-passenger-password">Password</label>
         <div class="password-input-wrap">
-          <input id="register-passenger-password" type="password" placeholder="Min 6 chars" autocomplete="new-password">
+          <input id="register-passenger-password" type="password" placeholder="Choose a password" autocomplete="new-password">
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-passenger-password',this)" aria-label="Show password" tabindex="-1">
             <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -160,7 +160,7 @@
     <!-- Legacy OTP card (kept for forgot-password and operator flows) -->
     <div class="auth-card" id="otp-card" style="display:none">
       <h2 id="otp-card-title">Verify your email</h2>
-      <p class="auth-subtext" id="otp-card-sub">Enter the code from your email.</p>
+      <p class="auth-subtext" id="otp-card-sub">We emailed you a 6-digit code. It expires in 5 minutes.</p>
       <div class="otp-meta">
         <p class="auth-subtext otp-meta-line">We sent a 6-digit code to:</p>
         <p class="otp-email-line" id="otp-email-display"></p>
@@ -182,7 +182,7 @@
 
     <div class="auth-card" id="forgot-card" style="display:none">
       <h2>Reset your password</h2>
-      <p class="auth-subtext">Enter your email and we&rsquo;ll send a verification code.</p>
+      <p class="auth-subtext">No worries &mdash; enter your email and we&rsquo;ll send you a reset code.</p>
       <div class="auth-field auth-email-otp-field">
         <label for="forgot-email">Email Address</label>
         <div class="auth-email-otp-row">
@@ -199,7 +199,7 @@
     <div class="auth-card" id="reset-card" style="display:none">
       <h2>Reset password</h2>
       <div class="otp-meta">
-        <p class="auth-subtext otp-meta-line">Code sent to:</p>
+        <p class="auth-subtext otp-meta-line">We sent a reset code to:</p>
         <p class="otp-email-line" id="reset-email-display"></p>
       </div>
       <div class="auth-field">
@@ -208,7 +208,7 @@
       </div>
       <div class="auth-field">
         <label>New password</label>
-        <input id="reset-password" type="password" placeholder="Min 6 chars" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+        <input id="reset-password" type="password" placeholder="Choose a new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
       </div>
       <button id="reset-submit" class="btn-auth-primary" onclick="doResetPassword()">Reset password</button>
       <div id="reset-error" class="auth-error" role="alert"></div>
@@ -1232,6 +1232,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=7fd9754e"></script>
+<script src="/js/app.bundle.js?v=f4c4885e"></script>
 </body>
 </html>
