@@ -189,6 +189,62 @@ These are non-negotiable and must be respected in every story:
 - [ ] Typecheck passes
 - [ ] Verify in browser using dev-browser skill (360px and 1440px screenshots of all four views)
 
+### US-011: Auth & onboarding microcopy upgrade
+**Description:** As a new or returning user, I want warm, confident copy on the auth screens so the product feels polished and human instead of terse and mechanical.
+
+**Acceptance Criteria:**
+- [ ] Login heading "Sign in" → "Welcome back"; subtext "to continue to IraGo" → "Sign in to book your next flight" (both `app.html` and the `portalCopy` strings in `js/app/02-auth.js`)
+- [ ] Operator/admin role subtexts improved ("Sign in to your Pilot Console" / "Sign in to the Admin Console")
+- [ ] Register, OTP, and forgot-password copy rewritten to be benefit-led and reassuring
+- [ ] Friendly error strings; human placeholders
+- [ ] JS strings edited in `js/app/*.js` + `npm run build:js`; typecheck passes
+- [ ] Verify in browser using dev-browser skill
+
+### US-012: Booking, tracking & payment microcopy upgrade
+**Description:** As a passenger, I want clear, encouraging copy through search, booking, tracking, and payment so every step feels guided.
+
+**Acceptance Criteria:**
+- [ ] Location placeholders → "Pickup from..." / "Where to?"
+- [ ] Search button, rides header, tracking empty state, OTP label, payment notes, confirmation copy, and rating prompt all rewritten (details in prd.json)
+- [ ] Loading/empty strings in booking + drone panels made consistent and friendly
+- [ ] JS-owned strings via `js/app/*.js` + rebuild; typecheck passes
+- [ ] Verify in browser using dev-browser skill
+
+### US-013: Operator & admin microcopy and empty-state upgrade
+**Description:** As a pilot or admin, I want purposeful headings, statuses, and empty states so the consoles read professionally.
+
+**Acceptance Criteria:**
+- [ ] Duty status strings read clearly (on duty / off duty with what it means)
+- [ ] All operator/admin loading and empty states unified into one friendly pattern; admin tables show helpful empty results
+- [ ] Admin dashboard subtitle informative; section titles consistent
+- [ ] JS-owned strings via `js/app/*.js` + rebuild; typecheck passes
+- [ ] Verify in browser using dev-browser skill
+
+### US-014: Google Maps style route search (destination-first, current location as source)
+**Description:** As a passenger, I want to just type where I'm going — like Google Maps — with my current location assumed as the pickup point, so booking takes one step instead of two.
+
+**Acceptance Criteria:**
+- [ ] Destination input gets default focus when entering the booking view (no active ride, no open overlay)
+- [ ] Pickup auto-fills from GPS as "Your location" (existing silent GPS logic verified/strengthened); denied → placeholder "Choose pickup location", no error spam, GPS button as retry
+- [ ] "Use current location" row pinned at top of pickup suggestions dropdown, wired to existing `useCurrentLocation()`
+- [ ] Search with destination but no pickup prompts "Set your pickup point" and focuses pickup
+- [ ] Visual order stays pickup-above-destination; no ids/handlers changed
+- [ ] `js/app/*.js` + `npm run build:js`; typecheck passes
+- [ ] Verify in browser using dev-browser skill (geolocation granted and denied)
+
+### US-015: Marketplace-style ride results — operator company as the trust signal
+**Inspiration:** Google Flights / Skyscanner lead every result with the carrier brand; Uber right-aligns price with ETA as the scan line.
+**Acceptance Criteria (summary — full detail in prd.json):** operator company chip + rating on ride cards (dispatch already returns companyName/companyCode/companyRating), flight-search card hierarchy, "Independent operator" fallback, company as a chip on the tracking pilot card and confirmation.
+
+### US-016: Terminology cleanup — Pilot = person, Operator = company
+**Rationale:** IraGo is a B2B2C aggregator dealing with operator companies who employ pilots (not Uber's direct-driver model). Label-only changes: login tab "Operator"→"Pilot", admin "Operators" tab→"Pilots", Add Member role label, profile role chip. All role values/identifiers in code and API stay `operator`.
+
+### US-017: Pilot-to-company assignment in admin
+**Rationale:** Pilots can't float unaffiliated in an aggregator. Add Member gets required Operator-company + optional office selects (endpoints exist), admin add-user endpoint persists companyId/officeId (columns exist), Users list shows a company chip with "Unassigned" in amber + company filter.
+
+### US-018: Companies section as a partner directory (Stripe Dashboard inspiration)
+**Rationale:** Partner accounts deserve counts and health at a glance: pilot/office counts on rich company cards, inline expandable offices, upgraded Add Company form, friendly empty state.
+
 ## Functional Requirements
 
 - FR-1: All redesign changes live in `css/app.css` and `app.html` (plus minimal `js/app/*.js` edits only where a story explicitly needs markup generated by JS to carry a class — regenerate the bundle via `npm run build:js`)

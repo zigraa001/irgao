@@ -186,7 +186,7 @@
         "Verify in browser using dev-browser skill (Users table and Add Member form)"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -286,6 +286,82 @@
         "Verify in browser using dev-browser skill (fresh load with geolocation granted and denied)"
       ],
       "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Marketplace-style ride results: operator company as the trust signal (Google Flights / Uber inspiration)",
+      "description": "As a passenger choosing between flights, I want to see which operator company runs each ride - the way Google Flights leads with the airline - so I can choose on trust, not just price.",
+      "acceptanceCriteria": [
+        "Dispatch/search already returns company data (grep js/app/06-booking.js for where ride cards are rendered and what fields the API returns; src/dispatch.js exposes companyName/companyCode/companyRating) - surface it: each ride card shows an operator company chip (company name + small code monogram) and company rating stars when available",
+        "Ride card layout follows flight-search conventions: company chip top-left, aircraft type + pilot name as secondary line, ETA/duration as metadata, price right-aligned and most prominent (18px+ bold navy)",
+        "Rides with no company affiliation show a neutral 'Independent operator' chip so the layout never collapses",
+        "Tracking pilot card upgraded: company name becomes a visible chip/badge next to the pilot name (not a gray afterthought line) - #tracking-pilot-company content unchanged, presentation upgraded",
+        "Booking confirmation card includes the operating company line (grep what data currentBooking._company holds and render it)",
+        "If the ride-search API response does NOT include company fields, extend the server response minimally (src/dispatch.js already selects them for dispatch - reuse the same JOIN for the search/quote endpoint) without changing existing response fields",
+        "JS edits in js/app/*.js + npm run build:js; no ids/handlers renamed; no smart quotes",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (ride results showing company chips)"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Terminology cleanup: Pilot = person, Operator = company (aggregator model)",
+      "description": "As IraGo, we partner with operator companies who employ pilots (unlike Uber's direct-driver model) - the UI language must reflect that consistently.",
+      "acceptanceCriteria": [
+        "Login role switcher: the 'Operator' tab label becomes 'Pilot' (data-role attribute value and all JS role strings stay 'operator' - this is a LABEL-ONLY change; grep js/app/02-auth.js portalCopy/applyPortalLabels and update display strings)",
+        "Login subtext for pilots reads accordingly (e.g. 'Sign in to your Pilot Console')",
+        "Admin Users section: tab 'Operators' becomes 'Pilots' (#admin-tab-operator label only); 'Operators Live Map' section title becomes 'Pilots Live Map'",
+        "Admin Add Member: role dropdown option label 'Operator' becomes 'Pilot' (option value stays 'operator'); form heading/copy refers to adding a pilot or admin",
+        "Operator profile card role chip shows 'Pilot' instead of 'Operator' (find where profile-display-role is filled in js/app and map the label at display time only)",
+        "Admin Companies section keeps 'Operator Companies' naming - companies are the operators; add a one-line explainer under the title: 'Operator companies employ the pilots who fly IraGo trips.'",
+        "Server role values, API params, DB columns, and all code identifiers are NOT renamed - display labels only; grep for user-visible strings, not variables",
+        "JS edits in js/app/*.js + npm run build:js; typecheck passes",
+        "Verify in browser using dev-browser skill (login tabs, admin users tabs, add member form)"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Pilot-to-company assignment in admin (Add Member + Users list)",
+      "description": "As an admin, I must assign every pilot to an operator company and regional office when creating them, and see/filter affiliation in the Users list - pilots cannot float unaffiliated in an aggregator.",
+      "acceptanceCriteria": [
+        "Add Member form: when role = Pilot(operator), show two selects - Operator company (required, loaded from the existing companies endpoint used by the Companies section) and Regional office (optional, filtered by chosen company via the existing GET offices-by-company endpoint in src/admin-routes.js ~line 527)",
+        "When role = Admin, the company/office selects are hidden",
+        "doAddUser in js/app/03-admin-profile.js sends companyId/officeId; extend the admin add-user endpoint in src/admin-routes.js to accept and persist optional companyId/officeId on the created user (columns already exist on users table - see src/demo-routes.js INSERT for reference)",
+        "Server validates companyId exists when provided; returns friendly error otherwise",
+        "Admin Users list: pilot rows show a company column/chip (JOIN operator_companies in the users listing query if not already present); pilots without a company show 'Unassigned' in amber",
+        "Users list gets a company filter dropdown (client-side filtering over the loaded list is acceptable)",
+        "Existing pilots with NULL company continue to work everywhere (no NOT NULL migration)",
+        "JS edits in js/app/*.js + npm run build:js; server starts clean (node server.js boots)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (Add Member with company select, Users list with company chips)"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Companies section as a partner directory (Stripe Dashboard inspiration)",
+      "description": "As an admin, I want the Operator Companies section to read like a partner-account directory - counts, offices, and health at a glance - not a bare name list.",
+      "acceptanceCriteria": [
+        "Company cards redesigned as rich partner cards: company name + code monogram avatar, HQ city, and live counts - pilots (COUNT users by companyId), regional offices (officeCount already computed in src/admin-routes.js ~line 484), and company rating if present",
+        "Extend the companies listing endpoint with a pilotCount subquery if it lacks one (mirror the existing officeCount pattern)",
+        "Clicking/expanding a company reveals its regional offices inline (reuse the existing offices-by-company endpoint and current offices list rendering)",
+        "Add Company form upgraded to the new form language and includes optional company code field if the DB column exists (check operator_companies schema in scripts/db-init.js first; skip if absent)",
+        "Empty state for zero companies: friendly prompt 'Add your first operator company to start onboarding pilots'",
+        "Offices list rows show city, address, contact - styled as table/list rows per the admin table language",
+        "JS edits in js/app/*.js + npm run build:js; server boots clean; typecheck passes",
+        "Verify in browser using dev-browser skill (Companies section with counts and expanded offices)"
+      ],
+      "priority": 18,
       "passes": false,
       "notes": ""
     }

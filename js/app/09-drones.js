@@ -342,11 +342,11 @@ async function loadDroneAdminServices() {
 function renderDroneAdminServices(services) {
   const list = document.getElementById('drone-admin-services-list');
   if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No services configured.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
   services.forEach(s => {
     html += '<tr>' +
       '<td>' + (s.imageEmoji || '🛸') + '</td>' +
-      '<td>' + escapeHtml(s.name) + '</td>' +
+      '<td><strong>' + escapeHtml(s.name) + '</strong></td>' +
       '<td>' + escapeHtml(s.category) + '</td>' +
       '<td>₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
       '<td>₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
@@ -355,7 +355,7 @@ function renderDroneAdminServices(services) {
       '<td><button type="button" class="drone-edit-btn" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -444,7 +444,7 @@ async function loadDroneAdminOperators() {
 function renderDroneAdminOperators(operators) {
   const list = document.getElementById('drone-admin-operators-list');
   if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No operators found.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
   operators.forEach(op => {
     html += '<tr>' +
       '<td><strong>' + escapeHtml(op.name) + '</strong><br><span style="font-size:12px;color:var(--gray-500);">' + escapeHtml(op.email || '—') + '</span></td>' +
@@ -455,7 +455,7 @@ function renderDroneAdminOperators(operators) {
       '<td><button type="button" class="drone-edit-btn" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 
@@ -545,7 +545,7 @@ async function loadDroneAdminBookings() {
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
   if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet.</div>'; return; }
-  let html = '<table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
+  let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +
       '<td>#' + b.id + '</td>' +
@@ -562,7 +562,7 @@ function renderDroneAdminBookings(bookings) {
       '<td>' + (b.operatorName ? '👤 ' + escapeHtml(b.operatorName) : '') + '</td>' +
     '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   list.innerHTML = html;
 }
 

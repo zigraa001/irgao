@@ -1137,13 +1137,12 @@ function renderPricingForm(config) {
   if (!host) return;
   var rows = PRICING_FIELDS.map(function (f) {
     var val = config[f.key] ? config[f.key].value : 0;
-    return '<div style="margin-bottom:14px;">' +
-      '<label style="font-weight:600;font-size:14px;color:var(--gray-900);display:block;">' + escapeHtml(f.label) + '</label>' +
-      '<div style="font-size:12px;color:var(--gray-500);margin-bottom:4px;">' + escapeHtml(f.desc) + '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;">' +
-        '<input type="number" id="pricing-' + f.key + '" value="' + val + '" min="0" max="100" step="0.5" ' +
-          'style="width:80px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;">' +
-        '<span style="font-size:14px;color:var(--gray-600);">%</span>' +
+    return '<div class="pricing-field">' +
+      '<label class="pricing-field-label">' + escapeHtml(f.label) + '</label>' +
+      '<div class="pricing-field-desc">' + escapeHtml(f.desc) + '</div>' +
+      '<div class="pricing-field-input">' +
+        '<input type="number" id="pricing-' + f.key + '" class="pd-input" value="' + val + '" min="0" max="100" step="0.5" style="width:80px;min-height:38px;">' +
+        '<span class="pricing-field-unit">%</span>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -1186,10 +1185,10 @@ function renderPricingChangelog(changelog) {
     var d = new Date(entry.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
-      '<span style="font-weight:600;">' + escapeHtml(entry.adminName) + '</span>' +
-      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
-      '<div style="color:var(--gray-700);margin-top:2px;">' + escapeHtml(entry.changes) + '</div>' +
+    return '<div class="admin-list-row" style="flex-direction:column;align-items:stretch;">' +
+      '<div><span class="admin-list-name">' + escapeHtml(entry.adminName) + '</span>' +
+      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span></div>' +
+      '<div class="admin-list-meta" style="margin-top:2px;">' + escapeHtml(entry.changes) + '</div>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
@@ -1232,7 +1231,7 @@ function renderRevenueChart(daily) {
     var pct = Math.max((d.revenue / maxRev) * 100, 2);
     var dayLabel = new Date(d.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px;" title="' + dayLabel + ': ' + INR(d.revenue) + '">' +
-      '<div style="width:100%;max-width:24px;background:var(--primary, #2563EB);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:2px;"></div>' +
+      '<div style="width:100%;max-width:24px;background:var(--blue);border-radius:4px 4px 0 0;height:' + pct + '%;min-height:2px;"></div>' +
       '<div style="font-size:9px;color:var(--gray-500);margin-top:2px;writing-mode:vertical-rl;transform:rotate(180deg);height:40px;overflow:hidden;">' + dayLabel + '</div>' +
     '</div>';
   }).join('');
@@ -1248,26 +1247,25 @@ function renderRevenuePayouts(payouts, commRate) {
   if (!payouts.length) { host.innerHTML = ''; return; }
   var rows = payouts.map(function (p) {
     return '<tr>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + escapeHtml(p.name) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + p.trips + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + INR(p.grossRevenue) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;color:#B45309;">' + INR(p.commission) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;font-weight:600;">' + INR(p.netPayout) + '</td>' +
+      '<td><strong>' + escapeHtml(p.name) + '</strong></td>' +
+      '<td>' + p.trips + '</td>' +
+      '<td>' + INR(p.grossRevenue) + '</td>' +
+      '<td style="color:#B45309;">' + INR(p.commission) + '</td>' +
+      '<td style="font-weight:600;">' + INR(p.netPayout) + '</td>' +
     '</tr>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:800px;">' +
-    '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
-    '<div style="overflow-x:auto;">' +
-    '<table style="width:100%;border-collapse:collapse;">' +
-      '<thead><tr style="border-bottom:2px solid var(--gray-300);text-align:left;">' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Operator</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Trips</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Gross</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Commission (' + commRate + '%)</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Net Payout</th>' +
+  host.innerHTML = '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
+    '<div class="admin-table-wrap" style="overflow-x:auto;max-width:800px;">' +
+    '<table class="admin-table">' +
+      '<thead><tr>' +
+        '<th>Operator</th>' +
+        '<th>Trips</th>' +
+        '<th>Gross</th>' +
+        '<th>Commission (' + commRate + '%)</th>' +
+        '<th>Net Payout</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
-    '</table></div></div>';
+    '</table></div>';
 }
 
 // ── Admin Compliance Monitor ────────────────────────────────────────────
@@ -1306,10 +1304,10 @@ function renderComplianceMissing(operators) {
     var lastStr = op.lastChecklist
       ? new Date(op.lastChecklist).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
       : 'Never';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-200);">' +
-      '<div><span style="font-weight:600;font-size:14px;">' + escapeHtml(op.name) + '</span>' +
-        '<span style="color:var(--gray-500);font-size:12px;margin-left:8px;">' + escapeHtml(op.email) + '</span></div>' +
-      '<div style="font-size:12px;color:#B45309;">Last: ' + lastStr + '</div>' +
+    return '<div class="admin-list-row">' +
+      '<div><span class="admin-list-name">' + escapeHtml(op.name) + '</span>' +
+        '<span class="admin-list-meta" style="margin-left:8px;">' + escapeHtml(op.email) + '</span></div>' +
+      '<div class="admin-list-meta" style="color:#B45309;">Last: ' + lastStr + '</div>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
@@ -1324,10 +1322,10 @@ function renderComplianceFailed(checklists) {
     var d = new Date(c.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
-      '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
-      '<span style="color:#DC2626;margin-left:8px;font-weight:600;">FAIL</span>' +
+    return '<div class="admin-list-row">' +
+      '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
+      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span>' +
+      '<span class="op-status-badge op-badge--red" style="margin-left:8px;">FAIL</span>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
@@ -1342,11 +1340,11 @@ function renderComplianceRecent(checklists) {
     var d = new Date(c.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
-    return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
-      '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
-      '<span style="' + statusCls + ';margin-left:8px;font-weight:600;text-transform:uppercase;">' + c.overallStatus + '</span>' +
+    var badgeCls = c.overallStatus === 'pass' ? 'op-badge--green' : 'op-badge--red';
+    return '<div class="admin-list-row">' +
+      '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
+      '<span class="admin-list-meta" style="margin-left:8px;">' + ts + '</span>' +
+      '<span class="op-status-badge ' + badgeCls + '" style="margin-left:8px;">' + c.overallStatus.toUpperCase() + '</span>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;margin-top:16px;">' +

@@ -25,6 +25,11 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Location inputs are a connected container (.location-inputs) — inner .loc-input elements are borderless; the container itself holds border/radius/:focus-within
 - For card-language consistency: use var(--surface) bg, var(--border-subtle) border, var(--radius-lg) corners, var(--shadow-sm) or var(--shadow-md) elevation
 - dashboard-pill already has hover + .active state CSS — no need to add those when using it in new contexts
+- Admin tables use `<div class="admin-table-wrap"><table class="admin-table">` pattern — auto-styled with uppercase headers, subtle dividers, row hover, rounded wrapper
+- `.pd-input` is the standard input class for admin/drone forms (44px, rounded, focus ring) — use instead of inline styles
+- `.admin-list-row` + `.admin-list-name` + `.admin-list-meta` for any list-of-items rows in admin sections
+- Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
+- `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
 
 ---
 
@@ -121,5 +126,18 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - pd-stat cards are shared between the admin dashboard (via #admin-platform-stats) and the profile modal (via .profile-dashboard-body) — style changes affect both contexts
   - drone-stat-card/drone-stat-val/drone-stat-label are rendered by js/app/09-drones.js and appear in the admin Drones section — updated to match the same card language
   - .admin-nav-item.active .admin-nav-icon svg { stroke: var(--blue); } colors the SVG icons blue on active state without needing JS changes
+  - Manual browser verification was not possible — recommend visual QA
+---
+
+## 2026-07-05 - US-009
+- What was implemented: Admin console tables, forms and remaining sections redesign — new `.admin-table` CSS with uppercase 12px headers, subtle dividers, row hover, wrapped in `.admin-table-wrap` rounded card; `.pd-input` styled as 44px rounded inputs with focus ring; `.admin-form-card` updated with design tokens (--surface, --border-subtle); `.admin-btn-sm` with hover transitions and variant-specific hover states; admin logs as rounded dark code block (--radius-lg, #0F172A bg, line hover); pricing form fields extracted to CSS classes (pricing-field/label/desc/input); compliance/changelog/revenue rows use `.admin-list-row` with `.op-status-badge` chips for pass/fail status; revenue payouts table uses `.admin-table` class; settings section toggles extracted from inline styles to CSS classes (admin-toggle-row/label/track/knob); drone admin forms updated with design tokens; `.auth-input`/`.auth-btn`/`.op-btn-secondary` CSS rules added; admin live panel/flight cards/fleet rows use design tokens
+- Files changed: css/app.css (admin-table, admin-table-wrap, pd-input, admin-form-card, admin-btn-sm, admin-log, admin-toggle-*, admin-list-row, pricing-field-*, auth-input, auth-btn, op-btn-secondary, drone-admin-form, drone-edit-btn, drone-status-select, drone-form-row, admin-live-panel, admin-flight-card, admin-fleet-row, admin-user-card, admin-tab, admin-load-more, admin-user-drawer-panel, pd-loading, pd-recent), app.html (settings section toggles refactored to CSS classes, CSS cache-bust), js/app/03-admin-profile.js (pricing form fields use CSS classes, revenue payouts table uses admin-table, compliance rows use admin-list-row + op-status-badge, changelog rows use admin-list-row, chart bar uses --blue), js/app/09-drones.js (all 3 admin tables wrapped in admin-table-wrap with overflow-x), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - `.admin-table` is now a proper CSS class — all drone admin tables (services, operators, bookings) and revenue payouts table use it; any new admin table should use `<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table">` pattern
+  - Settings toggle JS uses `knob.style.left` and `track.style.background` inline — CSS provides base styles but JS overrides them at runtime; do not try to use CSS `input:checked` selectors that conflict
+  - `.pd-input` now has a CSS rule (44px, rounded, focus ring) — any admin/drone form inputs can use this class instead of `.auth-field input` wrapping
+  - `.admin-list-row` is a reusable pattern for list rows in admin sections (compliance, changelog, etc.) — includes name/meta child classes
+  - `.auth-input` and `.auth-btn` CSS classes now exist — used by the Companies section form in app.html
+  - Revenue chart bars changed from `var(--primary, #2563EB)` to `var(--blue)` for design token consistency
   - Manual browser verification was not possible — recommend visual QA
 ---
