@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=navredesign0705">
+  <link rel="stylesheet" href="/css/app.css?v=bookingpanel0705">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -308,7 +308,7 @@
       <div class="panel-section" id="panel-locations">
         <div id="service-banner-area"></div>
         <div class="location-inputs" style="margin-top:10px;">
-          <div class="loc-input-group" style="margin-bottom:12px; position:relative;">
+          <div class="loc-input-group" style="position:relative;">
             <div class="loc-dot loc-dot-pickup"></div>
             <div class="loc-input-wrap">
               <input class="loc-input" id="pickup-input" type="text" placeholder="Enter pickup location" autocomplete="off">
@@ -328,11 +328,9 @@
             </div>
             <div class="loc-suggest" id="dest-suggest" style="display:none;"></div>
           </div>
-          <div style="position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:2">
-            <button class="swap-btn" onclick="swapLocations()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
-            </button>
-          </div>
+          <button class="swap-btn" onclick="swapLocations()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+          </button>
         </div>
 
         <div id="extra-fields-area"></div>
@@ -1234,6 +1232,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=3e2e6de1"></script>
+<script src="/js/app.bundle.js?v=525c325a"></script>
 </body>
 </html>
