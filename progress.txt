@@ -178,3 +178,17 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Drone loading strings are split between app.html (initial static HTML) and js/app/09-drones.js (JS-rendered empty/error states) — both need to be updated for consistency
   - The em-dash (—) in JS strings like 'No rides yet — your trips' uses a special Unicode character; replaced with ASCII double-dash for safety since the codebase pattern warns about special characters
 ---
+
+## 2026-07-05 - US-013
+- What was implemented: Operator and admin microcopy and empty-state upgrade -- duty card status strings made clearer ('You are on duty' / 'You are off duty' with descriptive subtexts), all operator loading/empty states unified (trips, zones, earnings), admin dashboard subtitle updated to 'Everything happening across IraGo right now', all 11 admin sections loading states unified to consistent 'Fetching...' pattern, all empty states given helpful hints about what will appear, page title kept as-is
+- Files changed: js/app/08-actions.js (duty status strings, ride history loading/empty, duty toasts), js/app/04-operator.js (trip loading/empty states), js/app/03-admin-profile.js (platform stats, user detail, users list, pricing, revenue, compliance, earnings, companies loading/empty), js/app/05-map.js (live flights/fleet empty states), js/app/09-drones.js (drone services/operators/bookings loading/empty), app.html (duty status initial, trips empty, zones loading, earnings loading, admin subtitle, all admin section initial loading strings), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - Operator duty status is rendered by renderOperatorDuty() in js/app/08-actions.js -- it sets #op-duty-status text and #op-duty-sub based on onDuty + hasGps state; there are 3 subtexts (no GPS, on duty, off duty)
+  - The duty toggle toasts in toggleOperatorDuty() also display duty state -- must keep consistent with renderOperatorDuty() wording
+  - Admin loading states exist in BOTH app.html (initial static HTML) and JS (dynamic after API fetch) -- both must be kept in sync
+  - Admin sections: Dashboard, Users, Live Map, Add Member, Companies, Pricing, Revenue, Compliance, Drones, Settings, Logs -- total 11 sections
+  - The 'Fetching...' verb pattern was used instead of 'Loading...' for consistency -- all loading states now follow this pattern
+  - Empty states should always hint at what will appear (e.g., 'Active trips will appear here') to reduce user anxiety
+  - Page title 'IraGo -- Book Your Air Taxi' was kept as-is since it already communicates the product value
+  - Manual browser verification was not possible -- recommend visual QA of operator console and admin sections
+---

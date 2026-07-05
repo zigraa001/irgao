@@ -265,7 +265,7 @@
         "Verify in browser using dev-browser skill (operator console + 2-3 admin sections)"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
