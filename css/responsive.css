@@ -118,6 +118,13 @@
   .use-cases-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Contact page: two-column info/form layout must stack (it's an inline
+     grid-template-columns:1fr 1fr, hence the !important to override it) */
+  .grid-split {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-10) !important;
+  }
 }
 
 /* ─── SMALL MOBILE (max 480px) ─── */

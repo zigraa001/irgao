@@ -62,6 +62,61 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* ═══════════════════════════════════════════
+   ADMIN — align to the IraGo brand design system
+   The admin console adopts the marketing-site tokens (tokens.css):
+   square corners, deep-navy palette, corporate blue, forest green and
+   restrained navy shadows — matching index.html. Scoped to the admin
+   surfaces so the passenger/operator views keep their existing look.
+   This block re-maps every var() the admin styles already consume, so
+   most deviations are corrected here without per-rule edits.
+   ═══════════════════════════════════════════ */
+#admin-view,
+#admin-user-drawer {
+  /* Square, engineering-grade corners */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-full: 0;
+
+  /* Neutrals → navy-tinted brand text / border ramp */
+  --gray-900: #16243A;  /* text-primary */
+  --gray-800: #16243A;
+  --gray-700: #3E4C61;  /* text-body */
+  --gray-600: #3E4C61;
+  --gray-500: #67748A;  /* text-muted */
+  --gray-400: #93A0B4;  /* text-hint  */
+  --gray-300: #D8DEE6;  /* card-border */
+  --gray-200: #D8DEE6;
+  --gray-100: #E9EDF1;  /* bg-muted   */
+  --gray-50:  #F4F6F8;  /* bg-subtle  */
+
+  /* Accents → brand */
+  --blue: #0057B8;          /* = --accent */
+  --blue-dark: #004494;     /* = --accent-dark */
+  --blue-light: #D6E4F5;
+  --blue-50: #EFF4FA;
+  --blue-glow: rgba(0, 87, 184, 0.12);
+  --green: #1E7B45;         /* forest green (brand) */
+  --green-dark: #145C33;
+  --green-light: #D6E7DD;
+  --green-50: #EEF5F0;
+  --red: #C8102E;           /* = --emergency */
+  --red-dark: #A50D26;
+  --red-light: #F6D5DB;
+  --red-50: #FBEAED;
+  --purple: #0B1F3A;        /* slate-purple avatars/badges → navy */
+  --orange: #8A7440;        /* amber warnings → brand gold */
+
+  /* Restrained navy shadows (brand cards are near-flat) */
+  --shadow-sm: 0 1px 2px rgba(11, 31, 58, 0.08);
+  --shadow-md: 0 2px 8px rgba(11, 31, 58, 0.10);
+  --shadow-lg: 0 4px 16px rgba(11, 31, 58, 0.12);
+  --shadow-xl: 0 4px 16px rgba(11, 31, 58, 0.12);
+}
+
+/* ═══════════════════════════════════════════
    VIEWS (show/hide)
    ═══════════════════════════════════════════ */
 .view { display: none; }
@@ -738,12 +793,12 @@ a { text-decoration: none; color: inherit; }
   color: var(--blue-dark);
 }
 .nav-profile-dropdown-role.role-operator {
-  background: rgba(99, 102, 241, 0.12);
-  color: #4338ca;
+  background: var(--sky-glow);
+  color: var(--sky);
 }
 .nav-profile-dropdown-role.role-admin {
-  background: rgba(168, 85, 247, 0.12);
-  color: #7e22ce;
+  background: rgba(11, 31, 58, 0.08);
+  color: var(--navy);
 }
 .nav-profile-dropdown-divider {
   height: 1px;
@@ -797,7 +852,7 @@ a { text-decoration: none; color: inherit; }
   flex-shrink: 0;
 }
 .profile-account-avatar.admin-avatar {
-  background: #35507A;
+  background: var(--navy);
 }
 .profile-account-info { min-width: 0; flex: 1; }
 .profile-account-name {
@@ -2091,6 +2146,29 @@ a { text-decoration: none; color: inherit; }
   .booking-nav { padding: 0 12px; }
 }
 
+/* ─── MOBILE TOP NAV (booking / operator / admin all use .booking-nav) ───
+   Phones can't fit logo + role badge + bell + Profile + Log out + avatar in
+   one row, so the avatar got clipped off the right edge. Drop the decorative
+   role badge (role is still shown in the in-page profile card) and shrink the
+   remaining controls so everything fits without horizontal scroll. */
+@media (max-width: 640px) {
+  .booking-nav { padding: 0 12px; gap: 8px; }
+  .booking-nav-logo img { height: 30px; }
+  .customer-role-badge,
+  .op-role-badge,
+  .admin-role-badge { display: none; }
+  .nav-profile { gap: 6px; }
+  .nav-bell { width: 32px; height: 32px; border-radius: var(--radius-sm); }
+  .nav-bell svg { width: 18px; height: 18px; }
+  .nav-text-btn { padding: 6px 10px; font-size: 12px; }
+  .nav-avatar { width: 32px; height: 32px; font-size: 12px; }
+}
+/* Ultra-narrow phones: hide the "Profile" text button (profile is reachable via
+   the avatar and the in-page profile card); keep Log out always visible. */
+@media (max-width: 380px) {
+  .nav-profile .js-open-profile { display: none; }
+}
+
 /* ═══════════════════════════════════════════
    POPULAR ROUTES
    ═══════════════════════════════════════════ */
@@ -2510,6 +2588,17 @@ a { text-decoration: none; color: inherit; }
   box-shadow: var(--shadow-sm);
   pointer-events: none;
 }
+/* On desktop these map overlays are offset by left:432px to clear the 420px
+   side panel. That offset is declared after the earlier mobile media query, so
+   it wins the cascade and pushes them off the right edge on phones. Re-assert
+   the on-screen mobile positions here (after the base rules). */
+@media (max-width: 900px) {
+  .op-map-badge { left: 12px; right: auto; top: 12px; }
+  .op-map-legend {
+    left: 12px; right: 12px; top: 12px; bottom: auto;
+    max-width: none; font-size: 10px;
+  }
+}
 .booking-map-legend {
   position: absolute;
   bottom: 16px;
@@ -2535,6 +2624,12 @@ a { text-decoration: none; color: inherit; }
 }
 .op-panel {
   width: 420px;
+}
+/* This rule sits after the max-width:900px sheet rule above, so its 420px would
+   otherwise win on mobile and push the operator panel off-screen. Re-assert the
+   full-width bottom-sheet width for small screens. */
+@media (max-width: 900px) {
+  .op-panel { width: 100%; }
 }
 .op-panel .op-welcome {
   font-size: 20px;
@@ -2566,7 +2661,7 @@ a { text-decoration: none; color: inherit; }
 #admin-view {
   min-height: 100vh;
   flex-direction: column;
-  background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF5 50%, #F0F4F8 100%);
+  background: var(--bg-subtle);
 }
 .admin-role-badge {
   font-size: 10px;
@@ -2574,14 +2669,14 @@ a { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #fff;
-  background: linear-gradient(135deg, #1E293B, #334155);
+  background: var(--navy);
   padding: 5px 14px;
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 8px rgba(15,23,42,0.18);
+  box-shadow: var(--shadow-sm);
 }
 .admin-avatar {
-  background: linear-gradient(135deg, #0057B8, #004494);
-  box-shadow: 0 2px 8px rgba(0,87,184,0.25);
+  background: var(--accent);
+  box-shadow: var(--shadow-sm);
 }
 .op-body {
   flex: 1;
@@ -2692,7 +2787,7 @@ a { text-decoration: none; color: inherit; }
 }
 .admin-user-card:hover {
   border-color: var(--blue-light);
-  box-shadow: 0 4px 16px rgba(0,87,184,0.08), 0 0 0 1px rgba(0,87,184,0.08);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 .admin-user-card:active { transform: translateY(0px); }
@@ -2710,22 +2805,22 @@ a { text-decoration: none; color: inherit; }
   transition: all 0.2s ease;
 }
 .admin-user-card:hover .admin-user-chevron {
-  color: #0057B8;
+  color: var(--accent);
   transform: translateX(3px);
 }
 .admin-user-id {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 15px;
   color: #fff;
-  background: linear-gradient(135deg, #0057B8, #004494);
-  box-shadow: 0 2px 6px rgba(0,87,184,0.2);
+  background: var(--accent);
+  box-shadow: var(--shadow-sm);
 }
 .admin-user-main { flex: 1; min-width: 0; }
 .admin-user-name {
@@ -2783,25 +2878,41 @@ a { text-decoration: none; color: inherit; }
 .admin-form-select:hover {
   border-color: var(--gray-300);
 }
+/* Generic form input (drone admin forms etc.) — was undefined, rendered unstyled */
+.pd-input {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--gray-800);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pd-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+  outline: none;
+}
 .admin-add-submit {
   width: auto;
   padding: 11px 24px;
-  border-radius: 8px;
+  border-radius: 0;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 .admin-add-submit:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,87,184,0.2);
+  box-shadow: var(--shadow-md);
 }
 .admin-add-success {
   display: none;
   margin-top: 14px;
   padding: 12px 14px;
-  border-radius: 8px;
-  background: rgba(16,185,129,0.08);
-  border: 1px solid rgba(16,185,129,0.2);
-  color: #047857;
+  border-radius: 0;
+  background: var(--green-50);
+  border: 1px solid var(--green-light);
+  color: var(--green-dark);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
@@ -2812,9 +2923,9 @@ a { text-decoration: none; color: inherit; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #047857;
-  background: #D1FAE5;
-  border: 1px solid #A7F3D0;
+  color: var(--green-dark);
+  background: var(--green-50);
+  border: 1px solid var(--green-light);
   padding: 4px 10px;
   border-radius: var(--radius-sm);
 }
@@ -2878,7 +2989,7 @@ a { text-decoration: none; color: inherit; }
 }
 .admin-btn-sm.primary {
   border-color: rgba(0,87,184,0.2);
-  color: #0057B8;
+  color: var(--accent);
   background: rgba(0,87,184,0.06);
 }
 .admin-btn-sm.primary:hover {
@@ -2886,13 +2997,13 @@ a { text-decoration: none; color: inherit; }
   border-color: rgba(0,87,184,0.3);
 }
 .admin-btn-sm.danger {
-  border-color: #FECACA;
-  color: #B91C1C;
-  background: #FEF2F2;
+  border-color: var(--red-light);
+  color: var(--red-dark);
+  background: var(--red-50);
 }
 .admin-btn-sm.danger:hover {
-  background: #FEE2E2;
-  border-color: #FCA5A5;
+  background: var(--red-light);
+  border-color: var(--red);
 }
 .admin-user-tabs {
   display: flex;
@@ -3067,7 +3178,7 @@ a { text-decoration: none; color: inherit; }
 }
 .admin-live-map-fs:hover {
   background: #fff;
-  color: #0057B8;
+  color: var(--accent);
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   transform: scale(1.05);
 }
@@ -3131,7 +3242,7 @@ body.admin-map-fs { overflow: hidden; }
 }
 .admin-flight-card:hover {
   border-color: var(--blue-light);
-  box-shadow: 0 2px 8px rgba(0,87,184,0.06);
+  box-shadow: var(--shadow-md);
 }
 .admin-flight-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .admin-flight-route { font-weight: 700; color: var(--gray-900); }
@@ -3162,7 +3273,7 @@ body.admin-map-fs { overflow: hidden; }
 }
 .admin-zone-map {
   height: 320px;
-  border-radius: 12px;
+  border-radius: 0;
   border: 1px solid var(--gray-200);
   overflow: hidden;
   background: var(--gray-100);
@@ -3171,7 +3282,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-zone-altitude {
   background: #fff;
   border: 1px solid var(--gray-200);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 14px;
   font-size: 11px;
   max-height: 360px;
@@ -3370,9 +3481,9 @@ body.admin-map-fs { overflow: hidden; }
   position: sticky;
   top: 78px;
   align-self: start;
-  background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
-  border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(15,23,42,0.18), 0 1px 4px rgba(15,23,42,0.12);
+  background: var(--bg-dark);
+  border-radius: 0;
+  box-shadow: var(--shadow-lg);
   padding: 8px 10px 18px;
   border: 1px solid rgba(255,255,255,0.04);
 }
@@ -3423,12 +3534,12 @@ body.admin-map-fs { overflow: hidden; }
   color: #E2E8F0;
   transform: translateX(2px);
 }
-.admin-nav-item:focus-visible { outline: 2px solid #7FB2F0; outline-offset: -2px; }
+.admin-nav-item:focus-visible { outline: 2px solid var(--accent-light); outline-offset: -2px; }
 .admin-nav-item.active {
-  background: linear-gradient(135deg, rgba(0,87,184,0.2), rgba(127,178,240,0.12));
+  background: var(--accent-glow-strong);
   color: #fff;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 #0057B8;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .admin-nav-icon {
   width: 20px;
@@ -3441,7 +3552,7 @@ body.admin-map-fs { overflow: hidden; }
   transition: opacity 0.15s ease;
 }
 .admin-nav-item:hover .admin-nav-icon { opacity: 0.9; }
-.admin-nav-item.active .admin-nav-icon { opacity: 1; color: #7FB2F0; }
+.admin-nav-item.active .admin-nav-icon { opacity: 1; color: var(--accent-light); }
 .admin-nav-icon svg { width: 17px; height: 17px; display: block; }
 .admin-main { min-width: 0; }
 .admin-section { animation: adminFadeIn 0.25s ease-out; }
@@ -3490,18 +3601,32 @@ body.admin-map-fs { overflow: hidden; }
 #admin-view .pd-recent,
 #admin-view .pd-breakdown-card,
 #admin-view .drone-admin-form,
-#admin-view .drone-stat-card { border-radius: 12px; }
+#admin-view .drone-stat-card { border-radius: 0; }
 #admin-view .admin-btn-sm,
 #admin-view .admin-load-more,
 #admin-view .admin-form-select,
 #admin-view .auth-field input,
 #admin-view .auth-input,
-#admin-view .admin-live-map-fs { border-radius: 8px; }
-#admin-view .admin-user-id { border-radius: 10px; }
+#admin-view .admin-live-map-fs { border-radius: 0; }
+/* Initial avatars stay circular (matches the marketing team avatars) */
+#admin-view .admin-user-id,
+#admin-user-drawer .admin-user-drawer-avatar { border-radius: 50%; }
+/* Remaining admin rounded-rectangles → square */
+#admin-view .admin-drawer,
+#admin-view .admin-drawer-toggle,
+#admin-view .admin-nav-item,
+#admin-view .admin-table-wrap,
+#admin-view .admin-logs-scroll,
+#admin-view .pd-bar-track,
+#admin-view .pd-bar-fill,
+#admin-view .pd-error,
+#admin-view .pd-refresh,
+#admin-view .drone-status-select,
+#admin-user-drawer .admin-user-drawer-close { border-radius: 0; }
 #admin-view .admin-form-card {
   padding: 22px;
   border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02);
+  box-shadow: var(--shadow-sm);
 }
 #admin-view .pd-stat {
   padding: 18px 18px 16px;
@@ -3511,12 +3636,12 @@ body.admin-map-fs { overflow: hidden; }
   overflow: hidden;
 }
 #admin-view .pd-stat:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 #admin-view .pd-stat-value { font-size: 28px; letter-spacing: -0.03em; }
 #admin-view .pd-stat--green .pd-stat-value { color: var(--green-dark); }
-#admin-view .pd-stat--amber .pd-stat-value { color: #B45309; }
+#admin-view .pd-stat--amber .pd-stat-value { color: var(--gold); }
 #admin-view .pd-stat--red .pd-stat-value { color: var(--red-dark); }
 #admin-view .pd-stat--purple .pd-stat-value { color: var(--purple); }
 #admin-view .pd-stat--green { border-color: var(--gray-200); border-left: 3px solid var(--green); }
@@ -3548,8 +3673,8 @@ body.admin-map-fs { overflow: hidden; }
 #admin-view .admin-tab:hover { color: var(--gray-800); }
 #admin-view .admin-tab.active {
   background: transparent;
-  color: #0057B8;
-  box-shadow: inset 0 -2px 0 #0057B8;
+  color: var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 #admin-view .dashboard-pill {
   cursor: pointer;
@@ -3563,10 +3688,10 @@ body.admin-map-fs { overflow: hidden; }
   border-color: var(--gray-300);
 }
 #admin-view .dashboard-pill.active {
-  background: linear-gradient(135deg, #0F172A, #1E293B);
-  border-color: var(--gray-900);
+  background: var(--navy);
+  border-color: var(--navy);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(15,23,42,0.18);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Admin data tables (drone management, offices, …) */
@@ -3589,7 +3714,7 @@ body.admin-map-fs { overflow: hidden; }
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gray-500);
-  background: linear-gradient(180deg, var(--gray-50), #F1F5F9);
+  background: var(--bg-subtle);
   padding: 12px 16px;
   border-bottom: 1px solid var(--gray-200);
   white-space: nowrap;
@@ -3620,7 +3745,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-user-drawer-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(11, 31, 58, 0.5);
   opacity: 0;
   transition: opacity 0.25s ease;
   backdrop-filter: blur(2px);
@@ -3635,7 +3760,7 @@ body.admin-map-fs { overflow: hidden; }
   width: 100%;
   max-width: 480px;
   background: #fff;
-  box-shadow: -8px 0 40px rgba(15,23,42,0.12), -2px 0 8px rgba(15,23,42,0.06);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -3647,14 +3772,14 @@ body.admin-map-fs { overflow: hidden; }
   position: relative;
   padding: 24px 24px 18px;
   border-bottom: 1px solid var(--gray-200);
-  background: linear-gradient(180deg, #F8FAFC, #F1F5F9);
+  background: var(--bg-subtle);
 }
 .admin-user-drawer-close {
   position: absolute;
   top: 16px;
   right: 16px;
   border: none;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(11, 31, 58, 0.06);
   color: var(--gray-600);
   width: 34px;
   height: 34px;
@@ -3668,7 +3793,7 @@ body.admin-map-fs { overflow: hidden; }
   justify-content: center;
 }
 .admin-user-drawer-close:hover {
-  background: rgba(15, 23, 42, 0.1);
+  background: rgba(11, 31, 58, 0.1);
   color: var(--gray-900);
 }
 .admin-user-drawer-avatar {
@@ -3681,9 +3806,9 @@ body.admin-map-fs { overflow: hidden; }
   font-weight: 700;
   font-size: 22px;
   color: #fff;
-  background: linear-gradient(135deg, #0057B8, #004494);
+  background: var(--accent);
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(0,87,184,0.2);
+  box-shadow: var(--shadow-md);
 }
 .admin-user-drawer-name {
   font-size: 18px;
@@ -3822,7 +3947,7 @@ body.admin-map-fs { overflow: hidden; }
 /* ── Admin logs ── */
 .admin-logs-scroll {
   height: 60vh; overflow-y: auto; border: 1px solid var(--gray-200);
-  border-radius: 4px; background: #0B1020; color: #D1D5DB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  border-radius: 4px; background: var(--bg-dark-deep); color: #D1D5DB; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
 }
 .admin-logs-list { display: flex; flex-direction: column; }
 .admin-log-line { padding: 4px 12px; border-bottom: 1px solid rgba(255,255,255,.05); white-space: pre-wrap; word-break: break-word; }

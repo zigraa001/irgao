@@ -2730,7 +2730,7 @@ function renderPricingForm(config) {
       '<div style="font-size:12px;color:var(--gray-500);margin-bottom:4px;">' + escapeHtml(f.desc) + '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;">' +
         '<input type="number" id="pricing-' + f.key + '" value="' + val + '" min="0" max="100" step="0.5" ' +
-          'style="width:80px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;">' +
+          'style="width:80px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:0;font-size:14px;">' +
         '<span style="font-size:14px;color:var(--gray-600);">%</span>' +
       '</div>' +
     '</div>';
@@ -2756,14 +2756,14 @@ async function saveAdminPricing() {
     });
     var data = await res.json();
     if (res.ok && data.saved) {
-      if (msg) { msg.style.color = '#16A34A'; msg.textContent = 'Pricing config saved.'; }
+      if (msg) { msg.style.color = 'var(--green)'; msg.textContent = 'Pricing config saved.'; }
       _adminPricingData = data.config || {};
       loadAdminPricing();
     } else {
-      if (msg) { msg.style.color = '#DC2626'; msg.textContent = data.error || 'Save failed.'; }
+      if (msg) { msg.style.color = 'var(--emergency)'; msg.textContent = data.error || 'Save failed.'; }
     }
   } catch (e) {
-    if (msg) { msg.style.color = '#DC2626'; msg.textContent = 'Could not reach server.'; }
+    if (msg) { msg.style.color = 'var(--emergency)'; msg.textContent = 'Could not reach server.'; }
   }
 }
 
@@ -2820,7 +2820,7 @@ function renderRevenueChart(daily) {
     var pct = Math.max((d.revenue / maxRev) * 100, 2);
     var dayLabel = new Date(d.day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px;" title="' + dayLabel + ': ' + INR(d.revenue) + '">' +
-      '<div style="width:100%;max-width:24px;background:var(--primary, #2563EB);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:2px;"></div>' +
+      '<div style="width:100%;max-width:24px;background:var(--accent);border-radius:0;height:' + pct + '%;min-height:2px;"></div>' +
       '<div style="font-size:9px;color:var(--gray-500);margin-top:2px;writing-mode:vertical-rl;transform:rotate(180deg);height:40px;overflow:hidden;">' + dayLabel + '</div>' +
     '</div>';
   }).join('');
@@ -2836,26 +2836,22 @@ function renderRevenuePayouts(payouts, commRate) {
   if (!payouts.length) { host.innerHTML = ''; return; }
   var rows = payouts.map(function (p) {
     return '<tr>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + escapeHtml(p.name) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + p.trips + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;">' + INR(p.grossRevenue) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;color:#B45309;">' + INR(p.commission) + '</td>' +
-      '<td style="padding:6px 10px;font-size:13px;font-weight:600;">' + INR(p.netPayout) + '</td>' +
+      '<td class="cell-strong">' + escapeHtml(p.name) + '</td>' +
+      '<td class="cell-num">' + p.trips + '</td>' +
+      '<td class="cell-num">' + INR(p.grossRevenue) + '</td>' +
+      '<td class="cell-num" style="color:var(--gold);">' + INR(p.commission) + '</td>' +
+      '<td class="cell-num cell-strong">' + INR(p.netPayout) + '</td>' +
     '</tr>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card" style="max-width:800px;">' +
-    '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
-    '<div style="overflow-x:auto;">' +
-    '<table style="width:100%;border-collapse:collapse;">' +
-      '<thead><tr style="border-bottom:2px solid var(--gray-300);text-align:left;">' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Operator</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Trips</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Gross</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Commission (' + commRate + '%)</th>' +
-        '<th style="padding:6px 10px;font-size:12px;color:var(--gray-600);">Net Payout</th>' +
+  host.innerHTML = '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
+    '<div class="admin-table-wrap" style="max-width:800px;">' +
+    '<table class="admin-table">' +
+      '<thead><tr>' +
+        '<th>Operator</th><th>Trips</th><th>Gross</th>' +
+        '<th>Commission (' + commRate + '%)</th><th>Net Payout</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
-    '</table></div></div>';
+    '</table></div>';
 }
 
 // ── Admin Compliance Monitor ────────────────────────────────────────────
@@ -2897,11 +2893,11 @@ function renderComplianceMissing(operators) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-200);">' +
       '<div><span style="font-weight:600;font-size:14px;">' + escapeHtml(op.name) + '</span>' +
         '<span style="color:var(--gray-500);font-size:12px;margin-left:8px;">' + escapeHtml(op.email) + '</span></div>' +
-      '<div style="font-size:12px;color:#B45309;">Last: ' + lastStr + '</div>' +
+      '<div style="font-size:12px;color:var(--gold);">Last: ' + lastStr + '</div>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;color:#B45309;">Missing Checklist (24h)</div>' + rows + '</div>';
+    '<div class="op-section-title" style="font-size:14px;color:var(--gold);">Missing Checklist (24h)</div>' + rows + '</div>';
 }
 
 function renderComplianceFailed(checklists) {
@@ -2915,11 +2911,11 @@ function renderComplianceFailed(checklists) {
     return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
       '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
       '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
-      '<span style="color:#DC2626;margin-left:8px;font-weight:600;">FAIL</span>' +
+      '<span style="color:var(--emergency);margin-left:8px;font-weight:600;">FAIL</span>' +
     '</div>';
   }).join('');
   host.innerHTML = '<div class="admin-form-card" style="max-width:640px;">' +
-    '<div class="op-section-title" style="font-size:14px;color:#DC2626;">Failed Checklists (7 days)</div>' + rows + '</div>';
+    '<div class="op-section-title" style="font-size:14px;color:var(--emergency);">Failed Checklists (7 days)</div>' + rows + '</div>';
 }
 
 function renderComplianceRecent(checklists) {
@@ -2930,7 +2926,7 @@ function renderComplianceRecent(checklists) {
     var d = new Date(c.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
+    var statusCls = c.overallStatus === 'pass' ? 'color:var(--green)' : 'color:var(--emergency)';
     return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
       '<span style="font-weight:600;">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
       '<span style="color:var(--gray-500);margin-left:8px;">' + ts + '</span>' +
@@ -2966,12 +2962,12 @@ function renderOperatorEarnings(data) {
     pdStat('✈️', data.completedTrips || 0, 'Completed Trips') +
   '</div>';
   var monthKpis = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
-    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
+    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:0;">' +
       '<div style="font-size:12px;color:var(--gray-500);">This Month</div>' +
       '<div style="font-size:18px;font-weight:700;">' + INR(data.monthGross) + '</div>' +
-      '<div style="font-size:12px;color:#16A34A;">' + INR(data.monthNet) + ' net</div>' +
+      '<div style="font-size:12px;color:var(--green);">' + INR(data.monthNet) + ' net</div>' +
     '</div>' +
-    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:8px;">' +
+    '<div style="flex:1;min-width:120px;background:var(--gray-100);padding:10px;border-radius:0;">' +
       '<div style="font-size:12px;color:var(--gray-500);">Month Trips</div>' +
       '<div style="font-size:18px;font-weight:700;">' + (data.monthTrips || 0) + '</div>' +
     '</div>' +
@@ -3017,15 +3013,15 @@ async function submitComplianceChecklist() {
     if (res.ok) {
       var passed = data.overallStatus === 'pass';
       if (statusEl) {
-        statusEl.style.color = passed ? '#16A34A' : '#DC2626';
+        statusEl.style.color = passed ? 'var(--green)' : 'var(--emergency)';
         statusEl.textContent = passed ? 'Checklist PASSED — you are cleared for flight.' : 'Checklist FAILED — not all critical items checked.';
       }
       loadComplianceHistory();
     } else {
-      if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = data.error || 'Submission failed.'; }
+      if (statusEl) { statusEl.style.color = 'var(--emergency)'; statusEl.textContent = data.error || 'Submission failed.'; }
     }
   } catch (e) {
-    if (statusEl) { statusEl.style.color = '#DC2626'; statusEl.textContent = 'Could not reach server.'; }
+    if (statusEl) { statusEl.style.color = 'var(--emergency)'; statusEl.textContent = 'Could not reach server.'; }
   }
 }
 
@@ -3040,7 +3036,7 @@ async function loadComplianceHistory() {
       var d = new Date(c.createdAt);
       var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
                d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      var statusCls = c.overallStatus === 'pass' ? 'color:#16A34A' : 'color:#DC2626';
+      var statusCls = c.overallStatus === 'pass' ? 'color:var(--green)' : 'color:var(--emergency)';
       return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">' +
         '<span>' + ts + '</span>' +
         '<span style="' + statusCls + ';font-weight:600;text-transform:uppercase;">' + c.overallStatus + '</span>' +

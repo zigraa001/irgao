@@ -39,7 +39,8 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=paypage0703">
+  <link rel="stylesheet" href="/css/tokens.css?v=9f95a6f3">
+  <link rel="stylesheet" href="/css/app.css?v=9f95a6f3">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -403,7 +404,7 @@
             </div>
             <div class="loc-suggest" id="dest-suggest" style="display:none;"></div>
           </div>
-          <div style="position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:2">
+          <div class="swap-btn-wrap">
             <button class="swap-btn" onclick="swapLocations()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
             </button>
@@ -1050,7 +1051,7 @@
       <!-- Operators Live Map section -->
       <section class="admin-section" id="admin-section-live" hidden>
         <div class="op-section-title">Operators Live Map</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
+        <p class="admin-users-meta">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
         <div id="admin-live-meta" class="admin-users-meta"></div>
         <div id="admin-live-map-wrap" class="admin-live-map-wrap">
           <div id="admin-live-map" class="admin-live-map"></div>
@@ -1109,17 +1110,16 @@
         </div>
       </section>
 
-      <!-- Logs section (observability): in-memory ring buffer, last 50 first,
-           older pages load on scroll-up to avoid rendering everything at once. -->
+      <!-- Operator Companies: manage operator companies and their regional offices. -->
       <section class="admin-section" id="admin-section-companies" hidden>
         <div class="op-section-title">Operator Companies</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Manage operator companies and their regional offices across metro cities.</p>
+        <p class="admin-users-meta">Manage operator companies and their regional offices across metro cities.</p>
         <div id="admin-companies-list" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;"></div>
         <div class="admin-form-card" style="max-width:560px;margin-bottom:20px;">
           <div class="op-section-title" style="font-size:14px;">Add Company</div>
           <input type="text" id="admin-company-name" class="auth-input" placeholder="Company name (e.g. SkyTaxi India)" style="margin-bottom:8px;">
           <input type="text" id="admin-company-hq" class="auth-input" placeholder="Head office city" style="margin-bottom:8px;">
-          <button type="button" class="auth-btn" onclick="addOperatorCompany()">Add Company</button>
+          <button type="button" class="btn-auth-primary" onclick="addOperatorCompany()">Add Company</button>
           <div class="auth-error" id="admin-company-error"></div>
         </div>
         <div class="op-section-title" style="font-size:15px;">Regional Offices</div>
@@ -1129,7 +1129,7 @@
       <!-- Pricing Config section -->
       <section class="admin-section" id="admin-section-pricing" hidden>
         <div class="op-section-title">Pricing Configuration</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
+        <p class="admin-users-meta">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
         <div id="admin-pricing-form" class="admin-form-card" style="max-width:640px;margin-bottom:20px;">
           <div class="pd-loading">Loading pricing config…</div>
         </div>
@@ -1139,7 +1139,7 @@
       <!-- Revenue Dashboard section -->
       <section class="admin-section" id="admin-section-revenue" hidden>
         <div class="op-section-title">Revenue Dashboard</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Platform revenue overview with daily trends and operator payout breakdown.</p>
+        <p class="admin-users-meta">Platform revenue overview with daily trends and operator payout breakdown.</p>
         <div id="admin-revenue-kpis" class="profile-stats-grid" style="margin-bottom:20px;">
           <div class="pd-loading">Loading revenue data…</div>
         </div>
@@ -1150,7 +1150,7 @@
       <!-- Compliance Monitor section -->
       <section class="admin-section" id="admin-section-compliance" hidden>
         <div class="op-section-title">Compliance Monitor</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Pre-flight safety checklist status across all operators. Operators without a checklist in 24h are flagged.</p>
+        <p class="admin-users-meta">Pre-flight safety checklist status across all operators. Operators without a checklist in 24h are flagged.</p>
         <div id="admin-compliance-summary" class="profile-stats-grid" style="margin-bottom:20px;">
           <div class="pd-loading">Loading compliance data…</div>
         </div>
@@ -1161,7 +1161,7 @@
 
       <section class="admin-section" id="admin-section-settings" hidden>
         <div class="op-section-title">Platform Settings</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Runtime toggles for platform behaviour. Changes take effect immediately.</p>
+        <p class="admin-users-meta">Runtime toggles for platform behaviour. Changes take effect immediately.</p>
         <div class="admin-form-card" style="max-width:560px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:2px 0;">
             <div>
@@ -1172,8 +1172,8 @@
             </div>
             <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;">
               <input type="checkbox" id="admin-toggle-emergency-bypass" onchange="toggleEmergencyBypass(this.checked)" style="opacity:0;width:0;height:0;">
-              <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--gray-300);border-radius:26px;transition:0.2s;"></span>
-              <span id="admin-toggle-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+              <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--gray-300);border-radius:0;transition:0.2s;"></span>
+              <span id="admin-toggle-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:0;transition:0.2s;box-shadow:var(--shadow-sm);"></span>
             </label>
           </div>
           <div id="admin-bypass-status" style="margin-top:12px;font-size:12px;color:var(--gray-500);"></div>
@@ -1189,8 +1189,8 @@
             </div>
             <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;">
               <input type="checkbox" id="admin-toggle-demo-mode" onchange="toggleDemoMode(this.checked)" style="opacity:0;width:0;height:0;">
-              <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--gray-300);border-radius:26px;transition:0.2s;"></span>
-              <span id="admin-toggle-demo-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+              <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--gray-300);border-radius:0;transition:0.2s;"></span>
+              <span id="admin-toggle-demo-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:0;transition:0.2s;box-shadow:var(--shadow-sm);"></span>
             </label>
           </div>
           <div id="admin-demo-status" style="margin-top:12px;font-size:12px;color:var(--gray-500);"></div>
@@ -1235,7 +1235,7 @@
 
       <section class="admin-section" id="admin-section-logs" hidden>
         <div class="op-section-title">Logs</div>
-        <p class="admin-users-meta" style="margin-top:-6px;">Most recent server logs (since this process started). Scroll up to load older entries — 50 at a time.</p>
+        <p class="admin-users-meta">Most recent server logs (since this process started). Scroll up to load older entries — 50 at a time.</p>
         <div id="admin-logs-meta" class="admin-users-meta"></div>
         <div id="admin-logs-scroll" class="admin-logs-scroll">
           <div id="admin-logs-loading" class="pd-loading" style="display:none;">Loading older logs…</div>
@@ -1359,6 +1359,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=72e553bc"></script>
+<script src="/js/app.bundle.js?v=9f95a6f3"></script>
 </body>
 </html>

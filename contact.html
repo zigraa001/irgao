@@ -54,6 +54,10 @@
       font-size: var(--text-base);
       transition: border-color var(--transition-fast);
       outline: none;
+      /* Fill the grid/flex cell and allow shrinking so the two-up name row
+         never blows out of the card on narrow screens */
+      width: 100%;
+      min-width: 0;
     }
 
     .form-control:focus {
