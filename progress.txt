@@ -156,3 +156,14 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The prefers-reduced-motion block should list ALL animated elements; the `* { transition-duration: 0.01ms !important }` catch-all handles transitions but explicit animation: none is needed for each @keyframes user
   - Manual browser verification was not possible — recommend visual QA at 360px, 768px, 1024px, and 1440px
 ---
+
+## 2026-07-05 - US-011
+- What was implemented: Auth and onboarding microcopy upgrade — warmer login heading ('Welcome back'), benefit-led subtexts for all three role tabs, benefit-led register card copy, OTP card copy with actual 5-minute expiry, reassuring forgot-password copy, friendlier reset card meta, humanized password placeholders
+- Files changed: js/app/02-auth.js (SIGNUP_CONFIG passenger/operator/admin loginTitle+loginSub, showOtpCard subtext), app.html (login-card-title, login-card-sub, register subtext, otp-card-sub, forgot-card subtext, reset-card meta, register-passenger-password placeholder, reset-password placeholder), js/app.bundle.js (rebuilt), prd.json (US-011 passes:true)
+- **Learnings for future iterations:**
+  - OTP_EXPIRY_SECONDS is 300 (5 minutes) defined in src/otp-limits.js — use this value when referencing OTP expiry in user-facing copy
+  - SIGNUP_CONFIG loginTitle/loginSub are applied by applyPortalLabels() which runs on tab switch AND on page load — static HTML in app.html must match the passenger defaults since that's the initial state
+  - The static otp-card-sub in app.html is immediately overridden by showOtpCard() JS — both must be updated for consistency
+  - Error messages for login 401/400 are already friendly ('Incorrect email or password.') — other status codes fall through to data.error which could show raw server errors, but this is acceptable for uncommon edge cases
+  - Password placeholder 'Min 6 chars' was technical — 'Choose a password' / 'Choose a new password' reads more human while the validation message still enforces the 6-char minimum
+---
