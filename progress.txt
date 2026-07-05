@@ -85,3 +85,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - route-info-bar and booking-map-legend both use `backdrop-filter: blur(6px)` — this creates a frosted glass effect when floating over the map
   - Manual browser verification was not possible — recommend visual QA
 ---
+
+## 2026-07-05 - US-006
+- What was implemented: Payment, confirmation and overlay modals redesign — confirm-overlay gets backdrop-filter blur(4px) with solid-color fallback and fade-in animation, payment-page uses --radius-2xl and confirmIn entrance animation, modernized payment step dots (pill-shaped 24px/32px active width), payment-fare-breakdown with --border-subtle dividers and clean row layout, coupon chips as outline cards with hover-to-blue border, payment-summary-card with blue-50 background and 36px amount, confirm-check as solid green circle with white SVG check and pop-in animation, confirm-detail tiles with --surface-subtle and --radius-md, btn-confirm with --radius-md and hover lift on primary, toasts with --radius-lg rounded corners + shadow-lg + colored left accent + slide-in animation, profile modal backdrop gets blur(4px) and card gets confirmIn animation + --radius-2xl, payment fields with focus-ring, coupon section wrapped in bordered card, prefers-reduced-motion media query disabling all entrance animations
+- Files changed: css/app.css (confirm-overlay backdrop blur/fade, confirm-card entrance animation, confirm-check green/white pop, confirm-detail tiles, confirm-id pill, btn-confirm modernized, payment-page animation/radius, payment-page-header/body/footer padding/borders, payment-dot pill indicator, payment-summary-card blue-50, payment-fare-breakdown clean rows, coupon-section card wrapper, coupon-chip outline style, coupon-input/apply-btn modern tokens, toast slide-in + accent bar, profile-modal-backdrop blur, profile-modal-card animation/radius, weather-info-bar tokens, payment-fields focus, reduced-motion block), app.html (CSS cache-bust)
+- **Learnings for future iterations:**
+  - The confirm-overlay is shared by payment overlay, booking confirmation, and must-reset — all three inherit the backdrop blur and animation changes
+  - The confirmIn keyframe animation is reused by payment-page and profile-modal-card — keep it as the single entry animation for all modal-like surfaces
+  - Coupon chips now use outline style (--border-subtle border, --surface bg) with hover highlighting in blue — more versatile than the old dashed blue style
+  - Payment dots are now pill-shaped (24px width, 6px height) with the active dot wider (32px) — this matches modern step indicator patterns
+  - The @supports not (backdrop-filter) fallback uses a darker background (0.7 alpha vs 0.5) to compensate for the missing blur
+  - prefers-reduced-motion: reduce block disables all entrance animations (confirmIn, checkPop, overlayFadeIn, toastSlideIn) with animation: none !important
+  - Manual browser verification was not possible — recommend visual QA
+---

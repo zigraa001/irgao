@@ -128,7 +128,7 @@
         "Verify in browser using dev-browser skill (payment and confirmation overlays)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -205,6 +205,66 @@
         "Verify in browser using dev-browser skill (360px and 1440px screenshots of all four views)"
       ],
       "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Auth and onboarding microcopy upgrade",
+      "description": "As a new or returning user, I want warm, confident copy on the auth screens so the product feels polished and human instead of terse and mechanical.",
+      "acceptanceCriteria": [
+        "Login card: heading 'Sign in' becomes 'Welcome back'; subtext 'to continue to IraGo' becomes 'Sign in to book your next flight' (update BOTH the static markup in app.html #login-card-sub AND the portalCopy strings in js/app/02-auth.js around lines 54-80)",
+        "Role-specific subtexts improved too: operator 'to continue to the IraGo Pilot Console' becomes 'Sign in to your Pilot Console'; admin 'to continue to the IraGo Admin Console' becomes 'Sign in to the Admin Console' (keep applyPortalLabels/switchLoginRole wiring intact)",
+        "Register card: subtext 'Enter your details and verify your email to get started.' becomes benefit-led copy, e.g. 'Book eVTOL air taxis across India in minutes.'",
+        "OTP cards: 'Enter the code from your email.' style strings become clearer, e.g. 'We emailed you a 6-digit code. It expires in 10 minutes.' (match actual expiry if defined in src/otp.js, otherwise omit the expiry claim)",
+        "Forgot password: 'Enter your email and we'll send a verification code.' becomes reassuring, e.g. 'No worries - enter your email and we'll send you a reset code.'",
+        "Generic error strings on auth cards reviewed: no raw server errors shown; common cases read friendly (e.g. 'Incorrect email or password')",
+        "Placeholder text sweep on auth inputs: 'you@example.com' kept, but any bare/technical placeholders made human",
+        "All changed JS strings edited in js/app/*.js (never the bundle) followed by npm run build:js; no smart/curly quotes introduced",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (login + register + forgot cards, all three role tabs)"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Booking, tracking and payment microcopy upgrade",
+      "description": "As a passenger, I want clear, encouraging copy through search, booking, tracking, and payment so every step feels guided.",
+      "acceptanceCriteria": [
+        "Location inputs: placeholder 'Enter pickup location' becomes 'Pickup from...' and 'Enter destination' becomes 'Where to?' (app.html #pickup-input / #dest-input)",
+        "Search button 'Find Available Rides' reviewed and tightened, e.g. 'Search flights' (check js/app/06-booking.js for code that rewrites #search-btn-text per service tab and keep those variants consistent)",
+        "Rides header 'Available Rides' becomes service-aware or friendlier, e.g. 'Choose your flight'; grep JS for any code writing #rides-title before changing",
+        "Tracking empty state: 'No active ride' / 'Live tracking will appear here after booking.' becomes warmer, e.g. 'No flights yet' / 'Book a ride and you will see live tracking here.'",
+        "Tracking OTP label 'Share this OTP with your pilot to start ride' becomes grammatical and clear, e.g. 'Share this code with your pilot to start your ride'",
+        "Payment: 'Tap Pay to confirm your ride and notify nearby pilots.' and demo notes reviewed for clarity; confirmation card 'Your ride is being prepared' becomes e.g. 'We are lining up your aircraft'",
+        "Rating prompt 'Optional comment (optional)' redundancy fixed to 'Add a comment (optional)'",
+        "Empty/loading strings in booking + drone panels ('Loading drone services...', 'Loading your bookings...') get consistent sentence-case friendly phrasing",
+        "Strings that live in JS are changed in js/app/*.js with npm run build:js afterwards; strings in app.html changed in place; no ids/classes/handlers touched",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (booking panel, tracking panel, payment overlay)"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Operator and admin microcopy and empty-state upgrade",
+      "description": "As a pilot or admin, I want purposeful headings, statuses, and empty states so the consoles read professionally.",
+      "acceptanceCriteria": [
+        "Operator: duty card copy reviewed - status strings (grep js/app/04-operator.js for what fills #op-duty-status/#op-duty-sub) read clearly, e.g. 'You are on duty - receiving dispatch offers' / 'You are off duty - go on duty to receive trips'",
+        "Operator empty states ('Loading zones...', 'Loading earnings...', etc.) and any 'No trips' states get consistent friendly phrasing with a hint of what will appear there",
+        "Admin dashboard: 'Overview' subtitle becomes informative, e.g. 'Everything happening across IraGo right now'; section titles reviewed for consistency (sentence case, no trailing colons)",
+        "Admin empty/loading states ('Loading platform stats...', 'Loading users...', 'Loading live flights...', 'Loading fleet...') unified to one consistent pattern across all 11 sections",
+        "All admin table empty results show a helpful empty state (e.g. 'No users match your search') instead of blank space - check the JS renderers for what they output when lists are empty",
+        "Page title in app.html <title> reviewed: 'IraGo - Book Your Air Taxi' kept or improved",
+        "JS-owned strings edited in js/app/*.js + npm run build:js; no ids/classes/handlers touched; no smart quotes",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill (operator console + 2-3 admin sections)"
+      ],
+      "priority": 13,
       "passes": false,
       "notes": ""
     }
