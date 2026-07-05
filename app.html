@@ -761,68 +761,113 @@
           </div>
         </div>
 
-        <div class="panel-section profile-account-section" style="padding-top:0;">
-          <div class="profile-account-card" style="margin-bottom:0;">
-            <div class="profile-account-row">
-              <div class="profile-account-avatar profile-display-avatar">O</div>
-              <div class="profile-account-info">
-                <p class="profile-account-name profile-display-name">Guest</p>
-                <p class="profile-account-email profile-display-email">—</p>
+        <!-- Section nav -->
+        <nav class="op-nav" id="op-nav">
+          <div class="admin-nav-group-label">Flights</div>
+          <button type="button" class="op-nav-item active" data-op-section="trips" onclick="showOperatorSection('trips')">
+            <svg class="op-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.8 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.5-.6.4-1.1z"/></svg>
+            Trips
+          </button>
+          <div class="admin-nav-group-label">Operations</div>
+          <button type="button" class="op-nav-item" data-op-section="checklist" onclick="showOperatorSection('checklist')">
+            <svg class="op-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Pre-flight
+          </button>
+          <button type="button" class="op-nav-item" data-op-section="altitude" onclick="showOperatorSection('altitude')">
+            <svg class="op-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Altitude
+          </button>
+          <div class="op-nav-group-system">
+            <div class="admin-nav-group-label">Overview</div>
+            <button type="button" class="op-nav-item" data-op-section="earnings" onclick="showOperatorSection('earnings')">
+              <svg class="op-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Earnings
+            </button>
+            <button type="button" class="op-nav-item" data-op-section="account" onclick="showOperatorSection('account')">
+              <svg class="op-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Account
+            </button>
+          </div>
+        </nav>
+
+        <!-- Section: Trips (default/primary) -->
+        <div class="op-section" id="op-section-trips">
+          <div class="panel-section">
+            <div class="panel-step-heading" id="op-section-heading">Assigned trips</div>
+            <div id="op-trips">
+              <div class="op-empty" id="op-empty">
+                <div class="op-empty-title">No trips assigned yet</div>
+                <div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>
               </div>
             </div>
-            <div class="profile-account-meta">
-              <span class="profile-account-detail profile-display-role">Pilot</span>
-              <span class="profile-account-detail profile-display-verified">Email verified</span>
-            </div>
-            <div class="profile-account-actions">
-              <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
-              <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+          </div>
+        </div>
+
+        <!-- Section: Pre-flight Checklist -->
+        <div class="op-section" id="op-section-checklist" style="display:none">
+          <div class="panel-section">
+            <div class="panel-step-heading" id="op-section-heading-checklist">Pre-flight Checklist</div>
+            <div id="op-compliance-body">
+              <div class="op-compliance-form" id="op-compliance-form">
+                <label class="op-check-item"><input type="checkbox" id="op-ck-firstAid"> First Aid Kit</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-fireExt"> Fire Extinguisher</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-elt"> Emergency Locator Transmitter</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-briefing"> Pilot Briefing Done</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-inspect"> Aircraft Inspected</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-weather"> Weather Checked</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-fuel"> Fuel Sufficient</label>
+                <label class="op-check-item"><input type="checkbox" id="op-ck-comms"> Communication Equipment</label>
+                <textarea id="op-ck-notes" placeholder="Additional notes (optional)" rows="2" style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;resize:vertical;"></textarea>
+                <button type="button" class="btn-auth-primary" style="margin-top:10px;width:100%;" onclick="submitComplianceChecklist()">Submit Checklist</button>
+                <div id="op-compliance-status" style="margin-top:8px;font-size:13px;"></div>
+              </div>
+              <div id="op-compliance-history" style="margin-top:12px;"></div>
             </div>
           </div>
         </div>
 
-        <div class="panel-section">
-          <div class="op-section-title" style="margin-top:0;">Assigned trips</div>
-          <div id="op-trips">
-            <div class="op-empty" id="op-empty">
-              <div class="op-empty-title">No trips assigned yet</div>
-              <div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>
+        <!-- Section: Altitude Bands -->
+        <div class="op-section" id="op-section-altitude" style="display:none">
+          <div class="panel-section">
+            <div class="panel-step-heading" id="op-section-heading-altitude">Altitude bands</div>
+            <div id="operator-zone-altitude" class="admin-zone-altitude">
+              <h4>Altitude (3D)</h4>
+              <div class="op-empty-sub">Fetching altitude zones...</div>
             </div>
           </div>
         </div>
 
-        <div class="panel-section">
-          <div class="op-section-title" style="margin-top:0;">Altitude bands</div>
-          <div id="operator-zone-altitude" class="admin-zone-altitude">
-            <h4>Altitude (3D)</h4>
-            <div class="op-empty-sub">Fetching altitude zones...</div>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <div class="op-section-title" style="margin-top:0;">Earnings</div>
-          <div id="op-earnings-body">
-            <div class="op-empty-sub">Fetching your earnings...</div>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <div class="op-section-title" style="margin-top:0;">Pre-flight Checklist</div>
-          <div id="op-compliance-body">
-            <div class="op-compliance-form" id="op-compliance-form">
-              <label class="op-check-item"><input type="checkbox" id="op-ck-firstAid"> First Aid Kit</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-fireExt"> Fire Extinguisher</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-elt"> Emergency Locator Transmitter</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-briefing"> Pilot Briefing Done</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-inspect"> Aircraft Inspected</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-weather"> Weather Checked</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-fuel"> Fuel Sufficient</label>
-              <label class="op-check-item"><input type="checkbox" id="op-ck-comms"> Communication Equipment</label>
-              <textarea id="op-ck-notes" placeholder="Additional notes (optional)" rows="2" style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;resize:vertical;"></textarea>
-              <button type="button" class="btn-auth-primary" style="margin-top:10px;width:100%;" onclick="submitComplianceChecklist()">Submit Checklist</button>
-              <div id="op-compliance-status" style="margin-top:8px;font-size:13px;"></div>
+        <!-- Section: Earnings -->
+        <div class="op-section" id="op-section-earnings" style="display:none">
+          <div class="panel-section">
+            <div class="panel-step-heading" id="op-section-heading-earnings">Earnings</div>
+            <div id="op-earnings-body">
+              <div class="op-empty-sub">Fetching your earnings...</div>
             </div>
-            <div id="op-compliance-history" style="margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <!-- Section: Account -->
+        <div class="op-section" id="op-section-account" style="display:none">
+          <div class="panel-section">
+            <div class="panel-step-heading" id="op-section-heading-account">Account</div>
+            <div class="profile-account-card" style="margin-bottom:0;">
+              <div class="profile-account-row">
+                <div class="profile-account-avatar profile-display-avatar">O</div>
+                <div class="profile-account-info">
+                  <p class="profile-account-name profile-display-name">Guest</p>
+                  <p class="profile-account-email profile-display-email">—</p>
+                </div>
+              </div>
+              <div class="profile-account-meta">
+                <span class="profile-account-detail profile-display-role">Pilot</span>
+                <span class="profile-account-detail profile-display-verified">Email verified</span>
+              </div>
+              <div class="profile-account-actions">
+                <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
+                <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1279,6 +1324,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=9b0d2817"></script>
+<script src="/js/app.bundle.js?v=a6145508"></script>
 </body>
 </html>

@@ -1121,6 +1121,7 @@ function routeForRole(user) {
       flightZoneFetchCache.clear();
       showView('operator-view');
       closeTripDetails();
+      showOperatorSection('trips');
       loadOperatorTrips();
       initOpSelfMap();
       setTimeout(function () { if (opSelfMap) opSelfMap.invalidateSize(); }, 400);

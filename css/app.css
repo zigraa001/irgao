@@ -2880,6 +2880,47 @@ textarea:focus-visible, a:focus-visible {
   max-height: 200px;
   margin-top: 0;
 }
+.op-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.op-nav .admin-nav-group-label:first-child { padding-top: 0; }
+.op-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-500);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-align: left;
+}
+.op-nav-item:hover { background: var(--gray-50); color: var(--gray-700); }
+.op-nav-item.active {
+  background: var(--blue-50);
+  color: var(--blue);
+  font-weight: 600;
+}
+.op-nav-item.active .op-nav-icon svg { stroke: var(--blue); }
+.op-nav-icon { display: flex; align-items: center; flex-shrink: 0; }
+.op-nav-icon svg { width: 16px; height: 16px; }
+.op-nav-group-system {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.op-nav-group-system .op-nav-item { color: var(--gray-400); }
+.op-nav-group-system .op-nav-item:hover { color: var(--gray-600); }
+.op-nav-group-system .op-nav-item.active { color: var(--blue); }
+.op-section { }
 .op-role-badge {
   font-size: 12px;
   font-weight: 600;

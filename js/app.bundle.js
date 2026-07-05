@@ -1297,6 +1297,7 @@ function routeForRole(user) {
       flightZoneFetchCache.clear();
       showView('operator-view');
       closeTripDetails();
+      showOperatorSection('trips');
       loadOperatorTrips();
       initOpSelfMap();
       setTimeout(function () { if (opSelfMap) opSelfMap.invalidateSize(); }, 400);
@@ -3822,6 +3823,29 @@ async function pollOperatorGpsForRide() {
       );
     }
   } catch (e) { /* ignore */ }
+}
+
+var OP_SECTION_HEADINGS = {
+  trips: 'Assigned trips',
+  checklist: 'Pre-flight Checklist',
+  altitude: 'Altitude bands',
+  earnings: 'Earnings',
+  account: 'Account'
+};
+
+function showOperatorSection(section) {
+  document.querySelectorAll('#op-list-section > .op-section').forEach(function (s) {
+    s.style.display = 'none';
+  });
+  var target = document.getElementById('op-section-' + section);
+  if (target) target.style.display = 'block';
+  document.querySelectorAll('.op-nav-item').forEach(function (item) {
+    item.classList.toggle('active', item.getAttribute('data-op-section') === section);
+  });
+  var heading = document.getElementById('op-section-heading');
+  if (heading && OP_SECTION_HEADINGS[section]) {
+    heading.textContent = OP_SECTION_HEADINGS[section];
+  }
 }
 
 // Show one top-level .view and hide the rest.
