@@ -66,10 +66,10 @@ const SIGNUP_CONFIG = {
     errorId: 'register-operator-error',
     submitId: 'register-operator-submit',
     submitLabel: 'Send OTP',
-    otpTitle: 'Verify operator account',
+    otpTitle: 'Verify pilot account',
     loginTitle: 'Sign in',
     loginSub: 'Sign in to your Pilot Console',
-    loginHint: 'Operator accounts are created by an admin only. Contact your administrator to be provisioned.',
+    loginHint: 'Pilot accounts are created by an admin only. Contact your administrator to be provisioned.',
     // Public self-signup is closed — only admins create operator accounts.
     signupDisabled: true,
   },

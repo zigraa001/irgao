@@ -50,13 +50,13 @@ const ZONE_DRAW_ORDER = { flight_corridor: 0, restricted: 1, no_fly: 2 };
 // Admin Console badge, blue=operator, gray=customer).
 const ROLE_BADGE = {
   admin:    { label: 'Admin',    cls: 'op-badge--purple' },
-  operator: { label: 'Operator', cls: 'op-badge--blue' },
+  operator: { label: 'Pilot', cls: 'op-badge--blue' },
   customer: { label: 'Passenger', cls: 'op-badge--gray' },
 };
 
 const ROLE_PROFILE = {
   admin:    { label: 'Admin',     dropdownClass: 'role-admin' },
-  operator: { label: 'Operator',  dropdownClass: 'role-operator' },
+  operator: { label: 'Pilot',  dropdownClass: 'role-operator' },
   customer: { label: 'Passenger', dropdownClass: '' },
 };
 
@@ -665,7 +665,7 @@ async function loadAdminPlatformStats() {
 }
 
 function adminRoleLabel(role) {
-  if (role === 'operator') return 'Operator';
+  if (role === 'operator') return 'Pilot';
   if (role === 'admin') return 'Admin';
   return 'Passenger';
 }
@@ -889,7 +889,7 @@ function renderAdminUsers() {
     listHost.innerHTML =
       '<div class="op-empty">' +
       '<div class="op-empty-icon">👥</div>' +
-      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'operators' : 'passengers') + ' found</div>' +
+      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'pilots' : 'passengers') + ' found</div>' +
       '<div class="op-empty-sub">New accounts will show up here once they register or are added by an admin.</div>' +
       '</div>';
   } else {
@@ -1254,11 +1254,11 @@ function renderRevenuePayouts(payouts, commRate) {
       '<td style="font-weight:600;">' + INR(p.netPayout) + '</td>' +
     '</tr>';
   }).join('');
-  host.innerHTML = '<div class="op-section-title" style="font-size:14px;">Operator Payouts</div>' +
+  host.innerHTML = '<div class="op-section-title" style="font-size:14px;">Pilot Payouts</div>' +
     '<div class="admin-table-wrap" style="overflow-x:auto;max-width:800px;">' +
     '<table class="admin-table">' +
       '<thead><tr>' +
-        '<th>Operator</th>' +
+        '<th>Pilot</th>' +
         '<th>Trips</th>' +
         '<th>Gross</th>' +
         '<th>Commission (' + commRate + '%)</th>' +
@@ -1290,7 +1290,7 @@ function renderComplianceSummary(s) {
   var host = document.getElementById('admin-compliance-summary');
   if (!host) return;
   host.innerHTML =
-    pdStat('👥', s.totalOperators || 0, 'Total Operators') +
+    pdStat('👥', s.totalOperators || 0, 'Total Pilots') +
     pdStat('✅', s.withChecklist24h || 0, 'Checked In (24h)', 'green') +
     pdStat('⚠️', s.missingChecklist24h || 0, 'Missing Checklist', 'amber') +
     pdStat('❌', s.failedLast7d || 0, 'Failed (7 days)', 'red');
