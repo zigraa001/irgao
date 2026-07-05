@@ -619,13 +619,26 @@ function showPilotCard(pilot, company, officeCity) {
   if (pilot.license) parts.push(pilot.license);
   if (metaEl) metaEl.textContent = parts.length ? parts.join(' · ') : '';
   var compEl = document.getElementById('tracking-pilot-company');
-  var compParts = [];
-  if (pilot.companyName) compParts.push(pilot.companyName);
-  else if (company && company.name) compParts.push(company.name);
-  if (officeCity) compParts.push(officeCity + ' Regional Office');
-  if (pilot.flightHours) compParts.push(pilot.flightHours + ' flight hrs');
-  if (pilot.rating) compParts.push('★ ' + pilot.rating);
-  if (compEl) compEl.textContent = compParts.length ? compParts.join(' · ') : '';
+  if (compEl) {
+    var compName = pilot.companyName || (company && company.name) || '';
+    var compCode = (company && company.code) || '';
+    if (compName) {
+      var chipHtml = '<span class="pilot-company-chip">' +
+        '<span class="pilot-company-monogram">' + escapeHtml((compCode || compName.charAt(0)).slice(0, 3)) + '</span>' +
+        '<span class="pilot-company-label">' + escapeHtml(compName) + '</span>' +
+        '</span>';
+      if (officeCity) chipHtml += '<span class="pilot-company-office">' + escapeHtml(officeCity) + '</span>';
+      if (pilot.flightHours) chipHtml += '<span class="pilot-company-stat">' + escapeHtml(String(pilot.flightHours)) + ' flight hrs</span>';
+      if (pilot.rating) chipHtml += '<span class="pilot-company-stat">' + String.fromCharCode(9733) + ' ' + escapeHtml(String(pilot.rating)) + '</span>';
+      compEl.innerHTML = chipHtml;
+    } else {
+      var fallbackParts = [];
+      if (officeCity) fallbackParts.push(officeCity + ' Regional Office');
+      if (pilot.flightHours) fallbackParts.push(pilot.flightHours + ' flight hrs');
+      if (pilot.rating) fallbackParts.push(String.fromCharCode(9733) + ' ' + pilot.rating);
+      compEl.textContent = fallbackParts.length ? fallbackParts.join(' ' + String.fromCharCode(183) + ' ') : '';
+    }
+  }
   var vn = document.getElementById('tracking-vehicle-name');
   var vnParts = [];
   if (pilot.aircraftType) vnParts.push(pilot.aircraftType);

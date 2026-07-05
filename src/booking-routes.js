@@ -17,7 +17,7 @@ const {
   getSurchargeRates,
 } = require("./pricing");
 const { estimateCarbonSavedKg, carbonComparison, CREDITS_PER_KM } = require("./carbon");
-const { startDispatch, stopDispatch, setOperatorDuty } = require("./dispatch");
+const { startDispatch, stopDispatch, setOperatorDuty, listAvailableOperatorsNear } = require("./dispatch");
 const { pushOperator, pushCustomer } = require("./dispatch-hub");
 const { rateLimit } = require("./rate-limit");
 const { fareBreakdown } = require("./fare-breakdown");
@@ -446,6 +446,26 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   const creditsRate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;
   const creditsWillEarn = Math.round(creditsRate * distanceKm);
+  // Surface nearby operators with company info for marketplace-style ride cards.
+  let nearbyOperators = [];
+  try {
+    const operators = await listAvailableOperatorsNear(pickupLat, pickupLng);
+    const companyMap = new Map();
+    for (const op of operators) {
+      const key = op.companyId || ("ind_" + op.id);
+      if (!companyMap.has(key)) {
+        companyMap.set(key, {
+          name: op.companyName || null,
+          code: op.companyCode || null,
+          rating: op.companyRating || null,
+          pilotCount: 0,
+        });
+      }
+      companyMap.get(key).pilotCount++;
+    }
+    nearbyOperators = Array.from(companyMap.values());
+  } catch (err) { /* degrade gracefully */ }
+
   res.json({
     feasible: feasibility.feasible,
     emergencyBypass: feasibility.emergencyBypass || false,
@@ -459,6 +479,7 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     carbonComparison: carbonComparison(distanceKm, 1),
     carbonCredits: { balance: creditBalance, willEarn: creditsWillEarn },
     route: feasibility.route || null,
+    nearbyOperators,
   });
 });
 

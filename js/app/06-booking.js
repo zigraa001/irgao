@@ -253,6 +253,7 @@ async function searchRides() {
     currentRoute = (fdata && fdata.route) ? fdata.route : null;
     currentDiscount = (fdata && fdata.discount) ? fdata.discount : null;
     currentCarbonComparison = (fdata && fdata.carbonComparison) ? fdata.carbonComparison : null;
+    currentNearbyOperators = (fdata && fdata.nearbyOperators) ? fdata.nearbyOperators : [];
     if (currentRoute && currentRoute.segments && currentRoute.segments.length) {
       drawRouteFromPlan();
     }
@@ -295,8 +296,21 @@ async function searchRides() {
         '<div class="ride-price-est">' + discountRemaining + ' discounted flight' + (discountRemaining === 1 ? '' : 's') + ' left</div>'
       : '<div class="ride-price-val">&#8377;' + price.toLocaleString('en-IN') + '</div>' +
         '<div class="ride-price-est">incl. 18% GST</div>';
+    // Company chip: cycle through nearby operators or show 'Independent operator'
+    const opCompanies = currentNearbyOperators.filter(function(c) { return c.name; });
+    const comp = opCompanies.length ? opCompanies[i % opCompanies.length] : null;
+    const companyChipHtml = comp
+      ? '<div class="ride-company-chip">' +
+          '<span class="ride-company-monogram">' + escapeHtml((comp.code || comp.name.charAt(0)).slice(0, 3)) + '</span>' +
+          '<span class="ride-company-name">' + escapeHtml(comp.name) + '</span>' +
+          (comp.rating ? '<span class="ride-company-rating">' + String.fromCharCode(9733) + ' ' + comp.rating + '</span>' : '') +
+        '</div>'
+      : '<div class="ride-company-chip ride-company-independent">' +
+          '<span class="ride-company-name">Independent operator</span>' +
+        '</div>';
     return `
       <div class="ride-card" data-idx="${i}" onclick="selectRideCard(this, ${i}, ${price}, ${time}, '${co2}')">
+        ${companyChipHtml}
         <div class="ride-card-top">
           <div class="ride-icon ride-icon-${r.icon}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -500,6 +514,11 @@ function fillConfirmation(booking) {
   document.getElementById('confirm-cost').textContent = '\u20B9' + Math.round(booking.fareEstimate).toLocaleString('en-IN');
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
   document.getElementById('confirm-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
+  var companyEl = document.getElementById('confirm-company');
+  if (companyEl) {
+    var comp = currentBooking && currentBooking._company;
+    companyEl.textContent = comp && comp.name ? comp.name + (comp.officeCity ? ' (' + comp.officeCity + ')' : '') : 'Independent operator';
+  }
 }
 
 function renderWeatherBar(w) {
@@ -870,6 +889,7 @@ function resetBooking() {
   currentDiscount = null;
   currentCarbonComparison = null;
   currentCarbonCredits = null;
+  currentNearbyOperators = [];
   pickupCoord = null;
   destCoord = null;
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };

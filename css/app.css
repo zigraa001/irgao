@@ -1500,6 +1500,92 @@ textarea:focus-visible, a:focus-visible {
 .ride-stat.carbon { color: var(--green-dark); background: var(--green-50); }
 .ride-stat.carbon svg { color: var(--green); }
 
+/* ── Ride company chip ── */
+.ride-company-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--blue-50);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--navy);
+  margin-bottom: 10px;
+}
+.ride-company-chip.ride-company-independent {
+  background: var(--surface-subtle);
+  color: var(--gray-500);
+}
+.ride-company-monogram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--blue);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+.ride-company-independent .ride-company-monogram { display: none; }
+.ride-company-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+.ride-company-rating {
+  color: var(--amber, #b45309);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* ── Tracking pilot company chip ── */
+.pilot-company-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: var(--blue-50);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-right: 8px;
+}
+.pilot-company-monogram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--blue);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.pilot-company-label {
+  white-space: nowrap;
+}
+.pilot-company-office {
+  font-size: 11px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+.pilot-company-stat {
+  font-size: 11px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
 /* ── Discount badge ── */
 .badge-discount {
   background: #fef3c7; color: #92400e;
@@ -2507,7 +2593,7 @@ textarea:focus-visible, a:focus-visible {
 .tracking-pilot-info { flex: 1; min-width: 0; }
 .tracking-pilot-name { font-weight: 700; font-size: 15px; color: var(--gray-900); }
 .tracking-pilot-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.tracking-pilot-company { font-size: 12px; color: var(--blue); font-weight: 600; margin-top: 2px; }
+.tracking-pilot-company { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--blue); font-weight: 600; }
 .tracking-otp-card {
   text-align: center;
   padding: 16px 20px;
