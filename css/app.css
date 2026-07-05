@@ -895,7 +895,8 @@ textarea:focus-visible, a:focus-visible {
   position: absolute;
   inset: 0;
   background: rgba(15, 23, 42, 0.50);
-  
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .profile-modal-card {
   position: relative;
@@ -903,17 +904,18 @@ textarea:focus-visible, a:focus-visible {
   max-width: 100%;
   max-height: 92vh;
   overflow-y: auto;
-  background: #fff;
+  background: var(--surface);
   border-radius: 0;
   box-shadow: 0 -8px 40px rgba(15,23,42,0.18);
   padding: 20px 18px 32px;
   -webkit-overflow-scrolling: touch;
+  animation: confirmIn .2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (min-width: 600px) {
   .profile-modal-card {
     max-width: 440px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
     padding: 24px;
   }
 }
@@ -1587,7 +1589,11 @@ textarea:focus-visible, a:focus-visible {
 
 /* ── Coupon section in payment overlay ── */
 .coupon-section {
-  margin: 10px 0;
+  margin: 12px 0;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
 }
 .coupon-input-row {
   display: flex;
@@ -1596,33 +1602,34 @@ textarea:focus-visible, a:focus-visible {
 }
 .coupon-input-row input {
   flex: 1;
-  padding: 10px 12px;
-  border: 1.5px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  transition: border-color 0.2s;
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 .coupon-input-row input:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px var(--blue-glow);
+  box-shadow: var(--focus-ring);
 }
 .coupon-input-row input:disabled {
   background: var(--gray-100);
   color: var(--gray-500);
 }
 .coupon-apply-btn {
-  padding: 10px 18px;
+  padding: 11px 18px;
   background: var(--blue);
   color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s;
+  transition: background var(--transition);
 }
 .coupon-apply-btn:hover { background: var(--blue-dark); }
 .coupon-apply-btn:disabled { opacity: 0.6; cursor: default; }
@@ -1653,27 +1660,28 @@ textarea:focus-visible, a:focus-visible {
 .payment-page {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--surface);
   width: 100%;
   max-width: 520px;
   height: 100dvh;
   overflow: hidden;
+  animation: confirmIn .2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (min-width: 640px) {
   #payment-overlay { padding: 20px; }
   .payment-page {
     height: auto;
     max-height: 92vh;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.3);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
   }
 }
 .payment-page-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--gray-200);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 .payment-back-btn {
@@ -1694,24 +1702,24 @@ textarea:focus-visible, a:focus-visible {
 .payment-page-sub { font-size: 12px; color: var(--gray-500); }
 .payment-step-dots { display: flex; gap: 6px; flex-shrink: 0; }
 .payment-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--gray-300);
-  transition: background 0.2s;
+  width: 24px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--gray-200);
+  transition: background var(--transition), width var(--transition);
 }
-.payment-dot.on { background: var(--blue); }
+.payment-dot.on { background: var(--blue); width: 32px; }
 .payment-page-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px;
   -webkit-overflow-scrolling: touch;
 }
 .payment-page-footer {
   flex-shrink: 0;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--gray-200);
-  background: #fff;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1721,37 +1729,39 @@ textarea:focus-visible, a:focus-visible {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  color: var(--gray-600);
+  color: var(--gray-500);
+  padding: 4px 0;
 }
 .payment-footer-total span:last-child {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  color: var(--gray-900);
+  color: var(--navy, var(--gray-900));
 }
 .payment-summary-card {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: 12px;
-  padding: 18px 16px;
+  background: var(--blue-50);
+  border: 1px solid rgba(0, 87, 184, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
   text-align: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .payment-summary-label {
   font-size: 12px;
   color: var(--gray-500);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 .payment-summary-amount {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 800;
-  color: var(--gray-900);
-  margin-top: 4px;
+  color: var(--navy, var(--gray-900));
+  margin-top: 6px;
 }
 .payment-summary-offers {
   font-size: 12px;
   color: #15803d;
-  margin-top: 8px;
+  margin-top: 10px;
   font-weight: 600;
   line-height: 1.6;
 }
@@ -1772,8 +1782,8 @@ textarea:focus-visible, a:focus-visible {
 .coupon-chips {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 12px;
   max-height: 180px;
   overflow-y: auto;
 }
@@ -1781,34 +1791,34 @@ textarea:focus-visible, a:focus-visible {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 10px 12px;
-  border: 1.5px dashed var(--blue);
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background: var(--blue-50);
+  background: var(--surface);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
 }
 .coupon-chip:hover {
-  background: var(--blue-light);
-  border-color: var(--blue-dark);
-  transform: translateY(-1px);
+  border-color: var(--blue);
+  background: var(--blue-50);
+  box-shadow: var(--shadow-sm);
 }
 .coupon-chip-code {
   font-size: 14px;
   font-weight: 800;
-  color: var(--blue-dark);
+  color: var(--blue);
   letter-spacing: 1px;
 }
 .coupon-chip-desc {
   font-size: 12px;
-  color: var(--gray-600);
-  margin-top: 2px;
+  color: var(--gray-500);
+  margin-top: 3px;
 }
 .coupon-chip-save {
   font-size: 12px;
   font-weight: 600;
   color: #15803d;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 @media (max-width: 600px) {
@@ -1823,26 +1833,34 @@ textarea:focus-visible, a:focus-visible {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.5);
-  
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 2000;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
-.confirm-overlay.active { display: flex; }
+@supports not (backdrop-filter: blur(4px)) {
+  .confirm-overlay { background: rgba(15, 23, 42, 0.7); }
+}
+.confirm-overlay.active { display: flex; animation: overlayFadeIn .2s ease; }
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 .confirm-card {
-  background: #fff;
+  background: var(--surface);
   border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 440px;
   overflow: hidden;
   box-shadow: var(--shadow-xl);
-  animation: confirmIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: confirmIn .2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes confirmIn {
-  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 .confirm-header {
@@ -1854,18 +1872,19 @@ textarea:focus-visible, a:focus-visible {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--green-light);
+  background: #16a34a;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  animation: checkBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  animation: checkPop .4s cubic-bezier(0.34, 1.56, 0.64, 1) .1s both;
 }
-@keyframes checkBounce {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
+@keyframes checkPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
-.confirm-check svg { width: 32px; height: 32px; color: var(--green-dark); }
+.confirm-check svg { width: 32px; height: 32px; color: #fff; }
 .confirm-header h2 {
   font-size: 22px;
   font-weight: 800;
@@ -1878,14 +1897,15 @@ textarea:focus-visible, a:focus-visible {
 }
 .confirm-id {
   display: inline-block;
-  background: var(--gray-100);
-  padding: 4px 12px;
-  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
   color: var(--gray-600);
   margin-top: 10px;
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border-subtle);
 }
 
 .confirm-body { padding: 0 28px 20px; }
@@ -1943,9 +1963,9 @@ textarea:focus-visible, a:focus-visible {
   margin-bottom: 16px;
 }
 .confirm-detail {
-  padding: 12px;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
+  padding: 14px 12px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
   text-align: center;
 }
 .confirm-detail-label {
@@ -1966,18 +1986,19 @@ textarea:focus-visible, a:focus-visible {
 .confirm-footer { padding: 0 28px 24px; }
 .btn-confirm {
   width: 100%;
-  padding: 13px;
-  border-radius: var(--radius-sm);
+  padding: 14px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
   margin-bottom: 8px;
 }
 .btn-confirm-primary {
   background: var(--blue);
   color: #fff;
 }
-.btn-confirm-primary:hover { background: var(--blue-dark); }
+.btn-confirm-primary:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-confirm-primary:active { transform: translateY(0); box-shadow: none; }
 .btn-confirm-ghost {
   background: var(--gray-100);
   color: var(--gray-600);
@@ -2962,12 +2983,18 @@ textarea:focus-visible, a:focus-visible {
 .payment-fields { padding: 0 28px 8px; display: flex; flex-direction: column; gap: 12px; }
 .payment-fields input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid var(--gray-200);
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   font-size: 14px;
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.payment-note { font-size: 12px; color: var(--gray-500); padding: 0 28px 12px; text-align: center; }
+.payment-fields input:focus {
+  border-color: var(--blue);
+  box-shadow: var(--focus-ring);
+}
+.payment-note { font-size: 13px; color: var(--gray-500); padding: 4px 28px 12px; text-align: center; }
 .payment-error { padding: 0 28px; }
 
 /* Operator dispatch offer modal */
@@ -3583,22 +3610,25 @@ body.admin-map-fs { overflow: hidden; }
 /* ── Payment fare breakdown ── */
 .weather-info-bar {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  background: var(--gray-50); border: 1px solid var(--gray-200);
-  border-radius: 4px; padding: 8px 12px; margin-bottom: 8px; font-size: 12px;
+  background: var(--surface-subtle); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 10px; font-size: 12px;
   color: var(--gray-600);
 }
 .weather-condition { font-weight: 600; color: var(--gray-800); }
 .weather-risk { margin-left: auto; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .payment-fare-breakdown {
-  background: var(--gray-50); border: 1px solid var(--gray-200);
-  border-radius: 4px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
+  background: var(--surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 14px; font-size: 13px;
 }
 .payment-fare-breakdown .fb-row {
-  display: flex; justify-content: space-between; padding: 2px 0; color: var(--gray-600);
+  display: flex; justify-content: space-between; padding: 6px 0; color: var(--gray-500);
+  border-bottom: 1px solid var(--border-subtle);
 }
+.payment-fare-breakdown .fb-row:last-of-type { border-bottom: none; }
+.payment-fare-breakdown .fb-row span:last-child { color: var(--gray-700); font-weight: 500; }
 .payment-fare-breakdown .fb-total {
-  display: flex; justify-content: space-between; border-top: 1px solid var(--gray-200);
-  margin-top: 6px; padding-top: 6px; font-weight: 700; color: #111;
+  display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle);
+  margin-top: 4px; padding-top: 10px; font-weight: 700; font-size: 15px; color: var(--navy, #111);
 }
 
 /* ── Profile previous rides ── */
@@ -3677,16 +3707,26 @@ body.admin-map-fs { overflow: hidden; }
 .feas-foot { margin-top: 12px; font-size: 12px; color: #B45309; }
 
 /* ── Toast notifications ── */
-.toast-container { position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast {
-  pointer-events: auto; padding: 12px 18px; border-radius: 4px; font-size: 13px; font-weight: 600;
-  color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.18); animation: toastIn 0.25s ease, toastOut 0.3s ease 2.7s forwards;
-  max-width: 340px;
+  pointer-events: auto; padding: 14px 18px 14px 22px; border-radius: var(--radius-lg);
+  font-size: 13px; font-weight: 600; color: #fff;
+  box-shadow: var(--shadow-lg); max-width: 360px; position: relative; overflow: hidden;
+  animation: toastSlideIn .3s cubic-bezier(.16,1,.3,1), toastOut .3s ease 2.7s forwards;
+}
+.toast::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
 }
 .toast-success { background: #16a34a; }
+.toast-success::before { background: #15803d; }
 .toast-error { background: #dc2626; }
+.toast-error::before { background: #b91c1c; }
 .toast-info { background: var(--blue, #2563eb); }
-@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+.toast-info::before { background: var(--blue-dark, #1d4ed8); }
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(40px) scale(0.96); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
 /* ── Operator rates the customer ── */
@@ -4134,5 +4174,17 @@ body.admin-map-fs { overflow: hidden; }
   }
   .drone-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Reduced motion: disable entrance/pop animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .confirm-card,
+  .payment-page,
+  .profile-modal-card,
+  .toast,
+  .confirm-check,
+  .confirm-overlay.active {
+    animation: none !important;
   }
 }
