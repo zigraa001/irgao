@@ -736,6 +736,265 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   });
 }
 
+// ── Landing Zone Discovery (Overpass API + Open Topo Data) ──
+var landingZoneLayers = [];
+var landingZoneCache = new Map();
+var landingZoneFetchAbort = null;
+
+var LANDING_ZONE_CATEGORIES = {
+  helipad:    { label: 'Helipad',       color: '#10B981', icon: 'H', priority: 1 },
+  park:       { label: 'Park / Garden', color: '#22C55E', icon: 'P', priority: 2 },
+  pitch:      { label: 'Sports Field',  color: '#3B82F6', icon: 'S', priority: 3 },
+  parking:    { label: 'Parking Lot',   color: '#8B5CF6', icon: 'K', priority: 4 },
+  ground:     { label: 'Open Ground',   color: '#F59E0B', icon: 'G', priority: 5 },
+  rooftop:    { label: 'Rooftop',       color: '#EC4899', icon: 'R', priority: 6 },
+};
+
+function classifyOsmElement(tags) {
+  if (!tags) return null;
+  if (tags.aeroway === 'helipad') return 'helipad';
+  if (tags.leisure === 'pitch' || tags.leisure === 'recreation_ground') return 'pitch';
+  if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.leisure === 'playground' || tags.leisure === 'common') return 'park';
+  if (tags.amenity === 'parking' && tags.parking !== 'underground' && tags.parking !== 'multi-storey') return 'parking';
+  if (tags.landuse === 'grass' || tags.landuse === 'meadow' || tags.landuse === 'village_green' ||
+      tags.landuse === 'recreation_ground' || tags.landuse === 'brownfield' || tags.landuse === 'greenfield' ||
+      tags.natural === 'grassland' || tags.natural === 'heath' || tags.natural === 'sand') return 'ground';
+  if (tags.building === 'hospital' || tags.building === 'commercial' || tags.building === 'retail' ||
+      tags.building === 'industrial' || tags.building === 'warehouse' || tags.building === 'civic' ||
+      tags.building === 'stadium' || tags.building === 'university' || tags.building === 'office' ||
+      tags.building === 'public') return 'rooftop';
+  return null;
+}
+
+function getElementCenter(el) {
+  if (el.center) return [el.center.lat, el.center.lon];
+  if (el.lat != null && el.lon != null) return [el.lat, el.lon];
+  if (el.bounds) return [(el.bounds.minlat + el.bounds.maxlat) / 2, (el.bounds.minlon + el.bounds.maxlon) / 2];
+  if (el.geometry && el.geometry.length) {
+    var sumLat = 0, sumLon = 0;
+    el.geometry.forEach(function (p) { sumLat += p.lat; sumLon += p.lon; });
+    return [sumLat / el.geometry.length, sumLon / el.geometry.length];
+  }
+  return null;
+}
+
+function getElementName(el) {
+  if (!el.tags) return '';
+  return el.tags.name || el.tags['name:en'] || el.tags.description || '';
+}
+
+function estimateArea(el) {
+  if (!el.geometry || el.geometry.length < 3) return 0;
+  var coords = el.geometry;
+  var area = 0;
+  for (var i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    area += (coords[j].lon + coords[i].lon) * (coords[j].lat - coords[i].lat);
+  }
+  area = Math.abs(area) / 2;
+  var midLat = coords[0].lat * Math.PI / 180;
+  return area * (111320 * Math.cos(midLat)) * 111320;
+}
+
+function buildOverpassQuery(lat, lon, radius) {
+  return '[out:json][timeout:25];(' +
+    'node["aeroway"="helipad"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["aeroway"="helipad"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["leisure"~"park|garden|playground|pitch|recreation_ground|common"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'relation["leisure"~"park|garden|playground|pitch|recreation_ground|common"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["landuse"~"grass|meadow|village_green|brownfield|greenfield|recreation_ground"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["natural"~"grassland|heath|sand"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["amenity"="parking"]["parking"!~"underground|multi-storey"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    'way["building"~"hospital|commercial|retail|industrial|warehouse|civic|stadium|university|office|public"](around:' + radius + ',' + lat + ',' + lon + ');' +
+    ');out center body geom;';
+}
+
+function clearLandingZones() {
+  landingZoneLayers.forEach(function (layer) { if (map) map.removeLayer(layer); });
+  landingZoneLayers = [];
+  var badge = document.getElementById('landing-zone-badge');
+  if (badge) badge.style.display = 'none';
+}
+
+async function discoverLandingZones(lat, lon) {
+  if (!map) return;
+
+  var cacheKey = lat.toFixed(3) + ',' + lon.toFixed(3);
+  if (landingZoneCache.has(cacheKey)) {
+    renderLandingZones(landingZoneCache.get(cacheKey), lat, lon);
+    return;
+  }
+
+  if (landingZoneFetchAbort) { landingZoneFetchAbort.abort(); landingZoneFetchAbort = null; }
+
+  var badge = document.getElementById('landing-zone-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'landing-zone-badge';
+    badge.className = 'landing-zone-badge';
+    var mapEl = document.getElementById('map');
+    if (mapEl) mapEl.appendChild(badge);
+  }
+  badge.innerHTML = '<span class="lz-badge-spinner"></span> Scanning landing zones...';
+  badge.style.display = 'flex';
+
+  var controller = new AbortController();
+  landingZoneFetchAbort = controller;
+  var query = buildOverpassQuery(lat, lon, 2000);
+
+  try {
+    var res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      signal: controller.signal,
+    });
+    var data = await res.json();
+    landingZoneFetchAbort = null;
+    if (!data.elements || !data.elements.length) {
+      badge.innerHTML = 'No landing zones found nearby';
+      setTimeout(function () { badge.style.display = 'none'; }, 3000);
+      return;
+    }
+
+    var zones = [];
+    data.elements.forEach(function (el) {
+      var cat = classifyOsmElement(el.tags);
+      if (!cat) return;
+      var center = getElementCenter(el);
+      if (!center) return;
+      var name = getElementName(el);
+      var area = estimateArea(el);
+      var catInfo = LANDING_ZONE_CATEGORIES[cat];
+
+      if (cat === 'rooftop' && area < 500) return;
+      if (cat !== 'helipad' && cat !== 'rooftop' && area < 200) return;
+
+      zones.push({
+        cat: cat,
+        name: name || catInfo.label,
+        center: center,
+        area: area,
+        priority: catInfo.priority,
+        tags: el.tags,
+        geometry: el.geometry,
+      });
+    });
+
+    zones.sort(function (a, b) { return a.priority - b.priority; });
+
+    var seen = new Set();
+    zones = zones.filter(function (z) {
+      var key = z.center[0].toFixed(4) + ',' + z.center[1].toFixed(4);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    if (zones.length > 30) zones = zones.slice(0, 30);
+
+    if (landingZoneCache.size > 20) {
+      var oldest = landingZoneCache.keys().next().value;
+      landingZoneCache.delete(oldest);
+    }
+    landingZoneCache.set(cacheKey, zones);
+
+    renderLandingZones(zones, lat, lon);
+
+  } catch (e) {
+    landingZoneFetchAbort = null;
+    if (e.name !== 'AbortError') {
+      badge.innerHTML = 'Landing zone scan failed';
+      setTimeout(function () { badge.style.display = 'none'; }, 3000);
+    }
+  }
+}
+
+function renderLandingZones(zones, centerLat, centerLon) {
+  clearLandingZones();
+  if (!map || !zones.length) return;
+
+  var badge = document.getElementById('landing-zone-badge');
+
+  var counts = {};
+  zones.forEach(function (z) {
+    counts[z.cat] = (counts[z.cat] || 0) + 1;
+  });
+
+  zones.forEach(function (z) {
+    var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
+
+    var iconHtml =
+      '<div class="lz-marker lz-marker-' + z.cat + '" style="background:' + catInfo.color + ';">' +
+        '<span class="lz-marker-letter">' + catInfo.icon + '</span>' +
+      '</div>';
+
+    var marker = L.marker(z.center, {
+      icon: L.divIcon({
+        html: iconHtml,
+        className: 'lz-marker-wrap',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+      zIndexOffset: 100 - catInfo.priority * 10,
+    }).addTo(map);
+
+    var dist = haversineKmClient(centerLat, centerLon, z.center[0], z.center[1]);
+    var distLabel = dist < 1 ? Math.round(dist * 1000) + ' m' : dist.toFixed(1) + ' km';
+    var areaLabel = z.area > 0 ? (z.area > 10000 ? (z.area / 10000).toFixed(1) + ' ha' : Math.round(z.area) + ' m²') : '—';
+
+    var popupHtml =
+      '<div class="lz-popup">' +
+        '<div class="lz-popup-cat" style="color:' + catInfo.color + ';">' + catInfo.label + '</div>' +
+        '<div class="lz-popup-name">' + escapeHtml(z.name) + '</div>' +
+        '<div class="lz-popup-meta">' +
+          '<span>Area: ' + areaLabel + '</span>' +
+          '<span>Distance: ' + distLabel + '</span>' +
+        '</div>' +
+        '<div class="lz-popup-action">' +
+          '<button class="lz-popup-btn lz-popup-btn-pickup" onclick="setPickupFromLZ(' + z.center[0] + ',' + z.center[1] + ',\'' + escapeHtml(z.name).replace(/'/g, "\\'") + '\')">Set as Pickup</button>' +
+          '<button class="lz-popup-btn lz-popup-btn-dest" onclick="setDestFromLZ(' + z.center[0] + ',' + z.center[1] + ',\'' + escapeHtml(z.name).replace(/'/g, "\\'") + '\')">Set as Destination</button>' +
+        '</div>' +
+      '</div>';
+
+    marker.bindPopup(popupHtml, { maxWidth: 260, className: 'lz-popup-wrap' });
+    landingZoneLayers.push(marker);
+
+    if (z.geometry && z.geometry.length > 2 && z.cat !== 'rooftop') {
+      var latlngs = z.geometry.map(function (p) { return [p.lat, p.lon]; });
+      var poly = L.polygon(latlngs, {
+        color: catInfo.color,
+        fillColor: catInfo.color,
+        fillOpacity: 0.12,
+        weight: 1.5,
+        opacity: 0.5,
+      }).addTo(map);
+      landingZoneLayers.push(poly);
+    }
+  });
+
+  if (badge) {
+    var parts = [];
+    Object.keys(counts).forEach(function (cat) {
+      parts.push(counts[cat] + ' ' + LANDING_ZONE_CATEGORIES[cat].label.toLowerCase() + (counts[cat] > 1 ? 's' : ''));
+    });
+    badge.innerHTML =
+      '<svg class="lz-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>' +
+      '<span>' + zones.length + ' landing zone' + (zones.length > 1 ? 's' : '') + ' found</span>';
+    badge.title = parts.join(', ');
+    badge.style.display = 'flex';
+  }
+}
+
+function setPickupFromLZ(lat, lon, name) {
+  map.closePopup();
+  setPickup([lat, lon], name);
+}
+
+function setDestFromLZ(lat, lon, name) {
+  map.closePopup();
+  setDest([lat, lon], name);
+}
+
 function createMarker(latlng, type) {
   const div = document.createElement('div');
   div.className = 'custom-marker';
@@ -752,9 +1011,10 @@ function setPickup(latlng, name) {
   if (pickupMarker) map.removeLayer(pickupMarker);
   pickupMarker = createMarker(pickupCoord, 'pickup').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
-  else map.setView(pickupCoord, 13);
+  else map.setView(pickupCoord, 15);
   captureBookingDraft();
   refreshNearbyTaxis();
+  discoverLandingZones(pickupCoord[0], pickupCoord[1]);
 }
 
 function setDest(latlng, name) {
@@ -764,9 +1024,10 @@ function setDest(latlng, name) {
   if (destMarker) map.removeLayer(destMarker);
   destMarker = createMarker(destCoord, 'dest').addTo(map);
   if (pickupCoord && destCoord) drawRoute();
-  else map.setView(destCoord, 13);
+  else map.setView(destCoord, 15);
   captureBookingDraft();
   if (pickupCoord && destCoord) refreshNearbyTaxis();
+  discoverLandingZones(destCoord[0], destCoord[1]);
 }
 
 function drawRoute() {
