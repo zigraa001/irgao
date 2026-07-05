@@ -225,10 +225,10 @@ const SIGNUP_CONFIG = {
     submitId: 'register-passenger-submit',
     submitLabel: 'Send OTP',
     otpTitle: 'Verify passenger account',
-    loginTitle: 'Passenger sign in',
-    loginSub: 'Book Air Taxi, Golden Hour, and Air Shuttle rides.',
+    loginTitle: 'Sign in',
+    loginSub: 'to continue to IraGo',
     loginHint: '',
-    registerBtn: 'Create passenger account',
+    registerBtn: 'Create account',
   },
   operator: {
     purpose: 'signup_operator',
@@ -242,8 +242,8 @@ const SIGNUP_CONFIG = {
     submitId: 'register-operator-submit',
     submitLabel: 'Send OTP',
     otpTitle: 'Verify operator account',
-    loginTitle: 'Operator sign in',
-    loginSub: 'Flight rider / pilot console — assigned missions and fleet trips.',
+    loginTitle: 'Sign in',
+    loginSub: 'to continue to the IraGo Pilot Console',
     loginHint: 'Operator accounts are created by an admin only. Contact your administrator to be provisioned.',
     // Public self-signup is closed — only admins create operator accounts.
     signupDisabled: true,
@@ -251,8 +251,8 @@ const SIGNUP_CONFIG = {
   admin: {
     loginPath: '/api/auth/admin/login',
     loginUrl: '/login/admin',
-    loginTitle: 'Admin sign in',
-    loginSub: 'Platform admin — team management and fleet oversight.',
+    loginTitle: 'Sign in',
+    loginSub: 'to continue to the IraGo Admin Console',
     loginHint: '',
     loginOnly: true,
   },
@@ -294,6 +294,8 @@ function applyPortalLabels(role) {
   if (forgotLink) forgotLink.style.display = loginOnly ? 'none' : '';
   var googleBtn = document.querySelector('#login-card .btn-google');
   if (googleBtn) googleBtn.style.display = role === 'passenger' ? '' : 'none';
+  var orDivider = document.getElementById('login-or-divider');
+  if (orDivider) orDivider.style.display = role === 'passenger' ? '' : 'none';
   document.title = cfg.loginTitle + ' — IraGo';
 }
 
