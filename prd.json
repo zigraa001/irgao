@@ -382,8 +382,8 @@
         "MANDATORY gate: only set passes:true if tasks/us019-admin-audit.md exists AND every section row shows a modern token-based CSS rule AND the 'offenders after' column is 0 for every section. Record the audit-file path in notes. Do NOT claim browser/screenshot verification \u2014 this story is verified by the static audit only"
       ],
       "priority": 26,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Static audit at tasks/us019-admin-audit.md. All 11 admin sections verified: 0 inline style= in HTML, 0 hardcoded hex in admin CSS, all using token-based classes (--surface, --border-subtle, --shadow-sm, --radius-lg, etc.). Added amber/purple tokens, 30+ utility CSS classes, removed duplicate badge rules."
     },
     {
       "id": "US-020",
