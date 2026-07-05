@@ -286,7 +286,7 @@
         "Verify in browser using dev-browser skill (fresh load with geolocation granted and denied)"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

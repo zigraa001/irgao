@@ -192,3 +192,15 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Page title 'IraGo -- Book Your Air Taxi' was kept as-is since it already communicates the product value
   - Manual browser verification was not possible -- recommend visual QA of operator console and admin sections
 ---
+
+## 2026-07-05 - US-014
+- What was implemented: Google Maps style destination-first route search -- autofocus on #dest-input when booking view loads (guarded against tracking restore and overlays), "Use current location" row pinned at top of pickup suggestions dropdown, GPS-filled visual state (blue-50 background, solid blue dot with glow ring), geolocation deny silently changes placeholder to 'Choose pickup location', search with destination but no pickup shows inline error and focuses/highlights pickup input
+- Files changed: js/app/02-auth.js (dest-input autofocus after 1000ms with overlay guards, gps-filled class on auto-detect, placeholder change on geo deny), js/app/05-map.js (GPS_CURRENT_OPTION sentinel, "Use current location" row in pickup suggest render, gps-filled class on useCurrentLocation success), js/app/06-booking.js (no-pickup validation with friendly prompt + highlight-pickup animation, gps-filled cleanup in resetBooking), css/app.css (gps-filled blue-50 state, solid blue dot with :has() selector, highlight-pickup animation, loc-suggest-gps styling), app.html (CSS cache-bust), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - Autofocus timing: restoreActiveBooking runs at 600ms, GPS auto-detect at 800ms, so dest-input focus fires at 1000ms to avoid conflicts; it checks tracking-panel.active, confirm-overlay.active, payment-overlay.active, profile-modal.open, and must-reset-overlay.active before focusing
+  - The gps-filled class is separate from has-value -- has-value gives green-50 background for any filled input, gps-filled gives blue-50 and also triggers the solid blue dot indicator via :has() selector on .loc-input-group
+  - The GPS_CURRENT_OPTION is only added to the pickup suggest dropdown (target === 'pickup' && navigator.geolocation), not the destination dropdown
+  - The pickup placeholder changes to 'Choose pickup location' only when the silent auto-detect GPS fails -- the manual useCurrentLocation() shows an error toast instead (existing behavior)
+  - The highlight-pickup animation on .location-inputs adds blue-50 background to the first .loc-input-group for 2 seconds when search is attempted without a pickup
+  - Manual browser verification was not possible -- recommend visual QA of dest-first flow with geolocation granted and denied
+---
