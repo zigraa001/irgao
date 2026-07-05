@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us018-partners">
+  <link rel="stylesheet" href="/css/app.css?v=us022-wayfinding">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -306,6 +306,7 @@
 
       <!-- LOCATION INPUTS -->
       <div class="panel-section" id="panel-locations">
+        <h3 class="panel-step-heading" id="panel-locations-heading">Where are you going?</h3>
         <div class="location-inputs" style="margin-top:10px;">
           <div class="loc-input-group" style="position:relative;">
             <div class="loc-dot loc-dot-pickup"></div>
@@ -347,6 +348,9 @@
       <!-- RIDES LIST (hidden until search) -->
       <div class="panel-section rides-section" id="rides-area" style="display:none;">
         <div class="rides-header">
+          <button type="button" class="rides-back-btn" id="rides-back-btn" onclick="backToSearch()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
           <h3 id="rides-title">Choose your flight</h3>
           <span><span class="live-dot"></span> Live</span>
         </div>
@@ -432,6 +436,7 @@
         <button class="btn-end-tracking" onclick="endTracking()">Back to booking</button>
       </div>
       <div id="tracking-content">
+      <h3 class="tracking-panel-title">Live Tracking</h3>
       <div class="tracking-progress">
         <div class="tracking-progress-bar" id="tracking-progress-bar"></div>
       </div>
@@ -1274,6 +1279,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=66eccc70"></script>
+<script src="/js/app.bundle.js?v=9b0d2817"></script>
 </body>
 </html>

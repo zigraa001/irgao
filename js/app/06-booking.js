@@ -287,6 +287,7 @@ async function searchRides() {
     if (fres.ok && fdata && fdata.feasible === false) {
       list.innerHTML = renderFeasibilityWarning(fdata);
       document.getElementById('book-btn').style.display = 'none';
+      document.getElementById('panel-locations').style.display = 'none';
       area.style.display = 'block';
       area.scrollIntoView({ behavior: 'smooth' });
       searchBtnText.textContent = searchBtnLabel;
@@ -418,6 +419,7 @@ async function searchRides() {
     detailsToggle.style.display = 'none';
   }
 
+  document.getElementById('panel-locations').style.display = 'none';
   area.style.display = 'block';
   area.scrollIntoView({ behavior: 'smooth' });
   searchBtnText.textContent = searchBtnLabel;
@@ -868,6 +870,18 @@ function closeConfirm() {
   resetBooking();
 }
 
+function backToSearch() {
+  document.getElementById('rides-area').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'none';
+  document.getElementById('panel-locations').style.display = 'block';
+  var detailsToggle = document.getElementById('rides-details-toggle');
+  if (detailsToggle) detailsToggle.style.display = 'none';
+  var detailsContent = document.getElementById('rides-details-content');
+  if (detailsContent) detailsContent.innerHTML = '';
+  hideAuthError('booking-error');
+  selectedRide = null;
+}
+
 function renderCarbonComparison(cc) {
   if (!cc || !cc.comparisons) return '';
   var evKg = cc.electric.emissionsKg;
@@ -920,6 +934,7 @@ function renderCarbonComparison(cc) {
 function resetBooking() {
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
+  document.getElementById('panel-locations').style.display = 'block';
   document.getElementById('booking-panel').style.display = 'flex';
   var detailsToggle = document.getElementById('rides-details-toggle');
   if (detailsToggle) detailsToggle.style.display = 'none';

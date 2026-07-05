@@ -1406,22 +1406,46 @@ textarea:focus-visible, a:focus-visible {
 .popular-routes-toggle { text-transform: uppercase; letter-spacing: 1px; }
 .popular-routes-toggle svg:not(.disclosure-chevron) { width: 14px; height: 14px; }
 
+/* ── Panel step heading (wayfinding) ── */
+.panel-step-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 4px 0;
+}
+
 /* ═══════════════════════════════════════════
    RIDES PANEL (appears after search)
    ═══════════════════════════════════════════ */
 .rides-section {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.rides-back-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--surface-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+.rides-back-btn:hover { background: var(--gray-200); }
+.rides-back-btn svg { width: 16px; height: 16px; color: var(--gray-600); }
 .rides-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 14px;
 }
 .rides-header h3 {
   font-size: 15px;
   font-weight: 700;
   color: var(--gray-800);
+  flex: 1;
 }
 .rides-header span {
   font-size: 12px;
@@ -2475,6 +2499,15 @@ textarea:focus-visible, a:focus-visible {
   display: none;
 }
 .tracking-panel.active { display: block; }
+.tracking-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 20px 0;
+  margin: 0;
+}
 
 .tracking-empty {
   padding: 36px 24px;
