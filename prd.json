@@ -381,9 +381,89 @@
         "Typecheck passes (npm run typecheck)",
         "MANDATORY gate: only set passes:true if tasks/us019-admin-audit.md exists AND every section row shows a modern token-based CSS rule AND the 'offenders after' column is 0 for every section. Record the audit-file path in notes. Do NOT claim browser/screenshot verification \u2014 this story is verified by the static audit only"
       ],
-      "priority": 19,
+      "priority": 26,
       "passes": false,
       "notes": ""
+    },
+    {
+      "id": "US-020",
+      "priority": 20,
+      "passes": false,
+      "notes": "",
+      "title": "Admin console information architecture: grouped nav + demoted System zone",
+      "description": "As an admin, the left nav is 11 flat equally-weighted items (Dashboard, Users, Live Map, Add Member, Logs, Companies, Pricing, Revenue, Compliance, Drones, Settings) with no grouping or hierarchy, mixing a one-off action (Add Member) and dev/technical items (Logs, Settings) with core destinations \u2014 it's cluttered and confusing.",
+      "acceptanceCriteria": [
+        "Reorganize the 11 .admin-nav-item buttons in #admin-drawer into labeled groups with small uppercase group headers (new non-interactive .admin-nav-group-label, ~11px, var(--gray-400)), preserving EVERY data-admin-section value and showAdminSection() wiring: OVERVIEW = Dashboard, Live Map; MANAGEMENT = Users, Companies, Drones; FINANCE = Pricing, Revenue; GOVERNANCE = Compliance; SYSTEM = Settings, Logs",
+        "Pin the SYSTEM group to the BOTTOM of the drawer (margin-top:auto) and style it visually de-emphasized/muted with a divider above, so Logs/Settings read as advanced/technical, not primary destinations",
+        "Demote 'Add Member' from a top-level nav item to a primary action button inside the Users section header (e.g. a '+ Add member' button that opens the existing showAdminSection('add') target); remove it from the drawer nav list",
+        "All 11 sections still open via their existing data-admin-section/showAdminSection wiring; active-state highlighting still works; toggleAdminDrawer() still works; responsive at 768px",
+        "Rebuild bundle (npm run build:js), bump ?v= cache-buster; typecheck passes",
+        "Record the final grouping in progress.txt notes",
+        "Browser-free verification: this environment cannot render a browser, so verify structurally \u2014 grep the markup/JS for the required structure and write the before/after flow + evidence into progress.txt notes. Do NOT claim visual/screenshot verification. Confirm each data-admin-section still present and grouped under the correct header, Add Member is no longer an .admin-nav-item, and the SYSTEM group is the last group in the drawer."
+      ]
+    },
+    {
+      "id": "US-021",
+      "priority": 21,
+      "passes": false,
+      "notes": "",
+      "title": "Route & flight search UX overhaul: destination-first, progressive disclosure, intuitive results",
+      "description": "As a passenger, searching routes/flights is not intuitive \u2014 inputs and results present too much at once with no clear primary path. Building on US-014 (destination-first route search) and US-015 (marketplace results), make the whole search-to-result flow feel obvious and calm.",
+      "acceptanceCriteria": [
+        "Audit the current route/flight search + results components in the booking view and write the current step-by-step flow and its friction points (competing CTAs, fields shown before relevant, unclear next action) into progress.txt",
+        "Establish ONE primary path per step: (1) where to (destination) with current location as default source, (2) when/service refinement secondary, (3) a single dominant primary CTA to search \u2014 secondary controls (filters, service variants, extras) must be visually subordinate and progressively disclosed, not shown all at once",
+        "Search results (ride/flight cards) must lead with the decision-driving info (price, time, operator/trust signal) in a scannable hierarchy; de-emphasize secondary metadata; every empty/loading/no-results state states the next action (ties to US-012 microcopy)",
+        "Inputs use the modern token-based form language (44-48px rounded, focus ring, clear labels); no raw/unstyled search fields remain",
+        "Preserve all switchService()/search/booking JS wiring; no behavior regressions; rebuild bundle + cache-bust; typecheck passes",
+        "Browser-free verification: this environment cannot render a browser, so verify structurally \u2014 grep the markup/JS for the required structure and write the before/after flow + evidence into progress.txt notes. Do NOT claim visual/screenshot verification. Confirm the single-primary-CTA structure, progressive-disclosure containers, and results-card hierarchy exist in the markup, and document the redesigned flow in progress.txt."
+      ]
+    },
+    {
+      "id": "US-022",
+      "priority": 22,
+      "passes": false,
+      "notes": "",
+      "title": "Passenger booking end-to-end flow & wayfinding",
+      "description": "As a passenger, the booking journey across search -> results -> details -> payment -> tracking should feel like one guided flow with clear progress, not disconnected screens.",
+      "acceptanceCriteria": [
+        "Map the full passenger journey (service select -> search -> results -> ride detail -> payment -> confirmation -> live tracking) and document each transition and any dead-ends or unclear steps in progress.txt",
+        "Ensure every step has a clear title/heading so the user always knows where they are, one obvious primary action, and an obvious way back; no step dead-ends",
+        "Reduce simultaneous choices: apply progressive disclosure so only the current decision is prominent; move advanced/rarely-used options behind a secondary affordance",
+        "Consistent primary/secondary button hierarchy across all booking steps (one primary CTA per screen)",
+        "Preserve all booking JS wiring; no regressions; rebuild + cache-bust; typecheck passes",
+        "Browser-free verification: this environment cannot render a browser, so verify structurally \u2014 grep the markup/JS for the required structure and write the before/after flow + evidence into progress.txt notes. Do NOT claim visual/screenshot verification. Provide grep evidence that each step has a heading + single primary CTA, and document the journey in progress.txt."
+      ]
+    },
+    {
+      "id": "US-023",
+      "priority": 23,
+      "passes": false,
+      "notes": "",
+      "title": "Operator / Pilot console information architecture & task-focused flow",
+      "description": "As a pilot/operator, the console should lead with my primary job (see & manage assigned flights) and tuck secondary/technical sections away, mirroring the admin IA cleanup.",
+      "acceptanceCriteria": [
+        "Audit #operator-view (the 'Pilot Console') sections and nav and document the current sections + flow + friction in progress.txt",
+        "Make the pilot's primary task the default landing section and visually dominant; group secondary sections and de-emphasize technical/config ones",
+        "If the operator nav has 5+ flat items, apply the same grouped-nav + bottom SYSTEM-zone pattern and .admin-nav-group-label styling established in US-020",
+        "Operator view shows a clear current-section heading (wayfinding) like the admin .op-welcome",
+        "Preserve all operator JS wiring; no regressions; rebuild + cache-bust; typecheck passes",
+        "Browser-free verification: this environment cannot render a browser, so verify structurally \u2014 grep the markup/JS for the required structure and write the before/after flow + evidence into progress.txt notes. Do NOT claim visual/screenshot verification. Grep evidence of grouped/prioritized operator nav + heading; document in progress.txt."
+      ]
+    },
+    {
+      "id": "US-024",
+      "priority": 24,
+      "passes": false,
+      "notes": "",
+      "title": "Cross-role navigation hierarchy & wayfinding consistency (+ IA guidelines)",
+      "description": "As a user in any role, navigation should follow one consistent model: primary destinations prominent, advanced/technical/config consistently placed in a de-emphasized System area, and I always know where I am.",
+      "acceptanceCriteria": [
+        "Define and document ONE navigation model in a new tasks/ia-guidelines.md: primary vs secondary vs system grouping, group-label styling, wayfinding (current-section heading), and single-primary-CTA rule \u2014 this doc is the reference for all future pages",
+        "Verify each role (passenger, operator, admin) conforms: technical/config/logs live in a consistent de-emphasized location; every view has a current-location heading; group-label styling is shared/consistent",
+        "Fix any role that doesn't conform (reuse the shared .admin-nav-group-label / heading patterns)",
+        "No orphaned sections (every section reachable from its role nav); typecheck passes; rebuild + cache-bust if markup changed",
+        "Browser-free verification: this environment cannot render a browser, so verify structurally \u2014 grep the markup/JS for the required structure and write the before/after flow + evidence into progress.txt notes. Do NOT claim visual/screenshot verification. tasks/ia-guidelines.md exists and each role's conformance is recorded with grep evidence in progress.txt."
+      ]
     }
   ]
 }

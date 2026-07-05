@@ -10,3 +10,10 @@ local/.env.local
 *.db
 *.db-journal
 dev.db
+
+# Ralph operational artifacts (not product code)
+ralph-run.log
+auto-push.log
+local-server.log
+.last-branch
+test-results/

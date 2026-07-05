@@ -95,6 +95,13 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/ralph-prompt.md" 2>&1 | tee /dev/stderr) || true
   fi
   
+  # Push any new commits from this iteration to the remote
+  BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [ -n "$BRANCH" ]; then
+    echo "Pushing $BRANCH to origin..."
+    git push origin "$BRANCH" 2>&1 || echo "  (push failed — commits remain local, will retry next iteration)"
+  fi
+
   # Check for completion signal
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
     echo ""
@@ -102,7 +109,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     echo "Completed at iteration $i of $MAX_ITERATIONS"
     exit 0
   fi
-  
+
   echo "Iteration $i complete. Continuing..."
   sleep 2
 done

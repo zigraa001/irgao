@@ -14,6 +14,7 @@ You are an autonomous coding agent working on a software project.
 8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
 9. Update the PRD to set `passes: true` for the completed story
 10. Append your progress to `progress.txt`
+11. Commit the PRD/progress updates, then **push to the remote**: `git push origin <branchName>`. If the push fails (auth/network), note it in `progress.txt` and continue — do not block the story on a failed push.
 
 ## Progress Report Format
 
