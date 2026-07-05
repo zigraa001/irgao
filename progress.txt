@@ -18,6 +18,9 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Auth card visibility managed by hideAllAuthCards() with a hardcoded id array
 - auth-routes.js manually re-registers routes from mountRoleSignup — when changing role-signup.js handlers, also update auth-routes.js
 - New CSS tokens available: --focus-ring, --surface, --surface-subtle, --border-subtle, --transition — use these in future stories instead of hardcoding values
+- app.html only loads css/app.css (not css/tokens.css) — brand tokens like --navy must be defined in app.css's :root if needed
+- Service tab text labels are wrapped in `<span>` elements — use `.service-tab span { display: none; }` for icon-only responsive mode
+- Role badges (.customer-role-badge, .op-role-badge, .admin-role-badge) are hidden at <=768px via media query
 - The global :focus-visible rule in the RESET section applies to button, input, select, textarea, a — specific components can override with their own focus styles
 
 ---
@@ -40,4 +43,15 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The .auth-actions .btn-auth-primary override uses var(--radius-full) for the pill-shaped sign-in button on the login card
   - auth-error/auth-success no longer have borders — they use solid soft background colors (var(--red-50)/var(--green-50)) for a cleaner chip look
   - Manual browser verification was not possible in this environment — recommend visual QA
+---
+
+## 2026-07-05 - US-003
+- What was implemented: Booking view top navigation and service tabs redesign — 64px nav height with subtle border, segmented pill service tabs (radius-full, blue active state), modernized role badges (rounded chips, 12px semibold), 40px rounded nav-bell, 38px rounded nav-text-btn, 36px gradient avatar, responsive icon-only tabs at <=768px with aria-labels
+- Files changed: css/app.css (.booking-nav, .service-tabs, .service-tab, .nav-text-btn, .nav-bell, .nav-avatar, .customer-role-badge, .op-role-badge, .admin-role-badge, responsive media queries, added --navy token), app.html (service tab button aria-labels, text wrapped in spans, CSS cache-bust)
+- **Learnings for future iterations:**
+  - app.html only loads css/app.css — the --navy token from css/tokens.css was unavailable, had to add it to app.css :root
+  - Service tab labels are now wrapped in `<span>` elements to enable CSS hiding at narrow widths — this doesn't affect JS since switchService only uses data-service attribute and classList
+  - The old @media 900px rule had `.service-tabs { display: none }` — replaced with a 768px rule that hides labels but keeps icon-only tabs visible
+  - All three role badges (.customer/.op/.admin-role-badge) were unified to the same chip pattern (radius-full, no border) — they're hidden entirely below 768px since they take too much space
+  - Operator and admin navs inherit the .booking-nav treatment automatically — no separate styling needed
 ---
