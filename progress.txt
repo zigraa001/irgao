@@ -29,6 +29,7 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.pd-input` is the standard input class for admin/drone forms (44px, rounded, focus ring) — use instead of inline styles
 - `.admin-list-row` + `.admin-list-name` + `.admin-list-meta` for any list-of-items rows in admin sections
 - Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
+- `.partner-card` is the rich card pattern for admin Companies section -- monogram, stats row, expand/collapse offices; use `.partner-grid` as container
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
 - WCAG AA contrast: never use var(--gray-400) for readable text labels — use var(--gray-500) minimum; gray-400 is OK only for placeholders/icons/decorative
 - Touch targets on mobile: set min-height: 40-44px on interactive elements at ≤768px via media query
@@ -241,4 +242,16 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Client-side company filtering works per-page over the loaded adminUsers array -- '_unassigned' is a special sentinel for filtering pilots with no company
   - The admin-form-select CSS class provides consistent select styling (44px, rounded, focus ring)
   - Manual browser verification was not possible -- recommend visual QA of Add Member form with company select and Users list with company chips
+---
+
+## 2026-07-05 - US-018
+- What was implemented: Companies section redesigned as a partner directory -- rich partner cards with navy/blue monogram avatar, company code chip, star rating, and live stat counts (pilots, offices, fleet). Expand/collapse per-company offices inline via the existing offices-by-company endpoint. Add Company form fixed (was broken -- sent `headquarters` but backend expected `code`; form now has name + code fields using `.pd-input` class). Empty state with friendly prompt for zero companies. Server endpoint extended with pilotCount subquery. Removed the old flat Regional Offices table in favor of per-company inline offices.
+- Files changed: src/admin-routes.js (pilotCount subquery in GET /api/admin/companies), js/app/03-admin-profile.js (loadAdminCompanies rich partner cards, new toggleCompanyOffices expand/collapse, addOperatorCompany fixed to send code, _addMemberCompanies cache invalidated on add), app.html (companies section markup: partner-grid, pd-input fields, code input, removed offices-list div, CSS cache-bust), css/app.css (partner-card/grid/monogram/stats/offices/empty/add-form styles, responsive 480px), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The Add Company form was broken before this story -- it sent `{ name, headquarters }` but the backend POST /api/admin/companies expects `{ name, code }`; the operator_companies table has no headquarters column
+  - The old loadAdminCompanies rendered `c.headquarters` which was always empty since the column doesn't exist -- removed in favor of the code field
+  - Partner cards use per-company expand/collapse for offices via toggleCompanyOffices() which fetches GET /api/admin/companies/:id/offices on demand -- no global offices table
+  - After adding a company, _addMemberCompanies is set to null so the Add Member dropdown re-fetches the updated list
+  - The `.partner-chevron` rotation uses CSS `:has(~ .partner-offices.open)` -- the toggle button must be a sibling before the offices container
+  - Manual browser verification was not possible -- recommend visual QA of Companies section with partner cards and expanded offices
 ---
