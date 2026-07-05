@@ -13,10 +13,45 @@ body {
 button { cursor: pointer; font-family: inherit; border: none; background: none; }
 input, select, textarea { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
+
+/* Custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
 button:focus-visible, input:focus-visible, select:focus-visible,
 textarea:focus-visible, a:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+.ride-card:focus-visible,
+.route-chip:focus-visible,
+.op-trip-card:focus-visible,
+.dashboard-pill:focus-visible,
+.admin-tab:focus-visible,
+.admin-btn-sm:focus-visible,
+.drone-card:focus-visible,
+.feas-chip:focus-visible,
+.coupon-chip:focus-visible,
+.drone-hour-btn:focus-visible,
+.admin-load-more:focus-visible,
+.admin-flight-card:focus-visible,
+.admin-nav-item:focus-visible,
+.admin-drawer-toggle:focus-visible,
+.loc-gps-btn:focus-visible,
+.swap-btn:focus-visible,
+.admin-live-map-fs:focus-visible,
+.profile-modal-close:focus-visible,
+.payment-back-btn:focus-visible,
+.admin-user-drawer-close:focus-visible,
+.nav-avatar:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════
@@ -477,8 +512,8 @@ textarea:focus-visible, a:focus-visible {
   right: 4px;
   top: 50%;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -562,7 +597,7 @@ textarea:focus-visible, a:focus-visible {
 
 .auth-role-switcher {
   margin-top: 24px;
-  padding: 3px;
+  padding: 4px;
   border-top: none;
   display: flex;
   align-items: center;
@@ -575,7 +610,7 @@ textarea:focus-visible, a:focus-visible {
 .auth-role-btn {
   background: none;
   border: none;
-  padding: 7px 16px;
+  padding: 8px 16px;
   color: var(--gray-500);
   font-size: 12.5px;
   font-weight: 500;
@@ -631,8 +666,8 @@ textarea:focus-visible, a:focus-visible {
 .service-tab {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 18px;
+  gap: 8px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 600;
@@ -653,8 +688,8 @@ textarea:focus-visible, a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 16px;
   font-size: 13px;
   font-weight: 600;
   border-radius: var(--radius-md);
@@ -693,7 +728,7 @@ textarea:focus-visible, a:focus-visible {
 .nav-bell:hover { background: var(--gray-100); color: var(--gray-600); }
 .nav-bell svg { width: 20px; height: 20px; }
 .nav-avatar {
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--navy), var(--blue));
   display: flex;
@@ -770,7 +805,7 @@ textarea:focus-visible, a:focus-visible {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 11px 16px;
+  padding: 12px 16px;
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-700);
@@ -843,7 +878,7 @@ textarea:focus-visible, a:focus-visible {
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  padding: 5px 12px;
+  padding: 4px 12px;
 }
 .profile-account-actions {
   display: flex;
@@ -854,7 +889,7 @@ textarea:focus-visible, a:focus-visible {
 .btn-profile-logout {
   font-size: 13px;
   font-weight: 600;
-  padding: 9px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition);
@@ -936,8 +971,8 @@ textarea:focus-visible, a:focus-visible {
   position: absolute;
   top: 16px;
   right: 14px;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: var(--gray-100);
   border-radius: 50%;
@@ -1015,7 +1050,7 @@ textarea:focus-visible, a:focus-visible {
 .pd-stat-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--gray-400);
+  color: var(--gray-500);
   line-height: 1.25;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1094,7 +1129,7 @@ textarea:focus-visible, a:focus-visible {
 .pd-loading {
   padding: 32px 24px;
   text-align: center;
-  color: var(--gray-400);
+  color: var(--gray-500);
   font-size: 13px;
   font-weight: 500;
 }
@@ -1181,7 +1216,7 @@ textarea:focus-visible, a:focus-visible {
   overflow-y: auto;
 }
 .panel-section {
-  padding: 22px 24px;
+  padding: 24px;
   border-bottom: 1px solid var(--border-subtle);
 }
 .panel-section:last-child { border-bottom: none; }
@@ -1259,8 +1294,8 @@ textarea:focus-visible, a:focus-visible {
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -1273,11 +1308,11 @@ textarea:focus-visible, a:focus-visible {
 
 .swap-btn {
   position: absolute;
-  right: -18px;
+  right: -20px;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
@@ -1334,7 +1369,7 @@ textarea:focus-visible, a:focus-visible {
 }
 .rides-header span {
   font-size: 12px;
-  color: var(--gray-400);
+  color: var(--gray-500);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1355,8 +1390,8 @@ textarea:focus-visible, a:focus-visible {
   background: var(--surface);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  margin-bottom: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
   cursor: pointer;
   transition: all var(--transition);
   position: relative;
@@ -1431,7 +1466,7 @@ textarea:focus-visible, a:focus-visible {
 }
 .ride-price-est {
   font-size: 11px;
-  color: var(--gray-400);
+  color: var(--gray-500);
 }
 
 .ride-stats {
@@ -1603,7 +1638,7 @@ textarea:focus-visible, a:focus-visible {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 16px;
 }
 .coupon-input-row {
   display: flex;
@@ -1612,7 +1647,7 @@ textarea:focus-visible, a:focus-visible {
 }
 .coupon-input-row input {
   flex: 1;
-  padding: 11px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   font-size: 14px;
@@ -1630,7 +1665,7 @@ textarea:focus-visible, a:focus-visible {
   color: var(--gray-500);
 }
 .coupon-apply-btn {
-  padding: 11px 18px;
+  padding: 12px 16px;
   background: var(--blue);
   color: #fff;
   border: none;
@@ -1695,8 +1730,8 @@ textarea:focus-visible, a:focus-visible {
   flex-shrink: 0;
 }
 .payment-back-btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   font-size: 18px;
   background: var(--gray-100);
@@ -1908,12 +1943,12 @@ textarea:focus-visible, a:focus-visible {
 .confirm-id {
   display: inline-block;
   background: var(--surface-subtle);
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
   color: var(--gray-600);
-  margin-top: 10px;
+  margin-top: 8px;
   font-variant-numeric: tabular-nums;
   border: 1px solid var(--border-subtle);
 }
@@ -2157,6 +2192,25 @@ textarea:focus-visible, a:focus-visible {
   .booking-panel, .op-panel { max-height: 65vh; }
   .booking-nav { padding: 0 12px; }
 }
+@media (max-width: 360px) {
+  .booking-nav { padding: 0 8px; gap: 4px; }
+  .service-tabs { padding: 4px; gap: 0; }
+  .service-tab { padding: 8px; }
+  .nav-profile { gap: 4px; }
+  .booking-panel { padding: 12px; }
+  .panel-section { padding: 12px; }
+  .auth-card { padding: 24px 16px; max-width: 100%; }
+  .login-left { padding: 24px 12px; }
+  .payment-page-header { padding: 12px; }
+  .payment-page-body { padding: 12px; }
+  .tracking-otp-card { margin: 0 12px 12px; padding: 12px 16px; }
+  .tracking-otp-code { font-size: 24px; letter-spacing: 4px; }
+  .confirm-body { padding: 0 16px 16px; }
+  .confirm-header { padding: 24px 16px 16px; }
+  .route-chip { padding: 8px 12px; }
+  .ride-card { padding: 12px; }
+  .op-duty-card { padding: 12px; gap: 12px; }
+}
 
 /* ═══════════════════════════════════════════
    POPULAR ROUTES
@@ -2167,7 +2221,7 @@ textarea:focus-visible, a:focus-visible {
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--gray-400);
+  color: var(--gray-500);
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -2392,7 +2446,7 @@ textarea:focus-visible, a:focus-visible {
 }
 
 .tracking-footer {
-  padding: 14px 24px;
+  padding: 16px 24px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -2420,11 +2474,11 @@ textarea:focus-visible, a:focus-visible {
 .tracking-pilot-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 16px;
   background: var(--surface-subtle);
   border-radius: var(--radius-lg);
-  margin: 0 20px 10px;
+  margin: 0 20px 12px;
 }
 .tracking-pilot-avatar {
   width: 44px;
@@ -2446,7 +2500,7 @@ textarea:focus-visible, a:focus-visible {
 .tracking-otp-card {
   text-align: center;
   padding: 16px 20px;
-  margin: 0 20px 10px;
+  margin: 0 20px 12px;
   background: var(--blue-50);
   border: 1.5px dashed var(--blue);
   border-radius: var(--radius-lg);
@@ -2466,6 +2520,7 @@ textarea:focus-visible, a:focus-visible {
 }
 .btn-end-tracking {
   padding: 8px 16px;
+  min-height: 40px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 600;
@@ -2537,7 +2592,7 @@ textarea:focus-visible, a:focus-visible {
 .tracking-step-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--gray-400);
+  color: var(--gray-500);
 }
 .tracking-step.done .tracking-step-label { color: var(--blue); }
 .tracking-step.active .tracking-step-label { color: var(--blue); font-weight: 700; }
@@ -2644,7 +2699,7 @@ textarea:focus-visible, a:focus-visible {
   letter-spacing: 0.5px;
   color: var(--blue-dark);
   background: var(--blue-50);
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
 }
 
@@ -2692,7 +2747,7 @@ textarea:focus-visible, a:focus-visible {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--gray-400);
+  color: var(--gray-500);
   margin: 28px 0 12px;
 }
 .op-empty {
@@ -2703,16 +2758,16 @@ textarea:focus-visible, a:focus-visible {
   text-align: center;
   box-shadow: var(--shadow-sm);
 }
-.op-empty-icon { font-size: 24px; margin-bottom: 10px; color: var(--gray-300); }
+.op-empty-icon { font-size: 24px; margin-bottom: 12px; color: var(--gray-300); }
 .op-empty-title { font-size: 16px; font-weight: 700; color: var(--gray-700); }
-.op-empty-sub { font-size: 13px; color: var(--gray-400); margin-top: 6px; }
+.op-empty-sub { font-size: 13px; color: var(--gray-500); margin-top: 6px; }
 
 /* Assigned-trip list (US-009) */
 .op-trip-card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  padding: 16px;
   box-shadow: var(--shadow-sm);
   margin-bottom: 12px;
   cursor: pointer;
@@ -2780,7 +2835,7 @@ textarea:focus-visible, a:focus-visible {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--gray-400);
+  color: var(--gray-500);
   padding: 10px 14px;
   text-align: left;
   border-bottom: 1px solid var(--border-subtle);
@@ -2821,13 +2876,13 @@ textarea:focus-visible, a:focus-visible {
 .admin-user-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 14px 18px;
+  padding: 16px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   cursor: pointer;
   transition: border-color var(--transition), box-shadow var(--transition), transform 0.05s ease;
 }
@@ -2909,7 +2964,7 @@ textarea:focus-visible, a:focus-visible {
   box-shadow: var(--focus-ring);
   outline: none;
 }
-.admin-add-submit { width: auto; padding: 11px 22px; }
+.admin-add-submit { width: auto; padding: 12px 24px; }
 .admin-add-success {
   display: none;
   margin-top: 14px;
@@ -3014,7 +3069,7 @@ textarea:focus-visible, a:focus-visible {
   letter-spacing: 0.5px;
   color: var(--blue-dark);
   background: var(--blue-50);
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
 }
 .dashboard-intro {
@@ -3040,7 +3095,7 @@ textarea:focus-visible, a:focus-visible {
 .dashboard-pill {
   font-size: 12px;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
@@ -3247,11 +3302,11 @@ textarea:focus-visible, a:focus-visible {
 .admin-live-map-wrap .admin-live-map { margin-bottom: 0; }
 .admin-live-map-fs {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 1200;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   border: 1px solid var(--gray-200);
   background: #fff;
@@ -3299,15 +3354,15 @@ body.admin-map-fs { overflow: hidden; }
 .admin-live-panel h4 {
   font-size: 13px;
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: var(--gray-800);
 }
 .admin-flight-card {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 12px 14px;
-  margin-bottom: 10px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
   font-size: 13px;
   transition: border-color var(--transition);
 }
@@ -3333,7 +3388,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-zones-layout {
   display: grid;
   grid-template-columns: 1fr 220px;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 24px;
 }
 @media (max-width: 900px) {
@@ -3545,8 +3600,8 @@ body.admin-map-fs { overflow: hidden; }
   align-items: start;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 28px 60px;
-  gap: 28px;
+  padding: 24px 24px 60px;
+  gap: 24px;
 }
 .admin-drawer {
   position: sticky;
@@ -3577,13 +3632,13 @@ body.admin-map-fs { overflow: hidden; }
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   text-align: left;
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
-  padding: 9px 12px 9px 14px;
+  padding: 8px 12px;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--gray-500);
@@ -3671,13 +3726,13 @@ body.admin-map-fs { overflow: hidden; }
 }
 .admin-user-drawer-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 12px;
   border: none;
   background: rgba(15, 23, 42, 0.06);
   color: var(--gray-700);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   font-size: 22px;
   line-height: 1;
@@ -3739,7 +3794,7 @@ body.admin-map-fs { overflow: hidden; }
 .op-badge--blue { background: var(--blue-light); color: var(--blue-dark); border: 1px solid var(--blue-light); }
 
 @media (max-width: 768px) {
-  .admin-shell { grid-template-columns: 1fr; padding: 12px 14px 60px; gap: 14px; }
+  .admin-shell { grid-template-columns: 1fr; padding: 12px 16px 60px; gap: 16px; }
   .admin-drawer {
     position: relative;
     top: auto;
@@ -3759,6 +3814,14 @@ body.admin-map-fs { overflow: hidden; }
   .admin-page-header .op-welcome { font-size: 20px; }
   .admin-user-drawer-panel { max-width: 100%; }
 }
+@media (max-width: 360px) {
+  .admin-shell { padding: 8px; gap: 8px; }
+  .admin-page-header .op-welcome { font-size: 18px; }
+  .admin-summary-bar { gap: 8px; }
+  .admin-form-card { padding: 12px; }
+  .admin-table { font-size: 12px; }
+  .admin-table th, .admin-table td { padding: 8px; }
+}
 
 /* ── Operator on-duty toggle ── */
 .op-duty-card {
@@ -3772,13 +3835,13 @@ body.admin-map-fs { overflow: hidden; }
 .op-duty-card:has(.op-duty-switch[aria-pressed="true"]) .op-duty-status { color: #16A34A; }
 .op-duty-sub { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
 .op-duty-switch {
-  width: 48px; height: 28px; border-radius: 14px; border: none;
+  width: 52px; height: 32px; border-radius: 16px; border: none;
   background: var(--gray-300); position: relative; cursor: pointer;
   transition: background var(--transition); flex: none;
 }
 .op-duty-switch[aria-pressed="true"] { background: #22C55E; }
 .op-duty-knob {
-  position: absolute; top: 2px; left: 2px; width: 24px; height: 24px;
+  position: absolute; top: 2px; left: 2px; width: 28px; height: 28px;
   border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25);
   transition: transform var(--transition);
 }
@@ -3790,16 +3853,17 @@ body.admin-map-fs { overflow: hidden; }
   text-align: center; border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 .tracking-rate-title { font-weight: 700; font-size: 17px; margin-bottom: 12px; color: var(--gray-900); }
-.tracking-rate-stars { display: flex; gap: 10px; margin-bottom: 14px; justify-content: center; }
+.tracking-rate-stars { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
 .tracking-rate-stars button {
   font-size: 28px; line-height: 1; border: none; background: none; cursor: pointer;
-  color: var(--gray-300); padding: 2px 4px; transition: all var(--transition);
+  color: var(--gray-300); padding: 4px 6px; min-width: 40px; min-height: 40px;
+  display: flex; align-items: center; justify-content: center; transition: all var(--transition);
 }
 .tracking-rate-stars button:hover { transform: scale(1.25); color: #FBBF24; }
 .tracking-rate-stars button.on { color: #F59E0B; }
 .tracking-rate-input {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md); margin-bottom: 10px; font-size: 14px;
+  width: 100%; padding: 12px; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); margin-bottom: 12px; font-size: 14px;
   background: var(--surface); transition: border-color var(--transition);
 }
 .tracking-rate-input:focus { border-color: var(--blue); box-shadow: var(--focus-ring); outline: none; }
@@ -3819,7 +3883,7 @@ body.admin-map-fs { overflow: hidden; }
 .weather-risk { margin-left: auto; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .payment-fare-breakdown {
   background: var(--surface); border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 14px; font-size: 13px;
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; font-size: 13px;
 }
 .payment-fare-breakdown .fb-row {
   display: flex; justify-content: space-between; padding: 6px 0; color: var(--gray-500);
@@ -3829,7 +3893,7 @@ body.admin-map-fs { overflow: hidden; }
 .payment-fare-breakdown .fb-row span:last-child { color: var(--gray-700); font-weight: 500; }
 .payment-fare-breakdown .fb-total {
   display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle);
-  margin-top: 4px; padding-top: 10px; font-weight: 700; font-size: 15px; color: var(--navy, #111);
+  margin-top: 4px; padding-top: 12px; font-weight: 700; font-size: 15px; color: var(--navy, #111);
 }
 
 /* ── Profile previous rides ── */
@@ -3863,8 +3927,8 @@ body.admin-map-fs { overflow: hidden; }
 .admin-toggle-label {
   position: relative;
   display: inline-block;
-  width: 48px;
-  height: 26px;
+  width: 52px;
+  height: 32px;
   flex-shrink: 0;
 }
 .admin-toggle-label input {
@@ -3877,15 +3941,15 @@ body.admin-map-fs { overflow: hidden; }
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
   background: var(--gray-300);
-  border-radius: 26px;
+  border-radius: 32px;
   transition: background var(--transition);
 }
 .admin-toggle-knob {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
   background: #fff;
   border-radius: 50%;
   transition: left var(--transition);
@@ -3953,7 +4017,7 @@ body.admin-map-fs { overflow: hidden; }
 .loc-suggest-map .loc-suggest-icon { color: var(--blue-dark); }
 .loc-suggest-label {
   padding: 8px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: .05em;
-  text-transform: uppercase; color: var(--gray-400);
+  text-transform: uppercase; color: var(--gray-500);
 }
 
 /* ── Route feasibility warning + suggestions ── */
@@ -3972,7 +4036,7 @@ body.admin-map-fs { overflow: hidden; }
 .feas-chip {
   display: inline-flex; align-items: center; gap: 8px; width: fit-content;
   background: #fff; border: 1px solid #F59E0B; color: #92400E;
-  padding: 8px 12px; border-radius: 2px; font-size: 13px; cursor: pointer;
+  padding: 10px 12px; min-height: 40px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer;
   font-weight: 600; transition: background .15s;
 }
 .feas-chip:hover { background: #FEF3C7; }
@@ -3983,7 +4047,7 @@ body.admin-map-fs { overflow: hidden; }
 /* ── Toast notifications ── */
 .toast-container { position: fixed; top: 20px; right: 20px; z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast {
-  pointer-events: auto; padding: 14px 18px 14px 22px; border-radius: var(--radius-lg);
+  pointer-events: auto; padding: 16px 20px 16px 24px; border-radius: var(--radius-lg);
   font-size: 13px; font-weight: 600; color: #fff;
   box-shadow: var(--shadow-lg); max-width: 360px; position: relative; overflow: hidden;
   animation: toastSlideIn .3s cubic-bezier(.16,1,.3,1), toastOut .3s ease 2.7s forwards;
@@ -4008,7 +4072,8 @@ body.admin-map-fs { overflow: hidden; }
 .op-rate-stars { display: flex; gap: 4px; margin: 6px 0 8px; }
 .op-rate-stars button {
   font-size: 24px; line-height: 1; border: none; background: none; cursor: pointer;
-  color: var(--gray-300); padding: 0 2px;
+  color: var(--gray-300); padding: 4px 6px; min-width: 40px; min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
 }
 .op-rate-stars button.on { color: #F59E0B; }
 
@@ -4248,7 +4313,7 @@ body.admin-map-fs { overflow: hidden; }
   font-size: 13px;
   font-weight: 500;
   color: var(--gray-600);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 .drone-hour-picker {
   display: flex;
@@ -4256,8 +4321,8 @@ body.admin-map-fs { overflow: hidden; }
   gap: 8px;
 }
 .drone-hour-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-sm);
   background: #fff;
@@ -4275,7 +4340,7 @@ body.admin-map-fs { overflow: hidden; }
   text-align: center;
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-sm);
-  padding: 6px;
+  padding: 8px;
   font-size: 15px;
   font-weight: 700;
 }
@@ -4348,7 +4413,7 @@ body.admin-map-fs { overflow: hidden; }
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
 }
 .drone-status-confirmed { background: #e8f5e9; color: #2e7d32; }
@@ -4371,7 +4436,7 @@ body.admin-map-fs { overflow: hidden; }
   border: 1px solid #c62828;
   color: #c62828;
   border-radius: var(--radius-sm);
-  padding: 5px 12px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -4404,7 +4469,7 @@ body.admin-map-fs { overflow: hidden; }
   color: var(--blue-dark);
   border: 1px solid var(--blue-light);
   border-radius: var(--radius-md);
-  padding: 5px 12px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -4417,7 +4482,7 @@ body.admin-map-fs { overflow: hidden; }
 .drone-status-select {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 5px 8px;
+  padding: 4px 8px;
   font-size: 12px;
   background: var(--surface);
   transition: border-color var(--transition);
@@ -4452,7 +4517,7 @@ body.admin-map-fs { overflow: hidden; }
 .drone-stat-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--gray-400);
+  color: var(--gray-500);
   margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -4467,14 +4532,133 @@ body.admin-map-fs { overflow: hidden; }
   }
 }
 
-/* ── Reduced motion: disable entrance/pop animations ── */
+/* ── Missing :active states for interactive elements ── */
+.ride-card:active { transform: scale(0.99); }
+.route-chip:active { transform: scale(0.97); }
+.coupon-chip:active { transform: scale(0.97); }
+.nav-text-btn:active { transform: scale(0.97); }
+.nav-bell:active { background: var(--gray-200); }
+.nav-avatar:active { transform: scale(0.95); }
+.btn-end-tracking:active { transform: scale(0.97); }
+.dashboard-pill:active { transform: scale(0.97); }
+.admin-tab:active { transform: scale(0.97); }
+.admin-btn-sm:active { transform: scale(0.97); }
+.admin-nav-item:active { background: var(--gray-100); }
+.drone-hour-btn:active { background: var(--gray-200); }
+.profile-modal-close:active { background: var(--gray-300); }
+.payment-back-btn:active { background: var(--gray-300); }
+.admin-user-drawer-close:active { background: rgba(15, 23, 42, 0.12); }
+.admin-live-map-fs:active { transform: scale(0.95); }
+.loc-gps-btn:active { background: var(--gray-200); }
+.swap-btn:active { transform: translateY(-50%) scale(0.95); }
+.coupon-apply-btn:active { transform: scale(0.97); }
+.admin-load-more:active { transform: scale(0.98); }
+.op-trip-card:active { transform: scale(0.99); }
+.admin-drawer-toggle:active { background: var(--gray-100); }
+
+/* ── Missing :disabled states ── */
+.search-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.nav-text-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.admin-btn-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE POLISH (US-010)
+   ═══════════════════════════════════════════ */
+
+/* ── 360px: prevent overflow, tighter spacing ── */
+@media (max-width: 360px) {
+  .tracking-footer { flex-wrap: wrap; }
+  .tracking-stats { flex-wrap: wrap; }
+  .tracking-step-label { font-size: 10px; }
+  .cc-row { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .cc-val, .cc-saved { font-size: 10px; }
+  .pd-breakdown { grid-template-columns: 1fr; }
+  .route-info-grid { grid-template-columns: 1fr; }
+  .toast-container { right: 8px; left: 8px; }
+  .toast { max-width: 100%; }
+  .op-trip-meta { gap: 4px 8px; }
+  .admin-user-actions { align-items: stretch; }
+  .admin-btn-sm { font-size: 11px; padding: 6px 8px; }
+  .op-body { padding: 20px 12px 48px; }
+  .admin-toggle-row { gap: 8px; }
+  .feasibility-warning { padding: 12px; }
+  .feas-title { font-size: 14px; }
+  .admin-zones-layout { grid-template-columns: 1fr; }
+  .booking-map-legend { max-width: 180px; font-size: 9px; gap: 4px; padding: 6px 8px; }
+}
+
+/* ── 480px: mobile portrait polish ── */
+@media (max-width: 480px) {
+  .tracking-pilot-card { margin: 0 12px 12px; padding: 12px; }
+  .tracking-otp-card { margin: 0 12px 12px; padding: 12px 16px; }
+  .tracking-steps { padding: 0 12px 16px; }
+  .payment-summary-card { padding: 20px 16px; }
+  .carbon-comparison-card { font-size: 12px; }
+  .cc-header { padding: 8px 12px; }
+  .cc-body { padding: 8px 12px; }
+  .cc-footer { padding: 8px 12px; }
+  .new-flyer-banner { font-size: 12px; padding: 8px 12px; }
+  .admin-live-list { max-height: 280px; }
+  .admin-tab { padding: 8px 12px; font-size: 12px; }
+  .admin-user-tabs { flex-wrap: wrap; }
+}
+
+/* ── 768px: tablet landscape adjustments ── */
+@media (max-width: 768px) {
+  .payment-page { max-width: 100%; }
+  .confirm-body { padding: 0 20px 24px; }
+  .route-info-card { padding: 12px; }
+  .feasibility-warning { padding: 12px 14px; }
+  .op-body { padding: 24px 16px 48px; }
+}
+
+/* ── 1024px: small desktop / large tablet ── */
+@media (max-width: 1024px) {
+  .admin-shell { max-width: 100%; padding: 20px; gap: 20px; }
+  .admin-shell > .admin-drawer { position: static; }
+}
+
+/* ── 1440px+: wide screen comfort ── */
+@media (min-width: 1440px) {
+  .admin-shell { max-width: 1280px; }
+  .op-body { max-width: 960px; }
+}
+
+/* ── Touch target enforcement for mobile ── */
+@media (max-width: 768px) {
+  .loc-suggest-item { padding: 12px; min-height: 44px; }
+  .route-chip { padding: 12px 16px; min-height: 44px; }
+  .admin-nav-item { padding: 12px; min-height: 44px; }
+  .service-tab { min-height: 40px; }
+  .auth-forgot-link button { padding: 8px 4px; }
+}
+
+/* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {
   .confirm-card,
   .payment-page,
   .profile-modal-card,
   .toast,
   .confirm-check,
-  .confirm-overlay.active {
+  .confirm-overlay.active,
+  .popular-routes,
+  .rides-section,
+  .live-dot,
+  .badge-discount,
+  .marker-aircraft,
+  .flight-path,
+  .tracking-status-dot,
+  .tracking-step.active .tracking-step-dot,
+  .dispatch-tag--emergency,
+  .dispatch-card,
+  .loc-gps-btn.gps-loading svg,
+  .op-gps-dot,
+  .admin-section {
     animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }
