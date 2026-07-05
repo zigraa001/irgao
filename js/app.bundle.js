@@ -1385,6 +1385,8 @@ let adminUsers = [];
 let adminUsersTotal = 0;
 let adminUsersLoading = false;
 let adminUsersLoaded = false;
+let _addMemberCompanies = null;
+let adminUserCompanyFilter = '';
 let adminLiveInited = false;
 let adminCurrentSection = 'dashboard';
 let adminUserDrawerUser = null;
@@ -2149,10 +2151,33 @@ function switchAdminUserTab(tab) {
   adminUserPage = 0;
   adminUsers = [];
   adminUsersTotal = 0;
+  adminUserCompanyFilter = '';
   document.querySelectorAll('.admin-tab').forEach(function (btn) {
     btn.classList.toggle('active', btn.id === 'admin-tab-' + tab);
   });
+  var filterWrap = document.getElementById('admin-users-company-filter');
+  if (filterWrap) {
+    filterWrap.style.display = tab === 'operator' ? '' : 'none';
+    if (tab === 'operator') populateCompanyFilter();
+  }
   loadAdminUsersChunk(true);
+}
+
+async function populateCompanyFilter() {
+  var sel = document.getElementById('admin-users-company-select');
+  if (!sel) return;
+  var companies = await ensureAddMemberCompanies();
+  sel.innerHTML = '<option value="">All companies</option>' +
+    companies.map(function (c) {
+      return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    }).join('') +
+    '<option value="_unassigned">Unassigned</option>';
+}
+
+function filterAdminUsersByCompany() {
+  var sel = document.getElementById('admin-users-company-select');
+  adminUserCompanyFilter = sel ? sel.value : '';
+  renderAdminUsers();
 }
 
 function adminPageCount() {
@@ -2268,11 +2293,35 @@ function renderAdminUsers() {
       '<div class="op-empty-sub">New accounts will show up here once they register or are added by an admin.</div>' +
       '</div>';
   } else {
-    listHost.innerHTML = adminUsers.map(function (u) {
+    var filtered = adminUsers;
+    if (adminUserTab === 'operator' && adminUserCompanyFilter === '_unassigned') {
+      filtered = adminUsers.filter(function (u) { return !u.companyId; });
+    } else if (adminUserTab === 'operator' && adminUserCompanyFilter) {
+      filtered = adminUsers.filter(function (u) {
+        return String(u.companyId) === adminUserCompanyFilter;
+      });
+    }
+    if (!filtered.length && adminUserCompanyFilter) {
+      listHost.innerHTML =
+        '<div class="op-empty">' +
+        '<div class="op-empty-icon">🔍</div>' +
+        '<div class="op-empty-title">No pilots in this company</div>' +
+        '<div class="op-empty-sub">Try a different company filter or add a pilot to this company.</div>' +
+        '</div>';
+    } else {
+    listHost.innerHTML = filtered.map(function (u) {
       const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
       const bannedBadge = u.banned
         ? ' <span class="op-status-badge op-badge--red">Banned</span>'
         : '';
+      var companyChip = '';
+      if (u.role === 'operator') {
+        if (u.companyName) {
+          companyChip = '<span class="op-status-badge op-badge--blue">' + escapeHtml(u.companyName) + '</span>';
+        } else {
+          companyChip = '<span class="op-status-badge op-badge--amber">Unassigned</span>';
+        }
+      }
       let actions;
       if (u.role === 'admin') {
         actions = '<span class="admin-user-note">Password via .env bootstrap</span>';
@@ -2291,7 +2340,7 @@ function renderAdminUsers() {
         '<div class="admin-user-card" role="button" tabindex="0" onclick="openAdminUserDrawer(' + u.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openAdminUserDrawer(' + u.id + ')}">' +
           '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
           '<div class="admin-user-main">' +
-            '<div class="admin-user-name">' + escapeHtml(u.name || '—') + bannedBadge + '</div>' +
+            '<div class="admin-user-name">' + escapeHtml(u.name || '--') + bannedBadge + companyChip + '</div>' +
             '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
           '</div>' +
           roleBadgeHtml(u.role) +
@@ -2300,6 +2349,7 @@ function renderAdminUsers() {
         '</div>'
       );
     }).join('');
+    }
   }
 
   if (pagerHost) {
@@ -2427,14 +2477,68 @@ function hideAddSuccess() {
   if (el) { el.textContent = ''; el.classList.remove('show'); }
 }
 
-// Provision an operator/admin via POST /api/admin/users (bearer via apiFetch),
-// then clear the form, confirm, and refresh the list. Client validation mirrors
-// the server (all fields required, password >= 6, role in operator|admin).
+async function ensureAddMemberCompanies() {
+  if (_addMemberCompanies) return _addMemberCompanies;
+  try {
+    var res = await apiFetch('/api/admin/companies');
+    var data = await res.json();
+    if (res.ok && data.companies) _addMemberCompanies = data.companies;
+  } catch {}
+  return _addMemberCompanies || [];
+}
+
+function toggleAddMemberCompany() {
+  var role = (document.getElementById('admin-add-role') || {}).value;
+  var companyField = document.getElementById('admin-add-company-field');
+  var officeField = document.getElementById('admin-add-office-field');
+  if (!companyField || !officeField) return;
+  if (role === 'operator') {
+    companyField.style.display = '';
+    officeField.style.display = '';
+    loadAddMemberCompanyOptions();
+  } else {
+    companyField.style.display = 'none';
+    officeField.style.display = 'none';
+    document.getElementById('admin-add-company').value = '';
+    document.getElementById('admin-add-office').innerHTML = '<option value="">None (optional)</option>';
+  }
+}
+
+async function loadAddMemberCompanyOptions() {
+  var sel = document.getElementById('admin-add-company');
+  if (!sel) return;
+  var companies = await ensureAddMemberCompanies();
+  sel.innerHTML = '<option value="">Select a company</option>' +
+    companies.map(function (c) {
+      return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    }).join('');
+}
+
+async function onAddMemberCompanyChange() {
+  var companyId = (document.getElementById('admin-add-company') || {}).value;
+  var officeSel = document.getElementById('admin-add-office');
+  if (!officeSel) return;
+  officeSel.innerHTML = '<option value="">None (optional)</option>';
+  if (!companyId) return;
+  try {
+    var res = await apiFetch('/api/admin/companies/' + companyId + '/offices');
+    var data = await res.json();
+    if (res.ok && data.offices && data.offices.length) {
+      officeSel.innerHTML = '<option value="">None (optional)</option>' +
+        data.offices.map(function (o) {
+          return '<option value="' + o.id + '">' + escapeHtml(o.city + (o.address ? ' - ' + o.address : '')) + '</option>';
+        }).join('');
+    }
+  } catch {}
+}
+
 async function doAddUser() {
   const name = document.getElementById('admin-add-name').value.trim();
   const email = document.getElementById('admin-add-email').value.trim();
   const password = document.getElementById('admin-add-password').value;
   const role = document.getElementById('admin-add-role').value;
+  const companyId = (document.getElementById('admin-add-company') || {}).value || '';
+  const officeId = (document.getElementById('admin-add-office') || {}).value || '';
   hideAuthError('admin-add-error');
   hideAddSuccess();
   if (!name || !email || !password) {
@@ -2446,12 +2550,20 @@ async function doAddUser() {
   if (role !== 'operator' && role !== 'admin') {
     return showAuthError('admin-add-error', 'Role must be operator or admin.');
   }
-  setBusy('admin-add-submit', true, 'Adding…', 'Add Team Member');
+  if (role === 'operator' && !companyId) {
+    return showAuthError('admin-add-error', 'Please select an operator company for this pilot.');
+  }
+  setBusy('admin-add-submit', true, 'Adding...', 'Add Team Member');
+  var payload = { name: name, email: email, password: password, role: role };
+  if (role === 'operator') {
+    payload.companyId = Number(companyId);
+    if (officeId) payload.officeId = Number(officeId);
+  }
   try {
     const res = await apiFetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role })
+      body: JSON.stringify(payload)
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -2465,6 +2577,9 @@ async function doAddUser() {
     document.getElementById('admin-add-email').value = '';
     document.getElementById('admin-add-password').value = '';
     document.getElementById('admin-add-role').value = 'operator';
+    if (document.getElementById('admin-add-company')) document.getElementById('admin-add-company').value = '';
+    if (document.getElementById('admin-add-office')) document.getElementById('admin-add-office').innerHTML = '<option value="">None (optional)</option>';
+    toggleAddMemberCompany();
     const added = data.user || {};
     const label = (ROLE_BADGE[added.role] || {}).label || added.role || role;
     showAddSuccess(
@@ -2475,7 +2590,7 @@ async function doAddUser() {
   } catch (e) {
     showAuthError('admin-add-error', 'Could not reach the server. Please try again.');
   } finally {
-    setBusy('admin-add-submit', false, 'Adding…', 'Add Team Member');
+    setBusy('admin-add-submit', false, 'Adding...', 'Add Team Member');
   }
 }
 

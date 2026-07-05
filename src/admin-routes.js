@@ -46,6 +46,8 @@ function listUser(user) {
     createdAt: user.createdAt,
     banned: Boolean(user.bannedAt),
     mustResetPassword: Boolean(user.mustResetPassword),
+    companyId: user.companyId || null,
+    companyName: user.companyName || null,
   };
 }
 
@@ -91,7 +93,7 @@ router.post(
   requireAuth,
   requireRole("admin"),
   async (req, res) => {
-    const { name, email, password, role } = req.body || {};
+    const { name, email, password, role, companyId, officeId } = req.body || {};
 
     if (!name || !email || !password) {
       return res
@@ -113,6 +115,19 @@ router.post(
       });
     }
 
+    const parsedCompanyId = companyId ? Number(companyId) : null;
+    const parsedOfficeId = officeId ? Number(officeId) : null;
+
+    if (parsedCompanyId != null) {
+      const comp = await queryOne(
+        "SELECT id FROM operator_companies WHERE id = ?",
+        [parsedCompanyId]
+      );
+      if (!comp) {
+        return res.status(400).json({ error: "Selected operator company does not exist" });
+      }
+    }
+
     const normalizedEmail = String(email).toLowerCase();
 
     const existing = await queryOne("SELECT id FROM users WHERE email = ?", [
@@ -128,8 +143,8 @@ router.post(
     // login (mustResetPassword = 1). The change-password endpoint clears it.
     const passwordHash = await hashPassword(String(password));
     const result = await query(
-      "INSERT INTO users (name, email, passwordHash, role, emailVerified, mustResetPassword) VALUES (?, ?, ?, ?, 1, 1)",
-      [String(name), normalizedEmail, passwordHash, role]
+      "INSERT INTO users (name, email, passwordHash, role, emailVerified, mustResetPassword, companyId, officeId) VALUES (?, ?, ?, ?, 1, 1, ?, ?)",
+      [String(name), normalizedEmail, passwordHash, role, parsedCompanyId, parsedOfficeId]
     );
 
     const user = await queryOne("SELECT * FROM users WHERE id = ?", [
@@ -152,9 +167,12 @@ router.get("/users", requireAuth, requireRole("admin"), async (req, res) => {
   const total = Number(countRow?.total) || 0;
 
   const rows = await query(
-    `SELECT id, name, email, role, createdAt, bannedAt, mustResetPassword
-     FROM users WHERE ${whereSql}
-     ORDER BY createdAt DESC, id DESC
+    `SELECT u.id, u.name, u.email, u.role, u.createdAt, u.bannedAt,
+            u.mustResetPassword, u.companyId, oc.name AS companyName
+     FROM users u
+     LEFT JOIN operator_companies oc ON oc.id = u.companyId
+     WHERE ${whereSql.replace(/\b(role|deletedAt|bannedAt)\b/g, "u.$1")}
+     ORDER BY u.createdAt DESC, u.id DESC
      LIMIT ? OFFSET ?`,
     [...whereParams, limit, offset]
   );

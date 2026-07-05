@@ -943,6 +943,11 @@
             <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
             <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Pilots</button>
           </div>
+          <div id="admin-users-company-filter" style="display:none;margin:8px 0;">
+            <select id="admin-users-company-select" class="admin-form-select" style="max-width:260px;font-size:13px;" onchange="filterAdminUsersByCompany()">
+              <option value="">All companies</option>
+            </select>
+          </div>
           <div id="admin-users-meta" class="admin-users-meta"></div>
           <div id="admin-users-list">
             <div class="op-empty"><div class="op-empty-sub">Fetching users...</div></div>
@@ -999,9 +1004,21 @@
             </div>
             <div class="auth-field">
               <label>Role</label>
-              <select id="admin-add-role" class="admin-form-select">
+              <select id="admin-add-role" class="admin-form-select" onchange="toggleAddMemberCompany()">
                 <option value="operator">Pilot</option>
                 <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="auth-field" id="admin-add-company-field">
+              <label>Operator Company <span style="color:var(--red)">*</span></label>
+              <select id="admin-add-company" class="admin-form-select" onchange="onAddMemberCompanyChange()">
+                <option value="">Select a company</option>
+              </select>
+            </div>
+            <div class="auth-field" id="admin-add-office-field">
+              <label>Regional Office</label>
+              <select id="admin-add-office" class="admin-form-select">
+                <option value="">None (optional)</option>
               </select>
             </div>
           </div>
@@ -1236,6 +1253,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=82aa8932"></script>
+<script src="/js/app.bundle.js?v=fce4c5f2"></script>
 </body>
 </html>
