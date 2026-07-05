@@ -4583,7 +4583,7 @@ function switchService(service) {
 
   if (service === 'taxi') {
     btn.classList.add('search-btn-blue');
-    btnText.textContent = 'Find Available Rides';
+    btnText.textContent = 'Search flights';
     banner.innerHTML = `
       <div class="shuttle-info-banner">
         <strong>Urgency &middot; HNWI &middot; VIP &middot; Diplomat.</strong> Rooftop to rooftop — IGI to your hotel in 18 min. Zero ground transport.
@@ -4607,7 +4607,7 @@ function switchService(service) {
       </div>`;
   } else {
     btn.classList.add('search-btn-green');
-    btnText.textContent = 'Find Shuttle Routes';
+    btnText.textContent = 'Search shuttle routes';
     banner.innerHTML = `
       <div class="shuttle-info-banner">
         <strong>Joy Rides &middot; Tourism &amp; Religious Circuits.</strong> HP scenic corridors, Vaishno Devi &amp; Char Dham — all DGCA-certified.
@@ -4763,7 +4763,7 @@ async function searchRides() {
   const area = document.getElementById('rides-area');
   const title = document.getElementById('rides-title');
 
-  title.textContent = currentService === 'taxi' ? 'Available Rides' : currentService === 'golden' ? 'Air Ambulances Nearby' : 'Shuttle Routes';
+  title.textContent = currentService === 'taxi' ? 'Choose your flight' : currentService === 'golden' ? 'Air ambulances nearby' : 'Shuttle routes';
 
   // Route feasibility pre-check at booking time: alert the customer if the
   // route crosses / lands in a restricted (no-fly) zone and surface the 3
@@ -6331,13 +6331,13 @@ async function loadRideHistory() {
   const user = AUTH && AUTH.user;
   if (!user || user.role !== 'customer') { box.style.display = 'none'; return; }
   box.style.display = 'block';
-  body.innerHTML = '<div class="pd-loading">Loading your rides…</div>';
+  body.innerHTML = '<div class="pd-loading">Loading your rides...</div>';
   try {
     const res = await apiFetch('/api/bookings/history');
     const data = await res.json().catch(() => ({}));
     const rides = Array.isArray(data.rides) ? data.rides : [];
     if (!rides.length) {
-      body.innerHTML = '<div class="pd-loading">No rides yet — your trips will appear here.</div>';
+      body.innerHTML = '<div class="pd-loading">No rides yet -- your trips will appear here.</div>';
       return;
     }
     body.innerHTML = rides.map(function (r) {
@@ -6634,7 +6634,7 @@ function renderDroneServices() {
   if (!list) return;
   const filtered = droneCurrentCategory === 'all' ? droneServices : droneServices.filter(s => s.category === droneCurrentCategory);
   if (!filtered.length) {
-    list.innerHTML = '<div class="op-empty-sub">No drone services found in this category.</div>';
+    list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
@@ -6842,7 +6842,7 @@ function renderDroneMyBookings() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse services above to book!</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse services above to get started.</div>';
     return;
   }
   let html = '';
@@ -7126,7 +7126,7 @@ async function loadDroneAdminBookings() {
 
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
-  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet.</div>'; return; }
+  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings found.</div>'; return; }
   let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +

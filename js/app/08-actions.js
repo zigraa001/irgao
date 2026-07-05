@@ -145,13 +145,13 @@ async function loadRideHistory() {
   const user = AUTH && AUTH.user;
   if (!user || user.role !== 'customer') { box.style.display = 'none'; return; }
   box.style.display = 'block';
-  body.innerHTML = '<div class="pd-loading">Loading your rides…</div>';
+  body.innerHTML = '<div class="pd-loading">Loading your rides...</div>';
   try {
     const res = await apiFetch('/api/bookings/history');
     const data = await res.json().catch(() => ({}));
     const rides = Array.isArray(data.rides) ? data.rides : [];
     if (!rides.length) {
-      body.innerHTML = '<div class="pd-loading">No rides yet — your trips will appear here.</div>';
+      body.innerHTML = '<div class="pd-loading">No rides yet -- your trips will appear here.</div>';
       return;
     }
     body.innerHTML = rides.map(function (r) {

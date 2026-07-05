@@ -52,7 +52,7 @@ function renderDroneServices() {
   if (!list) return;
   const filtered = droneCurrentCategory === 'all' ? droneServices : droneServices.filter(s => s.category === droneCurrentCategory);
   if (!filtered.length) {
-    list.innerHTML = '<div class="op-empty-sub">No drone services found in this category.</div>';
+    list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
@@ -260,7 +260,7 @@ function renderDroneMyBookings() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse services above to book!</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse services above to get started.</div>';
     return;
   }
   let html = '';
@@ -544,7 +544,7 @@ async function loadDroneAdminBookings() {
 
 function renderDroneAdminBookings(bookings) {
   const list = document.getElementById('drone-admin-bookings-list');
-  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet.</div>'; return; }
+  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings found.</div>'; return; }
   let html = '<div class="admin-table-wrap" style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
   bookings.forEach(b => {
     html += '<tr>' +

@@ -41,7 +41,7 @@ function switchService(service) {
 
   if (service === 'taxi') {
     btn.classList.add('search-btn-blue');
-    btnText.textContent = 'Find Available Rides';
+    btnText.textContent = 'Search flights';
     banner.innerHTML = `
       <div class="shuttle-info-banner">
         <strong>Urgency &middot; HNWI &middot; VIP &middot; Diplomat.</strong> Rooftop to rooftop — IGI to your hotel in 18 min. Zero ground transport.
@@ -65,7 +65,7 @@ function switchService(service) {
       </div>`;
   } else {
     btn.classList.add('search-btn-green');
-    btnText.textContent = 'Find Shuttle Routes';
+    btnText.textContent = 'Search shuttle routes';
     banner.innerHTML = `
       <div class="shuttle-info-banner">
         <strong>Joy Rides &middot; Tourism &amp; Religious Circuits.</strong> HP scenic corridors, Vaishno Devi &amp; Char Dham — all DGCA-certified.
@@ -221,7 +221,7 @@ async function searchRides() {
   const area = document.getElementById('rides-area');
   const title = document.getElementById('rides-title');
 
-  title.textContent = currentService === 'taxi' ? 'Available Rides' : currentService === 'golden' ? 'Air Ambulances Nearby' : 'Shuttle Routes';
+  title.textContent = currentService === 'taxi' ? 'Choose your flight' : currentService === 'golden' ? 'Air ambulances nearby' : 'Shuttle routes';
 
   // Route feasibility pre-check at booking time: alert the customer if the
   // route crosses / lands in a restricted (no-fly) zone and surface the 3
