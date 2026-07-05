@@ -217,3 +217,15 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The tracking-pilot-company element now uses innerHTML (not textContent) when a company chip is rendered -- fallback to textContent when no company name is available
   - Manual browser verification was not possible -- recommend visual QA of ride cards with company chips
 ---
+
+## 2026-07-05 - US-016
+- What was implemented: Terminology cleanup -- display labels changed from 'Operator' to 'Pilot' where referring to the person/role, while 'Operator Companies' kept for the company entity. Login role tab, admin Users tab, Live Map title, Add Member role dropdown, profile role chip, compliance/revenue section labels all updated. Companies section got a one-line explainer about the aggregator model. Auth login hint and OTP title updated for pilot terminology.
+- Files changed: app.html (login role tab, operator profile default text, admin Users tab, Live Map title, Add Member dropdown, Companies explainer, Compliance description), js/app/02-auth.js (SIGNUP_CONFIG operator otpTitle + loginHint), js/app/03-admin-profile.js (ROLE_BADGE + ROLE_PROFILE operator labels, adminRoleLabel, empty state text, revenue payout labels, compliance stat label), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - ROLE_BADGE and ROLE_PROFILE maps in 03-admin-profile.js control the display label for role badges and profile cards -- change the label property to rename a role's display text without affecting any code identifiers
+  - adminRoleLabel() in 03-admin-profile.js is a separate function used in a few places -- must also be updated when changing role display names
+  - Drone operator strings in 09-drones.js refer to drone operators (a drone-specific concept), NOT the pilot/operator user role -- do not change those
+  - The confirmation card 'Operator' label (line 647 in app.html) refers to the operating company, not the person -- kept as-is
+  - All data-role attributes, option values, API paths, function names, and variable names stay 'operator' -- only user-visible text labels changed
+  - Manual browser verification was not possible -- recommend visual QA of login tabs, admin Users tabs, Add Member form, and profile cards
+---

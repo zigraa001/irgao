@@ -324,7 +324,7 @@
         "Verify in browser using dev-browser skill (login tabs, admin users tabs, add member form)"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
