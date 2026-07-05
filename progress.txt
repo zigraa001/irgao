@@ -31,6 +31,7 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
 - `.partner-card` is the rich card pattern for admin Companies section -- monogram, stats row, expand/collapse offices; use `.partner-grid` as container
 - `.admin-nav-group-label` is the group header pattern for nav drawers (11px uppercase, gray-400); `.admin-nav-group-system` pins the System zone to drawer bottom via margin-top:auto
+- Operator panel uses `.op-nav` with `.op-nav-item[data-op-section]` for section switching via `showOperatorSection()`; `.op-nav-group-system` de-emphasizes overview/account sections with border-top + muted color
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
 - `.disclosure-toggle` + `.disclosure-content` is the reusable progressive disclosure pattern -- toggle button (12px uppercase) gets `.open` class for chevron rotation, content container toggles display:none/block with slideUp animation; use `.disclosure-count` for a count badge
 - `.service-details-area:empty` auto-hides via CSS -- no JS needed to manage visibility of empty containers
@@ -336,4 +337,43 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - No dead-ends: every step has at least one way back + one forward action
   - panel-locations hidden when rides-area shown (line 422 in 06-booking.js); restored in backToSearch (line 876) and resetBooking (line 937)
   - All element IDs preserved; all onclick handlers intact; no smart quotes; typecheck passes; bundle rebuilt
+---
+
+## 2026-07-05 - US-023
+- What was implemented: Operator / Pilot console information architecture & task-focused flow -- added section nav with grouped labels, section switching, and wayfinding headings. Duty card stays always visible as a global state indicator. Sections organized by priority: Trips (primary default), Pre-flight Checklist + Altitude Bands (operations), Earnings + Account (overview/system zone de-emphasized).
+- **Current operator view audit (before):**
+  - All 6 sections stacked vertically in a single scrollable panel with NO navigation
+  - Sections: Welcome heading, Duty card, Profile card, Assigned trips, Altitude bands, Earnings, Pre-flight Checklist
+  - No way to jump to a section; everything equally weighted
+  - Profile card took prominent position above the pilot's actual primary task (trips)
+  - No section headings for wayfinding (only op-section-title eyebrow labels)
+  - Friction: pilot had to scroll past profile and duty card to reach trips; pre-flight checklist buried at the bottom
+- **Redesigned flow (after):**
+  - Duty card stays always visible at top (global state indicator for dispatch availability)
+  - Section nav added with 5 items in 3 labeled groups using .admin-nav-group-label pattern from US-020:
+    - FLIGHTS: Trips (default active, primary task)
+    - OPERATIONS: Pre-flight, Altitude
+    - OVERVIEW (system zone with border-top divider, muted styling): Earnings, Account
+  - Only one section visible at a time via showOperatorSection() switching
+  - Each section has a .panel-step-heading for wayfinding (e.g., "Assigned trips", "Pre-flight Checklist")
+  - Profile card moved to Account section (accessible but not in the primary flow)
+- Files changed: app.html (operator panel restructured: section nav with .op-nav, .op-nav-item, .admin-nav-group-label, .op-nav-group-system, section containers with .op-section, wayfinding headings), js/app/04-operator.js (showOperatorSection function, OP_SECTION_HEADINGS map), js/app/02-auth.js (showOperatorSection('trips') called in routeForRole for operator), css/app.css (.op-nav, .op-nav-item, .op-nav-icon, .op-nav-group-system, .op-section styles), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - The operator panel is a single-column sidebar unlike the admin (which has drawer + main). Section switching is done by showing/hiding .op-section containers within the same panel
+  - showOperatorSection() mirrors showAdminSection() pattern but is simpler -- no drawer collapse on mobile since sections are within the panel itself
+  - The duty card is NOT inside a switchable section -- it stays visible above the nav at all times since it's the global state indicator
+  - .op-nav reuses .admin-nav-group-label for group headers, maintaining visual consistency with the admin drawer grouping
+  - .op-nav-group-system mirrors .admin-nav-group-system pattern (border-top divider, muted text) but uses padding-top/margin-top instead of margin-top:auto since the nav is not a full-height flex column
+- **Browser-free verification evidence:**
+  - 5 .op-nav-item buttons with data-op-section: trips, checklist, altitude, earnings, account
+  - 3 .admin-nav-group-label headers: Flights, Operations, Overview
+  - .op-nav-group-system wraps Overview group (Earnings + Account) with visual de-emphasis
+  - 5 .op-section containers: op-section-trips (default visible), op-section-checklist/altitude/earnings/account (display:none)
+  - 5 .panel-step-heading headings for wayfinding in each section
+  - showOperatorSection('trips') called in routeForRole() as default landing
+  - All 17 original element IDs preserved (op-trips, op-empty, op-duty-card, op-duty-toggle, op-duty-status, op-duty-sub, op-earnings-body, op-compliance-body, op-compliance-form, op-compliance-status, op-compliance-history, op-welcome, op-welcome-sub, operator-zone-altitude, op-panel, op-list-section, op-detail-section)
+  - All checkbox IDs preserved (op-ck-firstAid through op-ck-comms)
+  - All onclick handlers preserved: toggleOperatorDuty(), submitComplianceChecklist(), closeTripDetails(), showOperatorSection()
+  - Profile card classes (profile-display-avatar/name/email/role/verified, js-open-profile, btn-profile-outline, btn-profile-logout) preserved in op-section-account
+  - Typecheck passes; bundle rebuilt; server boots clean
 ---

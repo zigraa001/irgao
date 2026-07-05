@@ -437,8 +437,8 @@
     {
       "id": "US-023",
       "priority": 23,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Added section nav with 5 items in 3 groups: FLIGHTS (Trips - primary default), OPERATIONS (Pre-flight, Altitude), OVERVIEW/system-zone (Earnings, Account). Duty card stays always visible above nav. Section switching via showOperatorSection(). Wayfinding headings on each section.",
       "title": "Operator / Pilot console information architecture & task-focused flow",
       "description": "As a pilot/operator, the console should lead with my primary job (see & manage assigned flights) and tuck secondary/technical sections away, mirroring the admin IA cleanup.",
       "acceptanceCriteria": [
