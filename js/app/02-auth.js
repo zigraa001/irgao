@@ -1159,13 +1159,35 @@ function routeForRole(user) {
                   name = (name + ', ' + (a.city || a.town || a.county || '')).trim().replace(/,\s*$/, '');
                 }
               } catch (e) {}
-              if (!pickupCoord) { setPickup([lat, lng], name); map.setView([lat, lng], 14); }
+              if (!pickupCoord) {
+                setPickup([lat, lng], name);
+                document.getElementById('pickup-input').classList.add('gps-filled');
+                map.setView([lat, lng], 14);
+              }
             },
-            function () { /* silently ignore if user denies */ },
+            function () {
+              var pi = document.getElementById('pickup-input');
+              if (pi) pi.placeholder = 'Choose pickup location';
+            },
             { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
           );
         }
       }, 800);
+      // Destination-first: focus #dest-input so the user types where they're going
+      setTimeout(function () {
+        var tp = document.getElementById('tracking-panel');
+        var co = document.getElementById('confirm-overlay');
+        var po = document.getElementById('payment-overlay');
+        var pm = document.getElementById('profile-modal');
+        var mr = document.getElementById('must-reset-overlay');
+        if (tp && tp.classList.contains('active')) return;
+        if (co && co.classList.contains('active')) return;
+        if (po && po.classList.contains('active')) return;
+        if (pm && pm.classList.contains('open')) return;
+        if (mr && mr.classList.contains('active')) return;
+        var di = document.getElementById('dest-input');
+        if (di) di.focus();
+      }, 1000);
       break;
     }
   }

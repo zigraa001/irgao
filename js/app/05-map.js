@@ -501,6 +501,7 @@ function startMapPick(target) {
 }
 
 var MAP_PICK_OPTION = '__map_pick__';
+var GPS_CURRENT_OPTION = '__gps_current__';
 
 function setupAutocomplete(inputId, suggestId, callback, target) {
   var input = document.getElementById(inputId);
@@ -557,10 +558,19 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
       scored.sort(function (a, b) { return b.score - a.score; });
       scored = scored.slice(0, 7);
     }
-    currentMatches = [{ name: MAP_PICK_OPTION }].concat(scored);
+    var topItems = [{ name: MAP_PICK_OPTION }];
+    if (target === 'pickup' && navigator.geolocation) {
+      topItems.unshift({ name: GPS_CURRENT_OPTION });
+    }
+    currentMatches = topItems.concat(scored);
     var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
     var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
+    var gpsSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>';
     dropdown.innerHTML = currentMatches.map(function (m, idx) {
+      if (m.name === GPS_CURRENT_OPTION) {
+        return '<div class="loc-suggest-item loc-suggest-gps" data-idx="' + idx + '">' +
+          gpsSvg + '<span class="loc-suggest-name">Use current location</span></div>';
+      }
       if (m.name === MAP_PICK_OPTION) {
         return '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
           mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>' +
@@ -588,6 +598,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     var name = currentMatches[idx].name;
     dropdown.style.display = 'none';
     currentMatches = [];
+    if (name === GPS_CURRENT_OPTION) { useCurrentLocation(); return; }
     if (name === MAP_PICK_OPTION) { startMapPick(target); return; }
     var coord = demoLocations[name];
     input.value = name;
@@ -801,6 +812,7 @@ function useCurrentLocation() {
         }
       } catch (e) { /* keep coordinates as name */ }
       setPickup([lat, lng], name.trim().replace(/,\s*$/, ''));
+      document.getElementById('pickup-input').classList.add('gps-filled');
       map.setView([lat, lng], 14);
       if (btn) { btn.classList.remove('gps-loading'); btn.disabled = false; }
     },

@@ -1289,6 +1289,17 @@ textarea:focus-visible, a:focus-visible {
 .loc-input::placeholder { color: var(--gray-400); }
 .loc-input:focus { outline: none; box-shadow: none; }
 .loc-input.has-value { background: var(--green-50); }
+.loc-input.gps-filled { background: var(--blue-50); }
+.loc-input.gps-filled + .loc-gps-btn { color: var(--blue); }
+.loc-input-group:has(.gps-filled) .loc-dot-pickup {
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,87,184,.2);
+}
+.location-inputs.highlight-pickup .loc-input-group:first-child {
+  background: var(--blue-50);
+  transition: background 0.3s ease;
+}
 .loc-gps-btn {
   position: absolute;
   right: 0;
@@ -4015,6 +4026,10 @@ body.admin-map-fs { overflow: hidden; }
 .loc-suggest-empty { padding: 12px 14px; color: var(--gray-500); font-size: 13px; text-align: center; }
 .loc-suggest-map .loc-suggest-name { font-weight: 600; color: var(--blue-dark); }
 .loc-suggest-map .loc-suggest-icon { color: var(--blue-dark); }
+.loc-suggest-gps { background: var(--blue-50); }
+.loc-suggest-gps .loc-suggest-name { font-weight: 600; color: var(--blue); }
+.loc-suggest-gps .loc-suggest-icon { color: var(--blue); }
+.loc-suggest-gps:hover { background: var(--blue-100, #DBEAFE); }
 .loc-suggest-label {
   padding: 8px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: .05em;
   text-transform: uppercase; color: var(--gray-500);

@@ -200,6 +200,16 @@ function calcDistance() {
 }
 
 async function searchRides() {
+  if (!pickupCoord && destCoord) {
+    showAuthError('booking-error', 'Set your pickup point');
+    var pi = document.getElementById('pickup-input');
+    if (pi) pi.focus();
+    document.querySelector('.location-inputs').classList.add('highlight-pickup');
+    setTimeout(function () {
+      document.querySelector('.location-inputs').classList.remove('highlight-pickup');
+    }, 2000);
+    return;
+  }
   if (!pickupCoord || !destCoord) {
     if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
     if (!destCoord) {
@@ -865,7 +875,7 @@ function resetBooking() {
   bookingDraft = { pickup: null, dest: null, service: currentService, distanceKm: null };
   document.getElementById('pickup-input').value = '';
   document.getElementById('dest-input').value = '';
-  document.getElementById('pickup-input').classList.remove('has-value');
+  document.getElementById('pickup-input').classList.remove('has-value', 'gps-filled');
   document.getElementById('dest-input').classList.remove('has-value');
   if (pickupMarker) { map.removeLayer(pickupMarker); pickupMarker = null; }
   if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
