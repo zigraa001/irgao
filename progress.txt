@@ -377,3 +377,27 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Profile card classes (profile-display-avatar/name/email/role/verified, js-open-profile, btn-profile-outline, btn-profile-logout) preserved in op-section-account
   - Typecheck passes; bundle rebuilt; server boots clean
 ---
+
+## 2026-07-05 - US-024
+- What was implemented: Cross-role navigation hierarchy & wayfinding consistency -- created tasks/ia-guidelines.md defining the unified navigation model (group hierarchy, de-emphasized zones, wayfinding headings, single-primary-CTA rule, shared CSS classes). Fixed naming collision: operator's de-emphasized bottom group renamed from "Overview" to "Personal" (admin uses "Overview" as its primary first group). Verified all three roles conform to the model with no orphaned sections.
+- Files changed: app.html (operator nav group label "Overview" -> "Personal", cache-bust via rebuild), tasks/ia-guidelines.md (new IA reference document), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - De-emphasized zone labels must NOT reuse a primary group label from another role -- "Overview" meant "primary destinations" in admin but "secondary personal items" in operator, causing confusion
+  - Passenger doesn't need grouped nav or a system zone -- 4 flat service tabs are sufficient for its scope; Profile access is in the top bar
+  - Admin section headings use .op-section-title (12px uppercase eyebrow) while Dashboard uniquely has .admin-page-header .op-welcome (24px) -- this is intentional (landing page vs inner pages), not a bug
+  - The operator uses .panel-step-heading (16px, 700, navy) for section headings -- appropriate for sidebar panel context where headings are smaller
+  - tasks/ia-guidelines.md is the canonical reference for future navigation decisions -- check it before adding new sections or nav items
+- **Browser-free verification evidence:**
+  - tasks/ia-guidelines.md EXISTS with complete navigation model documentation
+  - Group label uniqueness (no collisions): Flights, Operations, Personal, Overview, Management, Finance, Governance, System
+  - Admin de-emphasized zone: .admin-nav-group-system wraps System (Settings, Logs) at line 976
+  - Operator de-emphasized zone: .op-nav-group-system wraps Personal (Earnings, Account) at line 780
+  - Admin nav items (10) map 1:1 to section containers (11, with 'add' reachable via Users header button)
+  - Operator nav items (5) map 1:1 to section containers (5): trips, checklist, altitude, earnings, account
+  - Passenger service tabs (4): taxi, golden, shuttle, drones
+  - Admin wayfinding: all 11 sections have headings (Dashboard via .admin-page-header, others via .op-section-title)
+  - Operator wayfinding: all 5 sections have .panel-step-heading
+  - Passenger wayfinding: search (.panel-step-heading), tracking (.tracking-panel-title), rides title set by JS
+  - No orphaned sections: every section reachable from its nav or inline action button
+  - Typecheck passes; bundle rebuilt
+---

@@ -453,8 +453,8 @@
     {
       "id": "US-024",
       "priority": 24,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "IA guidelines at tasks/ia-guidelines.md. Operator de-emphasized zone renamed from 'Overview' to 'Personal' to avoid collision with admin's primary 'Overview' group. All roles conform: grouped nav (where applicable), wayfinding headings on every section, de-emphasized system/personal zone, no orphaned sections.",
       "title": "Cross-role navigation hierarchy & wayfinding consistency (+ IA guidelines)",
       "description": "As a user in any role, navigation should follow one consistent model: primary destinations prominent, advanced/technical/config consistently placed in a de-emphasized System area, and I always know where I am.",
       "acceptanceCriteria": [
