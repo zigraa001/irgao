@@ -167,3 +167,14 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Error messages for login 401/400 are already friendly ('Incorrect email or password.') — other status codes fall through to data.error which could show raw server errors, but this is acceptable for uncommon edge cases
   - Password placeholder 'Min 6 chars' was technical — 'Choose a password' / 'Choose a new password' reads more human while the validation message still enforces the 6-char minimum
 ---
+
+## 2026-07-05 - US-012
+- What was implemented: Booking, tracking and payment microcopy upgrade — friendlier location placeholders ('Pickup from...' / 'Where to?'), service-aware search button text ('Search flights' / 'Dispatch Air Ambulance' / 'Search shuttle routes'), rides header updated per service ('Choose your flight' / 'Air ambulances nearby' / 'Shuttle routes'), tracking empty state warmer ('No flights yet' / 'Book a ride and you'll see live tracking here.'), OTP label fixed grammar ('Share this code with your pilot to start your ride'), payment note reworded ('Confirm your booking and we'll notify nearby pilots.'), confirmation copy updated ('We're lining up your aircraft'), rating comment placeholder redundancy fixed ('Add a comment (optional)'), drone and ride loading/empty strings unified to consistent friendly phrasing
+- Files changed: app.html (pickup/dest placeholders, search-btn-text, rides-title, tracking-empty title/sub, tracking-otp-label, tracking-rate-comment placeholder, payment-note, confirm card subtitle, drone loading text, bookings loading text, profile rides loading text), js/app/06-booking.js (search button text per service, rides title per service), js/app/08-actions.js (rides loading/empty strings), js/app/09-drones.js (drone empty state strings), js/app.bundle.js (rebuilt)
+- **Learnings for future iterations:**
+  - Search button text (#search-btn-text) is set in THREE places in 06-booking.js: switchService() sets it per service tab, searchRides() temporarily changes it to 'Searching...' then restores, and the HTML default. All three must stay consistent with the HTML default matching the 'taxi' service variant
+  - Rides title (#rides-title) is set dynamically in searchRides() per currentService — the HTML default should match the taxi variant since that's the initial state
+  - The 'Dispatch Air Ambulance' search button text for golden hour service was intentionally NOT changed — it's already clear and appropriately urgent for emergency context
+  - Drone loading strings are split between app.html (initial static HTML) and js/app/09-drones.js (JS-rendered empty/error states) — both need to be updated for consistency
+  - The em-dash (—) in JS strings like 'No rides yet — your trips' uses a special Unicode character; replaced with ASCII double-dash for safety since the codebase pattern warns about special characters
+---
