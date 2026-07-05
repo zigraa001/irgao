@@ -306,7 +306,6 @@
 
       <!-- LOCATION INPUTS -->
       <div class="panel-section" id="panel-locations">
-        <div id="service-banner-area"></div>
         <div class="location-inputs" style="margin-top:10px;">
           <div class="loc-input-group" style="position:relative;">
             <div class="loc-dot loc-dot-pickup"></div>
@@ -333,15 +332,16 @@
           </button>
         </div>
 
-        <div id="extra-fields-area"></div>
-
-        <!-- Popular Routes -->
-        <div id="popular-routes-area" class="popular-routes" style="margin-top:14px;"></div>
-
         <button class="search-btn search-btn-blue" id="search-btn" onclick="searchRides()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
           <span id="search-btn-text">Search flights</span>
         </button>
+
+        <div id="service-banner-area" class="service-details-area"></div>
+        <div id="extra-fields-area" class="service-details-area"></div>
+
+        <!-- Popular Routes (progressive disclosure) -->
+        <div id="popular-routes-area" class="popular-routes"></div>
       </div>
 
       <!-- RIDES LIST (hidden until search) -->
@@ -351,6 +351,13 @@
           <span><span class="live-dot"></span> Live</span>
         </div>
         <div id="rides-list"></div>
+        <div id="rides-details-toggle" class="rides-details-toggle" style="display:none;">
+          <button type="button" class="disclosure-toggle" onclick="toggleRidesDetails()">
+            <svg class="disclosure-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            Flight details
+          </button>
+          <div id="rides-details-content" class="disclosure-content" style="display:none;"></div>
+        </div>
         <button class="search-btn search-btn-blue" id="book-btn" style="display:none;" onclick="bookRide()">
           Confirm Booking
         </button>
@@ -1267,6 +1274,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=5d601236"></script>
+<script src="/js/app.bundle.js?v=66eccc70"></script>
 </body>
 </html>

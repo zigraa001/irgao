@@ -4877,11 +4877,15 @@ function renderPopularRoutes(service) {
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>';
 
   const titleText = service === 'taxi' ? 'Popular Routes' : service === 'golden' ? 'Emergency Routes' : 'Shuttle Routes';
+  var routeCount = routes.length;
 
   area.innerHTML = `
-    <div class="popular-routes-title" style="color:var(--${color})">
+    <button type="button" class="disclosure-toggle popular-routes-toggle" onclick="togglePopularRoutes()" style="color:var(--${color})">
+      <svg class="disclosure-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       ${titleIcon} ${titleText}
-    </div>
+      <span class="disclosure-count">${routeCount}</span>
+    </button>
+    <div class="disclosure-content popular-routes-list" style="display:none;">
     ${routes.map(r => `
       <button class="route-chip ${hoverCls}" onclick="selectRoute('${r.from}','${r.to}')">
         <div class="route-chip-icon ${iconCls}">${r.emoji}</div>
@@ -4897,7 +4901,30 @@ function renderPopularRoutes(service) {
         </div>
       </button>
     `).join('')}
+    </div>
   `;
+}
+
+function togglePopularRoutes() {
+  var area = document.getElementById('popular-routes-area');
+  if (!area) return;
+  var content = area.querySelector('.popular-routes-list');
+  var toggle = area.querySelector('.popular-routes-toggle');
+  if (!content || !toggle) return;
+  var open = content.style.display !== 'none';
+  content.style.display = open ? 'none' : 'block';
+  toggle.classList.toggle('open', !open);
+}
+
+function toggleRidesDetails() {
+  var wrap = document.getElementById('rides-details-toggle');
+  if (!wrap) return;
+  var content = document.getElementById('rides-details-content');
+  var toggle = wrap.querySelector('.disclosure-toggle');
+  if (!content || !toggle) return;
+  var open = content.style.display !== 'none';
+  content.style.display = open ? 'none' : 'block';
+  toggle.classList.toggle('open', !open);
 }
 
 function selectRoute(from, to) {
@@ -5050,7 +5077,6 @@ async function searchRides() {
         '</div>';
     return `
       <div class="ride-card" data-idx="${i}" onclick="selectRideCard(this, ${i}, ${price}, ${time}, '${co2}')">
-        ${companyChipHtml}
         <div class="ride-card-top">
           <div class="ride-icon ride-icon-${r.icon}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -5061,12 +5087,13 @@ async function searchRides() {
               ${discountBadge}
               ${r.badge ? `<span class="ride-badge ${r.badgeCls}">${r.badge}</span>` : ''}
             </div>
-            <div class="ride-desc">${r.desc}</div>
+            <div class="ride-meta-line">${time} min &middot; ${Math.round(dist)} km</div>
           </div>
           <div class="ride-price">
             ${priceHtml}
           </div>
         </div>
+        ${companyChipHtml}
         <div class="ride-stats">
           <div class="ride-stat">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -5093,30 +5120,42 @@ async function searchRides() {
     list.insertAdjacentHTML('beforebegin',
       '<div class="new-flyer-banner">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' +
-        '<div><strong>New Flyer Offer!</strong> 50% off your first 3 flights — ' + discountRemaining + ' remaining</div>' +
+        '<div><strong>New Flyer Offer!</strong> 50% off your first 3 flights -- ' + discountRemaining + ' remaining</div>' +
       '</div>'
     );
   }
 
+  var detailsHtml = '';
   if (currentCarbonComparison) {
-    list.innerHTML += renderCarbonComparison(currentCarbonComparison);
+    detailsHtml += renderCarbonComparison(currentCarbonComparison);
   }
 
   if (currentRoute && currentRoute.feasible !== false) {
     var altProfile = currentRoute.altitudeProfile || {};
-    var routeInfoHtml =
+    detailsHtml +=
       '<div class="route-info-card">' +
         '<div class="route-info-title">Flight Route</div>' +
         '<div class="route-info-grid">' +
-          '<div class="route-info-item"><span class="route-info-label">Distance</span><span class="route-info-val">' + (currentRoute.totalDistanceKm || '—') + ' km</span></div>' +
-          '<div class="route-info-item"><span class="route-info-label">Fuel est.</span><span class="route-info-val">' + (currentRoute.totalFuelKg || '—') + ' kg</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Distance</span><span class="route-info-val">' + (currentRoute.totalDistanceKm || '--') + ' km</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Fuel est.</span><span class="route-info-val">' + (currentRoute.totalFuelKg || '--') + ' kg</span></div>' +
           '<div class="route-info-item"><span class="route-info-label">Detour</span><span class="route-info-val">' + (currentRoute.detourRatio > 1 ? (currentRoute.detourRatio + 'x') : 'Direct') + '</span></div>' +
-          '<div class="route-info-item"><span class="route-info-label">Altitude</span><span class="route-info-val">' + (altProfile.min || '—') + '–' + (altProfile.max || '—') + ' m</span></div>' +
+          '<div class="route-info-item"><span class="route-info-label">Altitude</span><span class="route-info-val">' + (altProfile.min || '--') + '--' + (altProfile.max || '--') + ' m</span></div>' +
         '</div>' +
         (currentRoute.reason && currentRoute.reason !== 'direct_clear' ?
           '<div class="route-info-note">' + routeReasonLabel(currentRoute.reason) + '</div>' : '') +
       '</div>';
-    list.innerHTML += routeInfoHtml;
+  }
+
+  var detailsToggle = document.getElementById('rides-details-toggle');
+  var detailsContent = document.getElementById('rides-details-content');
+  if (detailsHtml && detailsToggle && detailsContent) {
+    detailsContent.innerHTML = detailsHtml;
+    detailsContent.style.display = 'none';
+    detailsToggle.style.display = 'block';
+    var toggle = detailsToggle.querySelector('.disclosure-toggle');
+    if (toggle) toggle.classList.remove('open');
+  } else if (detailsToggle) {
+    detailsToggle.style.display = 'none';
   }
 
   area.style.display = 'block';
@@ -5622,6 +5661,10 @@ function resetBooking() {
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
   document.getElementById('booking-panel').style.display = 'flex';
+  var detailsToggle = document.getElementById('rides-details-toggle');
+  if (detailsToggle) detailsToggle.style.display = 'none';
+  var detailsContent = document.getElementById('rides-details-content');
+  if (detailsContent) detailsContent.innerHTML = '';
   hideAuthError('booking-error');
   selectedRide = null;
   currentBooking = null;

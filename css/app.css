@@ -1360,6 +1360,51 @@ textarea:focus-visible, a:focus-visible {
 .search-btn-red { background: var(--red); }
 .search-btn-green { background: var(--green); }
 
+/* ── Progressive disclosure toggles ── */
+.disclosure-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.disclosure-toggle:hover { color: var(--gray-700); }
+.disclosure-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+.disclosure-toggle.open .disclosure-chevron { transform: rotate(90deg); }
+.disclosure-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface-subtle);
+  color: var(--gray-500);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+}
+.disclosure-content { animation: slideUp 0.25s ease; }
+.service-details-area:empty { display: none; }
+.service-details-area { margin-top: 12px; }
+
+/* ── Rides details collapsible ── */
+.rides-details-toggle { margin-top: 4px; }
+
+/* ── Popular routes toggle ── */
+.popular-routes { margin-top: 8px; }
+.popular-routes-toggle { text-transform: uppercase; letter-spacing: 1px; }
+.popular-routes-toggle svg:not(.disclosure-chevron) { width: 14px; height: 14px; }
 
 /* ═══════════════════════════════════════════
    RIDES PANEL (appears after search)
@@ -1423,7 +1468,7 @@ textarea:focus-visible, a:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .ride-icon {
   width: 44px;
@@ -1466,6 +1511,12 @@ textarea:focus-visible, a:focus-visible {
   color: var(--gray-500);
   margin-top: 2px;
 }
+.ride-meta-line {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-top: 2px;
+}
 .ride-price {
   text-align: right;
   flex-shrink: 0;
@@ -1482,36 +1533,39 @@ textarea:focus-visible, a:focus-visible {
 
 .ride-stats {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
 }
 .ride-stat {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 8px;
-  background: var(--surface-subtle);
+  gap: 4px;
+  padding: 4px 6px;
+  background: transparent;
   border-radius: var(--radius-sm);
-  font-size: 11px;
-  color: var(--gray-600);
+  font-size: 10px;
+  color: var(--gray-500);
   font-weight: 500;
 }
-.ride-stat svg { width: 13px; height: 13px; flex-shrink: 0; }
+.ride-stat svg { width: 11px; height: 11px; flex-shrink: 0; opacity: 0.6; }
 .ride-stat.carbon { color: var(--green-dark); background: var(--green-50); }
-.ride-stat.carbon svg { color: var(--green); }
+.ride-stat.carbon svg { color: var(--green); opacity: 1; }
 
 /* ── Ride company chip ── */
 .ride-company-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: var(--blue-50);
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--navy);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+  margin-top: 2px;
 }
 .ride-company-chip.ride-company-independent {
   background: var(--surface-subtle);
@@ -2177,15 +2231,20 @@ textarea:focus-visible, a:focus-visible {
 }
 .extra-field select, .extra-field input {
   width: 100%;
-  background: var(--gray-50);
-  border: 1.5px solid var(--gray-200);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  font-size: 13px;
+  min-height: 44px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 14px;
   color: var(--gray-800);
-  transition: border-color 0.2s;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.extra-field select:focus, .extra-field input:focus { border-color: var(--red); }
+.extra-field select:focus, .extra-field input:focus {
+  border-color: var(--red);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
 
 /* ═══════════════════════════════════════════
    AIR SHUTTLE SPECIFIC
@@ -2312,7 +2371,6 @@ textarea:focus-visible, a:focus-visible {
 /* ═══════════════════════════════════════════
    POPULAR ROUTES
    ═══════════════════════════════════════════ */
-.popular-routes { animation: slideUp 0.3s ease; }
 .popular-routes-title {
   font-size: 11px;
   font-weight: 700;
