@@ -9,15 +9,39 @@
 // │  so nothing else needs to change.                                     │
 // └─────────────────────────────────────────────────────────────────────┘
 
-// Pricing aligned with evtol.travel/air-taxi-cost (launch-era 2025-2027).
-// Taxi uses mid-range launch ($4.50/mi ≈ ₹200/km), Golden Hour adds an
-// emergency premium, Shuttle uses at-scale shared-ride rates with 50% savings.
-// All amounts in INR (₹). base = flat boarding fee, perKm = per-kilometre.
-// 18% GST is applied on top by estimateFare / fareBreakdown.
+// Degressive pricing aligned with IraGo pitch deck corridor prices.
+// Shorter hops pay a higher per-km rate; beyond each tier threshold the
+// marginal rate drops, so long-haul corridors like Delhi→Agra land in the
+// deck's quoted range (₹13K–19K for ~200 km) while short hops like
+// IGI→Hotel (10 km) stay at ₹3,600–5,600.
+//
+// Each service defines { base, tiers: [{ upToKm, perKm }] }.
+// The last tier's perKm applies for any distance beyond its upToKm.
 const SERVICE_PRICING = {
-  taxi:    { base: 500, perKm: 200 },
-  golden:  { base: 5000, perKm: 600 },
-  shuttle: { base: 500,  perKm: 80 },
+  taxi: {
+    base: 1200,
+    tiers: [
+      { upToKm: 30,  perKm: 200 },
+      { upToKm: 100, perKm: 75 },
+      { upToKm: Infinity, perKm: 42 },
+    ],
+  },
+  golden: {
+    base: 5000,
+    tiers: [
+      { upToKm: 30,  perKm: 350 },
+      { upToKm: 100, perKm: 180 },
+      { upToKm: Infinity, perKm: 120 },
+    ],
+  },
+  shuttle: {
+    base: 180,
+    tiers: [
+      { upToKm: 20,  perKm: 18 },
+      { upToKm: 60,  perKm: 10 },
+      { upToKm: Infinity, perKm: 7 },
+    ],
+  },
 };
 
 const SERVICES = Object.keys(SERVICE_PRICING);
@@ -102,13 +126,27 @@ function getSurchargeRates(cfg) {
   };
 }
 
+function tieredCost(tiers, km) {
+  let cost = 0;
+  let consumed = 0;
+  for (const t of tiers) {
+    const ceiling = t.upToKm === Infinity ? km : t.upToKm;
+    const slice = Math.min(km, ceiling) - consumed;
+    if (slice <= 0) continue;
+    cost += slice * t.perKm;
+    consumed += slice;
+    if (consumed >= km) break;
+  }
+  return cost;
+}
+
 function estimateFare(service, distanceKm, opts = {}) {
   const pricing = SERVICE_PRICING[service];
   if (!pricing) {
     throw new Error(`Unknown service: ${service}`);
   }
   const km = Math.max(0, Number(distanceKm) || 0);
-  const base = pricing.base + pricing.perKm * km;
+  const base = pricing.base + tieredCost(pricing.tiers, km);
 
   const rates = opts._rates || { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
   const urgencyRate = rates.urgency[opts.bookingType] || 0;
@@ -145,6 +183,7 @@ module.exports = {
   SERVICE_PRICING,
   SERVICES,
   haversineKm,
+  tieredCost,
   estimateFare,
   estimateFareWithConfig,
   parseCoord,

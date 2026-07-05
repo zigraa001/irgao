@@ -170,23 +170,41 @@ function selectRoute(from, to) {
 }
 
 // ── Ride Data ──
+// Degressive per-km pricing aligned with pitch deck corridor prices.
+// Each tier: { upTo: km threshold, rate: ₹/km }. The last tier's rate
+// applies beyond its upTo value.
 const GST_RATE_CLIENT = 0.18;
+
+function tieredCostClient(tiers, km) {
+  var cost = 0, consumed = 0;
+  for (var i = 0; i < tiers.length; i++) {
+    var t = tiers[i];
+    var ceiling = t.upTo === Infinity ? km : t.upTo;
+    var slice = Math.min(km, ceiling) - consumed;
+    if (slice <= 0) continue;
+    cost += slice * t.rate;
+    consumed += slice;
+    if (consumed >= km) break;
+  }
+  return cost;
+}
+
 const rideOptions = {
   taxi: [
-    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 200, baseTime: 18, co2: 2.1 },
-    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 500, perKm: 280, baseTime: 22, co2: 3.4 },
-    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 500, perKm: 450, baseTime: 20, co2: 4.8 },
-    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 150, baseTime: 32, co2: 1.2 },
+    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 1200, tiers: [{upTo:30,rate:200},{upTo:100,rate:75},{upTo:Infinity,rate:42}], baseTime: 10, cruiseKmh: 300, overheadMin: 12, co2: 2.1 },
+    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 1200, tiers: [{upTo:30,rate:280},{upTo:100,rate:105},{upTo:Infinity,rate:60}], baseTime: 12, cruiseKmh: 280, overheadMin: 14, co2: 3.4 },
+    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 1200, tiers: [{upTo:30,rate:420},{upTo:100,rate:160},{upTo:Infinity,rate:90}], baseTime: 12, cruiseKmh: 280, overheadMin: 14, co2: 4.8 },
+    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 1200, tiers: [{upTo:30,rate:150},{upTo:100,rate:55},{upTo:Infinity,rate:32}], baseTime: 15, cruiseKmh: 240, overheadMin: 16, co2: 1.2 },
   ],
   golden: [
-    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, perKm: 600, baseTime: 12, co2: 5.2 },
-    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 5000, perKm: 1100, baseTime: 15, co2: 7.8 },
-    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', base: 5000, perKm: 1200, baseTime: 14, co2: 6.1 },
+    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, tiers: [{upTo:30,rate:350},{upTo:100,rate:180},{upTo:Infinity,rate:120}], baseTime: 8, cruiseKmh: 180, overheadMin: 7, co2: 5.2 },
+    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 5000, tiers: [{upTo:30,rate:600},{upTo:100,rate:300},{upTo:Infinity,rate:200}], baseTime: 10, cruiseKmh: 160, overheadMin: 8, co2: 7.8 },
+    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', base: 5000, tiers: [{upTo:30,rate:650},{upTo:100,rate:330},{upTo:Infinity,rate:220}], baseTime: 10, cruiseKmh: 150, overheadMin: 9, co2: 6.1 },
   ],
   shuttle: [
-    { name: 'Shuttle Standard', desc: 'Shared seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 80, baseTime: 15, co2: 0.8 },
-    { name: 'Shuttle Business', desc: 'Priority boarding, lounge access', icon: 'purple', badge: '', badgeCls: '', base: 500, perKm: 130, baseTime: 12, co2: 1.1 },
-    { name: 'Shuttle Express', desc: 'Non-stop, fastest route', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 180, baseTime: 8, co2: 1.5 },
+    { name: 'Shuttle Standard', desc: 'Per seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 180, tiers: [{upTo:20,rate:18},{upTo:60,rate:10},{upTo:Infinity,rate:7}], baseTime: 8, cruiseKmh: 160, overheadMin: 6, co2: 0.8 },
+    { name: 'Shuttle Business', desc: 'Per seat, priority boarding', icon: 'purple', badge: '', badgeCls: '', base: 180, tiers: [{upTo:20,rate:30},{upTo:60,rate:18},{upTo:Infinity,rate:12}], baseTime: 8, cruiseKmh: 180, overheadMin: 5, co2: 1.1 },
+    { name: 'Shuttle Express', desc: 'Per seat, non-stop, fastest', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 180, tiers: [{upTo:20,rate:40},{upTo:60,rate:25},{upTo:Infinity,rate:16}], baseTime: 6, cruiseKmh: 200, overheadMin: 4, co2: 1.5 },
   ]
 };
 
@@ -269,11 +287,12 @@ async function searchRides() {
   var discountRemaining = hasDiscount ? currentDiscount.remaining : 0;
 
   list.innerHTML = rides.map((r, i) => {
-    const subtotal = r.base + r.perKm * dist;
+    const subtotal = r.base + (r.tiers ? tieredCostClient(r.tiers, dist) : (r.perKm || 0) * dist);
     const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
     const price = hasDiscount ? Math.round(fullPrice * (1 - discountRate) / 100) * 100 : fullPrice;
-    const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
-    const time = Math.round(r.baseTime * timeFactor);
+    var cruiseSpeed = r.cruiseKmh || 200;
+    var overheadMin = r.overheadMin || 8;
+    const time = Math.max(r.baseTime || 6, Math.round(overheadMin + (dist / cruiseSpeed) * 60));
     const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);
     const roadTime = Math.round(time * 3.5);
     const discountBadge = hasDiscount

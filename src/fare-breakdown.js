@@ -1,4 +1,4 @@
-const { SERVICE_PRICING, NEW_FLYER_DISCOUNT, URGENCY_SURCHARGE, WEATHER_SURCHARGE, loadPricingConfig, getSurchargeRates } = require("./pricing");
+const { SERVICE_PRICING, NEW_FLYER_DISCOUNT, URGENCY_SURCHARGE, WEATHER_SURCHARGE, loadPricingConfig, getSurchargeRates, tieredCost } = require("./pricing");
 
 function round2(n) {
   return Math.round(Number(n) * 100) / 100;
@@ -10,7 +10,7 @@ function fareBreakdown(service, distanceKm, discountInfo, creditsUsed, couponInf
   const pricing = SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
-  const kmCharge = round2(pricing.perKm * km);
+  const kmCharge = round2(tieredCost(pricing.tiers, km));
   const baseAmount = round2(pricing.base + kmCharge);
 
   const rates = opts._rates || { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
@@ -54,7 +54,7 @@ function fareBreakdown(service, distanceKm, discountInfo, creditsUsed, couponInf
   return {
     service,
     base: pricing.base,
-    perKm: pricing.perKm,
+    perKm: pricing.tiers[0].perKm,
     distanceKm: round2(km),
     kmCharge,
     urgencySurcharge: urgencySurcharge > 0 ? { label: urgencyLabel, amount: urgencySurcharge } : null,

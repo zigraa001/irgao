@@ -4458,6 +4458,7 @@ function startMapPick(target) {
 }
 
 var MAP_PICK_OPTION = '__map_pick__';
+var PHOTON_SEARCH_OPTION = '__photon__';
 
 function setupAutocomplete(inputId, suggestId, callback, target) {
   var input = document.getElementById(inputId);
@@ -4465,6 +4466,9 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   if (!input || !dropdown) return;
   var activeIdx = -1;
   var currentMatches = [];
+  var photonTimer = null;
+  var photonAbort = null;
+  var lastPhotonQuery = '';
 
   function highlightMatch(name, query) {
     if (!query) return escapeHtml(name);
@@ -4497,13 +4501,80 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     return score;
   }
 
-  function render(query) {
+  var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
+  var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
+  var searchSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+  var globeSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
+  function renderDropdown(vertiports, photonResults, query) {
     activeIdx = -1;
+    var q = (query || '').trim();
+    currentMatches = [];
+
+    // Always start with "Choose on map"
+    currentMatches.push({ name: MAP_PICK_OPTION });
+
+    // Add vertiport matches
+    vertiports.forEach(function (v) { currentMatches.push(v); });
+
+    // Add photon results
+    if (photonResults && photonResults.length) {
+      currentMatches.push({ name: PHOTON_SEARCH_OPTION });
+      photonResults.forEach(function (r) { currentMatches.push(r); });
+    }
+
+    var html = '';
+    currentMatches.forEach(function (m, idx) {
+      if (m.name === MAP_PICK_OPTION) {
+        html += '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
+          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>';
+        if (q.length < 1) {
+          html += '<div class="loc-suggest-label">Popular vertiports</div>';
+        } else if (vertiports.length) {
+          html += '<div class="loc-suggest-label">IraGo vertiports</div>';
+        }
+        return;
+      }
+      if (m.name === PHOTON_SEARCH_OPTION) {
+        html += '<div class="loc-suggest-label loc-suggest-label-search">' + searchSvg + ' Search results</div>';
+        return;
+      }
+      if (m.photon) {
+        html += '<div class="loc-suggest-item loc-suggest-photon" data-idx="' + idx + '">' +
+          globeSvg +
+          '<div class="loc-suggest-text"><span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span>' +
+          (m.address ? '<span class="loc-suggest-addr">' + escapeHtml(m.address) + '</span>' : '') +
+          '</div></div>';
+      } else {
+        html += '<div class="loc-suggest-item" data-idx="' + idx + '">' +
+          pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
+      }
+    });
+
+    if (q.length >= 2 && !vertiports.length && (!photonResults || !photonResults.length)) {
+      html += '<div class="loc-suggest-empty">No matching places</div>';
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+
+    var items = dropdown.querySelectorAll('.loc-suggest-item');
+    for (var j = 0; j < items.length; j++) {
+      (function (el) {
+        var idx = parseInt(el.getAttribute('data-idx'));
+        el.onmousedown = function (e) {
+          e.preventDefault();
+          pickItem(idx);
+        };
+      })(items[j]);
+    }
+  }
+
+  function getLocalMatches(query) {
     var q = (query || '').trim();
     var names = Object.keys(demoLocations);
     var scored = [];
     if (q.length < 1) {
-      // Empty field: offer a few popular places under the map option
       scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
     } else {
       var keywords = q.toLowerCase().split(/\s+/);
@@ -4512,41 +4583,72 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         if (s > 0) scored.push({ name: names[i], score: s });
       }
       scored.sort(function (a, b) { return b.score - a.score; });
-      scored = scored.slice(0, 7);
+      scored = scored.slice(0, 5);
     }
-    currentMatches = [{ name: MAP_PICK_OPTION }].concat(scored);
-    var pinSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 7 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z"/></svg>';
-    var mapSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14m6-12v14"/></svg>';
-    dropdown.innerHTML = currentMatches.map(function (m, idx) {
-      if (m.name === MAP_PICK_OPTION) {
-        return '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
-          mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>' +
-          (q.length < 1 ? '<div class="loc-suggest-label">Popular vertiports</div>' : '') +
-          (q.length >= 1 && scored.length === 0 ? '<div class="loc-suggest-empty">No matching places</div>' : '');
-      }
-      return '<div class="loc-suggest-item" data-idx="' + idx + '">' +
-        pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
-    }).join('');
-    dropdown.style.display = 'block';
+    return scored;
+  }
 
-    var items = dropdown.querySelectorAll('.loc-suggest-item');
-    for (var j = 0; j < items.length; j++) {
-      (function (el, idx) {
-        el.onmousedown = function (e) {
-          e.preventDefault();
-          pickItem(idx);
-        };
-      })(items[j], j);
+  function searchPhoton(query) {
+    var q = (query || '').trim();
+    if (q.length < 2) return;
+    if (q === lastPhotonQuery) return;
+    lastPhotonQuery = q;
+
+    if (photonTimer) clearTimeout(photonTimer);
+    if (photonAbort) { photonAbort.abort(); photonAbort = null; }
+
+    photonTimer = setTimeout(function () {
+      var center = map ? map.getCenter() : { lat: 20.5937, lng: 78.9629 };
+      var controller = new AbortController();
+      photonAbort = controller;
+
+      var url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) +
+        '&lat=' + center.lat + '&lon=' + center.lng + '&limit=5&lang=en';
+
+      fetch(url, { signal: controller.signal })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          photonAbort = null;
+          if (!data.features || !data.features.length) return;
+          if (input.value.trim() !== q) return;
+
+          var results = data.features.map(function (feat) {
+            var props = feat.properties;
+            var name = props.name || props.street || 'Unknown';
+            var addrParts = [props.street, props.city || props.town, props.state, props.country].filter(Boolean);
+            var address = addrParts.join(', ');
+            var coords = feat.geometry.coordinates;
+            return { name: name, address: address, coord: [coords[1], coords[0]], photon: true };
+          });
+
+          var localMatches = getLocalMatches(q);
+          renderDropdown(localMatches, results, q);
+        })
+        .catch(function () { photonAbort = null; });
+    }, 350);
+  }
+
+  function render(query) {
+    var q = (query || '').trim();
+    var localMatches = getLocalMatches(q);
+    renderDropdown(localMatches, [], q);
+
+    if (q.length >= 2) {
+      searchPhoton(q);
     }
   }
 
   function pickItem(idx) {
     if (idx < 0 || idx >= currentMatches.length) return;
-    var name = currentMatches[idx].name;
+    var match = currentMatches[idx];
+    if (match.name === MAP_PICK_OPTION) { dropdown.style.display = 'none'; currentMatches = []; startMapPick(target); return; }
+    if (match.name === PHOTON_SEARCH_OPTION) return;
+
     dropdown.style.display = 'none';
+    var name = match.name;
+    var coord = match.photon ? match.coord : demoLocations[name];
+    if (!coord) return;
     currentMatches = [];
-    if (name === MAP_PICK_OPTION) { startMapPick(target); return; }
-    var coord = demoLocations[name];
     input.value = name;
     input.classList.add('has-value');
     callback(name, coord);
@@ -4573,10 +4675,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     if (dropdown.style.display === 'none' || !currentMatches.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive(activeIdx < currentMatches.length - 1 ? activeIdx + 1 : 0);
+      var next = activeIdx + 1;
+      while (next < currentMatches.length && (currentMatches[next].name === PHOTON_SEARCH_OPTION)) next++;
+      if (next < currentMatches.length) setActive(next); else setActive(0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive(activeIdx > 0 ? activeIdx - 1 : currentMatches.length - 1);
+      var prev = activeIdx - 1;
+      while (prev >= 0 && (currentMatches[prev].name === PHOTON_SEARCH_OPTION)) prev--;
+      if (prev >= 0) setActive(prev); else setActive(currentMatches.length - 1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (activeIdx >= 0) pickItem(activeIdx);
@@ -4950,23 +5056,41 @@ function selectRoute(from, to) {
 }
 
 // ── Ride Data ──
+// Degressive per-km pricing aligned with pitch deck corridor prices.
+// Each tier: { upTo: km threshold, rate: ₹/km }. The last tier's rate
+// applies beyond its upTo value.
 const GST_RATE_CLIENT = 0.18;
+
+function tieredCostClient(tiers, km) {
+  var cost = 0, consumed = 0;
+  for (var i = 0; i < tiers.length; i++) {
+    var t = tiers[i];
+    var ceiling = t.upTo === Infinity ? km : t.upTo;
+    var slice = Math.min(km, ceiling) - consumed;
+    if (slice <= 0) continue;
+    cost += slice * t.rate;
+    consumed += slice;
+    if (consumed >= km) break;
+  }
+  return cost;
+}
+
 const rideOptions = {
   taxi: [
-    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 200, baseTime: 18, co2: 2.1 },
-    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 500, perKm: 280, baseTime: 22, co2: 3.4 },
-    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 500, perKm: 450, baseTime: 20, co2: 4.8 },
-    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 150, baseTime: 32, co2: 1.2 },
+    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 1200, tiers: [{upTo:30,rate:200},{upTo:100,rate:75},{upTo:Infinity,rate:42}], baseTime: 10, cruiseKmh: 300, overheadMin: 12, co2: 2.1 },
+    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 1200, tiers: [{upTo:30,rate:280},{upTo:100,rate:105},{upTo:Infinity,rate:60}], baseTime: 12, cruiseKmh: 280, overheadMin: 14, co2: 3.4 },
+    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 1200, tiers: [{upTo:30,rate:420},{upTo:100,rate:160},{upTo:Infinity,rate:90}], baseTime: 12, cruiseKmh: 280, overheadMin: 14, co2: 4.8 },
+    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 1200, tiers: [{upTo:30,rate:150},{upTo:100,rate:55},{upTo:Infinity,rate:32}], baseTime: 15, cruiseKmh: 240, overheadMin: 16, co2: 1.2 },
   ],
   golden: [
-    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, perKm: 600, baseTime: 12, co2: 5.2 },
-    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 5000, perKm: 1100, baseTime: 15, co2: 7.8 },
-    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', base: 5000, perKm: 1200, baseTime: 14, co2: 6.1 },
+    { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, tiers: [{upTo:30,rate:350},{upTo:100,rate:180},{upTo:Infinity,rate:120}], baseTime: 8, cruiseKmh: 180, overheadMin: 7, co2: 5.2 },
+    { name: 'Air Ambulance ICU', desc: 'Full ICU + doctor on board', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 5000, tiers: [{upTo:30,rate:600},{upTo:100,rate:300},{upTo:Infinity,rate:200}], baseTime: 10, cruiseKmh: 160, overheadMin: 8, co2: 7.8 },
+    { name: 'Neonatal Transport', desc: 'Incubator + neonatal team', icon: 'gold', badge: '', badgeCls: '', base: 5000, tiers: [{upTo:30,rate:650},{upTo:100,rate:330},{upTo:Infinity,rate:220}], baseTime: 10, cruiseKmh: 150, overheadMin: 9, co2: 6.1 },
   ],
   shuttle: [
-    { name: 'Shuttle Standard', desc: 'Shared seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 80, baseTime: 15, co2: 0.8 },
-    { name: 'Shuttle Business', desc: 'Priority boarding, lounge access', icon: 'purple', badge: '', badgeCls: '', base: 500, perKm: 130, baseTime: 12, co2: 1.1 },
-    { name: 'Shuttle Express', desc: 'Non-stop, fastest route', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 180, baseTime: 8, co2: 1.5 },
+    { name: 'Shuttle Standard', desc: 'Per seat, scheduled route', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 180, tiers: [{upTo:20,rate:18},{upTo:60,rate:10},{upTo:Infinity,rate:7}], baseTime: 8, cruiseKmh: 160, overheadMin: 6, co2: 0.8 },
+    { name: 'Shuttle Business', desc: 'Per seat, priority boarding', icon: 'purple', badge: '', badgeCls: '', base: 180, tiers: [{upTo:20,rate:30},{upTo:60,rate:18},{upTo:Infinity,rate:12}], baseTime: 8, cruiseKmh: 180, overheadMin: 5, co2: 1.1 },
+    { name: 'Shuttle Express', desc: 'Per seat, non-stop, fastest', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 180, tiers: [{upTo:20,rate:40},{upTo:60,rate:25},{upTo:Infinity,rate:16}], baseTime: 6, cruiseKmh: 200, overheadMin: 4, co2: 1.5 },
   ]
 };
 
@@ -5049,11 +5173,12 @@ async function searchRides() {
   var discountRemaining = hasDiscount ? currentDiscount.remaining : 0;
 
   list.innerHTML = rides.map((r, i) => {
-    const subtotal = r.base + r.perKm * dist;
+    const subtotal = r.base + (r.tiers ? tieredCostClient(r.tiers, dist) : (r.perKm || 0) * dist);
     const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
     const price = hasDiscount ? Math.round(fullPrice * (1 - discountRate) / 100) * 100 : fullPrice;
-    const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
-    const time = Math.round(r.baseTime * timeFactor);
+    var cruiseSpeed = r.cruiseKmh || 200;
+    var overheadMin = r.overheadMin || 8;
+    const time = Math.max(r.baseTime || 6, Math.round(overheadMin + (dist / cruiseSpeed) * 60));
     const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);
     const roadTime = Math.round(time * 3.5);
     const discountBadge = hasDiscount
