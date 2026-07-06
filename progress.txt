@@ -554,3 +554,28 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.admin-form-footer` is a reusable pattern for right-aligned CTA rows with a border-top separator -- use in any admin form card
   - `#admin-section-add .admin-form-card` scoping keeps the max-width 760px constraint local to the Add Member form without affecting other admin-form-card instances
 ---
+
+## 2026-07-06 - US-106
+- What was implemented: Pricing section transformed into a 2-col grid composition (form .adm-span-8 + changelog .adm-span-4) with grouped fields under uppercase headings (Taxes, Commission, Surcharges), multi-column field layout on desktop, and Save CTA in card footer with last-saved hint. Changelog restyled as a vertical timeline card with dot + line rail. Settings section transformed into side-by-side .adm-span-6 cards with icon chips (amber warning for Emergency, blue bolt for Demo), upgraded toggle switches to 48x28 pill language (green when on), and status lines now render as soft chips (green active / gray disabled). Skeleton loading replaces pricing fetch text.
+- Files changed: js/app/03-admin-profile.js (PRICING_GROUPS constant with grouped fields, PRICING_FIELDS derived via reduce, adminPricingSkeleton function, renderPricingForm with grouped layout + group headings + footer CTA, renderPricingChangelog as timeline card with dot/line rail + empty state, settingsStatusChip helper, loadAdminSettings/toggleDemoMode/toggleEmergencyBypass updated to 48x28 knob positioning + green track + chip status), css/app.css (pricing-group/heading/fields grid layout, adm-pricing-layout with 1024px stack breakpoint, adm-timeline-card/list/entry/dot/who/when/what/empty timeline styles, adm-settings-grid/card/icon/icon--amber/icon--blue card styles, admin-toggle-label 48x28, admin-toggle-knob 22x22, adm-toggle-chip/--on status chips, admin-toggle-status flex layout), app.html (pricing section with adm-grid + adm-span-8/4 + skeleton blocks, settings section with adm-grid + adm-span-6 cards + SVG icon chips), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - 2-col pricing composition: `<div class="adm-grid adm-pricing-layout">` at app.html:1180, `adm-span-8` at :1181, `adm-span-4` at :1187
+  - Group heading + suffix: `pricing-group-heading` at js/app/03-admin-profile.js:1478, `pricing-field-unit` (% suffix) at :1473
+  - Group fields grid: `.pricing-group-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }` at css/app.css
+  - Timeline CSS: `.adm-timeline-list::before { ... width: 2px; background: var(--border-subtle); }` at css/app.css:4695, `.adm-timeline-dot { border: 2px solid var(--blue); }` at :4710
+  - Timeline renderer: `adm-timeline-entry` / `adm-timeline-dot` / `adm-timeline-body` in renderPricingChangelog
+  - Settings card grid: `.adm-settings-grid { align-items: start; }` at css/app.css:4747, `adm-span-6` on both cards in app.html
+  - Toggle 48x28: `.admin-toggle-label { width: 48px; height: 28px; }` at css/app.css:4642, `.admin-toggle-knob { width: 22px; height: 22px; }` at :4662
+  - Toggle chip CSS: `.adm-toggle-chip { ... background: var(--gray-100); }` at css/app.css:4777, `.adm-toggle-chip--on { background: var(--green-50); color: var(--green-dark); }` at :4789
+  - Wiring unchanged: `toggleEmergencyBypass(this.checked)` at app.html:1242, `toggleDemoMode(this.checked)` at app.html:1262
+  - All element ids preserved: admin-toggle-emergency-bypass, admin-toggle-knob, admin-bypass-status, admin-toggle-demo-mode, admin-toggle-demo-knob, admin-demo-status, admin-pricing-form, admin-pricing-changelog, admin-pricing-msg
+  - Shared classes NOT globally modified: pd-stat/pd-loading/pd-breakdown/profile-stats-grid/op-section-title/op-empty/op-btn/dashboard-pill/op-status-badge all retain original rule counts
+  - npm run build:js succeeded (v=9907ae26); npm run typecheck passes; CSS cache-buster bumped to v=us106-pricing-settings
+- **Learnings for future iterations:**
+  - `PRICING_GROUPS` is the grouped version of pricing fields -- groups can be reordered or new fields added by appending to the appropriate group
+  - `PRICING_FIELDS` is still available as a flat array (derived via reduce) for saveAdminPricing which iterates all fields
+  - `.adm-timeline-*` is a reusable vertical timeline pattern -- dot + line rail with who/when/what anatomy; first entry has a filled blue dot
+  - `.adm-toggle-chip` / `.adm-toggle-chip--on` are reusable status chips (gray disabled, green active) -- use for any on/off state display
+  - Toggle knob left position changed from 25px to 22px to match 48x28 track with 22x22 knob -- all three toggle functions (loadAdminSettings, toggleDemoMode, toggleEmergencyBypass) updated
+  - Settings status now uses innerHTML instead of textContent because it renders chip markup -- ensure any user-provided text in status is escaped (currently all text is hardcoded)
+---
