@@ -1227,3 +1227,39 @@ Both calls pass suppress=true → at most ZERO pickers for popular routes.
   - Zone altitude bar colors are now CSS classes keyed by zoneType (`zone-alt-bar--flight_corridor/restricted/no_fly`) -- add new zone type classes here if new types are added
   - The `OP_SECTION_HEADINGS` map and heading write were removed -- each section has its own static `.panel-step-heading` as the single source of truth
 ---
+
+## 2026-07-06 - US-116
+- What was implemented: Dispatch offers get pilot agency; trip cards become accessible and decision-ready
+  - Dispatch modal: removed inline display:none on .dispatch-actions, Accept/Reject buttons now visible
+  - Real countdown: 30s countdown (from payload.expiresInSeconds) with visible progress bar, auto-REJECT at zero (not auto-accept)
+  - Auto-accept removal: deleted the setTimeout(respondDispatchOffer(true), 1500) -- server evidence: demo pilots excluded from dispatch (email NOT LIKE 'demo-pilot%@irago.internal'), demo mode uses autoRunDemoForBooking instead of startDispatch
+  - Emergency offers: dispatch-card--emergency modifier class toggled for golden/emergency offers (red gradient header, red border, red countdown bar)
+  - Trip cards keyboard-accessible: op-trip-card now rendered as <button> elements with data-trip-id + addEventListener (no inline onclick)
+  - Trip card hierarchy: route title + status badge (row 1), fare + distance + relative time (row 2), customer + aircraft with SVG icons (row 3), chevron affordance
+  - Empty states with action: off-duty shows "Go on duty" CTA button (wires to toggleOperatorDuty), on-duty shows "Waiting for dispatch" with pulsing green dot
+  - Unified static (app.html) and JS-rendered empty states
+  - Skeletons: op-trip-skeleton shimmer shapes replace "Fetching your assigned trips..." text
+- Files changed: js/app/04-operator.js (showDispatchOffer countdown + auto-reject, hideDispatchOffer emergency cleanup, renderOperatorTrips button cards + hierarchy + empty CTAs, loadOperatorTrips skeleton, opTripsSkeleton helper), app.html (dispatch-countdown-track/bar, dispatch-actions no display:none, op-empty unified with SVG icon + CTA, CSS cache-buster), css/app.css (dispatch-countdown-track/bar, dispatch-card--emergency, dispatch-company, op-trip-numbers/fare/stat/meta-item/chevron, op-empty-cta, op-dispatch-dot, op-trip-skeleton, reduced-motion additions), js/app.bundle.js (rebuilt)
+- **HEADLESS structural verification:**
+  - Countdown implementation: `dispatchCountdownTimer = setInterval(function () {` at line 754, `remaining--` at 755, `respondDispatchOffer(false)` at 761 (auto-REJECT)
+  - No auto-accept: `grep setTimeout.*respondDispatchOffer.*true` returns EMPTY -- deleted
+  - Demo-flag decision evidence: src/dispatch.js line 86 `AND u.email NOT LIKE 'demo-pilot%@irago.internal'` excludes demo pilots from dispatch candidates; src/booking-routes.js line 356 calls `autoRunDemoForBooking` instead of `startDispatch`; dispatch_offer payload carries no demo field; /api/admin/settings is requireRole(admin) unreachable by operators
+  - Countdown bar + timer text: `dispatch-countdown-track` + `dispatch-countdown-bar` at app.html line 924; JS sets width percentage and text on each tick
+  - Dispatch actions visible: `<div class="dispatch-actions">` at app.html line 931 (no style="display:none;")
+  - Emergency card class: `card.classList.toggle('dispatch-card--emergency', isEmergencyRide)` at 04-operator.js line 724; removed in hideDispatchOffer at line 772
+  - Trip card template: `<button type="button" class="op-trip-card" data-trip-id="` at line 110; addEventListener at line 131-134
+  - Trip card hierarchy: op-trip-fare (16px/800 navy), op-trip-stat (12px muted distance + relative time), op-trip-meta-item with SVG icons for customer + aircraft, op-trip-chevron
+  - Empty state CTA: `<button type="button" class="op-empty-cta" onclick="toggleOperatorDuty()">Go on duty</button>` at line 93; "Waiting for dispatch" with op-dispatch-dot at line 84-85
+  - Skeleton: `opTripsSkeleton()` at line 42, called by loadOperatorTrips at line 59
+  - respondDispatchOffer: 4 occurrences (definition + countdown reject + 2 addEventListener calls)
+  - openTripDetails: 6 occurrences (definition + multiple call sites preserved)
+  - toggleOperatorDuty: 1 occurrence in 08-actions.js (definition unchanged)
+  - No smart/curly quotes in JS files
+  - npm run build:js succeeded (v=7defe244); npm run typecheck passes; CSS cache-buster bumped to v=us116-dispatch-trips
+- **Learnings for future iterations:**
+  - Dispatch countdown uses `payload.expiresInSeconds` (default 30) from the server -- server sets OFFER_SECONDS = 30 in src/dispatch.js
+  - The dispatch-actions row was hidden with inline `style="display:none;"` in app.html -- removed to show Accept/Reject buttons. JS removeAttribute('style') in showDispatchOffer ensures clean state
+  - Trip cards as `<button>` elements with `data-trip-id` + addEventListener replaces the old `div onclick="openTripDetails(N)"` pattern -- keyboard-accessible with existing :focus-visible rule firing
+  - Empty state CTA pattern: `.op-empty-cta` (blue-50 bg, blue border, rounded pill) is a reusable CTA button for empty states
+  - The `.op-dispatch-dot` (pulsing green dot) reuses the existing `softPulse` keyframe from tracking
+---

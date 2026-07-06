@@ -298,8 +298,8 @@
         "HEADLESS structural verification in progress.txt: quote the countdown implementation + auto-reject path, the demo-flag decision with evidence, the new trip-card template with button/keyboard wiring, the empty-state CTA markup, grep proof respondDispatchOffer/openTripDetails/toggleOperatorDuty still wired"
       ],
       "priority": 24,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Dispatch modal: real countdown (payload.expiresInSeconds, default 30s) with progress bar, auto-REJECT at zero. Auto-accept (setTimeout 1500ms) removed -- server evidence: demo pilots excluded, autoRunDemoForBooking used instead. Emergency offers: dispatch-card--emergency modifier (red gradient/border). Trip cards: <button> with addEventListener (no inline onclick), keyboard-accessible. Trip card hierarchy: route+badge, fare+distance+time, customer+aircraft with SVG icons, chevron. Empty states: off-duty CTA (Go on duty), on-duty pulsing dot (Waiting for dispatch). Skeletons: shimmer shapes. Grep evidence in progress.txt US-116 entry."
     },
     {
       "id": "US-117",
