@@ -435,3 +435,28 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - **Learnings for future iterations:**
   - US-101 was a foundation story whose work was distributed across US-008 (admin drawer/header), US-009 (tables/forms), US-019 (visual audit), and US-020 (nav groups) -- when stories share scope, later stories may find the work already done
 ---
+
+## 2026-07-06 - US-102
+- What was implemented: Dashboard command center with real KPI cards, composed grid layout, skeleton loading, and summary bar dateline strip. New admin-only renderer `adminDashboardHtml()` replaces `statsDashboardHtml()` for the admin dashboard while keeping the profile modal untouched.
+- Files changed: js/app/03-admin-profile.js (new admKpi/ADM_ICONS/adminDashboardHtml/adminDashboardSkeleton functions, loadAdminPlatformStats uses skeleton + new renderer + summary bar dateline), css/app.css (new .adm-kpi card system, .adm-comp-card composition cards, .adm-bar-row/track/fill bars, .adm-live-hero/btn, .admin-summary-bar repurposed as dateline strip, .adm-skeleton shimmer loading, prefers-reduced-motion covers .adm-skeleton, removed old display:none from .admin-summary-bar), app.html (removed "Platform overview" eyebrow and pd-loading from admin-platform-stats, bumped CSS cache-buster)
+- **Grep evidence:**
+  - New renderer: `function adminDashboardHtml(stats)` at line 727, `function admKpi(iconSvg, iconColor, value, label, chipHtml)` at line 703
+  - Host injection: `host.innerHTML = adminDashboardHtml(data.stats)` at line 816
+  - .adm-kpi CSS: `.adm-kpi { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); ... }`
+  - statsDashboardHtml call sites (profile modal untouched): line 175 `body.innerHTML = statsDashboardHtml(stats)` (renderProfileDashboard), line 905 user-detail drawer -- both unchanged
+  - Skeleton CSS: `@keyframes admShimmer { ... } .adm-skeleton { background: linear-gradient(...); animation: admShimmer 1.4s ... }`
+  - No emoji in admin dashboard: grep of adminDashboardHtml/admKpi lines returns 0 unicode emoji escapes
+  - No pdStat calls in new renderer: grep returns 0
+  - #admin-summary-bar repurposed as dateline strip: JS fills with clock SVG + date string; CSS changed from display:none to display:flex strip
+  - KPI hierarchy: primary row 4x .adm-span-3 (Total users, Total bookings, Live flights, Revenue), secondary row 5x .adm-span-3 compact (Completed, Cancelled, CO2 saved, Distance flown, Aircraft available)
+  - Composition row: Users by role (.adm-span-6 with .adm-bar-row horizontal bars), Live operations (.adm-span-6 with hero number + "Open Live Map" button wired to showAdminSection('live'))
+  - Shared classes unchanged: pd-stat/pd-loading/pd-breakdown/profile-stats-grid/op-section-title/op-empty/op-btn/dashboard-pill/op-status-badge all retain original global rules only
+  - npm run build:js succeeded (v=739523ae); npm run typecheck passes; CSS cache-buster bumped to v=us102-kpi-cards
+- **Learnings for future iterations:**
+  - `admKpi()` is the reusable KPI card builder for admin sections -- takes SVG icon, color variant, value, label, and optional chip HTML; use for Revenue (US-107) and Compliance (US-108) KPIs
+  - `ADM_ICONS` object holds all SVG icon strings used by the admin dashboard -- add new icons here when needed by later stories
+  - `adminDashboardSkeleton()` generates grid-based skeleton shapes matching the dashboard layout -- pattern can be adapted for other section skeletons
+  - The `#admin-summary-bar` is now a dateline strip rendered by `loadAdminPlatformStats()` -- its id survives; it shows the current date with a clock icon
+  - The admin dashboard no longer uses `statsDashboardHtml()` at all -- that function is now ONLY used by the profile modal (renderProfileDashboard) and the admin user-detail drawer (loadAdminUserDetail)
+  - Skeleton shimmer uses a CSS-only gradient animation (admShimmer keyframes) -- no JS needed; disabled under prefers-reduced-motion
+---
