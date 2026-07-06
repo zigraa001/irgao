@@ -63,6 +63,9 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Phase C (company portal): 'company' is a new DB role; PORTAL_BY_DB_ROLE maps company->'company'; SIGNUP_CONFIG.company has loginOnly:true; company-view is the placeholder div; companyStats uses pilot-employer linkage (bookings JOIN users ON operatorId WHERE companyId)
 - Company routes go in src/company-routes.js mounted at /api/company (NOT under /admin which is Tailscale-gated); every route uses requireAuth + requireRole('company') and resolves companyId via re-query of the users table
 - CREATABLE_ROLES/FILTERABLE_ROLES in admin-routes.js now include 'company'; POST /api/admin/users REQUIRES companyId when role==='company'
+- `.op-map-wrap` wraps the operator map + overlays with `position: relative` -- overlays use `left: 12px` (relative to map, not viewport)
+- `showOperatorSection()` toggles `.op-panel--wide` on #op-panel for non-map sections (checklist/earnings/account); trips/altitude keep 420px + map
+- Zone altitude bar colors use CSS classes keyed by zoneType: `.zone-alt-bar--flight_corridor`, `.zone-alt-bar--restricted`, `.zone-alt-bar--no_fly`
 
 ---
 
@@ -1174,4 +1177,53 @@ Both calls pass suppress=true → at most ZERO pickers for popular routes.
   - The `.nav-profile-dropdown` CSS is fully styled and ready-to-use (was defined but unused before this story)
   - `closeAllProfileDropdowns()` returns a boolean so Escape can short-circuit (close dropdown first, then modal)
   - The `emoji` fields in `popularRoutes` data are now dead code but harmless -- the renderer uses `ROUTE_ICON_SVG[service]` instead
+---
+
+## 2026-07-06 - US-115
+- What was implemented: Operator console layout overhaul -- wide workspace for non-map sections (checklist/earnings/account expand panel to 720-900px and hide map on desktop), map overlays anchored to map wrapper container (no more 432px magic numbers), section entrance transitions (150ms fade+slide), heading cleanup (per-section static headings, removed OP_SECTION_HEADINGS write), altitude section renamed and enlarged, legend inline hex colors replaced with token classes, zone altitude bar inline colors moved to CSS classes
+- Files changed: css/app.css (new .op-map-wrap, .op-panel--wide, @keyframes opSectionIn, .op-section animation, .op-zone-altitude, .op-legend-* classes, .zone-alt-bar--* classes, removed 432px magic numbers on .op-map-badge/.op-map-legend, added .op-section to reduced-motion block), app.html (wrapped map+badge+legend in .op-map-wrap, legend spans use token classes instead of inline hex, altitude section gets op-zone-altitude class + renamed title, CSS cache-buster bumped), js/app/04-operator.js (showOperatorSection adds op-panel--wide toggle + scheduleMapZoneRefresh on return to trips/altitude, removed OP_SECTION_HEADINGS write), js/app/05-map.js (renderZoneAltitudeStack: title 'Altitude (3D)' -> 'Airspace altitude bands', zone-alt-bar uses zoneType CSS classes instead of inline style bg/border-color), js/app.bundle.js (rebuilt)
+- **HEADLESS structural verification:**
+  - **Wide-mode class toggle + CSS:**
+    - CSS: `.op-panel--wide { width: clamp(720px, 60vw, 900px); }` at line 2976, scoped inside `@media (min-width: 901px)` (no effect at <=900px)
+    - CSS: `.op-panel--wide ~ .op-map-wrap { display: none; }` at line 2977 (hides map + badge + legend together)
+    - JS: `panel.classList.toggle('op-panel--wide', wideMode)` at 04-operator.js line 834, where `wideMode = section !== 'trips' && section !== 'altitude'`
+    - JS: `scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, ..., 150)` at line 836 -- re-layouts map tiles when returning to trips/altitude
+  - **Anchored overlay rules (no 432px remains):**
+    - `grep 432px css/app.css` returns ZERO results
+    - `.op-map-badge { left: 12px; }` at line 2886 (was 432px)
+    - `.op-map-legend { left: 12px; }` at line 2913 (was 432px)
+    - `.op-map-wrap { flex: 1; position: relative; display: flex; min-width: 0; }` at line 2954 provides positioned ancestor for absolute overlays
+    - app.html line 901: `<div class="op-map-wrap">` wraps #op-combined-map, .op-map-badge, .op-map-legend
+  - **Altitude title change in both files:**
+    - app.html line 851: `<h4>Airspace altitude bands</h4>`
+    - js/app/05-map.js line 353: `'<h4>Airspace altitude bands</h4>'` (empty state)
+    - js/app/05-map.js line 358: `'<h4>Airspace altitude bands</h4>'` (zones present)
+    - `grep "Altitude (3D)" app.html js/app/05-map.js` returns ZERO results
+  - **Section transition rule + reduced-motion proof:**
+    - `@keyframes opSectionIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }` at line 3027
+    - `.op-section { animation: opSectionIn 150ms ease-out both; }` at line 3031
+    - `.op-section` listed in `@media (prefers-reduced-motion: reduce)` block with `animation: none !important` at line 7181
+  - **Legend inline hex removed:**
+    - `grep -n "style=" app.html | grep -i "Restricted\|No-fly\|You"` returns ZERO results (inline hex colors gone)
+    - Token classes: `.op-legend-restricted { color: var(--amber-dark); }`, `.op-legend-nofly { color: var(--red-dark); }`, `.op-legend-you { color: var(--green-dark); }`, `.op-legend-count { margin-left: auto; color: var(--gray-500); }`
+  - **Altitude widget own class + taller max-height:**
+    - `.op-panel .op-zone-altitude { max-height: 400px; margin-top: 0; }` (was 200px)
+    - `.op-zone-altitude h4 { font-size: 13px; color: var(--navy); }` -- styled heading
+    - Zone bar CSS classes: `.zone-alt-bar--flight_corridor`, `.zone-alt-bar--restricted`, `.zone-alt-bar--no_fly` at lines 4023-4025
+    - JS uses `'zone-alt-bar zone-alt-bar--' + z.zoneType` at 05-map.js line 365 (no inline bg/border-color)
+  - **Wiring preserved:**
+    - showOperatorSection: 6 onclick references in app.html (trips/checklist/altitude/earnings/account nav items)
+    - toggleOperatorDuty: onclick at app.html line 775
+    - openTripDetails: called from JS (no inline onclick)
+    - closeTripDetails: onclick at app.html line 894
+    - submitComplianceChecklist: onclick at app.html line 838
+    - All op-* ids present (30 ids verified: op-panel, op-list-section, op-combined-map, op-section-heading, op-section-trips/checklist/altitude/earnings/account, all op-ck-* checkboxes, op-duty-*, op-earnings-body, op-compliance-*, op-detail-*, op-zone-badge, op-zone-badge-label, op-map-legend-count, etc.)
+    - All checkbox ids (9): op-ck-firstAid, op-ck-fireExt, op-ck-elt, op-ck-briefing, op-ck-inspect, op-ck-weather, op-ck-fuel, op-ck-comms, op-ck-notes
+  - npm run build:js succeeded (v=2bac7a31); npm run typecheck passes; CSS cache-buster bumped to v=us115-operator-layout
+- **Learnings for future iterations:**
+  - `.op-map-wrap` is the positioned wrapper for the operator map + overlays -- use it for any future overlays on the operator map (they position relative to the map, not the viewport)
+  - `showOperatorSection` now toggles `.op-panel--wide` class -- sections that need the map (trips/altitude) keep 420px, others get wide mode. The map wrapper is hidden via CSS sibling selector
+  - `scheduleMapZoneRefresh` is the canonical way to fix map tiles after a layout change -- it calls both `invalidateSize()` and `refreshMapZones()`
+  - Zone altitude bar colors are now CSS classes keyed by zoneType (`zone-alt-bar--flight_corridor/restricted/no_fly`) -- add new zone type classes here if new types are added
+  - The `OP_SECTION_HEADINGS` map and heading write were removed -- each section has its own static `.panel-step-heading` as the single source of truth
 ---

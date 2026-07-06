@@ -279,8 +279,8 @@
         "HEADLESS structural verification in progress.txt: quoted wide-mode class toggle + CSS, quoted anchored overlay rules (no 432px remains - grep), quoted altitude title change in both files, transition rule quoted with reduced-motion proof"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Wide mode (720-900px for checklist/earnings/account, map hidden via .op-map-wrap sibling selector). Overlays anchored to map wrapper (no 432px). Section transitions 150ms ease-out + reduced-motion. Heading write removed. Altitude: op-zone-altitude class, 400px max-height, renamed to Airspace altitude bands. Legend: token classes. Zone bars: CSS classes. Grep evidence in progress.txt US-115 entry."
     },
     {
       "id": "US-116",
