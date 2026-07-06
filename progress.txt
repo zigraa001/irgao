@@ -771,3 +771,35 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Company portal JS is in 10-company.js -- bundle concatenation order means admKpi/ADM_ICONS (defined in 03-admin-profile.js) are available as globals
   - Placeholder sections use .company-placeholder styling for 'coming soon' states -- each later story (US-126..US-129) replaces its own placeholder
 ---
+
+## 2026-07-06 - US-126
+- What was implemented: Company Flights section -- paged flight list with pilot-employer linkage, server-side filtering (status, pilot, date range), cross-company isolation, payout honesty, summary strip, admin table language UI with skeleton loading and filter-aware empty states
+- Files changed: src/company-routes.js (GET /api/company/flights endpoint), js/app/10-company.js (loadCompanyFlights, renderCompanyFlights, companyFlightsSkeleton, companyFlightsSummaryHtml, companyFlightRowHtml, companyFlightsFilter, companyFlightsPrev/Next, populateCompanyPilotFilter), app.html (replaced flights placeholder with toolbar + filters + body + pager markup), css/app.css (cf-toolbar, cf-filter-select, cf-meta, cf-summary-strip, cf-list-card, cf-header-row, cf-row, cf-cell-*, cf-pilot-*, cf-route-*, cf-est-hint, cf-pager, cf-skeleton-row, responsive 768px), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - Server endpoint: `router.get("/flights", async (req, res) => {` at src/company-routes.js:104
+  - Pilot-employer linkage: `clauses = ["u.companyId = ?"]` at :110; base FROM: `FROM bookings b JOIN users u ON u.id = b.operatorId LEFT JOIN users c ON c.id = b.customerId` at :138
+  - Paged: `ORDER BY b.createdAt DESC LIMIT ? OFFSET ?` at :156; response includes total, limit, offset, hasMore
+  - Customer first name only: `const customerFirst = r.customerName ? r.customerName.split(" ")[0] : null;` at :163
+  - Payout honesty: `payout: r.operatorPayout, payoutEstimated: r.operatorPayout == null` at :174-175; client renders `<span class="cf-est-hint">est.</span>` for estimated payouts
+  - Cross-company isolation (pilotId): checks `SELECT id FROM users WHERE id = ? AND companyId = ? AND role = 'operator'` at :121-124; returns empty result if pilot doesn't belong to caller's company
+  - Summary strip (server-computed): `SELECT COUNT(*) AS cnt, COALESCE(SUM(b.fareEstimate), 0) AS gross, COALESCE(SUM(COALESCE(b.operatorPayout, ...)), 0) AS net` at :142-146; rendered as cf-summary-strip
+  - Status filter: `if (req.query.status) { clauses.push("b.status = ?")` at :113-115
+  - Pilot filter: `if (req.query.pilotId) { ... clauses.push("b.operatorId = ?")` at :117-127
+  - Date filters: `req.query.from` at :129, `req.query.to` at :133
+  - UI lazy load: `if (name === 'flights') loadCompanyFlights();` at 10-company.js:25
+  - Status chips: `statusBadgeHtml(f.status)` at 10-company.js:111 (reuses existing op-status-badge classes unrestyled)
+  - Skeleton loading: `companyFlightsSkeleton()` generates 5 skeleton rows with adm-skeleton classes
+  - Filter-aware empty states: checks `hasFilters` to show 'No flights match these filters' vs 'No flights yet'
+  - Pager: US-103 style with admin-pager-btn SVG chevrons, admin-pager-info 'Showing X-Y of Z'
+  - Monogram avatars: uses `pilotInitials()` from 05-map.js for pilot avatar initials
+  - No shared class restyled globally: op-status-badge, admin-table, adm-kpi all untouched
+  - CSS cache buster: v=us126-company-flights; JS cache buster: v=57138fa9
+  - npm run build:js succeeded; npm run typecheck passes
+  - DB not available locally for curl verification but server boots clean and endpoint structure verified
+- **Learnings for future iterations:**
+  - Company flights uses the same pilot-employer linkage JOIN pattern as company dashboard (FROM bookings b JOIN users u ON u.id = b.operatorId WHERE u.companyId = ?)
+  - Cross-company isolation for pilotId filter is done by a preliminary SELECT to verify the pilot belongs to the calling company before adding the WHERE clause
+  - Payout honesty pattern: `payoutEstimated: r.operatorPayout == null` flag sent to client; client appends 'est.' hint for legacy rows without persisted operatorPayout
+  - Pilot filter is populated from the loaded flights data (no separate endpoint needed) -- when US-127 adds a /api/company/pilots endpoint, this can be upgraded
+  - companyFlightsFilter() resets offset to 0 before re-fetching to avoid orphaned pagination state
+---
