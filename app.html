@@ -95,6 +95,8 @@
         <button type="button" class="auth-role-btn" data-role="operator" onclick="switchLoginRole('operator')">Pilot</button>
         <span class="auth-role-sep">&middot;</span>
         <button type="button" class="auth-role-btn" data-role="admin" onclick="switchLoginRole('admin')">Admin</button>
+        <span class="auth-role-sep">&middot;</span>
+        <button type="button" class="auth-role-btn" data-role="company" onclick="switchLoginRole('company')">Partner</button>
       </div>
     </div>
 
@@ -1118,6 +1120,7 @@
               <select id="admin-add-role" class="admin-form-select" onchange="toggleAddMemberCompany()">
                 <option value="operator">Pilot</option>
                 <option value="admin">Admin</option>
+                <option value="company">Company account</option>
               </select>
             </div>
             <div class="auth-field" id="admin-add-company-field">
@@ -1337,6 +1340,8 @@
   </div>
 </div>
 
+<div id="company-view" class="view"></div>
+
 <!-- Admin user-detail drawer (slide-in from right) -->
 <div id="admin-user-drawer" class="admin-user-drawer" aria-hidden="true">
   <div class="admin-user-drawer-backdrop" onclick="closeAdminUserDrawer()"></div>
@@ -1422,6 +1427,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=8fe54da8"></script>
+<script src="/js/app.bundle.js?v=271aab97"></script>
 </body>
 </html>

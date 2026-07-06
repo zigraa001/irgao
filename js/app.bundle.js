@@ -257,6 +257,14 @@ const SIGNUP_CONFIG = {
     loginHint: '',
     loginOnly: true,
   },
+  company: {
+    loginPath: '/api/auth/company/login',
+    loginUrl: '/login/company',
+    loginTitle: 'Partner Console',
+    loginSub: 'Sign in to manage your company on IraGo',
+    loginHint: 'Company accounts are created by an IraGo admin. Contact your administrator to be provisioned.',
+    loginOnly: true,
+  },
 };
 
 function parsePortalFromLocation() {
@@ -265,14 +273,14 @@ function parsePortalFromLocation() {
     const params = new URLSearchParams(window.location.search);
     return { mode: params.has('register') ? 'signup' : 'login', role: 'passenger' };
   }
-  const m = path.match(/^\/(login|signup)\/(operator|admin)\/?$/);
+  const m = path.match(/^\/(login|signup)\/(operator|admin|company)\/?$/);
   if (m) return { mode: m[1], role: m[2] };
   return { mode: 'login', role: 'passenger' };
 }
 
 function portalForDbRole(role) {
   if (role === 'customer') return 'passenger';
-  if (role === 'operator' || role === 'admin') return role;
+  if (role === 'operator' || role === 'admin' || role === 'company') return role;
   return 'passenger';
 }
 
@@ -567,7 +575,7 @@ async function apiFetch(path, opts = {}) {
     ...opts,
     headers: { ...AUTH.headers(), ...(opts.headers || {}) }
   }));
-  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
+  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
     AUTH.clear();
     showView('login-view');
     showLoginCard();
@@ -1289,6 +1297,10 @@ function routeForRole(user) {
       showAdminSection('dashboard');
       break;
     }
+    case 'company': {
+      showView('company-view');
+      break;
+    }
     case 'operator': {
       const welcome = document.getElementById('op-welcome');
       if (welcome) welcome.textContent = 'Pilot Console';
@@ -1430,12 +1442,14 @@ const ROLE_BADGE = {
   admin:    { label: 'Admin',    cls: 'op-badge--purple' },
   operator: { label: 'Pilot', cls: 'op-badge--blue' },
   customer: { label: 'Passenger', cls: 'op-badge--gray' },
+  company:  { label: 'Partner',  cls: 'op-badge--blue' },
 };
 
 const ROLE_PROFILE = {
   admin:    { label: 'Admin',     dropdownClass: 'role-admin' },
   operator: { label: 'Pilot',  dropdownClass: 'role-operator' },
   customer: { label: 'Passenger', dropdownClass: '' },
+  company:  { label: 'Partner',   dropdownClass: 'role-company' },
 };
 
 function profileInitial(user) {
@@ -1803,6 +1817,7 @@ async function doDeleteAccount() {
 function loginUrlForRole(role) {
   if (role === 'operator') return '/login/operator';
   if (role === 'admin') return '/login/admin';
+  if (role === 'company') return '/login/company';
   return '/app.html';
 }
 
@@ -2688,9 +2703,9 @@ function toggleAddMemberCompany() {
   var companyField = document.getElementById('admin-add-company-field');
   var officeField = document.getElementById('admin-add-office-field');
   if (!companyField || !officeField) return;
-  if (role === 'operator') {
+  if (role === 'operator' || role === 'company') {
     companyField.style.display = '';
-    officeField.style.display = '';
+    officeField.style.display = role === 'operator' ? '' : 'none';
     loadAddMemberCompanyOptions();
   } else {
     companyField.style.display = 'none';
@@ -2743,15 +2758,15 @@ async function doAddUser() {
   if (password.length < 6) {
     return showAuthError('admin-add-error', 'Password must be at least 6 characters.');
   }
-  if (role !== 'operator' && role !== 'admin') {
-    return showAuthError('admin-add-error', 'Role must be operator or admin.');
+  if (role !== 'operator' && role !== 'admin' && role !== 'company') {
+    return showAuthError('admin-add-error', 'Role must be operator, admin, or company.');
   }
-  if (role === 'operator' && !companyId) {
-    return showAuthError('admin-add-error', 'Please select an operator company for this pilot.');
+  if ((role === 'operator' || role === 'company') && !companyId) {
+    return showAuthError('admin-add-error', 'Please select a company for this account.');
   }
   setBusy('admin-add-submit', true, 'Adding...', 'Add Team Member');
   var payload = { name: name, email: email, password: password, role: role };
-  if (role === 'operator') {
+  if (role === 'operator' || role === 'company') {
     payload.companyId = Number(companyId);
     if (officeId) payload.officeId = Number(officeId);
   }

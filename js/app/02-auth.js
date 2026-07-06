@@ -81,6 +81,14 @@ const SIGNUP_CONFIG = {
     loginHint: '',
     loginOnly: true,
   },
+  company: {
+    loginPath: '/api/auth/company/login',
+    loginUrl: '/login/company',
+    loginTitle: 'Partner Console',
+    loginSub: 'Sign in to manage your company on IraGo',
+    loginHint: 'Company accounts are created by an IraGo admin. Contact your administrator to be provisioned.',
+    loginOnly: true,
+  },
 };
 
 function parsePortalFromLocation() {
@@ -89,14 +97,14 @@ function parsePortalFromLocation() {
     const params = new URLSearchParams(window.location.search);
     return { mode: params.has('register') ? 'signup' : 'login', role: 'passenger' };
   }
-  const m = path.match(/^\/(login|signup)\/(operator|admin)\/?$/);
+  const m = path.match(/^\/(login|signup)\/(operator|admin|company)\/?$/);
   if (m) return { mode: m[1], role: m[2] };
   return { mode: 'login', role: 'passenger' };
 }
 
 function portalForDbRole(role) {
   if (role === 'customer') return 'passenger';
-  if (role === 'operator' || role === 'admin') return role;
+  if (role === 'operator' || role === 'admin' || role === 'company') return role;
   return 'passenger';
 }
 
@@ -391,7 +399,7 @@ async function apiFetch(path, opts = {}) {
     ...opts,
     headers: { ...AUTH.headers(), ...(opts.headers || {}) }
   }));
-  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
+  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
     AUTH.clear();
     showView('login-view');
     showLoginCard();
@@ -1111,6 +1119,10 @@ function routeForRole(user) {
       if (adminSub) adminSub.textContent = (user && user.name) || 'Admin';
       showView('admin-view');
       showAdminSection('dashboard');
+      break;
+    }
+    case 'company': {
+      showView('company-view');
       break;
     }
     case 'operator': {

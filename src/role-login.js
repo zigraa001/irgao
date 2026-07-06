@@ -6,6 +6,7 @@ const PORTAL_BY_DB_ROLE = {
   customer: "passenger",
   operator: "operator",
   admin: "admin",
+  company: "company",
 };
 
 function createRoleLoginHandler(expectedRole, authResponse) {

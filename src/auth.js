@@ -19,7 +19,7 @@ const JWT_ALGORITHM = "HS256";
 
 // Allowed user roles. role validation lives in app code because the DB stores
 // role as a plain VARCHAR rather than a DB-level enum.
-const ROLES = ["customer", "operator", "admin"];
+const ROLES = ["customer", "operator", "admin", "company"];
 
 // SQL fragment: only rows that have not been soft-deleted.
 const USER_NOT_DELETED = "deletedAt IS NULL";

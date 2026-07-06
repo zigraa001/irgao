@@ -43,9 +43,9 @@ app.use("/api", apiRouter);
 const APP_HTML = path.join(ROOT, "app.html");
 app.get("/login/passenger", (_req, res) => res.redirect(302, "/app.html"));
 app.get("/signup/passenger", (_req, res) => res.redirect(302, "/app.html?register=1"));
-for (const role of ["operator"]) {
+for (const role of ["operator", "company"]) {
   app.get(`/login/${role}`, (_req, res) => res.sendFile(APP_HTML));
-  app.get(`/signup/${role}`, (_req, res) => res.sendFile(APP_HTML));
+  app.get(`/signup/${role}`, (_req, res) => res.redirect(302, `/login/${role}`));
 }
 app.get("/login/admin", (_req, res) => res.sendFile(APP_HTML));
 app.get("/signup/admin", (_req, res) => res.redirect(302, "/login/admin"));

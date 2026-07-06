@@ -143,6 +143,67 @@ async function operatorStats(userId) {
   };
 }
 
+async function companyStats(userId) {
+  const userRow = await queryOne(
+    "SELECT companyId FROM users WHERE id = ?",
+    [userId]
+  );
+  const companyId = userRow ? userRow.companyId : null;
+  if (!companyId) {
+    return { scope: "company", totals: { completedFlights: 0, completedThisMonth: 0, grossRevenue: 0, netPayout: 0, totalPilots: 0, onDutyPilots: 0, cancelled: 0 } };
+  }
+
+  const [flightAgg, monthAgg, pilotAgg, dutyAgg] = await Promise.all([
+    queryOne(
+      `SELECT COUNT(*) AS completed,
+              COALESCE(SUM(b.fareEstimate), 0) AS gross,
+              COALESCE(SUM(COALESCE(b.operatorPayout, b.fareEstimate * 0.85)), 0) AS net,
+              SUM(CASE WHEN b.status = 'cancelled' OR b.status = 'rejected' THEN 1 ELSE 0 END) AS cancelled
+         FROM bookings b
+         JOIN users u ON u.id = b.operatorId
+         WHERE u.companyId = ? AND b.status = 'completed'`,
+      [companyId]
+    ),
+    queryOne(
+      `SELECT COUNT(*) AS n
+         FROM bookings b
+         JOIN users u ON u.id = b.operatorId
+         WHERE u.companyId = ? AND b.status = 'completed'
+           AND b.createdAt >= DATE_FORMAT(NOW(), '%Y-%m-01')`,
+      [companyId]
+    ),
+    queryOne(
+      `SELECT COUNT(*) AS n FROM users WHERE companyId = ? AND role = 'operator' AND ${USER_NOT_DELETED}`,
+      [companyId]
+    ),
+    queryOne(
+      `SELECT COUNT(*) AS n FROM users WHERE companyId = ? AND role = 'operator' AND onDuty = 1 AND ${USER_NOT_DELETED}`,
+      [companyId]
+    ),
+  ]);
+
+  const cancelledAgg = await queryOne(
+    `SELECT COUNT(*) AS n
+       FROM bookings b
+       JOIN users u ON u.id = b.operatorId
+       WHERE u.companyId = ? AND (b.status = 'cancelled' OR b.status = 'rejected')`,
+    [companyId]
+  );
+
+  return {
+    scope: "company",
+    totals: {
+      completedFlights: num(flightAgg ? flightAgg.completed : 0),
+      completedThisMonth: num(monthAgg ? monthAgg.n : 0),
+      grossRevenue: Math.round(num(flightAgg ? flightAgg.gross : 0)),
+      netPayout: Math.round(num(flightAgg ? flightAgg.net : 0)),
+      totalPilots: num(pilotAgg ? pilotAgg.n : 0),
+      onDutyPilots: num(dutyAgg ? dutyAgg.n : 0),
+      cancelled: num(cancelledAgg ? cancelledAgg.n : 0),
+    },
+  };
+}
+
 async function adminStats() {
   const [usersByRole, bookingAgg, fleetAgg, liveAgg] = await Promise.all([
     query(
@@ -186,6 +247,7 @@ async function adminStats() {
 async function buildProfileStats(userId, role) {
   if (role === "admin") return adminStats();
   if (role === "operator") return operatorStats(userId);
+  if (role === "company") return companyStats(userId);
   return customerStats(userId);
 }
 
@@ -194,4 +256,5 @@ module.exports = {
   customerStats,
   operatorStats,
   adminStats,
+  companyStats,
 };

@@ -130,9 +130,25 @@ router.post("/admin/verify-signup", (_req, res) => {
   });
 });
 
+router.post("/company/signup-request", (_req, res) => {
+  res.status(403).json({
+    error:
+      "Company accounts are provisioned by an admin only. Contact your IraGo administrator.",
+    code: "ADMIN_PROVISIONED_ONLY",
+  });
+});
+router.post("/company/verify-signup", (_req, res) => {
+  res.status(403).json({
+    error:
+      "Company accounts are provisioned by an admin only. Contact your IraGo administrator.",
+    code: "ADMIN_PROVISIONED_ONLY",
+  });
+});
+
 router.post("/passenger/login", createRoleLoginHandler("customer", authResponse));
 router.post("/operator/login", createRoleLoginHandler("operator", authResponse));
 router.post("/admin/login", createRoleLoginHandler("admin", authResponse));
+router.post("/company/login", createRoleLoginHandler("company", authResponse));
 
 // Legacy passenger login alias
 router.post("/login", createRoleLoginHandler("customer", authResponse));
