@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us103-users-table">
+  <link rel="stylesheet" href="/css/app.css?v=us104-live-map">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1063,9 +1063,9 @@
             <div class="adm-header-sub">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</div>
           </div>
         </div>
-        <div id="admin-live-meta" class="admin-users-meta"></div>
         <div id="admin-live-map-wrap" class="admin-live-map-wrap">
           <div id="admin-live-map" class="admin-live-map"></div>
+          <div id="admin-live-meta" class="admin-live-meta-chips"></div>
           <button type="button" id="admin-live-map-fs" class="admin-live-map-fs" onclick="toggleAdminMapFullscreen()" aria-label="Toggle fullscreen map" title="Fullscreen">
             <svg class="fs-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
             <svg class="fs-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
@@ -1073,15 +1073,19 @@
         </div>
         <div class="admin-live-layout">
           <div class="admin-live-panel">
-            <h4>In transit &amp; dispatching</h4>
+            <h4>In transit &amp; dispatching <span id="admin-live-flight-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-live-list" class="admin-live-list">
-              <div class="op-empty"><div class="op-empty-sub">Fetching live flights...</div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:60%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:80%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:50%;border-radius:4px"></div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:55%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:70%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:45%;border-radius:4px"></div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:65%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:75%;border-radius:4px"></div></div>
             </div>
           </div>
           <div class="admin-live-panel">
-            <h4>All pilots (GPS)</h4>
+            <h4>All pilots (GPS) <span id="admin-live-fleet-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-fleet-list" class="admin-live-list">
-              <div class="op-empty"><div class="op-empty-sub">Fetching fleet data...</div></div>
+              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:50%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:70%;border-radius:4px"></div></div></div></div>
+              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:45%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:60%;border-radius:4px"></div></div></div></div>
+              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:55%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:65%;border-radius:4px"></div></div></div></div>
             </div>
           </div>
         </div>
@@ -1389,6 +1393,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=295b4d13"></script>
+<script src="/js/app.bundle.js?v=0ed53df2"></script>
 </body>
 </html>

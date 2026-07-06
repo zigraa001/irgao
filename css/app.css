@@ -3637,37 +3637,37 @@ textarea:focus-visible, a:focus-visible {
 
 /* Admin live operations — map + lists */
 .admin-live-map {
-  height: 380px;
-  border-radius: var(--radius-lg);
+  height: clamp(420px, 62vh, 680px);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--gray-200);
   overflow: hidden;
   background: var(--gray-100);
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 .admin-live-map-wrap {
   position: relative;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 .admin-live-map-wrap .admin-live-map { margin-bottom: 0; }
 .admin-live-map-fs {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   z-index: 1200;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
+  border-radius: 50%;
+  border: none;
   background: var(--surface);
   color: var(--gray-700);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: var(--shadow-md);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
-.admin-live-map-fs:hover { background: var(--blue-50); color: var(--blue-dark); }
+.admin-live-map-fs:hover { background: var(--blue-50); color: var(--blue-dark); box-shadow: var(--shadow-lg); }
 .admin-live-map-fs svg { width: 18px; height: 18px; display: block; }
 .admin-live-map-fs .fs-collapse { display: none; }
 .admin-live-map-wrap.fs {
@@ -3686,10 +3686,46 @@ textarea:focus-visible, a:focus-visible {
 .admin-live-map-wrap.fs .admin-live-map-fs .fs-expand { display: none; }
 .admin-live-map-wrap.fs .admin-live-map-fs .fs-collapse { display: block; }
 body.admin-map-fs { overflow: hidden; }
+.admin-live-meta-chips {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1100;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .admin-live-chip { background: rgba(255,255,255,0.95); }
+}
+.admin-live-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.admin-live-chip-dot--green { background: var(--green); }
+.admin-live-chip-dot--amber { background: var(--amber); }
+.admin-live-chip-dot--blue { background: var(--blue); }
 .admin-live-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 24px;
 }
 @media (max-width: 900px) { .admin-live-layout { grid-template-columns: 1fr; } }
@@ -3697,38 +3733,87 @@ body.admin-map-fs { overflow: hidden; }
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
 }
 .admin-live-panel h4 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  margin: 0 0 12px;
-  color: var(--gray-800);
+  margin: 0 0 16px;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-live-panel-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
 }
 .admin-flight-card {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  transition: border-color var(--transition);
-}
-.admin-flight-card:hover { border-color: var(--blue-light); }
-.admin-flight-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.admin-flight-route { font-weight: 700; color: var(--gray-900); }
-.admin-flight-meta { color: var(--gray-600); font-size: 12px; line-height: 1.45; }
-.admin-live-list { max-height: 420px; overflow-y: auto; }
-.admin-fleet-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 12px;
+  font-size: 13px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: start;
+}
+.admin-flight-card:last-child { border-bottom: none; }
+.admin-flight-top { display: flex; align-items: center; gap: 8px; }
+.admin-flight-status { grid-column: 2; grid-row: 1; justify-self: end; }
+.admin-flight-route { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+.admin-flight-meta { color: var(--gray-500); font-size: 12.5px; line-height: 1.5; grid-column: 1 / -1; }
+.admin-flight-meta-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.admin-flight-time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--gray-500); font-size: 12px; white-space: nowrap; }
+.admin-live-list { max-height: 340px; overflow-y: auto; scrollbar-width: thin; }
+.admin-live-list::-webkit-scrollbar { width: 4px; }
+.admin-live-list::-webkit-scrollbar-track { background: transparent; }
+.admin-live-list::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+.admin-fleet-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
 }
 .admin-fleet-row:last-child { border-bottom: none; }
+.admin-fleet-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.admin-fleet-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+.admin-fleet-gps { font-size: 12.5px; color: var(--gray-500); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 4px; }
+.admin-fleet-gps-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.admin-fleet-gps-fresh { background: var(--green); }
+.admin-fleet-gps-stale { background: var(--gray-400); }
+.admin-fleet-status { justify-self: end; }
+.admin-live-skeleton { padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }
+.admin-live-skeleton:last-child { border-bottom: none; }
 
 .nearby-taxi-marker {
   font-size: 22px;
@@ -5368,7 +5453,9 @@ body.admin-map-fs { overflow: hidden; }
   .cc-body { padding: 8px 12px; }
   .cc-footer { padding: 8px 12px; }
   .new-flyer-banner { font-size: 12px; padding: 8px 12px; }
-  .admin-live-list { max-height: 280px; }
+  .admin-live-list { max-height: 240px; }
+  .admin-live-meta-chips { top: 8px; left: 8px; gap: 4px; }
+  .admin-live-chip { padding: 4px 8px; font-size: 11px; }
   .admin-tab { padding: 5px 12px; font-size: 12px; }
   .admin-users-toolbar { flex-wrap: wrap; }
   .admin-users-meta { margin-left: 0; width: 100%; }

@@ -408,10 +408,52 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
+function adminLiveChip(dotClass, value, label) {
+  return '<span class="admin-live-chip">' +
+    '<span class="admin-live-chip-dot ' + dotClass + '"></span>' +
+    '<span>' + value + ' ' + label + '</span>' +
+  '</span>';
+}
+
+function adminLiveSkeleton(count) {
+  var html = '';
+  for (var i = 0; i < count; i++) {
+    html += '<div class="admin-live-skeleton">' +
+      '<div class="adm-skeleton" style="height:14px;width:' + (50 + (i * 7) % 20) + '%;border-radius:4px;margin-bottom:8px"></div>' +
+      '<div class="adm-skeleton" style="height:12px;width:' + (60 + (i * 11) % 25) + '%;border-radius:4px"></div>' +
+    '</div>';
+  }
+  return html;
+}
+
+function adminFleetSkeleton(count) {
+  var html = '';
+  for (var i = 0; i < count; i++) {
+    html += '<div class="admin-live-skeleton">' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div>' +
+        '<div style="flex:1">' +
+          '<div class="adm-skeleton" style="height:14px;width:' + (45 + (i * 9) % 20) + '%;border-radius:4px;margin-bottom:6px"></div>' +
+          '<div class="adm-skeleton" style="height:12px;width:' + (55 + (i * 13) % 25) + '%;border-radius:4px"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  return html;
+}
+
+function pilotInitials(name) {
+  var parts = String(name || '').trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (parts[0] || '?').substring(0, 2).toUpperCase();
+}
+
 async function refreshAdminLiveFlights() {
   const listEl = document.getElementById('admin-live-list');
   const fleetEl = document.getElementById('admin-fleet-list');
   const metaEl = document.getElementById('admin-live-meta');
+  const flightCountEl = document.getElementById('admin-live-flight-count');
+  const fleetCountEl = document.getElementById('admin-live-fleet-count');
   if (!listEl) return;
   try {
     const res = await apiFetch('/api/admin/live-flights');
@@ -421,30 +463,43 @@ async function refreshAdminLiveFlights() {
     const fleet = Array.isArray(data.fleet) ? data.fleet : [];
     const dispatching = Array.isArray(data.dispatching) ? data.dispatching : [];
     if (metaEl) {
-      metaEl.textContent =
-        flights.length + ' active flight(s) · ' +
-        fleet.length + ' pilot(s) reporting GPS · ' +
-        dispatching.length + ' dispatching · updates every 5s';
+      metaEl.innerHTML =
+        adminLiveChip('admin-live-chip-dot--green', flights.length, flights.length === 1 ? 'flight' : 'flights') +
+        adminLiveChip('admin-live-chip-dot--blue', fleet.length, fleet.length === 1 ? 'pilot GPS' : 'pilots GPS') +
+        (dispatching.length ? adminLiveChip('admin-live-chip-dot--amber', dispatching.length, 'dispatching') : '');
     }
+    if (flightCountEl) flightCountEl.textContent = flights.length + dispatching.length;
+    if (fleetCountEl) fleetCountEl.textContent = fleet.length;
     if (!flights.length) {
-      listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No flights in transit right now. Active trips will appear here.</div></div>';
+      listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="adm-empty-title">No live flights right now</div><div class="adm-empty-sub">Dispatches will appear here as they go live.</div></div>';
     } else {
       listEl.innerHTML = flights.map(function (f) {
-        const op = f.operator;
-        const gps = op && op.lat != null
+        var op = f.operator;
+        var gps = op && op.lat != null
           ? op.lat.toFixed(4) + ', ' + op.lng.toFixed(4)
           : 'GPS pending';
+        var statusDot = f.status === 'dispatching' ? 'admin-live-chip-dot--amber' : 'admin-live-chip-dot--blue';
         return (
           '<div class="admin-flight-card">' +
             '<div class="admin-flight-top">' +
-              '<div class="admin-flight-route">' + escapeHtml(f.pickup.name) + ' → ' + escapeHtml(f.dest.name) + '</div>' +
-              statusBadgeHtml(f.status) +
+              '<span class="admin-live-chip-dot ' + statusDot + '" style="margin-top:2px"></span>' +
+              '<span class="admin-flight-route">' + escapeHtml(f.pickup.name) + ' → ' + escapeHtml(f.dest.name) + '</span>' +
             '</div>' +
+            '<div class="admin-flight-status">' + statusBadgeHtml(f.status) + '</div>' +
             '<div class="admin-flight-meta">' +
-              'IRG-' + String(f.id).padStart(5, '0') + ' · ' + escapeHtml(f.customer.name) +
-              '<br>Pilot: ' + escapeHtml(op ? op.name : 'Unassigned') + ' · ' + gps +
-              '<br>' + escapeHtml(f.service) + ' · ' + (f.distanceKm != null ? f.distanceKm + ' km' : '—') +
-              (f.carbonSavedKg != null ? ' · CO₂ saved ' + f.carbonSavedKg + ' kg' : '') +
+              '<div class="admin-flight-meta-row">' +
+                '<span>IRG-' + String(f.id).padStart(5, '0') + '</span>' +
+                '<span>·</span>' +
+                '<span>' + escapeHtml(f.customer.name) + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>Pilot: ' + escapeHtml(op ? op.name : 'Unassigned') + '</span>' +
+                '<span class="admin-flight-time">' + gps + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>' + escapeHtml(f.service) + ' · ' + (f.distanceKm != null ? f.distanceKm + ' km' : '—') +
+                (f.carbonSavedKg != null ? ' · CO₂ ' + f.carbonSavedKg + ' kg' : '') + '</span>' +
+              '</div>' +
             '</div>' +
           '</div>'
         );
@@ -452,17 +507,25 @@ async function refreshAdminLiveFlights() {
     }
     if (fleetEl) {
       if (!fleet.length) {
-        fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">No pilots reporting GPS yet. On-duty pilots will appear here.</div></div>';
+        fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="adm-empty-title">No pilots reporting GPS</div><div class="adm-empty-sub">On-duty pilots will appear here.</div></div>';
       } else {
         fleetEl.innerHTML = fleet.map(function (p) {
-          const gps = p.lat != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : '—';
-          const status = p.inTransit
+          var gps = p.lat != null ? p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) : '—';
+          var gpsFresh = p.lat != null;
+          var status = p.inTransit
             ? statusBadgeHtml(p.tripStatus || 'flying')
             : '<span class="op-status-badge op-badge--green">Available</span>';
           return (
             '<div class="admin-fleet-row">' +
-              '<div><b>' + escapeHtml(p.name) + '</b><br>' + gps + '</div>' +
-              '<div>' + status + '</div>' +
+              '<div class="admin-fleet-avatar">' + pilotInitials(p.name) + '</div>' +
+              '<div>' +
+                '<div class="admin-fleet-name">' + escapeHtml(p.name) + '</div>' +
+                '<div class="admin-fleet-gps">' +
+                  '<span class="admin-fleet-gps-dot ' + (gpsFresh ? 'admin-fleet-gps-fresh' : 'admin-fleet-gps-stale') + '"></span>' +
+                  gps +
+                '</div>' +
+              '</div>' +
+              '<div class="admin-fleet-status">' + status + '</div>' +
             '</div>'
           );
         }).join('');
@@ -513,8 +576,8 @@ async function refreshAdminLiveFlights() {
       }
     }
   } catch (e) {
-    listEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Could not load live flights.</div></div>';
-    if (fleetEl) fleetEl.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Could not load fleet.</div></div>';
+    listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load live flights</div><div class="adm-empty-sub">Check your connection and try again.</div></div>';
+    if (fleetEl) fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load fleet</div><div class="adm-empty-sub">Check your connection and try again.</div></div>';
   }
 }
 
