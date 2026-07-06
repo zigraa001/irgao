@@ -8356,6 +8356,7 @@ function showCompanySection(name) {
   if (name === 'flights') loadCompanyFlights();
   if (name === 'pilots') loadCompanyPilots();
   if (name === 'pricing') loadCompanyPricing();
+  if (name === 'profile') loadCompanyProfile();
 }
 
 function toggleCompanyDrawer() {
@@ -8998,5 +8999,220 @@ async function loadCompanyDashboard() {
     }
   } catch (e) {
     host.innerHTML = '<div class="adm-error">Could not reach the server. <button type="button" onclick="loadCompanyDashboard()" class="adm-retry-btn">Retry</button></div>';
+  }
+}
+
+// ===== Company Profile (US-129) =====
+
+var _cpProfileData = null;
+var _cpEditMode = false;
+
+function cpProfileSkeleton() {
+  return '<div class="adm-grid"><div class="adm-span-12"><div class="adm-skeleton" style="height:200px;border-radius:12px"></div></div></div>' +
+    '<div class="adm-grid adm-grid--spaced" style="margin-top:16px"><div class="adm-span-12"><div class="adm-skeleton" style="height:120px;border-radius:12px"></div></div></div>';
+}
+
+function cpEsc(v) {
+  if (v === null || v === undefined) return '';
+  var d = document.createElement('div');
+  d.textContent = String(v);
+  return d.innerHTML;
+}
+
+function cpPendingBanner(pending) {
+  if (!pending) return '';
+  var payload;
+  try { payload = typeof pending.payload === 'string' ? JSON.parse(pending.payload) : pending.payload; } catch (e) { payload = {}; }
+  var rows = '';
+  var keys = Object.keys(payload);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var d = payload[k];
+    rows += '<tr><td class="cprf-diff-field">' + cpEsc(k) + '</td>' +
+      '<td class="cprf-diff-old">' + cpEsc(d.from || '(empty)') + '</td>' +
+      '<td class="cprf-diff-arrow">&#x2192;</td>' +
+      '<td class="cprf-diff-new">' + cpEsc(d.to || '(empty)') + '</td></tr>';
+  }
+  return '<div class="cprf-pending-banner">' +
+    '<div class="cprf-pending-title">Pending change request</div>' +
+    '<p class="cprf-pending-sub">Submitted ' + new Date(pending.createdAt).toLocaleDateString('en-IN') + ' &mdash; awaiting IraGo admin approval</p>' +
+    '<table class="cprf-diff-table"><thead><tr><th>Field</th><th>Current</th><th></th><th>Proposed</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<button type="button" class="cprf-cancel-btn" onclick="cancelCompanyRequest(' + pending.id + ')">Cancel request</button>' +
+    '</div>';
+}
+
+function cpProfileReadView(c, offices, pending) {
+  var logo = c.logoUrl ? '<img src="' + cpEsc(c.logoUrl) + '" alt="Logo" class="cprf-logo">' : '<div class="cprf-logo-placeholder">No logo</div>';
+  var officeList = '';
+  if (offices && offices.length) {
+    for (var i = 0; i < offices.length; i++) {
+      var o = offices[i];
+      officeList += '<div class="cprf-office">' + cpEsc(o.city) + (o.address ? ' &mdash; ' + cpEsc(o.address) : '') + '</div>';
+    }
+  } else {
+    officeList = '<div class="cprf-office cprf-empty">No offices on file</div>';
+  }
+
+  return cpPendingBanner(pending) +
+    '<div class="cprf-card">' +
+      '<div class="cprf-card-head">' +
+        '<div class="cprf-logo-wrap">' + logo + '</div>' +
+        '<div class="cprf-title-wrap">' +
+          '<h2 class="cprf-name">' + cpEsc(c.name) + '</h2>' +
+          '<span class="cprf-code-chip">' + cpEsc(c.code) + '</span>' +
+        '</div>' +
+        '<button type="button" class="cprf-edit-btn" onclick="enterCompanyProfileEdit()"' + (pending ? ' disabled title="Cancel pending request first"' : '') + '>Edit profile</button>' +
+      '</div>' +
+      '<div class="cprf-details">' +
+        '<div class="cprf-detail-row"><span class="cprf-label">Contact email</span><span class="cprf-value">' + cpEsc(c.contactEmail || '(not set)') + '</span></div>' +
+        '<div class="cprf-detail-row"><span class="cprf-label">Contact phone</span><span class="cprf-value">' + cpEsc(c.contactPhone || '(not set)') + '</span></div>' +
+        '<div class="cprf-detail-row"><span class="cprf-label">Description</span><span class="cprf-value">' + cpEsc(c.description || '(not set)') + '</span></div>' +
+        '<div class="cprf-detail-row"><span class="cprf-label">Rating</span><span class="cprf-value">' + (c.rating || 'N/A') + '</span></div>' +
+        '<div class="cprf-detail-row"><span class="cprf-label">Fleet size</span><span class="cprf-value">' + (c.fleetSize || 0) + '</span></div>' +
+      '</div>' +
+      '<div class="cprf-offices-section">' +
+        '<h3 class="cprf-section-title">Regional Offices</h3>' +
+        officeList +
+      '</div>' +
+    '</div>';
+}
+
+function cpProfileEditForm(c) {
+  return '<div class="cprf-card">' +
+    '<div class="cprf-card-head">' +
+      '<h2 class="cprf-name">Edit Company Profile</h2>' +
+      '<span class="cprf-code-chip">' + cpEsc(c.code) + ' (read-only)</span>' +
+    '</div>' +
+    '<div class="cprf-form">' +
+      '<div class="cprf-field"><label class="cprf-field-label">Company name</label><input type="text" id="cprf-name" class="cprf-input" value="' + cpEsc(c.name || '') + '" maxlength="255"></div>' +
+      '<div class="cprf-field"><label class="cprf-field-label">Logo URL</label><input type="text" id="cprf-logo" class="cprf-input" value="' + cpEsc(c.logoUrl || '') + '" maxlength="512" placeholder="https://..."></div>' +
+      '<div class="cprf-field"><label class="cprf-field-label">Contact email</label><input type="email" id="cprf-email" class="cprf-input" value="' + cpEsc(c.contactEmail || '') + '" maxlength="255"></div>' +
+      '<div class="cprf-field"><label class="cprf-field-label">Contact phone</label><input type="text" id="cprf-phone" class="cprf-input" value="' + cpEsc(c.contactPhone || '') + '" maxlength="32"></div>' +
+      '<div class="cprf-field"><label class="cprf-field-label">Description</label><textarea id="cprf-desc" class="cprf-input cprf-textarea" maxlength="512" rows="3">' + cpEsc(c.description || '') + '</textarea></div>' +
+      '<div id="cprf-error" class="auth-error" hidden></div>' +
+      '<div id="cprf-success" class="admin-add-success" hidden></div>' +
+      '<div class="cprf-form-actions">' +
+        '<button type="button" class="das-ghost-btn" onclick="exitCompanyProfileEdit()">Cancel</button>' +
+        '<button type="button" class="cprf-submit-btn" onclick="submitCompanyProfileRequest()">Submit for approval</button>' +
+      '</div>' +
+    '</div>' +
+    '</div>';
+}
+
+function cpRequestHistoryHtml(requests) {
+  if (!requests || !requests.length) return '';
+  var statusClass = { pending: 'cprf-chip--amber', approved: 'cprf-chip--green', rejected: 'cprf-chip--red', superseded: 'cprf-chip--gray', cancelled: 'cprf-chip--gray' };
+  var html = '<div class="cprf-history"><h3 class="cprf-section-title">Request History</h3>';
+  for (var i = 0; i < requests.length; i++) {
+    var r = requests[i];
+    var cls = statusClass[r.status] || 'cprf-chip--gray';
+    var payload;
+    try { payload = typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload; } catch (e) { payload = {}; }
+    var fields = Object.keys(payload).join(', ');
+    html += '<div class="cprf-history-item">' +
+      '<div class="cprf-history-head">' +
+        '<span class="cprf-chip ' + cls + '">' + cpEsc(r.status) + '</span>' +
+        '<span class="cprf-history-date">' + new Date(r.createdAt).toLocaleDateString('en-IN') + '</span>' +
+      '</div>' +
+      '<div class="cprf-history-fields">Fields: ' + cpEsc(fields || 'none') + '</div>' +
+      (r.adminNote ? '<div class="cprf-history-note">Admin note: ' + cpEsc(r.adminNote) + '</div>' : '') +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderCompanyProfile() {
+  var host = document.getElementById('company-profile-body');
+  if (!host || !_cpProfileData) return;
+  var d = _cpProfileData;
+  if (_cpEditMode) {
+    host.innerHTML = cpProfileEditForm(d.company);
+  } else {
+    host.innerHTML = cpProfileReadView(d.company, d.offices, d.pending) + cpRequestHistoryHtml(d.requests || []);
+  }
+}
+
+async function loadCompanyProfile() {
+  var host = document.getElementById('company-profile-body');
+  if (!host) return;
+  host.innerHTML = cpProfileSkeleton();
+  _cpEditMode = false;
+  try {
+    var resp = await fetch('/api/company/profile', { credentials: 'include' });
+    if (!resp.ok) throw new Error('status ' + resp.status);
+    var data = await resp.json();
+    var histResp = await fetch('/api/company/requests', { credentials: 'include' });
+    var histData = histResp.ok ? await histResp.json() : { requests: [] };
+    _cpProfileData = Object.assign({}, data, { requests: histData.requests || [] });
+    renderCompanyProfile();
+  } catch (e) {
+    host.innerHTML = '<div class="adm-error">Could not load profile. <button type="button" onclick="loadCompanyProfile()" class="adm-retry-btn">Retry</button></div>';
+  }
+}
+
+function enterCompanyProfileEdit() {
+  _cpEditMode = true;
+  renderCompanyProfile();
+}
+
+function exitCompanyProfileEdit() {
+  _cpEditMode = false;
+  renderCompanyProfile();
+}
+
+async function submitCompanyProfileRequest() {
+  var errEl = document.getElementById('cprf-error');
+  var sucEl = document.getElementById('cprf-success');
+  if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+  if (sucEl) { sucEl.hidden = true; sucEl.textContent = ''; }
+
+  var changes = {};
+  var nameVal = (document.getElementById('cprf-name') || {}).value;
+  var logoVal = (document.getElementById('cprf-logo') || {}).value;
+  var emailVal = (document.getElementById('cprf-email') || {}).value;
+  var phoneVal = (document.getElementById('cprf-phone') || {}).value;
+  var descVal = (document.getElementById('cprf-desc') || {}).value;
+
+  if (nameVal !== undefined) changes.name = nameVal.trim();
+  if (logoVal !== undefined) changes.logoUrl = logoVal.trim();
+  if (emailVal !== undefined) changes.contactEmail = emailVal.trim();
+  if (phoneVal !== undefined) changes.contactPhone = phoneVal.trim();
+  if (descVal !== undefined) changes.description = descVal.trim();
+
+  try {
+    var resp = await fetch('/api/company/profile-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ changes: changes })
+    });
+    var data = await resp.json();
+    if (!resp.ok) {
+      if (errEl) { errEl.textContent = data.error || 'Failed to submit.'; errEl.hidden = false; }
+      return;
+    }
+    if (sucEl) { sucEl.textContent = 'Sent for IraGo approval!'; sucEl.hidden = false; }
+    setTimeout(function () { loadCompanyProfile(); }, 1200);
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Could not reach server.'; errEl.hidden = false; }
+  }
+}
+
+async function cancelCompanyRequest(requestId) {
+  if (!confirm('Cancel this pending change request?')) return;
+  try {
+    var resp = await fetch('/api/company/requests/' + requestId + '/cancel', {
+      method: 'POST',
+      credentials: 'include'
+    });
+    var data = await resp.json();
+    if (!resp.ok) {
+      alert(data.error || 'Failed to cancel.');
+      return;
+    }
+    loadCompanyProfile();
+  } catch (e) {
+    alert('Could not reach server.');
   }
 }

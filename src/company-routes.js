@@ -426,4 +426,138 @@ router.post("/pricing", async (req, res) => {
   }
 });
 
+// ── Company Profile (US-129) ───────────────────────────────────────────
+
+const PROFILE_WHITELIST = ["name", "logoUrl", "contactEmail", "contactPhone", "description"];
+
+router.get("/profile", async (req, res) => {
+  const cid = req.company.id;
+  try {
+    const company = await queryOne(
+      "SELECT id, name, code, logoUrl, contactEmail, contactPhone, description, rating, fleetSize, active FROM operator_companies WHERE id = ?",
+      [cid]
+    );
+    if (!company) return res.status(404).json({ error: "Company not found." });
+    const offices = await query(
+      "SELECT id, city, address, lat, lng, contactPhone, radiusKm FROM regional_offices WHERE companyId = ? AND active = 1 ORDER BY city",
+      [cid]
+    );
+    const pending = await queryOne(
+      "SELECT id, payload, createdAt FROM company_change_requests WHERE companyId = ? AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
+      [cid]
+    );
+    res.json({ company, offices, pending: pending || null });
+  } catch (err) {
+    console.error("[company] profile GET failed:", err.message);
+    res.status(500).json({ error: "Could not load profile." });
+  }
+});
+
+router.post("/profile-request", async (req, res) => {
+  const cid = req.company.id;
+  const { changes } = req.body;
+  if (!changes || typeof changes !== "object") {
+    return res.status(400).json({ error: "Missing changes object." });
+  }
+
+  const filtered = {};
+  for (const key of PROFILE_WHITELIST) {
+    if (key in changes) filtered[key] = changes[key];
+  }
+  if (Object.keys(filtered).length === 0) {
+    return res.status(400).json({ error: "No editable fields in request." });
+  }
+
+  if (filtered.name !== undefined && (typeof filtered.name !== "string" || filtered.name.trim().length < 2 || filtered.name.trim().length > 255)) {
+    return res.status(400).json({ error: "Name must be 2-255 characters." });
+  }
+  if (filtered.contactEmail !== undefined && filtered.contactEmail !== "" && !EMAIL_RE.test(filtered.contactEmail)) {
+    return res.status(400).json({ error: "Invalid email format." });
+  }
+  if (filtered.contactPhone !== undefined && filtered.contactPhone !== "" && !/^[\d+\-() ]{6,32}$/.test(filtered.contactPhone)) {
+    return res.status(400).json({ error: "Invalid phone format." });
+  }
+  if (filtered.description !== undefined && typeof filtered.description === "string" && filtered.description.length > 512) {
+    return res.status(400).json({ error: "Description must be at most 512 characters." });
+  }
+  if (filtered.logoUrl !== undefined && filtered.logoUrl !== "" && (typeof filtered.logoUrl !== "string" || filtered.logoUrl.length > 512)) {
+    return res.status(400).json({ error: "Logo URL must be at most 512 characters." });
+  }
+
+  try {
+    const current = await queryOne(
+      "SELECT name, logoUrl, contactEmail, contactPhone, description FROM operator_companies WHERE id = ?",
+      [cid]
+    );
+    if (!current) return res.status(404).json({ error: "Company not found." });
+
+    const diff = {};
+    for (const key of Object.keys(filtered)) {
+      const proposed = (filtered[key] === undefined || filtered[key] === null) ? "" : String(filtered[key]).trim();
+      const existing = (current[key] === undefined || current[key] === null) ? "" : String(current[key]);
+      if (proposed !== existing) {
+        diff[key] = { from: existing, to: proposed };
+      }
+    }
+    if (Object.keys(diff).length === 0) {
+      return res.status(400).json({ error: "No changes detected vs current values." });
+    }
+
+    await query(
+      "UPDATE company_change_requests SET status = 'superseded' WHERE companyId = ? AND status = 'pending'",
+      [cid]
+    );
+
+    const result = await query(
+      "INSERT INTO company_change_requests (companyId, requestedBy, type, payload) VALUES (?, ?, 'profile', ?)",
+      [cid, req.user.id, JSON.stringify(diff)]
+    );
+
+    res.json({ ok: true, requestId: result.insertId, diff });
+  } catch (err) {
+    console.error("[company] profile-request POST failed:", err.message);
+    res.status(500).json({ error: "Could not submit change request." });
+  }
+});
+
+router.get("/requests", async (req, res) => {
+  const cid = req.company.id;
+  try {
+    const rows = await query(
+      "SELECT id, type, payload, status, adminNote, createdAt, decidedAt FROM company_change_requests WHERE companyId = ? ORDER BY createdAt DESC LIMIT 50",
+      [cid]
+    );
+    res.json({ requests: rows });
+  } catch (err) {
+    console.error("[company] requests GET failed:", err.message);
+    res.status(500).json({ error: "Could not load requests." });
+  }
+});
+
+router.post("/requests/:id/cancel", async (req, res) => {
+  const cid = req.company.id;
+  const reqId = Number(req.params.id);
+  if (!Number.isFinite(reqId)) {
+    return res.status(400).json({ error: "Invalid request ID." });
+  }
+  try {
+    const row = await queryOne(
+      "SELECT id, companyId, status FROM company_change_requests WHERE id = ?",
+      [reqId]
+    );
+    if (!row) return res.status(404).json({ error: "Request not found." });
+    if (row.companyId !== cid) return res.status(403).json({ error: "Not your request." });
+    if (row.status !== "pending") return res.status(400).json({ error: "Only pending requests can be cancelled." });
+
+    await query(
+      "UPDATE company_change_requests SET status = 'cancelled', decidedAt = NOW() WHERE id = ?",
+      [reqId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[company] request cancel failed:", err.message);
+    res.status(500).json({ error: "Could not cancel request." });
+  }
+});
+
 module.exports = router;

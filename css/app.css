@@ -6515,6 +6515,246 @@ body.admin-map-fs { overflow: hidden; }
   }
 }
 
+/* ── Company Profile (US-129) ── */
+.cprf-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.cprf-card-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.cprf-logo-wrap { flex-shrink: 0; }
+.cprf-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+.cprf-logo-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #9ca3af;
+}
+.cprf-title-wrap { flex: 1; min-width: 0; }
+.cprf-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+.cprf-code-chip {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.cprf-edit-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cprf-edit-btn:hover { background: #1d4ed8; }
+.cprf-edit-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cprf-details { margin-bottom: 20px; }
+.cprf-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.cprf-detail-row:last-child { border-bottom: none; }
+.cprf-label {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+.cprf-value {
+  color: #111827;
+  font-size: 14px;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+.cprf-offices-section { margin-top: 8px; }
+.cprf-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 12px;
+}
+.cprf-office {
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #374151;
+}
+.cprf-office.cprf-empty { color: #9ca3af; font-style: italic; }
+
+/* Pending banner */
+.cprf-pending-banner {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.cprf-pending-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+.cprf-pending-sub {
+  font-size: 13px;
+  color: #a16207;
+  margin: 0 0 12px;
+}
+.cprf-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.cprf-diff-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #fcd34d;
+  color: #92400e;
+  font-weight: 600;
+}
+.cprf-diff-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #fef3c7;
+}
+.cprf-diff-field { font-weight: 600; color: #374151; }
+.cprf-diff-old { color: #dc2626; text-decoration: line-through; }
+.cprf-diff-arrow { color: #9ca3af; text-align: center; }
+.cprf-diff-new { color: #059669; font-weight: 600; }
+.cprf-cancel-btn {
+  background: none;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cprf-cancel-btn:hover { background: #fef2f2; }
+
+/* Edit form */
+.cprf-form { display: flex; flex-direction: column; gap: 16px; }
+.cprf-field { display: flex; flex-direction: column; gap: 4px; }
+.cprf-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.cprf-input {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  background: #fff;
+  transition: border-color .15s;
+}
+.cprf-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+.cprf-textarea {
+  height: auto;
+  padding: 10px 14px;
+  resize: vertical;
+}
+.cprf-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.cprf-submit-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cprf-submit-btn:hover { background: #1d4ed8; }
+
+/* Request history */
+.cprf-history { margin-top: 8px; }
+.cprf-history-item {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+.cprf-history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.cprf-chip {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.cprf-chip--amber { background: #fef3c7; color: #92400e; }
+.cprf-chip--green { background: #d1fae5; color: #065f46; }
+.cprf-chip--red { background: #fee2e2; color: #991b1b; }
+.cprf-chip--gray { background: #f3f4f6; color: #6b7280; }
+.cprf-history-date { font-size: 12px; color: #9ca3af; }
+.cprf-history-fields { font-size: 13px; color: #6b7280; }
+.cprf-history-note {
+  font-size: 13px;
+  color: #991b1b;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .cprf-card { padding: 16px; }
+  .cprf-card-head { flex-direction: column; align-items: flex-start; }
+  .cprf-detail-row { flex-direction: column; gap: 2px; }
+  .cprf-value { text-align: left; max-width: 100%; }
+  .cprf-diff-table { font-size: 12px; }
+}
+
 /* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {
   .confirm-card,

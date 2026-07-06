@@ -452,6 +452,25 @@ async function initSchema() {
     INDEX idx_cpc_company (companyId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  // Editable contact columns on operator_companies (US-129).
+  await ensureColumn("operator_companies", "contactEmail", "contactEmail VARCHAR(255) NULL");
+  await ensureColumn("operator_companies", "contactPhone", "contactPhone VARCHAR(32) NULL");
+  await ensureColumn("operator_companies", "description", "description VARCHAR(512) NULL");
+
+  await query(`CREATE TABLE IF NOT EXISTS company_change_requests (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    companyId   INT NOT NULL,
+    requestedBy INT NOT NULL,
+    type        VARCHAR(32) NOT NULL DEFAULT 'profile',
+    payload     LONGTEXT NOT NULL,
+    status      VARCHAR(32) NOT NULL DEFAULT 'pending',
+    adminId     INT NULL,
+    adminNote   VARCHAR(512) NULL,
+    createdAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    decidedAt   DATETIME NULL,
+    INDEX idx_ccr_company (companyId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // ── Drone rental system ────────────────────────────────────────────────
 
   await query(`CREATE TABLE IF NOT EXISTS drone_services (
