@@ -114,9 +114,11 @@ function initMap() {
 // Small on-map pill showing whether the map is auto-following the plane or
 // paused after a manual pan (with a live countdown to resume). Also makes the
 // 30s-pause behaviour visible so it's obvious it's working.
+var FOLLOW_PILL_PLANE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>';
+var FOLLOW_PILL_MAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>';
+
 function updateFollowPill() {
   var pill = document.getElementById('map-follow-pill');
-  // Only relevant during an active ride (tracking panel visible + following on).
   var tracking = document.getElementById('tracking-panel');
   var active = rideFollowOn && tracking && tracking.classList.contains('active');
   if (!active) {
@@ -126,22 +128,19 @@ function updateFollowPill() {
   if (!pill) {
     pill = document.createElement('div');
     pill.id = 'map-follow-pill';
-    pill.style.cssText =
-      'position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1000;' +
-      'background:rgba(30,58,95,0.92);color:#fff;font:600 12px/1 Inter,sans-serif;' +
-      'padding:7px 14px;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,0.25);pointer-events:none;';
+    pill.className = 'map-follow-pill';
     var mapEl = document.getElementById('map');
     if (mapEl) mapEl.appendChild(pill);
   }
   var remaining = RIDE_FOLLOW_RESUME_MS - (Date.now() - userMovedMapAt);
   if (remaining > 0) {
-    pill.textContent = '🗺️ Map paused · auto-follow in ' + Math.ceil(remaining / 1000) + 's';
-    pill.style.background = 'rgba(180,83,9,0.92)';
+    pill.innerHTML = FOLLOW_PILL_MAP + ' Map paused &middot; auto-follow in ' + Math.ceil(remaining / 1000) + 's';
+    pill.classList.add('map-follow-pill--paused');
   } else {
-    pill.textContent = '✈️ Following your plane';
-    pill.style.background = 'rgba(30,58,95,0.92)';
+    pill.innerHTML = FOLLOW_PILL_PLANE + ' Following your plane';
+    pill.classList.remove('map-follow-pill--paused');
   }
-  pill.style.display = 'block';
+  pill.style.display = 'flex';
 }
 
 function paddedBoundsFromMap(targetMap, padRatio) {

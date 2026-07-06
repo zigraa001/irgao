@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us113-ride-results">
+  <link rel="stylesheet" href="/css/app.css?v=us114-booking-desktop">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -294,10 +294,26 @@
     <span class="customer-role-badge">Passenger Dashboard</span>
 
     <div class="nav-profile">
-      <button type="button" class="nav-bell" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
-      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
-      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
-      <div class="nav-avatar nav-profile-avatar" id="nav-avatar" title="Your account">G</div>
+      <div class="nav-profile-menu">
+        <div class="nav-avatar nav-profile-avatar" id="nav-avatar" title="Your account" tabindex="0" role="button" aria-expanded="false" aria-haspopup="true">G</div>
+        <div class="nav-profile-dropdown" id="booking-nav-dropdown" hidden>
+          <div class="nav-profile-dropdown-head">
+            <p class="nav-profile-dropdown-name profile-display-name">Guest</p>
+            <p class="nav-profile-dropdown-email profile-display-email">--</p>
+            <span class="nav-profile-dropdown-role profile-display-role">Passenger</span>
+          </div>
+          <div class="nav-profile-dropdown-divider"></div>
+          <button type="button" class="nav-profile-dropdown-item js-open-profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My Profile
+          </button>
+          <div class="nav-profile-dropdown-divider"></div>
+          <a href="/logout" class="nav-profile-dropdown-item nav-profile-dropdown-logout nav-logout-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log out
+          </a>
+        </div>
+      </div>
     </div>
   </nav>
 
@@ -309,8 +325,8 @@
       <!-- LOCATION INPUTS -->
       <div class="panel-section" id="panel-locations">
         <h3 class="panel-step-heading" id="panel-locations-heading">Where are you going?</h3>
-        <div class="location-inputs" style="margin-top:10px;">
-          <div class="loc-input-group" style="position:relative;">
+        <div class="location-inputs">
+          <div class="loc-input-group">
             <div class="loc-dot loc-dot-pickup"></div>
             <div class="loc-input-wrap">
               <input class="loc-input" id="pickup-input" type="text" placeholder="Pickup from..." autocomplete="off">
@@ -320,7 +336,7 @@
             </div>
             <div class="loc-suggest" id="pickup-suggest" style="display:none;"></div>
           </div>
-          <div class="loc-input-group" style="position:relative;">
+          <div class="loc-input-group">
             <div class="loc-dot loc-dot-dest"></div>
             <div class="loc-input-wrap">
               <input class="loc-input" id="dest-input" type="text" placeholder="Where to?" autocomplete="off">
@@ -389,37 +405,17 @@
         <div class="auth-error" id="booking-error"></div>
       </div>
 
-      <div class="panel-section profile-account-section">
-        <div class="op-section-title">My Profile</div>
-        <div class="profile-account-card">
-          <div class="profile-account-row">
-            <div class="profile-account-avatar profile-display-avatar">G</div>
-            <div class="profile-account-info">
-              <p class="profile-account-name profile-display-name">Guest</p>
-              <p class="profile-account-email profile-display-email">—</p>
-            </div>
-          </div>
-          <div class="profile-account-meta">
-            <span class="profile-account-detail profile-display-role">Passenger</span>
-            <span class="profile-account-detail profile-display-verified">Email verified</span>
-          </div>
-          <div class="profile-account-actions">
-            <button type="button" class="btn-profile-outline js-open-profile">Account settings</button>
-            <a href="/logout" class="btn-profile-logout nav-logout-link">Log out</a>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Drone Rental Panel (shown when Drones tab is active) -->
     <div class="booking-panel" id="drone-panel" style="display:none;">
       <div class="panel-section">
 
-        <div class="drone-category-filter" id="drone-category-filter" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;">
+        <div class="drone-category-filter" id="drone-category-filter">
           <button type="button" class="dashboard-pill drone-cat-btn active" data-cat="all" onclick="filterDroneCategory('all')">All</button>
         </div>
 
-        <div id="drone-services-list" style="margin-top:12px;">
+        <div id="drone-services-list">
           <div class="pd-loading">Fetching drone services...</div>
         </div>
       </div>
@@ -431,8 +427,8 @@
       </div>
 
       <!-- My drone bookings -->
-      <div class="panel-section" id="drone-my-bookings-section" style="margin-top:8px;">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;">My Drone Bookings</div>
+      <div class="panel-section" id="drone-my-bookings-section">
+        <div class="drone-my-heading">My Drone Bookings</div>
         <div id="drone-my-bookings">
           <div class="op-empty-sub">Loading your bookings...</div>
         </div>
@@ -443,9 +439,9 @@
     <div id="map"></div>
     <div class="route-info-bar" id="route-info-bar"></div>
     <div class="booking-map-legend" id="booking-map-legend">
-      <span style="color:#D97706">&#9644; Restricted</span>
-      <span style="color:#DC2626">&#9644; No-fly</span>
-      <span id="booking-map-legend-count" style="margin-left:auto;color:var(--gray-500)"></span>
+      <span class="legend-restricted">&#9644; Restricted</span>
+      <span class="legend-nofly">&#9644; No-fly</span>
+      <span id="booking-map-legend-count" class="legend-count"></span>
     </div>
 
     <!-- Tracking Panel (overlaid on map) -->
@@ -540,7 +536,7 @@
           <span id="tracking-vehicle-name">—</span>
         </div>
         <div class="tracking-cost" id="tracking-cost">—</div>
-        <button class="btn-end-tracking" id="tracking-cancel-btn" onclick="cancelBooking()">Cancel ride</button>
+        <button class="btn-end-tracking btn-end-tracking--destructive" id="tracking-cancel-btn" onclick="cancelBooking()">Cancel ride</button>
         <button class="btn-end-tracking" id="tracking-end-btn" onclick="endTracking()" style="display:none;">Done</button>
       </div>
       <div class="tracking-rate" id="tracking-rate" style="display:none;">
@@ -1598,6 +1594,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=c0460e8e"></script>
+<script src="/js/app.bundle.js?v=bc41cf46"></script>
 </body>
 </html>

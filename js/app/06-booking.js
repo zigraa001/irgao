@@ -122,6 +122,12 @@ const popularRoutes = {
   ],
 };
 
+var ROUTE_ICON_SVG = {
+  taxi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>',
+  golden: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  shuttle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+};
+
 function renderPopularRoutes(service) {
   const area = document.getElementById('popular-routes-area');
   const routes = popularRoutes[service] || [];
@@ -129,12 +135,7 @@ function renderPopularRoutes(service) {
   const color = colorMap[service];
   const hoverCls = service === 'golden' ? 'red-hover' : service === 'shuttle' ? 'green-hover' : '';
   const iconCls = `route-chip-icon-${color}`;
-
-  const titleIcon = service === 'taxi'
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2"/></svg>'
-    : service === 'golden'
-    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>';
+  const routeSvg = ROUTE_ICON_SVG[service] || ROUTE_ICON_SVG.taxi;
 
   const titleText = service === 'taxi' ? 'Popular Routes' : service === 'golden' ? 'Emergency Routes' : 'Shuttle Routes';
   var routeCount = routes.length;
@@ -142,18 +143,18 @@ function renderPopularRoutes(service) {
   area.innerHTML = `
     <button type="button" class="disclosure-toggle popular-routes-toggle" onclick="togglePopularRoutes()" style="color:var(--${color})">
       <svg class="disclosure-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      ${titleIcon} ${titleText}
+      ${routeSvg} ${titleText}
       <span class="disclosure-count">${routeCount}</span>
     </button>
     <div class="disclosure-content popular-routes-list" style="display:none;">
     ${routes.map(r => `
       <button class="route-chip ${hoverCls}" onclick="selectRoute('${r.from}','${r.to}')">
-        <div class="route-chip-icon ${iconCls}">${r.emoji}</div>
+        <div class="route-chip-icon ${iconCls}">${routeSvg}</div>
         <div class="route-chip-info">
           <div class="route-chip-name">${r.from} &rarr; ${r.to}</div>
           <div class="route-chip-meta">
             <span>${r.meta}</span>
-            <span style="background:var(--${color}-light);color:var(--${color}-dark);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:600;">${r.tag}</span>
+            <span class="route-tag-chip route-tag-chip--${color}">${r.tag}</span>
           </div>
         </div>
         <div class="route-chip-arrow">

@@ -2803,6 +2803,8 @@ textarea:focus-visible, a:focus-visible {
   cursor: pointer;
 }
 .btn-end-tracking:hover { background: var(--gray-100); border-color: var(--gray-300); }
+.btn-end-tracking--destructive { color: #B91C1C; border-color: rgba(239, 68, 68, 0.35); }
+.btn-end-tracking--destructive:hover { background: rgba(239, 68, 68, 0.08); color: #991B1B; border-color: rgba(239, 68, 68, 0.5); }
 
 /* Steps timeline */
 .tracking-steps {
@@ -7054,6 +7056,103 @@ body.admin-map-fs { overflow: hidden; }
   .appr-diff-table { font-size: 12px; }
   .appr-actions { flex-direction: column; }
 }
+
+/* ═══════════════════════════════════════════
+   US-114: BOOKING DESKTOP SPACE
+   ═══════════════════════════════════════════ */
+
+/* Drone catalog full-width on desktop */
+@media (min-width: 901px) {
+  #drone-panel {
+    width: 100%;
+    max-width: 100%;
+    border-right: none;
+  }
+  #drone-panel > .panel-section {
+    max-width: 1160px;
+    margin-inline: auto;
+    width: 100%;
+  }
+}
+
+/* Tracking panel docked into left panel slot on desktop */
+@media (min-width: 901px) {
+  .tracking-panel.active {
+    position: static;
+    transform: none;
+    width: 420px;
+    max-width: 420px;
+    bottom: auto;
+    left: auto;
+    border-right: 1px solid var(--border-subtle);
+    border-radius: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    order: -1;
+    flex-shrink: 0;
+    animation: none;
+    box-shadow: none;
+  }
+}
+
+/* Follow pill on map */
+.map-follow-pill {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(30, 58, 95, 0.92);
+  color: var(--surface);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.map-follow-pill--paused { background: rgba(180, 83, 9, 0.92); }
+.map-follow-pill svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Booking map legend zone-color classes */
+.legend-restricted { color: var(--amber-dark); }
+.legend-nofly { color: var(--red-dark); }
+.legend-count { margin-left: auto; color: var(--gray-500); }
+
+/* Drone panel inline-style extraction */
+.drone-category-filter { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+#drone-services-list { margin-top: 12px; }
+#drone-my-bookings-section { margin-top: 8px; }
+.drone-my-heading { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+
+/* Location inputs spacing */
+.location-inputs { margin-top: 10px; }
+
+/* Route tag chip (extracted from inline style) */
+.route-tag-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+}
+.route-tag-chip--blue { background: var(--blue-light); color: var(--blue-dark); }
+.route-tag-chip--red { background: var(--red-light); color: var(--red-dark); }
+.route-tag-chip--green { background: var(--green-light); color: var(--green-dark, #166534); }
+
+/* Route chip icon SVG sizing */
+.route-chip-icon svg { width: 18px; height: 18px; }
+
+/* Booking nav: hide bell in booking view */
+#booking-view .nav-bell { display: none; }
+
+/* Booking nav dropdown toggle */
+#booking-view .nav-profile { position: relative; }
+#booking-view .nav-text-btn { display: none; }
 
 /* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {

@@ -280,6 +280,19 @@ async function loadProfileQuickStats() {
   } catch (e) { /* ignore */ }
 }
 
+function closeAllProfileDropdowns() {
+  var closed = false;
+  document.querySelectorAll('.nav-profile-dropdown').forEach(function (dd) {
+    if (!dd.hidden) {
+      dd.hidden = true;
+      var avatar = dd.parentElement && dd.parentElement.querySelector('.nav-profile-avatar');
+      if (avatar) avatar.setAttribute('aria-expanded', 'false');
+      closed = true;
+    }
+  });
+  return closed;
+}
+
 function bindProfileActions() {
   document.querySelectorAll('.js-open-profile').forEach(function (btn) {
     if (btn.dataset.profileOpenBound) return;
@@ -301,12 +314,38 @@ function bindProfileActions() {
     if (avatar.dataset.profileAvatarBound) return;
     avatar.dataset.profileAvatarBound = '1';
     avatar.style.cursor = 'pointer';
-    avatar.addEventListener('click', function () { openProfileModal(); });
+    var dropdown = avatar.parentElement && avatar.parentElement.querySelector('.nav-profile-dropdown');
+    if (dropdown) {
+      avatar.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isOpen = !dropdown.hidden;
+        closeAllProfileDropdowns();
+        if (!isOpen) {
+          dropdown.hidden = false;
+          avatar.setAttribute('aria-expanded', 'true');
+        }
+      });
+      avatar.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          avatar.click();
+        }
+      });
+    } else {
+      avatar.addEventListener('click', function () { openProfileModal(); });
+    }
   });
+  if (!window._profileDropdownDocBound) {
+    window._profileDropdownDocBound = true;
+    document.addEventListener('click', function () { closeAllProfileDropdowns(); });
+  }
   if (!window._profileEscapeBound) {
     window._profileEscapeBound = true;
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeProfileModal();
+      if (e.key === 'Escape') {
+        if (closeAllProfileDropdowns()) return;
+        closeProfileModal();
+      }
     });
   }
 }
