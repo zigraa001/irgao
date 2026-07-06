@@ -63,6 +63,7 @@ textarea:focus-visible, a:focus-visible {
 
   --blue: #0057B8;
   --blue-dark: #004494;
+  --blue-sky: #7DD3FC;
   --blue-light: #D6E4F5;
   --blue-50: #EFF4FA;
   --blue-glow: rgba(0, 87, 184, 0.12);
@@ -5057,13 +5058,30 @@ body.admin-map-fs { overflow: hidden; }
 .pricing-save-btn { margin-top: 0; }
 .pricing-msg { margin-top: 8px; font-size: 13px; }
 .pricing-input-sm { width: 80px; min-height: 44px; }
-.admin-bar-chart { display: flex; align-items: flex-end; height: 120px; gap: 2px; padding: 0 4px; }
-.admin-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 20px; }
-.admin-bar-fill { width: 100%; max-width: 24px; background: var(--blue); border-radius: 4px 4px 0 0; min-height: 2px; }
-.admin-bar-label { font-size: 9px; color: var(--gray-500); margin-top: 2px; writing-mode: vertical-rl; transform: rotate(180deg); height: 40px; overflow: hidden; }
-.admin-payouts-wrap { overflow-x: auto; max-width: 800px; }
-.td-commission { color: var(--amber-dark); }
-.td-bold { font-weight: 600; }
+.admin-bar-chart { display: flex; align-items: flex-end; min-height: 240px; gap: 3px; padding: 0; flex: 1; background: repeating-linear-gradient(to top, transparent, transparent calc(25% - 1px), var(--border-subtle) calc(25% - 1px), var(--border-subtle) 25%); }
+.admin-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 12px; cursor: default; }
+.admin-bar-fill { width: 100%; max-width: 28px; background: linear-gradient(to top, var(--blue), var(--blue-sky)); border-radius: 4px 4px 0 0; min-height: 2px; transition: opacity 0.15s ease; }
+.admin-bar-col:hover .admin-bar-fill { opacity: 0.75; }
+.admin-bar-label { font-size: 10px; color: var(--gray-500); margin-top: 6px; text-align: center; white-space: nowrap; display: none; }
+.admin-bar-chart .admin-bar-col:nth-child(5n) .admin-bar-label { display: block; }
+.admin-bar-chart .admin-bar-col:first-child .admin-bar-label { display: block; }
+.admin-bar-chart .admin-bar-col:last-child .admin-bar-label { display: block; }
+.admin-payouts-wrap { overflow-x: auto; }
+.td-commission { color: var(--gray-500); }
+.td-bold { font-weight: 600; color: var(--navy); }
+.adm-chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.adm-chart-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+.adm-chart-total { font-size: 13px; color: var(--gray-500); font-variant-numeric: tabular-nums; }
+.adm-chart-area { position: relative; padding-left: 64px; }
+.adm-chart-ymax { position: absolute; left: 0; top: 0; font-size: 11px; color: var(--gray-500); font-variant-numeric: tabular-nums; }
+.adm-chart-empty { padding: 32px 20px; text-align: center; color: var(--gray-500); font-size: 13px; }
+.adm-pilot-cell { display: flex; align-items: center; gap: 8px; }
+.adm-pilot-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), var(--blue)); color: var(--surface); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.adm-num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+.adm-error { padding: 24px; text-align: center; color: var(--gray-500); font-size: 14px; background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); }
+.adm-retry-btn { background: none; border: none; color: var(--blue); cursor: pointer; font-weight: 600; text-decoration: underline; font-size: 14px; }
+.adm-retry-btn:hover { color: var(--blue-dark); }
+.adm-skeleton-chart { height: 280px; border-radius: var(--radius-lg); }
 .admin-missing-meta { color: var(--amber-dark); }
 .badge-ml { margin-left: 8px; }
 .op-status-badge-sm { font-size: 11px; }
