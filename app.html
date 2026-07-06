@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us112-design-a11y">
+  <link rel="stylesheet" href="/css/app.css?v=us113-ride-results">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -367,12 +367,13 @@
 
       <!-- RIDES LIST (hidden until search) -->
       <div class="panel-section rides-section" id="rides-area" style="display:none;">
+        <div id="route-summary-card" class="route-summary-card" hidden></div>
         <div class="rides-header">
           <button type="button" class="rides-back-btn" id="rides-back-btn" onclick="backToSearch()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </button>
           <h3 id="rides-title">Choose your flight</h3>
-          <span><span class="live-dot"></span> Live</span>
+          <span id="rides-live-badge" style="display:none;"><span class="live-dot"></span> Live</span>
         </div>
         <div id="rides-list"></div>
         <div id="rides-details-toggle" class="rides-details-toggle" style="display:none;">
@@ -1597,6 +1598,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=82c02fdc"></script>
+<script src="/js/app.bundle.js?v=c0460e8e"></script>
 </body>
 </html>

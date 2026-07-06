@@ -1438,7 +1438,7 @@ function swapLocations() {
 
 function useCurrentLocation() {
   if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser.');
+    showToast('Geolocation is not supported by your browser', 'error');
     return;
   }
   const btn = document.querySelector('.loc-gps-btn');

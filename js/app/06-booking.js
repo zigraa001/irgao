@@ -192,7 +192,10 @@ function selectRoute(from, to) {
   const toCoord = demoLocations[to];
   if (fromCoord) setPickup(fromCoord, from, true);
   if (toCoord) setTimeout(() => setDest(toCoord, to, true), 200);
-  document.getElementById('popular-routes-area').innerHTML = '';
+  var content = document.querySelector('.popular-routes-list');
+  var toggle = document.querySelector('.popular-routes-toggle');
+  if (content) content.style.display = 'none';
+  if (toggle) toggle.classList.remove('open');
 }
 
 // ── Ride Data ──
@@ -228,7 +231,7 @@ function calcDistance() {
 async function searchRides() {
   hideLandingPicker();
   if (!pickupCoord && destCoord) {
-    showAuthError('booking-error', 'Set your pickup point');
+    showAuthError('booking-error', 'Where are you flying from?');
     var pi = document.getElementById('pickup-input');
     if (pi) pi.focus();
     document.querySelector('.location-inputs').classList.add('highlight-pickup');
@@ -237,13 +240,17 @@ async function searchRides() {
     }, 2000);
     return;
   }
-  if (!pickupCoord || !destCoord) {
-    if (!pickupCoord) setPickup([28.6315, 77.2167], 'Connaught Place, Delhi');
-    if (!destCoord) {
-      setTimeout(() => setDest([28.5830, 77.0780], 'Dwarka Helipad, Delhi'), 300);
-      setTimeout(searchRides, 700);
-      return;
-    }
+  if (!destCoord && pickupCoord) {
+    showAuthError('booking-error', 'Where are you flying to?');
+    var di = document.getElementById('dest-input');
+    if (di) di.focus();
+    return;
+  }
+  if (!pickupCoord && !destCoord) {
+    showAuthError('booking-error', 'Set your pickup and destination to search flights');
+    var pi2 = document.getElementById('pickup-input');
+    if (pi2) pi2.focus();
+    return;
   }
 
   var searchBtnText = document.getElementById('search-btn-text');
@@ -259,6 +266,10 @@ async function searchRides() {
   const title = document.getElementById('rides-title');
 
   title.textContent = currentService === 'taxi' ? 'Choose your flight' : currentService === 'golden' ? 'Air ambulances nearby' : 'Shuttle routes';
+
+  // Live badge: hide until we know operators are actually nearby
+  var liveBadge = document.getElementById('rides-live-badge');
+  if (liveBadge) liveBadge.style.display = 'none';
 
   // Route feasibility pre-check at booking time: alert the customer if the
   // route crosses / lands in a restricted (no-fly) zone and surface the 3
@@ -302,6 +313,18 @@ async function searchRides() {
       list.insertAdjacentHTML('beforeend', bypassBanner);
     }
   } catch (e) { /* degrade: if feasibility call fails, fall through to rides */ }
+
+  // Live badge: show only when real nearby operators exist
+  if (liveBadge) {
+    var realOps = currentNearbyOperators.filter(function(c) { return c.name; });
+    if (realOps.length > 0) {
+      liveBadge.innerHTML = '<span class="live-dot"></span> ' + realOps.length + ' pilot' + (realOps.length === 1 ? '' : 's') + ' nearby';
+      liveBadge.style.display = '';
+    }
+  }
+
+  // Route summary card at top of results
+  renderRouteSummary(draft);
 
   var hasDiscount = currentDiscount && currentDiscount.eligible;
   var discountRate = hasDiscount ? 0.50 : 0;
@@ -357,16 +380,8 @@ async function searchRides() {
         ${companyChipHtml}
         <div class="ride-stats">
           <div class="ride-stat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            ${time} min fly
-          </div>
-          <div class="ride-stat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>
-            ${Math.round(dist)} km
-          </div>
-          <div class="ride-stat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            ~${roadTime} min road
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2"/></svg>
+            ~3.5x faster than road
           </div>
           <div class="ride-stat carbon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -879,8 +894,11 @@ function backToSearch() {
   if (detailsToggle) detailsToggle.style.display = 'none';
   var detailsContent = document.getElementById('rides-details-content');
   if (detailsContent) detailsContent.innerHTML = '';
+  var summaryCard = document.getElementById('route-summary-card');
+  if (summaryCard) summaryCard.hidden = true;
   hideAuthError('booking-error');
   selectedRide = null;
+  renderPopularRoutes(currentService);
 }
 
 function renderCarbonComparison(cc) {
@@ -932,12 +950,49 @@ function renderCarbonComparison(cc) {
   '</div>';
 }
 
+function renderRouteSummary(draft) {
+  var host = document.getElementById('route-summary-card');
+  if (!host) return;
+  if (!draft || !draft.pickup || !draft.dest) { host.hidden = true; return; }
+  var distKm = draft.distanceKm != null ? Math.round(draft.distanceKm) : Math.round(calcDistance());
+  host.innerHTML =
+    '<div class="route-summary-dots">' +
+      '<span class="route-summary-dot route-summary-dot--pickup"></span>' +
+      '<span class="route-summary-line"></span>' +
+      '<span class="route-summary-dot route-summary-dot--dest"></span>' +
+    '</div>' +
+    '<div class="route-summary-text">' +
+      '<span class="route-summary-label">' + escapeHtml(draft.pickup.name) + '</span>' +
+      '<span class="route-summary-arrow">&rarr;</span>' +
+      '<span class="route-summary-label">' + escapeHtml(draft.dest.name) + '</span>' +
+      '<span class="route-summary-dist">&middot; ' + distKm + ' km</span>' +
+    '</div>' +
+    '<button type="button" class="route-summary-edit" id="route-summary-edit-btn">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+      ' Edit' +
+    '</button>';
+  host.hidden = false;
+  var editBtn = document.getElementById('route-summary-edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', function () { editRouteFromSummary(); });
+  }
+}
+
+function editRouteFromSummary() {
+  document.getElementById('panel-locations').style.display = 'block';
+  var summaryCard = document.getElementById('route-summary-card');
+  if (summaryCard) summaryCard.hidden = true;
+}
+
 function resetBooking() {
   hideLandingPicker();
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
   document.getElementById('panel-locations').style.display = 'block';
   document.getElementById('booking-panel').style.display = 'flex';
+  renderPopularRoutes(currentService);
+  var summaryCard = document.getElementById('route-summary-card');
+  if (summaryCard) summaryCard.hidden = true;
   var detailsToggle = document.getElementById('rides-details-toggle');
   if (detailsToggle) detailsToggle.style.display = 'none';
   var detailsContent = document.getElementById('rides-details-content');

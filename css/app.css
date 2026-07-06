@@ -1437,6 +1437,73 @@ textarea:focus-visible, a:focus-visible {
 .rides-section {
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.route-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+.route-summary-card[hidden] { display: none; }
+.route-summary-dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.route-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.route-summary-dot--pickup { background: var(--blue); }
+.route-summary-dot--dest { background: var(--navy); }
+.route-summary-line {
+  width: 2px;
+  height: 10px;
+  background: var(--border-subtle);
+}
+.route-summary-text {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--gray-700);
+  line-height: 1.4;
+  min-width: 0;
+}
+.route-summary-label {
+  font-weight: 600;
+}
+.route-summary-arrow {
+  margin: 0 4px;
+  color: var(--gray-400);
+}
+.route-summary-dist {
+  color: var(--gray-500);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+.route-summary-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
+  background: none;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.route-summary-edit:hover { background: var(--blue-50); }
+.route-summary-edit:focus-visible { box-shadow: var(--focus-ring); }
+
 .rides-back-btn {
   width: 32px;
   height: 32px;
