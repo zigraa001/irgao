@@ -3283,7 +3283,7 @@ textarea:focus-visible, a:focus-visible {
 }
 .op-btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-300); }
 
-/* Pricing form fields (US-009) */
+/* Pricing form fields (US-009, US-106) */
 .pricing-field { margin-bottom: 16px; }
 .pricing-field-label {
   display: block;
@@ -3305,6 +3305,39 @@ textarea:focus-visible, a:focus-visible {
   font-size: 14px;
   font-weight: 500;
   color: var(--gray-600);
+}
+.pricing-group { margin-bottom: 20px; }
+.pricing-group:last-child { margin-bottom: 0; }
+.pricing-group-heading {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-500);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.pricing-group-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+}
+.pricing-last-saved {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+.adm-pricing-layout {
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .adm-pricing-layout .adm-span-8,
+  .adm-pricing-layout .adm-span-4 {
+    grid-column: span 12;
+  }
+}
+@media (max-width: 768px) {
+  .pricing-group-fields { grid-template-columns: 1fr; }
 }
 
 /* Admin list rows (compliance, changelog, etc.) (US-009) */
@@ -4609,8 +4642,8 @@ body.admin-map-fs { overflow: hidden; }
 .admin-toggle-label {
   position: relative;
   display: inline-block;
-  width: 52px;
-  height: 32px;
+  width: 48px;
+  height: 28px;
   flex-shrink: 0;
 }
 .admin-toggle-label input {
@@ -4623,15 +4656,15 @@ body.admin-map-fs { overflow: hidden; }
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
   background: var(--gray-300);
-  border-radius: 32px;
+  border-radius: 28px;
   transition: background var(--transition);
 }
 .admin-toggle-knob {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 28px;
-  height: 28px;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
   background: var(--surface);
   border-radius: 50%;
   transition: left var(--transition);
@@ -4641,6 +4674,121 @@ body.admin-map-fs { overflow: hidden; }
   margin-top: 12px;
   font-size: 12px;
   color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Pricing timeline (US-106) ── */
+.adm-timeline-card { padding: 20px; }
+.adm-timeline-heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 16px;
+}
+.adm-timeline-list {
+  position: relative;
+  padding-left: 20px;
+}
+.adm-timeline-list::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--border-subtle);
+  border-radius: 1px;
+}
+.adm-timeline-entry {
+  position: relative;
+  padding-bottom: 16px;
+}
+.adm-timeline-entry:last-child { padding-bottom: 0; }
+.adm-timeline-dot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--blue);
+  z-index: 1;
+}
+.adm-timeline-entry:first-child .adm-timeline-dot {
+  background: var(--blue);
+}
+.adm-timeline-who {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+.adm-timeline-when {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 1px;
+}
+.adm-timeline-what {
+  font-size: 13px;
+  color: var(--gray-700);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.adm-timeline-empty {
+  font-size: 13px;
+  color: var(--gray-500);
+  padding: 12px 0;
+}
+
+/* ── Settings cards (US-106) ── */
+.adm-settings-grid { align-items: start; }
+.adm-settings-card { position: relative; }
+.adm-settings-card-body { flex: 1; min-width: 0; }
+.adm-settings-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+.adm-settings-icon--amber {
+  background: var(--amber-50, #FFF7ED);
+  color: var(--amber-dark, #92400E);
+}
+.adm-settings-icon--blue {
+  background: var(--blue-50);
+  color: var(--blue);
+}
+.adm-settings-card .admin-toggle-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.adm-settings-card .admin-toggle-desc {
+  font-size: 13px;
+}
+
+/* Toggle status chips (US-106) */
+.adm-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  flex-shrink: 0;
+}
+.adm-toggle-chip--on {
+  background: var(--green-50, #F0FDF4);
+  color: var(--green-dark, #166534);
 }
 
 /* ── Admin logs (US-009) ── */
@@ -4861,7 +5009,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-meta-footer { margin-top: 14px; }
 .admin-section-card { margin-bottom: 20px; }
 .admin-section-card--narrow { }
-.admin-section-card--spaced { margin-top: 16px; }
+.admin-section-card--spaced { }
 .admin-add-note {
   display: flex; align-items: flex-start; gap: 8px;
   font-size: 13px; color: var(--blue-dark, #1E40AF); line-height: 1.4;
@@ -4906,10 +5054,7 @@ body.admin-map-fs { overflow: hidden; }
 .drone-bookings-list-wrap { margin-top: 12px; }
 .drone-form-desc { width: 100%; margin-top: 6px; }
 .drone-form-actions { display: flex; gap: 8px; margin-top: 8px; }
-.admin-changelog-row { flex-direction: column; align-items: stretch; }
-.admin-changelog-row .admin-list-meta { margin-left: 8px; }
-.admin-changelog-row .admin-list-meta + .admin-list-meta { margin-left: 0; margin-top: 2px; }
-.pricing-save-btn { margin-top: 8px; width: 100%; }
+.pricing-save-btn { margin-top: 0; }
 .pricing-msg { margin-top: 8px; font-size: 13px; }
 .pricing-input-sm { width: 80px; min-height: 44px; }
 .admin-bar-chart { display: flex; align-items: flex-end; height: 120px; gap: 2px; padding: 0 4px; }

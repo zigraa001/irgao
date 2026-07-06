@@ -1876,6 +1876,12 @@ function showAdminSection(name) {
   }
 }
 
+function settingsStatusChip(on, activeText, inactiveText) {
+  var cls = on ? 'adm-toggle-chip adm-toggle-chip--on' : 'adm-toggle-chip';
+  var text = on ? activeText : inactiveText;
+  return '<span class="' + cls + '">' + text + '</span>';
+}
+
 async function loadAdminSettings() {
   try {
     const res = await apiFetch('/api/admin/settings');
@@ -1886,31 +1892,31 @@ async function loadAdminSettings() {
     const knob = document.getElementById('admin-toggle-knob');
     const track = knob?.previousElementSibling;
     if (cb) cb.checked = !!s.emergencyNoFlyBypass;
-    if (knob) knob.style.left = s.emergencyNoFlyBypass ? '25px' : '3px';
-    if (track) track.style.background = s.emergencyNoFlyBypass ? 'var(--red)' : 'var(--gray-300)';
+    if (knob) knob.style.left = s.emergencyNoFlyBypass ? '22px' : '3px';
+    if (track) track.style.background = s.emergencyNoFlyBypass ? 'var(--green)' : 'var(--gray-300)';
     const status = document.getElementById('admin-bypass-status');
-    if (status) status.textContent = s.emergencyNoFlyBypass
-      ? 'Active — Golden Hour bookings can enter no-fly zones with ATC clearance.'
-      : 'Disabled — all services obey no-fly restrictions.';
+    if (status) status.innerHTML = s.emergencyNoFlyBypass
+      ? settingsStatusChip(true, 'Active', '') + ' Golden Hour bookings can enter no-fly zones with ATC clearance.'
+      : settingsStatusChip(false, '', 'Disabled') + ' All services obey no-fly restrictions.';
 
     const dcb = document.getElementById('admin-toggle-demo-mode');
     const dknob = document.getElementById('admin-toggle-demo-knob');
     const dtrack = dknob?.previousElementSibling;
     if (dcb) dcb.checked = !!s.demoMode;
-    if (dknob) dknob.style.left = s.demoMode ? '25px' : '3px';
-    if (dtrack) dtrack.style.background = s.demoMode ? 'var(--blue)' : 'var(--gray-300)';
+    if (dknob) dknob.style.left = s.demoMode ? '22px' : '3px';
+    if (dtrack) dtrack.style.background = s.demoMode ? 'var(--green)' : 'var(--gray-300)';
     const dstatus = document.getElementById('admin-demo-status');
-    if (dstatus) dstatus.textContent = s.demoMode
-      ? 'Active — paid bookings auto-run a demo pilot through the full ride.'
-      : 'Disabled — paid bookings dispatch to real on-duty pilots.';
+    if (dstatus) dstatus.innerHTML = s.demoMode
+      ? settingsStatusChip(true, 'Active', '') + ' Paid bookings auto-run a demo pilot through the full ride.'
+      : settingsStatusChip(false, '', 'Disabled') + ' Paid bookings dispatch to real on-duty pilots.';
   } catch {}
 }
 
 async function toggleDemoMode(on) {
   const knob = document.getElementById('admin-toggle-demo-knob');
   const track = knob?.previousElementSibling;
-  if (knob) knob.style.left = on ? '25px' : '3px';
-  if (track) track.style.background = on ? 'var(--blue)' : 'var(--gray-300)';
+  if (knob) knob.style.left = on ? '22px' : '3px';
+  if (track) track.style.background = on ? 'var(--green)' : 'var(--gray-300)';
   try {
     const res = await apiFetch('/api/admin/settings', {
       method: 'PATCH',
@@ -1921,9 +1927,9 @@ async function toggleDemoMode(on) {
     const data = await res.json();
     const s = data.settings || {};
     const status = document.getElementById('admin-demo-status');
-    if (status) status.textContent = s.demoMode
-      ? 'Active — paid bookings auto-run a demo pilot through the full ride.'
-      : 'Disabled — paid bookings dispatch to real on-duty pilots.';
+    if (status) status.innerHTML = s.demoMode
+      ? settingsStatusChip(true, 'Active', '') + ' Paid bookings auto-run a demo pilot through the full ride.'
+      : settingsStatusChip(false, '', 'Disabled') + ' Paid bookings dispatch to real on-duty pilots.';
     showToast(s.demoMode ? 'Demo mode enabled' : 'Demo mode disabled', 'success');
   } catch {
     showToast('Network error', 'error');
@@ -1933,8 +1939,8 @@ async function toggleDemoMode(on) {
 async function toggleEmergencyBypass(on) {
   const knob = document.getElementById('admin-toggle-knob');
   const track = knob?.previousElementSibling;
-  if (knob) knob.style.left = on ? '25px' : '3px';
-  if (track) track.style.background = on ? 'var(--red)' : 'var(--gray-300)';
+  if (knob) knob.style.left = on ? '22px' : '3px';
+  if (track) track.style.background = on ? 'var(--green)' : 'var(--gray-300)';
   try {
     const res = await apiFetch('/api/admin/settings', {
       method: 'PATCH',
@@ -1948,9 +1954,9 @@ async function toggleEmergencyBypass(on) {
     const data = await res.json();
     const s = data.settings || {};
     const status = document.getElementById('admin-bypass-status');
-    if (status) status.textContent = s.emergencyNoFlyBypass
-      ? 'Active — Golden Hour bookings can enter no-fly zones with ATC clearance.'
-      : 'Disabled — all services obey no-fly restrictions.';
+    if (status) status.innerHTML = s.emergencyNoFlyBypass
+      ? settingsStatusChip(true, 'Active', '') + ' Golden Hour bookings can enter no-fly zones with ATC clearance.'
+      : settingsStatusChip(false, '', 'Disabled') + ' All services obey no-fly restrictions.';
     showToast(s.emergencyNoFlyBypass ? 'Emergency bypass enabled' : 'Emergency bypass disabled', 'success');
   } catch {
     showToast('Network error', 'error');
@@ -2780,19 +2786,35 @@ async function doAddUser() {
 // ── Admin Pricing Config ─────────────────────────────────────────────────
 var _adminPricingData = null;
 
-var PRICING_FIELDS = [
-  { key: 'gstPercent', label: 'GST Rate', desc: 'Goods and Services Tax applied on all fares' },
-  { key: 'platformCommissionPercent', label: 'Platform Commission', desc: 'IraGo commission deducted from operator payouts' },
-  { key: 'emergencySurchargePercent', label: 'Medical Emergency Surcharge', desc: 'Added to Golden Hour (air ambulance) bookings' },
-  { key: 'urgencySurchargePercent', label: 'Urgency Travel Surcharge', desc: 'Added to urgency-flagged bookings' },
-  { key: 'weatherHighSurchargePercent', label: 'Adverse Weather Surcharge', desc: 'Applied when wind >40 km/h or visibility <3 km' },
-  { key: 'weatherMediumSurchargePercent', label: 'Weather Caution Surcharge', desc: 'Applied when wind >20 km/h or visibility <5 km' },
+var PRICING_GROUPS = [
+  { heading: 'Taxes', fields: [
+    { key: 'gstPercent', label: 'GST Rate', desc: 'Goods and Services Tax applied on all fares' },
+  ]},
+  { heading: 'Commission', fields: [
+    { key: 'platformCommissionPercent', label: 'Platform Commission', desc: 'IraGo commission deducted from operator payouts' },
+  ]},
+  { heading: 'Surcharges', fields: [
+    { key: 'emergencySurchargePercent', label: 'Medical Emergency Surcharge', desc: 'Added to Golden Hour (air ambulance) bookings' },
+    { key: 'urgencySurchargePercent', label: 'Urgency Travel Surcharge', desc: 'Added to urgency-flagged bookings' },
+    { key: 'weatherHighSurchargePercent', label: 'Adverse Weather Surcharge', desc: 'Applied when wind >40 km/h or visibility <3 km' },
+    { key: 'weatherMediumSurchargePercent', label: 'Weather Caution Surcharge', desc: 'Applied when wind >20 km/h or visibility <5 km' },
+  ]},
 ];
+
+var PRICING_FIELDS = PRICING_GROUPS.reduce(function (acc, g) { return acc.concat(g.fields); }, []);
+
+function adminPricingSkeleton() {
+  var rows = '';
+  for (var i = 0; i < 6; i++) {
+    rows += '<div class="adm-skeleton" style="height:44px;margin-bottom:12px;width:' + (i % 2 === 0 ? '100%' : '80%') + '"></div>';
+  }
+  return '<div class="adm-skeleton" style="height:14px;width:100px;margin-bottom:16px"></div>' + rows;
+}
 
 async function loadAdminPricing() {
   var host = document.getElementById('admin-pricing-form');
   if (!host) return;
-  host.innerHTML = '<div class="pd-loading">Fetching pricing configuration...</div>';
+  host.innerHTML = adminPricingSkeleton();
   try {
     var res = await apiFetch('/api/admin/pricing');
     var data = await res.json();
@@ -2808,19 +2830,36 @@ async function loadAdminPricing() {
 function renderPricingForm(config) {
   var host = document.getElementById('admin-pricing-form');
   if (!host) return;
-  var rows = PRICING_FIELDS.map(function (f) {
-    var val = config[f.key] ? config[f.key].value : 0;
-    return '<div class="pricing-field">' +
-      '<label class="pricing-field-label">' + escapeHtml(f.label) + '</label>' +
-      '<div class="pricing-field-desc">' + escapeHtml(f.desc) + '</div>' +
-      '<div class="pricing-field-input">' +
-        '<input type="number" id="pricing-' + f.key + '" class="pd-input pricing-input-sm" value="' + val + '" min="0" max="100" step="0.5">' +
-        '<span class="pricing-field-unit">%</span>' +
-      '</div>' +
+  var lastSaved = '';
+  PRICING_FIELDS.forEach(function (f) {
+    if (config[f.key] && config[f.key].updatedAt) {
+      var d = new Date(config[f.key].updatedAt);
+      var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      if (!lastSaved || config[f.key].updatedAt > lastSaved) lastSaved = ts;
+    }
+  });
+  var groups = PRICING_GROUPS.map(function (g) {
+    var fields = g.fields.map(function (f) {
+      var val = config[f.key] ? config[f.key].value : 0;
+      return '<div class="pricing-field">' +
+        '<label class="pricing-field-label">' + escapeHtml(f.label) + '</label>' +
+        '<div class="pricing-field-desc">' + escapeHtml(f.desc) + '</div>' +
+        '<div class="pricing-field-input">' +
+          '<input type="number" id="pricing-' + f.key + '" class="pd-input pricing-input-sm" value="' + val + '" min="0" max="100" step="0.5">' +
+          '<span class="pricing-field-unit">%</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="pricing-group">' +
+      '<div class="pricing-group-heading">' + escapeHtml(g.heading) + '</div>' +
+      '<div class="pricing-group-fields">' + fields + '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = rows +
-    '<button type="button" class="btn-auth-primary pricing-save-btn" onclick="saveAdminPricing()">Save Pricing Config</button>' +
+  host.innerHTML = groups +
+    '<div class="admin-form-footer">' +
+      (lastSaved ? '<span class="pricing-last-saved">Last saved ' + lastSaved + '</span>' : '') +
+      '<button type="button" class="btn-auth-primary pricing-save-btn" onclick="saveAdminPricing()">Save Pricing Config</button>' +
+    '</div>' +
     '<div id="admin-pricing-msg" class="pricing-msg"></div>';
 }
 
@@ -2853,19 +2892,31 @@ async function saveAdminPricing() {
 
 function renderPricingChangelog(changelog) {
   var host = document.getElementById('admin-pricing-changelog');
-  if (!host || !changelog.length) { if (host) host.innerHTML = ''; return; }
+  if (!host) return;
+  if (!changelog.length) {
+    host.innerHTML = '<div class="admin-form-card adm-timeline-card">' +
+      '<div class="adm-timeline-heading">Change History</div>' +
+      '<div class="adm-timeline-empty">No changes recorded yet.</div>' +
+    '</div>';
+    return;
+  }
   var rows = changelog.map(function (entry) {
     var d = new Date(entry.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return '<div class="admin-list-row admin-changelog-row">' +
-      '<div><span class="admin-list-name">' + escapeHtml(entry.adminName) + '</span>' +
-      '<span class="admin-list-meta">' + ts + '</span></div>' +
-      '<div class="admin-list-meta">' + escapeHtml(entry.changes) + '</div>' +
+    return '<div class="adm-timeline-entry">' +
+      '<div class="adm-timeline-dot"></div>' +
+      '<div class="adm-timeline-body">' +
+        '<div class="adm-timeline-who">' + escapeHtml(entry.adminName) + '</div>' +
+        '<div class="adm-timeline-when">' + ts + '</div>' +
+        '<div class="adm-timeline-what">' + escapeHtml(entry.changes) + '</div>' +
+      '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
-    '<div class="op-section-title drone-sub-title">Change History</div>' + rows + '</div>';
+  host.innerHTML = '<div class="admin-form-card adm-timeline-card">' +
+    '<div class="adm-timeline-heading">Change History</div>' +
+    '<div class="adm-timeline-list">' + rows + '</div>' +
+  '</div>';
 }
 
 // ── Admin Revenue Dashboard ─────────────────────────────────────────────

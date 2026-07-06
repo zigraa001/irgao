@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us105-companies">
+  <link rel="stylesheet" href="/css/app.css?v=us106-pricing-settings">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1177,10 +1177,15 @@
             <div class="adm-header-sub">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</div>
           </div>
         </div>
-        <div id="admin-pricing-form" class="admin-form-card admin-section-card">
-          <div class="pd-loading">Fetching pricing configuration...</div>
+        <div class="adm-grid adm-pricing-layout">
+          <div id="admin-pricing-form" class="admin-form-card adm-span-8">
+            <div class="adm-skeleton" style="height:14px;width:100px;margin-bottom:16px"></div>
+            <div class="adm-skeleton" style="height:44px;margin-bottom:12px"></div>
+            <div class="adm-skeleton" style="height:44px;margin-bottom:12px;width:80%"></div>
+            <div class="adm-skeleton" style="height:44px;margin-bottom:12px"></div>
+          </div>
+          <div id="admin-pricing-changelog" class="adm-span-4"></div>
         </div>
-        <div id="admin-pricing-changelog" class="admin-section-card"></div>
       </section>
 
       <!-- Revenue Dashboard section -->
@@ -1221,38 +1226,46 @@
             <div class="adm-header-sub">Runtime toggles for platform behaviour. Changes take effect immediately.</div>
           </div>
         </div>
-        <div class="admin-form-card admin-section-card--narrow">
-          <div class="admin-toggle-row">
-            <div>
-              <div class="admin-toggle-title">Emergency No-Fly Bypass</div>
-              <div class="admin-toggle-desc">
-                When enabled, Golden Hour (air ambulance) bookings can bypass no-fly zone restrictions. ATC clearance is requested automatically.
+        <div class="adm-grid adm-settings-grid">
+          <div class="admin-form-card adm-span-6 adm-settings-card">
+            <div class="admin-toggle-row">
+              <div class="adm-settings-card-body">
+                <div class="adm-settings-icon adm-settings-icon--amber">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="admin-toggle-title">Emergency No-Fly Bypass</div>
+                <div class="admin-toggle-desc">
+                  When enabled, Golden Hour (air ambulance) bookings can bypass no-fly zone restrictions. ATC clearance is requested automatically.
+                </div>
               </div>
+              <label class="admin-toggle-label">
+                <input type="checkbox" id="admin-toggle-emergency-bypass" onchange="toggleEmergencyBypass(this.checked)">
+                <span class="admin-toggle-track"></span>
+                <span id="admin-toggle-knob" class="admin-toggle-knob"></span>
+              </label>
             </div>
-            <label class="admin-toggle-label">
-              <input type="checkbox" id="admin-toggle-emergency-bypass" onchange="toggleEmergencyBypass(this.checked)">
-              <span class="admin-toggle-track"></span>
-              <span id="admin-toggle-knob" class="admin-toggle-knob"></span>
-            </label>
+            <div id="admin-bypass-status" class="admin-toggle-status"></div>
           </div>
-          <div id="admin-bypass-status" class="admin-toggle-status"></div>
-        </div>
 
-        <div class="admin-form-card admin-section-card--narrow admin-section-card--spaced">
-          <div class="admin-toggle-row">
-            <div>
-              <div class="admin-toggle-title">Demo Mode</div>
-              <div class="admin-toggle-desc">
-                When enabled, every paid booking auto-assigns a demo pilot and plays the full animated ride lifecycle — no live operators needed. Turn off for real dispatch to on-duty pilots.
+          <div class="admin-form-card adm-span-6 adm-settings-card">
+            <div class="admin-toggle-row">
+              <div class="adm-settings-card-body">
+                <div class="adm-settings-icon adm-settings-icon--blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div class="admin-toggle-title">Demo Mode</div>
+                <div class="admin-toggle-desc">
+                  When enabled, every paid booking auto-assigns a demo pilot and plays the full animated ride lifecycle -- no live operators needed. Turn off for real dispatch to on-duty pilots.
+                </div>
               </div>
+              <label class="admin-toggle-label">
+                <input type="checkbox" id="admin-toggle-demo-mode" onchange="toggleDemoMode(this.checked)">
+                <span class="admin-toggle-track"></span>
+                <span id="admin-toggle-demo-knob" class="admin-toggle-knob"></span>
+              </label>
             </div>
-            <label class="admin-toggle-label">
-              <input type="checkbox" id="admin-toggle-demo-mode" onchange="toggleDemoMode(this.checked)">
-              <span class="admin-toggle-track"></span>
-              <span id="admin-toggle-demo-knob" class="admin-toggle-knob"></span>
-            </label>
+            <div id="admin-demo-status" class="admin-toggle-status"></div>
           </div>
-          <div id="admin-demo-status" class="admin-toggle-status"></div>
         </div>
       </section>
 
@@ -1399,6 +1412,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=c797317f"></script>
+<script src="/js/app.bundle.js?v=9907ae26"></script>
 </body>
 </html>
