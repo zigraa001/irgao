@@ -29,7 +29,8 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.pd-input` is the standard input class for admin/drone forms (44px, rounded, focus ring) — use instead of inline styles
 - `.admin-list-row` + `.admin-list-name` + `.admin-list-meta` for any list-of-items rows in admin sections
 - Settings toggle JS sets inline `knob.style.left` and `track.style.background` — CSS provides base layout but JS overrides at runtime
-- `.partner-card` is the rich card pattern for admin Companies section -- monogram, stats row, expand/collapse offices; use `.partner-grid` as container
+- `.partner-card` is the rich card pattern for admin Companies section -- 44px monogram, icon+number stats, hover lift, expand/collapse offices; `.partner-grid` is CSS Grid auto-fill (min 300px per card)
+- `.admin-form-footer` for right-aligned CTA rows with border-top separator inside `.admin-form-card`
 - `.admin-nav-group-label` is the group header pattern for nav drawers (11px uppercase, gray-400); `.admin-nav-group-system` pins the System zone to drawer bottom via margin-top:auto
 - Operator panel uses `.op-nav` with `.op-nav-item[data-op-section]` for section switching via `showOperatorSection()`; `.op-nav-group-system` de-emphasizes overview/account sections with border-top + muted color
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
@@ -525,4 +526,31 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Flight cards use CSS Grid (1fr auto) instead of flexbox for better alignment of status badges
   - Fleet rows use a 3-col grid (avatar | identity | status) with the avatar as a 32px gradient monogram circle
   - GPS freshness is a simple binary: green dot if lat != null (reporting), gray if not -- no timestamp-based staleness calculation available from the API
+---
+
+## 2026-07-06 - US-105
+- What was implemented: Companies partner directory and Add Member form polish -- partner grid upgraded to responsive auto-fill CSS Grid, company cards with 44px monogram avatar, hover lift (translateY(-2px) + shadow-md), icon+number pairs (SVG icons for pilots/offices/fleet), office rows with location pin icons and left indentation. Add Company form restructured with header row (title + helper text) and inline fields+button on desktop (stacking at <=768px). Add Member form scoped to max-width 760px with info callout (blue-50 bg + info icon) for the temp-password note, right-aligned CTA in a footer row with border-top separator.
+- Files changed: css/app.css (partner-grid auto-fill, partner-card hover lift, partner-monogram 44px, partner-stat inline icon+number pairs, partner-stat-icon/partner-office-icon, partner-add-header/title/help, partner-add-fields with button inline, admin-add-note info callout, admin-add-note-icon, admin-form-footer, scoped #admin-section-add max-width, responsive 768px/480px), js/app/03-admin-profile.js (loadAdminCompanies stats with SVG icon+number pairs, toggleCompanyOffices office rows with location pin SVG), app.html (Add Company form with header row + inline button, Add Member note as info callout div with SVG icon, CTA in admin-form-footer, CSS cache-bust), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - Partner grid rule: `.partner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }` at line 3324
+  - Partner card hover lift: `.partner-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }` at line 3333
+  - Partner monogram 44px: `width: 44px; height: 44px;` at line 3336
+  - Card anatomy classes in renderer: partner-stat-icon SVG icons at lines 616-618 (pilots person icon, offices building icon, fleet plane icon)
+  - Office row location icon: partner-office-icon SVG at toggleCompanyOffices renderer
+  - Add Company header: partner-add-header/partner-add-title/partner-add-help at app.html line 1159-1161
+  - Inline fields+button: partner-add-fields wraps both inputs + auth-btn button at app.html line 1163-1166
+  - Form grid rule: `.admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }` at line 3202
+  - Add Member max-width: `#admin-section-add .admin-form-card { max-width: 760px; }` at line 4873
+  - Info callout: `.admin-add-note { display: flex; background: var(--blue-50); border-radius: var(--radius-md); }` at line 4865
+  - Form footer: `.admin-form-footer { display: flex; justify-content: flex-end; }` at line 4872
+  - Wiring unchanged: addOperatorCompany onclick at app.html:1166, doAddUser onclick at app.html:1141 + onkeydown at :1114, toggleAddMemberCompany onchange at :1118, onAddMemberCompanyChange onchange at :1125
+  - Shared classes untouched: .pd-input has 4 existing rules (no new global rules), .pd-stat/.pd-loading/.pd-breakdown/.profile-stats-grid/.op-section-title/.op-empty/.op-btn/.dashboard-pill/.op-status-badge all retain original global rules only
+  - npm run build:js succeeded (v=c797317f); npm run typecheck passes; CSS cache-buster bumped to v=us105-companies
+- **Learnings for future iterations:**
+  - `.partner-grid` is now CSS Grid with auto-fill -- cards automatically flow into columns based on available width (min 300px per card); no need for manual span classes
+  - `.partner-stat` is now an inline horizontal layout (icon + val + label) instead of the old vertical stack -- more compact and scannable for card grids
+  - `.partner-add-fields` now includes the submit button as a flex child -- the button sits inline with inputs on desktop and stacks on mobile (<=768px)
+  - `.admin-add-note` changed from a plain `<p>` to a `<div>` with flex layout for the icon -- uses blue-50 bg as a soft info callout
+  - `.admin-form-footer` is a reusable pattern for right-aligned CTA rows with a border-top separator -- use in any admin form card
+  - `#admin-section-add .admin-form-card` scoping keeps the max-width 760px constraint local to the Add Member form without affecting other admin-form-card instances
 ---
