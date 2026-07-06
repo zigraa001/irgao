@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us107-revenue">
+  <link rel="stylesheet" href="/css/app.css?v=us108-compliance-logs">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1211,11 +1211,17 @@
             <div class="adm-header-sub">Pre-flight safety checklist status across all pilots. Pilots without a checklist in 24h are flagged.</div>
           </div>
         </div>
-        <div id="admin-compliance-summary" class="profile-stats-grid admin-section-card">
-          <div class="pd-loading">Fetching compliance data...</div>
+        <div id="admin-compliance-summary"></div>
+        <div class="adm-grid adm-comp-board">
+          <div class="adm-span-6 adm-comp-card adm-comp-card--amber">
+            <div class="adm-comp-card-header">Missing Checklist <span class="adm-comp-count" id="admin-compliance-missing-count"></span></div>
+            <div id="admin-compliance-missing"></div>
+          </div>
+          <div class="adm-span-6 adm-comp-card adm-comp-card--red">
+            <div class="adm-comp-card-header">Failed Checklists <span class="adm-comp-count" id="admin-compliance-failed-count"></span></div>
+            <div id="admin-compliance-failed"></div>
+          </div>
         </div>
-        <div id="admin-compliance-missing" class="admin-section-card"></div>
-        <div id="admin-compliance-failed" class="admin-section-card"></div>
         <div id="admin-compliance-recent"></div>
       </section>
 
@@ -1412,6 +1418,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=0d397c07"></script>
+<script src="/js/app.bundle.js?v=d625608f"></script>
 </body>
 </html>

@@ -310,7 +310,7 @@ async function loadAdminLogs() {
     scroll.scrollTop = scroll.scrollHeight;
     scroll.onscroll = onAdminLogsScroll;
   }
-  if (meta) meta.textContent = 'Most recent 50 entries shown first. Scroll up to load older logs.';
+  if (meta) meta.textContent = 'Showing most recent 50 entries. Scroll up to load older logs.';
 }
 
 async function fetchAdminLogsPage(firstPage) {
@@ -331,8 +331,13 @@ async function fetchAdminLogsPage(firstPage) {
       const pageLogs = logs.slice().reverse();
       const html = pageLogs.map(function (l) {
         const ts = l.ts ? new Date(l.ts).toLocaleTimeString('en-IN', { hour12: false }) : '';
-        return '<div class="admin-log-line ' + (l.level === 'error' ? 'error' : '') + '">' +
-          '<span class="admin-log-ts">' + escapeHtml(ts) + '</span>' + escapeHtml(l.msg || '') + '</div>';
+        var lvl = l.level || 'info';
+        var lvlCls = lvl === 'error' ? 'admin-log-level--error' : lvl === 'warn' ? 'admin-log-level--warn' : 'admin-log-level--info';
+        var lineCls = lvl === 'error' ? 'error' : lvl === 'warn' ? 'warn' : '';
+        return '<div class="admin-log-line ' + lineCls + '">' +
+          '<span class="admin-log-ts">' + escapeHtml(ts) + '</span>' +
+          '<span class="admin-log-level ' + lvlCls + '">' + lvl.toUpperCase() + '</span>' +
+          escapeHtml(l.msg || '') + '</div>';
       }).join('');
       if (firstPage) {
         list.innerHTML = html;

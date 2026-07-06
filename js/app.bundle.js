@@ -2106,7 +2106,9 @@ var ADM_ICONS = {
   aircraft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22l1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="M14.5 6.5l3-3a2.12 2.12 0 0 1 3 3l-3 3"/><path d="M10 10l4 4"/></svg>',
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
   building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><line x1="8" y1="6" x2="8.01" y2="6"/><line x1="16" y1="6" x2="16.01" y2="6"/><line x1="12" y1="6" x2="12.01" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/></svg>',
-  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>'
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
 };
 
 function adminDashboardHtml(stats) {
@@ -3032,20 +3034,28 @@ function renderRevenuePayouts(payouts, commRate) {
 }
 
 // ── Admin Compliance Monitor ────────────────────────────────────────────
+function adminComplianceSkeleton() {
+  var cards = '';
+  for (var i = 0; i < 4; i++) {
+    cards += '<div class="adm-span-3"><div class="adm-kpi"><div class="adm-skeleton" style="width:36px;height:36px;border-radius:50%"></div><div class="adm-skeleton" style="width:60px;height:10px;border-radius:4px;margin-top:8px"></div><div class="adm-skeleton" style="width:44px;height:24px;border-radius:4px;margin-top:6px"></div></div></div>';
+  }
+  return '<div class="adm-grid" style="margin-bottom:20px">' + cards + '</div>';
+}
+
 async function loadAdminCompliance() {
   var summaryHost = document.getElementById('admin-compliance-summary');
   if (!summaryHost) return;
-  summaryHost.innerHTML = '<div class="pd-loading">Fetching compliance data...</div>';
+  summaryHost.innerHTML = adminComplianceSkeleton();
   try {
     var res = await apiFetch('/api/admin/compliance');
     var data = await res.json();
-    if (!res.ok) { summaryHost.innerHTML = '<div class="pd-error">Could not load compliance data. Please try again.</div>'; return; }
+    if (!res.ok) { summaryHost.innerHTML = '<div class="adm-error">Could not load compliance data. <button class="adm-retry-btn" onclick="loadAdminCompliance()">Retry</button></div>'; return; }
     renderComplianceSummary(data.summary || {});
     renderComplianceMissing(data.operatorsMissingChecklist || []);
     renderComplianceFailed(data.failedChecklists || []);
     renderComplianceRecent(data.recentChecklists || []);
   } catch (e) {
-    summaryHost.innerHTML = '<div class="pd-error">Could not reach server.</div>';
+    summaryHost.innerHTML = '<div class="adm-error">Could not reach server. <button class="adm-retry-btn" onclick="loadAdminCompliance()">Retry</button></div>';
   }
 }
 
@@ -3053,46 +3063,60 @@ function renderComplianceSummary(s) {
   var host = document.getElementById('admin-compliance-summary');
   if (!host) return;
   host.innerHTML =
-    pdStat('👥', s.totalOperators || 0, 'Total Pilots') +
-    pdStat('✅', s.withChecklist24h || 0, 'Checked In (24h)', 'green') +
-    pdStat('⚠️', s.missingChecklist24h || 0, 'Missing Checklist', 'amber') +
-    pdStat('❌', s.failedLast7d || 0, 'Failed (7 days)', 'red');
+    '<div class="adm-grid" style="margin-bottom:20px">' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (s.totalOperators || 0).toLocaleString('en-IN'), 'Total Pilots') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.shield, 'green', (s.withChecklist24h || 0).toLocaleString('en-IN'), 'Checked In (24h)') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.alert, 'amber', (s.missingChecklist24h || 0).toLocaleString('en-IN'), 'Missing Checklist') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.cancel, 'red', (s.failedLast7d || 0).toLocaleString('en-IN'), 'Failed (7 days)') + '</div>' +
+    '</div>';
 }
 
 function renderComplianceMissing(operators) {
   var host = document.getElementById('admin-compliance-missing');
   if (!host) return;
-  if (!operators.length) { host.innerHTML = ''; return; }
+  var countEl = document.getElementById('admin-compliance-missing-count');
+  if (countEl) countEl.textContent = operators.length || '';
+  if (!operators.length) {
+    host.innerHTML = '<div class="adm-comp-empty adm-comp-empty--positive"><svg class="adm-comp-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>All pilots checked in during the last 24 hours</div>';
+    return;
+  }
   var rows = operators.map(function (op) {
+    var initials = pilotInitials(op.name || 'U');
     var lastStr = op.lastChecklist
       ? new Date(op.lastChecklist).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
       : 'Never';
-    return '<div class="admin-list-row">' +
-      '<div><span class="admin-list-name">' + escapeHtml(op.name) + '</span>' +
-        '<span class="admin-list-meta badge-ml">' + escapeHtml(op.email) + '</span></div>' +
-      '<div class="admin-list-meta admin-missing-meta">Last: ' + lastStr + '</div>' +
+    return '<div class="adm-comp-row">' +
+      '<div class="adm-comp-avatar adm-comp-avatar--amber">' + escapeHtml(initials) + '</div>' +
+      '<div class="adm-comp-identity"><div class="adm-comp-name">' + escapeHtml(op.name) + '</div>' +
+        '<div class="adm-comp-meta">' + escapeHtml(op.email) + '</div></div>' +
+      '<div class="adm-comp-meta">Last: ' + lastStr + '</div>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
-    '<div class="op-section-title drone-sub-title admin-missing-meta">Missing Checklist (24h)</div>' + rows + '</div>';
+  host.innerHTML = rows;
 }
 
 function renderComplianceFailed(checklists) {
   var host = document.getElementById('admin-compliance-failed');
   if (!host) return;
-  if (!checklists.length) { host.innerHTML = ''; return; }
+  var countEl = document.getElementById('admin-compliance-failed-count');
+  if (countEl) countEl.textContent = checklists.length || '';
+  if (!checklists.length) {
+    host.innerHTML = '<div class="adm-comp-empty adm-comp-empty--positive"><svg class="adm-comp-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>No failed checklists in the last 7 days</div>';
+    return;
+  }
   var rows = checklists.slice(0, 10).map(function (c) {
+    var initials = pilotInitials(c.operatorName || 'U');
     var d = new Date(c.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    return '<div class="admin-list-row">' +
-      '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span class="admin-list-meta badge-ml">' + ts + '</span>' +
-      '<span class="op-status-badge op-badge--red badge-ml">FAIL</span>' +
+    return '<div class="adm-comp-row">' +
+      '<div class="adm-comp-avatar adm-comp-avatar--red">' + escapeHtml(initials) + '</div>' +
+      '<div class="adm-comp-identity"><div class="adm-comp-name">' + escapeHtml(c.operatorName || 'Unknown') + '</div>' +
+        '<div class="adm-comp-meta">' + ts + '</div></div>' +
+      '<span class="op-status-badge op-badge--red">FAIL</span>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card admin-section-card">' +
-    '<div class="op-section-title drone-sub-title admin-failed-title">Failed Checklists (7 days)</div>' + rows + '</div>';
+  host.innerHTML = rows;
 }
 
 function renderComplianceRecent(checklists) {
@@ -3100,18 +3124,20 @@ function renderComplianceRecent(checklists) {
   if (!host) return;
   if (!checklists.length) { host.innerHTML = ''; return; }
   var rows = checklists.slice(0, 15).map(function (c) {
+    var initials = pilotInitials(c.operatorName || 'U');
     var d = new Date(c.createdAt);
     var ts = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' +
              d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     var badgeCls = c.overallStatus === 'pass' ? 'op-badge--green' : 'op-badge--red';
-    return '<div class="admin-list-row">' +
-      '<span class="admin-list-name">' + escapeHtml(c.operatorName || 'Unknown') + '</span>' +
-      '<span class="admin-list-meta badge-ml">' + ts + '</span>' +
-      '<span class="op-status-badge ' + badgeCls + ' badge-ml">' + c.overallStatus.toUpperCase() + '</span>' +
+    return '<div class="adm-comp-row">' +
+      '<div class="adm-comp-avatar">' + escapeHtml(initials) + '</div>' +
+      '<div class="adm-comp-identity"><div class="adm-comp-name">' + escapeHtml(c.operatorName || 'Unknown') + '</div>' +
+        '<div class="adm-comp-meta">' + ts + '</div></div>' +
+      '<span class="op-status-badge ' + badgeCls + '">' + c.overallStatus.toUpperCase() + '</span>' +
     '</div>';
   }).join('');
-  host.innerHTML = '<div class="admin-form-card admin-section-card admin-section-card--spaced">' +
-    '<div class="op-section-title drone-sub-title">Recent Checklists</div>' + rows + '</div>';
+  host.innerHTML = '<div class="adm-comp-card adm-comp-card--recent">' +
+    '<div class="adm-comp-card-header">Recent Checklists</div>' + rows + '</div>';
 }
 
 // ── Operator Earnings ────────────────────────────────────────────────────
@@ -7514,7 +7540,7 @@ async function loadAdminLogs() {
     scroll.scrollTop = scroll.scrollHeight;
     scroll.onscroll = onAdminLogsScroll;
   }
-  if (meta) meta.textContent = 'Most recent 50 entries shown first. Scroll up to load older logs.';
+  if (meta) meta.textContent = 'Showing most recent 50 entries. Scroll up to load older logs.';
 }
 
 async function fetchAdminLogsPage(firstPage) {
@@ -7535,8 +7561,13 @@ async function fetchAdminLogsPage(firstPage) {
       const pageLogs = logs.slice().reverse();
       const html = pageLogs.map(function (l) {
         const ts = l.ts ? new Date(l.ts).toLocaleTimeString('en-IN', { hour12: false }) : '';
-        return '<div class="admin-log-line ' + (l.level === 'error' ? 'error' : '') + '">' +
-          '<span class="admin-log-ts">' + escapeHtml(ts) + '</span>' + escapeHtml(l.msg || '') + '</div>';
+        var lvl = l.level || 'info';
+        var lvlCls = lvl === 'error' ? 'admin-log-level--error' : lvl === 'warn' ? 'admin-log-level--warn' : 'admin-log-level--info';
+        var lineCls = lvl === 'error' ? 'error' : lvl === 'warn' ? 'warn' : '';
+        return '<div class="admin-log-line ' + lineCls + '">' +
+          '<span class="admin-log-ts">' + escapeHtml(ts) + '</span>' +
+          '<span class="admin-log-level ' + lvlCls + '">' + lvl.toUpperCase() + '</span>' +
+          escapeHtml(l.msg || '') + '</div>';
       }).join('');
       if (firstPage) {
         list.innerHTML = html;

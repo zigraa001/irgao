@@ -4792,18 +4792,36 @@ body.admin-map-fs { overflow: hidden; }
   color: var(--green-dark, #166534);
 }
 
-/* ── Admin logs (US-009) ── */
+/* ── Admin logs (US-009 / US-108) ── */
+#admin-logs-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--gray-500);
+  background: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
 .admin-logs-scroll {
-  height: 60vh;
+  height: 65vh;
   overflow-y: auto;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background: var(--gray-900);
+  background: var(--navy, #0A1628);
   color: var(--gray-200);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
+  font-size: 12.5px;
   box-shadow: var(--shadow-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.15) transparent;
 }
+.admin-logs-scroll::-webkit-scrollbar { width: 6px; }
+.admin-logs-scroll::-webkit-scrollbar-track { background: transparent; }
+.admin-logs-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+.admin-logs-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
+#admin-logs-loading { background: transparent; color: var(--gray-400); border: none; }
 .admin-logs-list { display: flex; flex-direction: column; }
 .admin-log-line {
   padding: 6px 16px;
@@ -4814,7 +4832,101 @@ body.admin-map-fs { overflow: hidden; }
 }
 .admin-log-line:hover { background: rgba(255,255,255,.03); }
 .admin-log-line.error { color: var(--red-light); }
+.admin-log-line.warn { color: var(--amber-light, #FCD34D); }
 .admin-log-ts { color: var(--gray-500); margin-right: 10px; font-variant-numeric: tabular-nums; }
+.admin-log-level {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.admin-log-level--info { background: rgba(100,149,237,.15); color: rgba(147,197,253,1); }
+.admin-log-level--error { background: rgba(239,68,68,.15); color: var(--red-light); }
+.admin-log-level--warn { background: rgba(245,158,11,.15); color: var(--amber-light, #FCD34D); }
+
+/* ── Compliance status board (US-108) ── */
+.adm-comp-board { margin-bottom: 20px; }
+.adm-comp-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 20px;
+  overflow: hidden;
+}
+.adm-comp-card--amber { border-left: 3px solid var(--amber); }
+.adm-comp-card--red { border-left: 3px solid var(--red, #EF4444); }
+.adm-comp-card--recent { border-left: none; margin-top: 4px; }
+.adm-comp-card-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.adm-comp-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+}
+.adm-comp-card--amber .adm-comp-count { background: var(--amber-50); color: var(--amber-dark); }
+.adm-comp-card--red .adm-comp-count { background: var(--red-50); color: var(--red-dark, #991B1B); }
+.adm-comp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.adm-comp-row:last-child { border-bottom: none; }
+.adm-comp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.adm-comp-avatar--amber { background: linear-gradient(135deg, var(--amber-dark), var(--amber)); }
+.adm-comp-avatar--red { background: linear-gradient(135deg, var(--red-dark, #991B1B), var(--red, #EF4444)); }
+.adm-comp-identity { flex: 1; min-width: 0; }
+.adm-comp-name { font-size: 14px; font-weight: 600; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-comp-meta { font-size: 12.5px; color: var(--gray-500); white-space: nowrap; }
+.adm-comp-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.adm-comp-empty--positive { color: var(--green-dark); }
+.adm-comp-empty-icon {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 8px;
+  stroke: currentColor;
+}
+@media (max-width: 1024px) {
+  .adm-comp-board > .adm-span-6 { grid-column: span 12; }
+}
 
 /* ── Operator compliance checklist ── */
 .op-check-item {
