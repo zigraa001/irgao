@@ -6142,6 +6142,163 @@ body.admin-map-fs { overflow: hidden; }
   font-size: 13px;
 }
 
+/* ── Company Flights ── */
+.cf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.cf-filter-select {
+  min-width: 140px;
+  max-width: 200px;
+}
+.cf-meta {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.cf-summary-strip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.cf-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.cf-summary-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--gray-400);
+}
+.cf-summary-item strong {
+  color: var(--navy);
+  font-weight: 700;
+}
+.cf-summary-payout strong {
+  color: var(--green-dark);
+}
+.cf-list-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+.cf-header-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(180px, 2fr) 100px 90px 90px 100px;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--gray-500);
+}
+.cf-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(180px, 2fr) 100px 90px 90px 100px;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+  transition: background var(--transition);
+}
+.cf-row:last-child {
+  border-bottom: none;
+}
+.cf-row:hover {
+  background: var(--gray-50);
+}
+.cf-cell-pilot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cf-pilot-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-pilot-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-route {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-route-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+.cf-cell-date {
+  font-size: 13px;
+  color: var(--gray-600);
+  font-variant-numeric: tabular-nums;
+}
+.cf-cell-fare,
+.cf-cell-payout {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cf-cell-payout {
+  color: var(--navy);
+}
+.cf-est-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--gray-400);
+  margin-left: 2px;
+}
+.cf-skeleton-row {
+  pointer-events: none;
+}
+.cf-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+@media (max-width: 768px) {
+  .cf-header-row { display: none; }
+  .cf-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+  }
+  .cf-cell-pilot { grid-column: 1 / -1; }
+  .cf-cell-route { grid-column: 1 / -1; }
+  .cf-cell-status { order: 1; }
+  .cf-cell-date { order: 2; text-align: right; }
+  .cf-cell-fare { order: 3; }
+  .cf-cell-payout { order: 4; text-align: right; }
+  .cf-summary-strip { gap: 12px; }
+}
+
 /* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {
   .confirm-card,
