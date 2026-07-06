@@ -222,8 +222,8 @@
         "HEADLESS structural verification in progress.txt: grep proof zero hardcoded Tailwind hex remains in the lp/landing-zone code paths, quoted token-based lp-* rules, quoted ARIA attributes in the dropdown renderer, quoted activeIdx preservation logic"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All lp-*/lz-* CSS re-skinned onto tokens (--radius-md, --surface, --border-subtle, --transition, --lp-cat). Tailwind hues replaced with corporate palette (green, green-dark, blue, purple, amber-dark, navy) via CSS classes. Letter badges replaced with stroke-SVG icons (LZ_ICONS). Photon dropdown stability: patchPhotonResults preserves activeIdx, inline loading indicator. ARIA 1.2 combobox: role=combobox/listbox/option, aria-expanded, aria-controls, aria-activedescendant, aria-selected. Mouse wiring converted to addEventListener. No -apple-system font remains. Grep evidence in progress.txt US-112 entry."
     },
     {
       "id": "US-113",

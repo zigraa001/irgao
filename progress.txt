@@ -1085,3 +1085,26 @@ Both calls pass suppress=true → at most ZERO pickers for popular routes.
   - When converting inline onclick to addEventListener in concatenated JS (no modules), store the data array in a module-scoped variable (_currentLandingZones) so event handlers can access it
   - escapeHtml + onclick attribute strings are fundamentally broken for names with apostrophes -- always use addEventListener with index-based lookups
 ---
+
+## 2026-07-06 - US-112
+- What was implemented: Landing-zone picker + Photon autocomplete design-system conformance and a11y
+- Files changed: js/app/05-map.js (LANDING_ZONE_CATEGORIES palette + LZ_ICONS SVGs, renderDropdown ARIA, patchPhotonResults stability, showPhotonLoading, addEventListener conversion, setActive ARIA, hideDd/showDd helpers), css/app.css (lp-*/lz-* rules onto tokens, category color classes, .lz-marker-icon, photon loading CSS), app.html (CSS cache-buster bump), js/app.bundle.js (rebuilt)
+- **HEADLESS structural verification:**
+  - **Zero Tailwind hex in LANDING_ZONE_CATEGORIES:** grep '#10B981|#22C55E|#3B82F6|#8B5CF6|#F59E0B|#EC4899' returns 0 hits in the categories definition (drawRoute hexes at lines 1359/1377/1381/1395 are out of scope per AC)
+  - **Token-based lp-* rules:** `.lp-picker { border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }` `.lp-picker-skip { border-radius: var(--radius-sm); transition: var(--transition); }` `.lp-item { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: var(--transition); }` `.lp-item-icon { border-radius: var(--radius-sm); background: var(--lp-cat); }` `.lz-marker { background: var(--lp-cat); transition: var(--transition); }`
+  - **Category CSS classes:** `.lp-cat-helipad { --lp-cat: var(--green); }` `.lp-cat-park { --lp-cat: var(--green-dark); }` `.lp-cat-pitch { --lp-cat: var(--blue); }` `.lp-cat-parking { --lp-cat: var(--purple); }` `.lp-cat-ground { --lp-cat: var(--amber-dark); }` `.lp-cat-rooftop { --lp-cat: var(--navy); }`
+  - **SVG icons replace letter badges:** `LZ_ICONS` object at line 954 with helipad (H+circle), park (tree), pitch (flag), parking (P+rect), ground (landscape), rooftop (building) stroke SVGs. `lz-marker-icon` replaces `lz-marker-letter` in marker creation (line 1189). `lp-item-icon` now contains SVG + category CSS class (line 1217).
+  - **No -apple-system font in lp/lz CSS:** grep returns 0 hits (removed from .lp-item-icon and .lz-marker-letter)
+  - **ARIA combobox pattern:** `input.setAttribute('role', 'combobox')` at line 611; `input.setAttribute('aria-expanded', 'false'/'true')` at lines 612/655/660; `input.setAttribute('aria-controls', suggestId)` at line 613; `input.setAttribute('aria-autocomplete', 'list')` at line 614; `dropdown.setAttribute('role', 'listbox')` at line 615
+  - **ARIA option items:** `role="option" id="<suggestId>-opt-<idx>"` on all .loc-suggest-item elements (lines 695/709/715/777); `aria-selected="true"` set by setActive (line 910); `aria-activedescendant` updated on input (line 912)
+  - **activeIdx preservation:** `patchPhotonResults` (line 748) saves `oldActiveIsPhoton` flag, only resets activeIdx if old active was a photon item; non-photon active items survive the photon patch; `lastPhotonResults` cached for re-render stability
+  - **Photon loading indicator:** `showPhotonLoading()` (line 730) adds `.loc-suggest-photon-loading` row with spinner under "Search results" label while fetch is in flight; removed by `patchPhotonResults` when results arrive
+  - **addEventListener (no el.onmousedown):** grep 'onmousedown' in 05-map.js returns 0 hits; all item wiring uses `el.addEventListener('mousedown', ...)` at lines 668/790
+  - **Behavior preserved:** debounce 350ms unchanged (line 833); local+remote merge order unchanged; setPickup/setDest signatures unchanged (line 1259/1273); selectLandingPoint unchanged
+  - npm run build:js succeeded (v=82c02fdc); npm run typecheck passes; CSS cache-buster bumped to v=us112-design-a11y; server boots clean
+- **Learnings for future iterations:**
+  - CSS custom property `--lp-cat` on category classes allows both icon background AND label text color to be driven by a single class, eliminating inline `style="background:..."` and `style="color:..."` from JS
+  - The `patchPhotonResults` pattern (append to existing DOM, preserve activeIdx) is reusable for any dropdown that fetches async results -- avoids the full-re-render flash
+  - ARIA combobox pattern: `role="combobox"` + `aria-expanded` + `aria-controls` on input, `role="listbox"` on dropdown, `role="option"` + `id` on items, `aria-activedescendant` tracks active -- focus MUST stay on input (not items) for blur-to-close to work
+  - When caching photon results (`lastPhotonResults`), the `render()` function can reuse them on re-focus without re-fetching, improving UX for tab-back scenarios
+---
