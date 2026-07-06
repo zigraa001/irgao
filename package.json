@@ -24,6 +24,8 @@
     "local:tailscale-stop": "bash scripts/local/tailscale-stop.sh",
     "typecheck": "tsc --noEmit",
     "test": "node --test",
+    "test:e2e": "node scripts/test-all.js",
+    "test:company": "node scripts/test-company-portal.js",
     "build:js": "node scripts/build-app-js.js",
     "prestart": "node scripts/build-app-js.js"
   },
