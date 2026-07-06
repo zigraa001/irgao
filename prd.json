@@ -241,8 +241,8 @@
         "HEADLESS structural verification in progress.txt: quote the summary-card renderer + Edit re-expand path, the single-stats card template, the removed/re-driven Live badge, the new empty-search branch (no demo coords), grep proof alert( is gone from 05-map.js"
       ],
       "priority": 21,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Route summary card with pickup/dest dots + Edit affordance. Stats deduped to one meta-line + one comparison chip (~3.5x faster). Live badge driven by currentNearbyOperators (hidden when no real operators). Empty-search validation replaces demo-coord teleport with inline errors + focus. alert() replaced with showToast. selectRoute collapses disclosure instead of destroying innerHTML. Popular routes re-rendered in resetBooking/backToSearch. Grep evidence in progress.txt US-113 entry."
     },
     {
       "id": "US-114",

@@ -1108,3 +1108,24 @@ Both calls pass suppress=true → at most ZERO pickers for popular routes.
   - ARIA combobox pattern: `role="combobox"` + `aria-expanded` + `aria-controls` on input, `role="listbox"` on dropdown, `role="option"` + `id` on items, `aria-activedescendant` tracks active -- focus MUST stay on input (not items) for blur-to-close to work
   - When caching photon results (`lastPhotonResults`), the `render()` function can reuse them on re-focus without re-fetching, improving UX for tab-back scenarios
 ---
+
+## 2026-07-06 - US-113
+- What was implemented: Ride results query visibility, stat deduplication, fake signal removal, and honest validation
+- Files changed: js/app/06-booking.js (renderRouteSummary, editRouteFromSummary, empty-search validation, stats dedupe, live badge driven by operators, selectRoute preserves disclosure, resetBooking/backToSearch re-render popular routes), js/app/05-map.js (alert() replaced with showToast), app.html (route-summary-card element, rides-live-badge id + initial hidden, CSS cache-buster), css/app.css (route-summary-card styles), js/app.bundle.js (rebuilt)
+- **Grep evidence (headless structural verification):**
+  - **Summary card renderer:** `renderRouteSummary(draft)` called at line 327 in searchRides; renders `route-summary-card` with pickup/dest dot motif + distance + Edit button; `editRouteFromSummary()` at line 981 re-shows `#panel-locations` without clearing results
+  - **Edit re-expand path:** `editRouteFromSummary` shows panel-locations (display:block) and hides the summary card -- results area stays visible
+  - **Single-stats card template:** ride-stats now contains only 2 stats: `~3.5x faster than road` (comparison chip) + `-{co2} kg CO2` (carbon chip); time/distance are in `ride-meta-line` only (no duplication)
+  - **Live badge driven by real signal:** `#rides-live-badge` starts `display:none` (app.html line 376); JS sets it visible only when `currentNearbyOperators.filter(c => c.name).length > 0` (line 318-322); shows "N pilot(s) nearby" with pulsing dot; hidden when feasibility call fails or returns no operators
+  - **No demo coords in searchRides:** `grep '28.6315\|77.2167\|28.5830\|77.0780\|Connaught Place\|Dwarka Helipad' js/app/06-booking.js` returns 0 hits; replaced with inline-error + focus: "Where are you flying from?" / "Where are you flying to?" / "Set your pickup and destination to search flights"
+  - **alert() removed from 05-map.js:** `grep 'alert(' js/app/05-map.js` returns 0 hits; replaced with `showToast('Geolocation is not supported by your browser', 'error')`
+  - **selectRoute preserves popular-routes-area:** collapses `.popular-routes-list` (display:none) and removes `.open` from toggle -- does NOT set `innerHTML = ''` on `#popular-routes-area`
+  - **Popular routes re-rendered:** `renderPopularRoutes(currentService)` called in resetBooking (line 993) and backToSearch (line 901)
+  - **Wiring preserved:** searchRides (1 definition), selectRideCard (1), bookRide (1), switchService (1), selectRoute (1) all exist; all element ids preserved (rides-area, rides-list, rides-title, book-btn, rides-back-btn, popular-routes-area, rides-details-toggle, booking-error)
+  - npm run build:js succeeded (v=c0460e8e); npm run typecheck passes; CSS cache-buster bumped to v=us113-ride-results
+- **Learnings for future iterations:**
+  - The `renderRouteSummary` pattern (pickup → dest dot motif + Edit button) gives query context without requiring a full panel re-render
+  - When removing fake liveness signals, drive from data already fetched (currentNearbyOperators from feasibility call) rather than adding new API calls
+  - For empty-search validation, reuse the existing `showAuthError` + focus pattern rather than falling back to demo data -- keeps the validation honest and consistent
+  - `selectRoute` should collapse the disclosure rather than destroying innerHTML -- this preserves the route list for repeat use without re-rendering
+---
