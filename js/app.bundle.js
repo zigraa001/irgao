@@ -3593,11 +3593,24 @@ function escapeHtml(s) {
 function bookingRef(id) { return 'IRG-' + String(id).padStart(5, '0'); }
 function fmtINR(n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); }
 
-// Fetch the operator's assigned trips and render the list (or the empty state).
+function opTripsSkeleton() {
+  var rows = '';
+  for (var i = 0; i < 3; i++) {
+    rows += '<div class="op-trip-skeleton adm-skeleton"><div class="adm-sk-row">' +
+      '<div class="adm-sk-text" style="--w:' + (160 + i * 20) + 'px"></div>' +
+      '<div class="adm-sk-pill adm-skeleton" style="--w:60px"></div></div>' +
+      '<div class="adm-sk-row" style="margin-top:8px">' +
+      '<div class="adm-sk-text adm-skeleton" style="--w:80px"></div>' +
+      '<div class="adm-sk-text adm-skeleton" style="--w:60px"></div>' +
+      '<div class="adm-sk-text adm-skeleton" style="--w:50px"></div></div></div>';
+  }
+  return rows;
+}
+
 async function loadOperatorTrips() {
   const host = document.getElementById('op-trips');
   if (!host) return;
-  host.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Fetching your assigned trips...</div></div>';
+  host.innerHTML = opTripsSkeleton();
   try {
     const res = await apiFetch('/api/operator/trips');
     if (!res.ok) throw new Error('load failed');
@@ -3616,34 +3629,64 @@ function renderOperatorTrips() {
   const host = document.getElementById('op-trips');
   if (!host) return;
   if (!operatorTrips.length) {
-    host.innerHTML =
-      '<div class="op-empty" id="op-empty">' +
-      '<div class="op-empty-icon">🛩️</div>' +
-      '<div class="op-empty-title">No trips assigned yet</div>' +
-      '<div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>' +
-      '</div>';
+    var dutyBtn = document.getElementById('op-duty-toggle');
+    var isOnDuty = dutyBtn && dutyBtn.getAttribute('aria-pressed') === 'true';
+    if (isOnDuty) {
+      host.innerHTML =
+        '<div class="op-empty" id="op-empty">' +
+        '<div class="op-empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>' +
+        '<div class="op-empty-title">Waiting for dispatch</div>' +
+        '<div class="op-empty-sub"><span class="op-dispatch-dot"></span> You are on duty -- offers will appear here.</div>' +
+        '</div>';
+    } else {
+      host.innerHTML =
+        '<div class="op-empty" id="op-empty">' +
+        '<div class="op-empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg></div>' +
+        '<div class="op-empty-title">No trips assigned yet</div>' +
+        '<div class="op-empty-sub">Go on duty to start receiving trip offers.</div>' +
+        '<button type="button" class="op-empty-cta" onclick="toggleOperatorDuty()">Go on duty</button>' +
+        '</div>';
+    }
     return;
   }
   host.innerHTML = operatorTrips.map(function (t) {
-    const customer = (t.customer && t.customer.name) || 'Customer';
-    const service = SERVICE_LABELS[t.service] || t.service;
-    const aircraft = t.aircraft ? (t.aircraft.name + ' · ' + t.aircraft.model) : 'Unassigned';
+    var customer = (t.customer && t.customer.name) || 'Customer';
+    var service = SERVICE_LABELS[t.service] || t.service;
+    var aircraft = t.aircraft ? (t.aircraft.name + ' ' + t.aircraft.model) : '';
+    var timeAgo = '';
+    if (t.requestedAt) {
+      var diff = Math.round((Date.now() - new Date(t.requestedAt).getTime()) / 60000);
+      if (diff < 1) timeAgo = 'just now';
+      else if (diff < 60) timeAgo = diff + 'm ago';
+      else timeAgo = Math.floor(diff / 60) + 'h ago';
+    }
     return (
-      '<div class="op-trip-card" onclick="openTripDetails(' + t.id + ')">' +
+      '<button type="button" class="op-trip-card" data-trip-id="' + t.id + '">' +
         '<div class="op-trip-top">' +
           '<div class="op-trip-route">' +
             escapeHtml(t.pickupName) + '<span class="arrow">&rarr;</span>' + escapeHtml(t.destName) +
           '</div>' +
           statusBadgeHtml(t.status) +
         '</div>' +
-        '<div class="op-trip-meta">' +
-          '<span><b>' + escapeHtml(customer) + '</b></span>' +
-          '<span>' + escapeHtml(service) + '</span>' +
-          '<span>✈️ ' + escapeHtml(aircraft) + '</span>' +
+        '<div class="op-trip-numbers">' +
+          '<span class="op-trip-fare">' + fmtINR(t.fareEstimate) + '</span>' +
+          (t.distanceKm != null ? '<span class="op-trip-stat">' + Math.round(t.distanceKm * 10) / 10 + ' km</span>' : '') +
+          (timeAgo ? '<span class="op-trip-stat">' + escapeHtml(timeAgo) + '</span>' : '') +
         '</div>' +
-      '</div>'
+        '<div class="op-trip-meta">' +
+          '<span class="op-trip-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ' + escapeHtml(customer) + '</span>' +
+          (aircraft ? '<span class="op-trip-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg> ' + escapeHtml(aircraft) + '</span>' : '') +
+        '</div>' +
+        '<div class="op-trip-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>' +
+      '</button>'
     );
   }).join('');
+  host.querySelectorAll('.op-trip-card').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = Number(btn.getAttribute('data-trip-id'));
+      if (id) openTripDetails(id);
+    });
+  });
 }
 
 function renderTripDetailsBody(t, fuelPlan) {
@@ -4218,8 +4261,6 @@ function showDispatchOffer(payload) {
     '\nFare: ' + fmtINR(b.fareEstimate) + ' · ' + (b.distanceKm || '?') + ' km';
   sendBrowserNotification(nTitle, nBody, 'dispatch-' + (payload.offerId || ''));
 
-  // Mission id + emergency badge so the pilot can see WHICH request this is
-  // and immediately spot air-ambulance (golden) missions that need urgent action.
   const tagsEl = document.getElementById('dispatch-tags');
   if (tagsEl) {
     const isEmergency = b.service === 'golden';
@@ -4233,11 +4274,14 @@ function showDispatchOffer(payload) {
         : '');
   }
 
+  var card = document.querySelector('.dispatch-card');
+  if (card) card.classList.toggle('dispatch-card--emergency', isEmergencyRide);
+
   document.getElementById('dispatch-route').textContent =
     (b.pickupName || 'Pickup') + ' → ' + (b.destName || 'Destination');
   var companyLine = '';
   if (payload.company && payload.company.name) {
-    companyLine = '<br><span style="color:var(--blue);font-weight:600;">' + escapeHtml(payload.company.name) + '</span>';
+    companyLine = '<br><span class="dispatch-company">' + escapeHtml(payload.company.name) + '</span>';
     if (payload.officeCity) companyLine += ' — ' + escapeHtml(payload.officeCity) + ' Office';
   }
   var etaLine = '';
@@ -4249,15 +4293,37 @@ function showDispatchOffer(payload) {
     '<br>You are ~' + (payload.operatorDistanceKm != null ? payload.operatorDistanceKm : '?') + ' km from pickup' +
     etaLine + companyLine +
     '<br><strong>' + escapeHtml((b.pickupName || 'Pickup')) + '</strong> → <strong>' + escapeHtml((b.destName || 'Destination')) + '</strong>';
-  const secs = payload.expiresInSeconds || 30;
-  document.getElementById('dispatch-timer').textContent = 'New ride request — auto-accepting...';
+
+  var secs = payload.expiresInSeconds || 30;
+  var timerEl = document.getElementById('dispatch-timer');
+  var progressEl = document.getElementById('dispatch-countdown-bar');
+  var actionsEl = document.querySelector('.dispatch-actions');
+  if (actionsEl) actionsEl.removeAttribute('style');
+  timerEl.textContent = secs + 's to respond';
+  if (progressEl) { progressEl.style.width = '100%'; }
   document.getElementById('dispatch-overlay').classList.add('active');
   if (dispatchCountdownTimer) clearInterval(dispatchCountdownTimer);
-  setTimeout(function () { respondDispatchOffer(true); }, 1500);
+  var remaining = secs;
+  var total = secs;
+  dispatchCountdownTimer = setInterval(function () {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(dispatchCountdownTimer);
+      dispatchCountdownTimer = null;
+      timerEl.textContent = 'Time expired -- declining';
+      if (progressEl) progressEl.style.width = '0%';
+      respondDispatchOffer(false);
+      return;
+    }
+    timerEl.textContent = remaining + 's to respond';
+    if (progressEl) progressEl.style.width = Math.round((remaining / total) * 100) + '%';
+  }, 1000);
 }
 
 function hideDispatchOffer() {
   document.getElementById('dispatch-overlay').classList.remove('active');
+  var card = document.querySelector('.dispatch-card');
+  if (card) card.classList.remove('dispatch-card--emergency');
   activeDispatchOffer = null;
   if (dispatchCountdownTimer) {
     clearInterval(dispatchCountdownTimer);

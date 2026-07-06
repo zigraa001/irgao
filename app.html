@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us115-operator-layout">
+  <link rel="stylesheet" href="/css/app.css?v=us116-dispatch-trips">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -813,8 +813,10 @@
             <div class="panel-step-heading" id="op-section-heading">Assigned trips</div>
             <div id="op-trips">
               <div class="op-empty" id="op-empty">
+                <div class="op-empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg></div>
                 <div class="op-empty-title">No trips assigned yet</div>
-                <div class="op-empty-sub">When a ride is dispatched to you, it will appear here.</div>
+                <div class="op-empty-sub">Go on duty to start receiving trip offers.</div>
+                <button type="button" class="op-empty-cta" onclick="toggleOperatorDuty()">Go on duty</button>
               </div>
             </div>
           </div>
@@ -919,13 +921,14 @@
         <div class="dispatch-head">
           <h3 id="dispatch-title">New mission offer</h3>
           <div class="dispatch-timer" id="dispatch-timer">Respond within 30s</div>
+          <div class="dispatch-countdown-track"><div class="dispatch-countdown-bar" id="dispatch-countdown-bar"></div></div>
         </div>
         <div class="dispatch-body">
           <div class="dispatch-tags" id="dispatch-tags"></div>
           <div class="dispatch-route" id="dispatch-route">—</div>
           <div class="dispatch-meta" id="dispatch-meta"></div>
         </div>
-        <div class="dispatch-actions" style="display:none;">
+        <div class="dispatch-actions">
           <button type="button" class="op-btn op-btn--reject" id="dispatch-reject-btn">Reject</button>
           <button type="button" class="op-btn op-btn--accept" id="dispatch-accept-btn">Accept</button>
         </div>
@@ -1596,6 +1599,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=2bac7a31"></script>
+<script src="/js/app.bundle.js?v=7defe244"></script>
 </body>
 </html>

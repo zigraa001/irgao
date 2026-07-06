@@ -3137,6 +3137,77 @@ textarea:focus-visible, a:focus-visible {
   gap: 4px 14px;
 }
 .op-trip-meta b { color: var(--gray-700); font-weight: 600; }
+.op-trip-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  position: relative;
+}
+.op-trip-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 6px;
+}
+.op-trip-fare {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+.op-trip-stat {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-variant-numeric: tabular-nums;
+}
+.op-trip-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.op-trip-meta-item svg { flex-shrink: 0; opacity: 0.5; }
+.op-trip-chevron {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+  transition: opacity var(--transition);
+}
+.op-trip-card:hover .op-trip-chevron { opacity: 0.8; }
+.op-empty-cta {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-50);
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.op-empty-cta:hover { background: var(--blue); color: #fff; }
+.op-dispatch-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 4px;
+  vertical-align: middle;
+  animation: softPulse 1.5s ease-in-out infinite;
+}
+.op-trip-skeleton {
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-lg);
+  min-height: 80px;
+}
 .op-status-badge {
   flex-shrink: 0;
   font-size: 11px;
@@ -3771,6 +3842,30 @@ textarea:focus-visible, a:focus-visible {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,.45); }
   50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
 }
+.dispatch-countdown-track {
+  margin-top: 10px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+.dispatch-countdown-bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 2px;
+  background: #fff;
+  transition: width 1s linear;
+}
+.dispatch-card--emergency .dispatch-head {
+  background: linear-gradient(135deg, #991B1B 0%, #DC2626 100%);
+}
+.dispatch-card--emergency .dispatch-countdown-bar {
+  background: #FCA5A5;
+}
+.dispatch-card--emergency {
+  border: 2px solid #DC2626;
+}
+.dispatch-company { color: var(--blue); font-weight: 600; }
 .dispatch-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -7197,6 +7292,8 @@ body.admin-map-fs { overflow: hidden; }
   .tracking-step.active .tracking-step-dot,
   .dispatch-tag--emergency,
   .dispatch-card,
+  .dispatch-card--emergency,
+  .op-dispatch-dot,
   .loc-gps-btn.gps-loading svg,
   .op-gps-dot,
   .op-section,
