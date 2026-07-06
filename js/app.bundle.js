@@ -1890,6 +1890,9 @@ function showAdminSection(name) {
     droneAdminBookingsLoaded = false;
     showDroneAdminTab('services');
   }
+  if (name === 'approvals') {
+    loadAdminApprovals();
+  }
 }
 
 function settingsStatusChip(on, activeText, inactiveText) {
@@ -2264,6 +2267,7 @@ async function loadAdminPlatformStats() {
     bar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
       now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
+  refreshApprovalsBadge();
   try {
     var res = await apiFetch('/api/me/stats');
     var data = await res.json().catch(function () { return {}; });
@@ -3315,6 +3319,194 @@ async function loadComplianceHistory() {
     }).join('');
     host.innerHTML = '<div class="compliance-recent-title">Recent Submissions</div>' + rows;
   } catch (e) { /* ignore */ }
+}
+
+// ===== Admin Approvals (US-130) =====
+
+var _apprCurrentTab = 'pending';
+
+function apprEsc(v) {
+  if (v === null || v === undefined) return '';
+  var d = document.createElement('div');
+  d.textContent = String(v);
+  return d.innerHTML;
+}
+
+async function refreshApprovalsBadge() {
+  var badge = document.getElementById('admin-approvals-badge');
+  if (!badge) return;
+  try {
+    var res = await apiFetch('/api/admin/company-requests/count');
+    var data = await res.json().catch(function () { return {}; });
+    var cnt = data.count || 0;
+    badge.textContent = cnt;
+    badge.hidden = cnt === 0;
+  } catch (e) { /* ignore */ }
+}
+
+function switchApprovalTab(tab) {
+  _apprCurrentTab = tab;
+  var pendingBtn = document.getElementById('appr-tab-pending');
+  var decidedBtn = document.getElementById('appr-tab-decided');
+  if (pendingBtn) pendingBtn.classList.toggle('appr-tab--active', tab === 'pending');
+  if (decidedBtn) decidedBtn.classList.toggle('appr-tab--active', tab === 'decided');
+  loadAdminApprovals();
+}
+
+function apprDiffRows(payload) {
+  var parsed;
+  try { parsed = typeof payload === 'string' ? JSON.parse(payload) : payload; } catch (e) { parsed = {}; }
+  var keys = Object.keys(parsed);
+  if (!keys.length) return '<div class="appr-no-diff">No changes</div>';
+  var rows = '';
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var d = parsed[k];
+    rows += '<tr><td class="appr-diff-field">' + apprEsc(k) + '</td>' +
+      '<td class="appr-diff-old">' + apprEsc(d.from || '(empty)') + '</td>' +
+      '<td class="appr-diff-arrow">&#x2192;</td>' +
+      '<td class="appr-diff-new">' + apprEsc(d.to || '(empty)') + '</td></tr>';
+  }
+  return '<table class="appr-diff-table"><thead><tr><th>Field</th><th>Current</th><th></th><th>Proposed</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function apprMonogram(name) {
+  if (!name) return '?';
+  return name.split(' ').map(function (w) { return w.charAt(0); }).join('').substring(0, 2).toUpperCase();
+}
+
+function apprRelativeTime(dateStr) {
+  if (!dateStr) return '';
+  var diff = Date.now() - new Date(dateStr).getTime();
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  var days = Math.floor(hrs / 24);
+  return days + 'd ago';
+}
+
+function apprPendingCardHtml(r) {
+  return '<div class="appr-card" id="appr-card-' + r.id + '">' +
+    '<div class="appr-card-head">' +
+      '<div class="appr-monogram">' + apprMonogram(r.companyName) + '</div>' +
+      '<div class="appr-card-title">' +
+        '<div class="appr-company-name">' + apprEsc(r.companyName) + ' <span class="appr-code">' + apprEsc(r.companyCode) + '</span></div>' +
+        '<div class="appr-meta">Requested by ' + apprEsc(r.requesterName || 'Unknown') + ' &middot; ' + apprRelativeTime(r.createdAt) + '</div>' +
+      '</div>' +
+    '</div>' +
+    apprDiffRows(r.payload) +
+    '<div class="appr-actions">' +
+      '<button type="button" class="appr-approve-btn" onclick="approveRequest(' + r.id + ')">Approve</button>' +
+      '<button type="button" class="appr-reject-toggle" onclick="toggleRejectNote(' + r.id + ')">Reject</button>' +
+    '</div>' +
+    '<div class="appr-reject-form" id="appr-reject-' + r.id + '" hidden>' +
+      '<textarea class="appr-reject-note" id="appr-note-' + r.id + '" placeholder="Reason for rejection (optional)" rows="2" maxlength="512"></textarea>' +
+      '<button type="button" class="appr-reject-confirm" onclick="rejectRequest(' + r.id + ')">Confirm rejection</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function apprDecidedCardHtml(r) {
+  var statusClass = { approved: 'appr-chip--green', rejected: 'appr-chip--red', superseded: 'appr-chip--gray', cancelled: 'appr-chip--gray' };
+  var cls = statusClass[r.status] || 'appr-chip--gray';
+  return '<div class="appr-card appr-card--decided">' +
+    '<div class="appr-card-head">' +
+      '<div class="appr-monogram">' + apprMonogram(r.companyName) + '</div>' +
+      '<div class="appr-card-title">' +
+        '<div class="appr-company-name">' + apprEsc(r.companyName) + ' <span class="appr-code">' + apprEsc(r.companyCode) + '</span></div>' +
+        '<div class="appr-meta">by ' + apprEsc(r.requesterName || 'Unknown') + ' &middot; ' + apprRelativeTime(r.createdAt) +
+          (r.decidedAt ? ' &middot; decided ' + apprRelativeTime(r.decidedAt) : '') + '</div>' +
+      '</div>' +
+      '<span class="appr-chip ' + cls + '">' + apprEsc(r.status) + '</span>' +
+    '</div>' +
+    apprDiffRows(r.payload) +
+    (r.adminNote ? '<div class="appr-admin-note">Admin note: ' + apprEsc(r.adminNote) + '</div>' : '') +
+  '</div>';
+}
+
+async function loadAdminApprovals() {
+  var host = document.getElementById('admin-approvals-body');
+  if (!host) return;
+  host.innerHTML = '<div class="adm-skeleton" style="height:120px;border-radius:12px;margin-bottom:12px"></div><div class="adm-skeleton" style="height:120px;border-radius:12px"></div>';
+  var status = _apprCurrentTab === 'decided' ? 'all' : 'pending';
+  try {
+    var res = await apiFetch('/api/admin/company-requests?status=' + status);
+    var data = await res.json().catch(function () { return {}; });
+    var requests = data.requests || [];
+    if (_apprCurrentTab === 'decided') {
+      requests = requests.filter(function (r) { return r.status !== 'pending'; });
+    }
+    if (!requests.length) {
+      host.innerHTML = '<div class="appr-empty"><div class="appr-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>' +
+        '<div class="appr-empty-title">' + (_apprCurrentTab === 'pending' ? 'No pending requests' : 'No decided requests yet') + '</div>' +
+        '<div class="appr-empty-sub">Partner change requests will appear here.</div></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < requests.length; i++) {
+      if (_apprCurrentTab === 'pending') {
+        html += apprPendingCardHtml(requests[i]);
+      } else {
+        html += apprDecidedCardHtml(requests[i]);
+      }
+    }
+    host.innerHTML = html;
+  } catch (e) {
+    host.innerHTML = '<div class="adm-error">Could not load requests. <button type="button" onclick="loadAdminApprovals()" class="adm-retry-btn">Retry</button></div>';
+  }
+}
+
+function toggleRejectNote(reqId) {
+  var form = document.getElementById('appr-reject-' + reqId);
+  if (form) form.hidden = !form.hidden;
+}
+
+async function approveRequest(reqId) {
+  var card = document.getElementById('appr-card-' + reqId);
+  var btn = card ? card.querySelector('.appr-approve-btn') : null;
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
+  try {
+    var res = await apiFetch('/api/admin/company-requests/' + reqId + '/approve', { method: 'POST' });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok) {
+      if (card) card.style.opacity = '0.4';
+      setTimeout(function () { loadAdminApprovals(); refreshApprovalsBadge(); }, 600);
+    } else {
+      alert(data.error || 'Could not approve.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
+    }
+  } catch (e) {
+    alert('Could not reach server.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
+  }
+}
+
+async function rejectRequest(reqId) {
+  var noteEl = document.getElementById('appr-note-' + reqId);
+  var note = noteEl ? noteEl.value.trim() : '';
+  var card = document.getElementById('appr-card-' + reqId);
+  var btn = card ? card.querySelector('.appr-reject-confirm') : null;
+  if (btn) { btn.disabled = true; btn.textContent = 'Rejecting...'; }
+  try {
+    var res = await apiFetch('/api/admin/company-requests/' + reqId + '/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: note })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok) {
+      if (card) card.style.opacity = '0.4';
+      setTimeout(function () { loadAdminApprovals(); refreshApprovalsBadge(); }, 600);
+    } else {
+      alert(data.error || 'Could not reject.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm rejection'; }
+    }
+  } catch (e) {
+    alert('Could not reach server.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm rejection'; }
+  }
 }
 
 

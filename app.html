@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us129-company-profile">
+  <link rel="stylesheet" href="/css/app.css?v=us130-admin-approvals">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -992,6 +992,9 @@
         <button type="button" class="admin-nav-item" data-admin-section="compliance" onclick="showAdminSection('compliance')">
           <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="admin-nav-label">Compliance</span>
         </button>
+        <button type="button" class="admin-nav-item" data-admin-section="approvals" onclick="showAdminSection('approvals')">
+          <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="admin-nav-label">Approvals</span><span id="admin-approvals-badge" class="admin-nav-badge" hidden>0</span>
+        </button>
 
         <div class="admin-nav-group-system">
           <div class="admin-nav-group-label">System</div>
@@ -1226,6 +1229,21 @@
           </div>
         </div>
         <div id="admin-compliance-recent"></div>
+      </section>
+
+      <!-- Approvals section -->
+      <section class="admin-section" id="admin-section-approvals" hidden>
+        <div class="admin-page-header">
+          <div>
+            <h1 class="adm-header-title">Approvals</h1>
+            <p class="adm-header-sub">Review and decide company change requests</p>
+          </div>
+        </div>
+        <div class="appr-tabs">
+          <button type="button" class="appr-tab appr-tab--active" id="appr-tab-pending" onclick="switchApprovalTab('pending')">Pending</button>
+          <button type="button" class="appr-tab" id="appr-tab-decided" onclick="switchApprovalTab('decided')">Decided</button>
+        </div>
+        <div id="admin-approvals-body"></div>
       </section>
 
       <section class="admin-section" id="admin-section-settings" hidden>
@@ -1579,6 +1597,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=b0a36723"></script>
+<script src="/js/app.bundle.js?v=2ce914b3"></script>
 </body>
 </html>

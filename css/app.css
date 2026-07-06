@@ -6755,6 +6755,206 @@ body.admin-map-fs { overflow: hidden; }
   .cprf-diff-table { font-size: 12px; }
 }
 
+/* ── Admin Approvals (US-130) ── */
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 20px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+.appr-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+.appr-tab {
+  padding: 8px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+.appr-tab--active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.appr-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: opacity .3s;
+}
+.appr-card--decided { opacity: .85; }
+.appr-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.appr-monogram {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #e0e7ff;
+  color: #3730a3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.appr-card-title { flex: 1; min-width: 0; }
+.appr-company-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+.appr-code {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: 6px;
+}
+.appr-meta {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.appr-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.appr-diff-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
+}
+.appr-diff-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.appr-diff-field { font-weight: 600; color: #374151; }
+.appr-diff-old { color: #dc2626; text-decoration: line-through; }
+.appr-diff-arrow { color: #9ca3af; text-align: center; }
+.appr-diff-new { color: #059669; font-weight: 600; }
+.appr-actions {
+  display: flex;
+  gap: 10px;
+}
+.appr-approve-btn {
+  background: #059669;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.appr-approve-btn:hover { background: #047857; }
+.appr-approve-btn:disabled { opacity: .5; cursor: not-allowed; }
+.appr-reject-toggle {
+  background: none;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.appr-reject-toggle:hover { background: #fef2f2; }
+.appr-reject-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.appr-reject-note {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+}
+.appr-reject-confirm {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.appr-reject-confirm:hover { background: #b91c1c; }
+.appr-reject-confirm:disabled { opacity: .5; cursor: not-allowed; }
+.appr-chip {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.appr-chip--green { background: #d1fae5; color: #065f46; }
+.appr-chip--red { background: #fee2e2; color: #991b1b; }
+.appr-chip--gray { background: #f3f4f6; color: #6b7280; }
+.appr-admin-note {
+  font-size: 13px;
+  color: #991b1b;
+  font-style: italic;
+  margin-top: 8px;
+}
+.appr-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+.appr-empty-icon { color: #d1d5db; margin-bottom: 12px; }
+.appr-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 4px;
+}
+.appr-empty-sub {
+  font-size: 14px;
+  color: #9ca3af;
+}
+.appr-no-diff {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+  .appr-card { padding: 14px; }
+  .appr-card-head { flex-wrap: wrap; }
+  .appr-diff-table { font-size: 12px; }
+  .appr-actions { flex-direction: column; }
+}
+
 /* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {
   .confirm-card,

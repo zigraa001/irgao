@@ -825,4 +825,169 @@ router.get(
   }
 );
 
+// ── Company change-request approvals (US-130) ──────────────────────────
+
+const COMPANY_EDIT_WHITELIST = ["name", "logoUrl", "contactEmail", "contactPhone", "description"];
+
+router.get(
+  "/company-requests",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const status = req.query.status || "pending";
+    const where = status === "all" ? "" : "WHERE cr.status = ?";
+    const params = status === "all" ? [] : [status];
+    const rows = await query(
+      `SELECT cr.*, oc.name AS companyName, oc.code AS companyCode, u.name AS requesterName
+       FROM company_change_requests cr
+       LEFT JOIN operator_companies oc ON oc.id = cr.companyId
+       LEFT JOIN users u ON u.id = cr.requestedBy
+       ${where}
+       ORDER BY cr.createdAt DESC
+       LIMIT 100`,
+      params
+    );
+    res.json({ requests: rows });
+  }
+);
+
+router.get(
+  "/company-requests/count",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const row = await queryOne(
+      "SELECT COUNT(*) AS cnt FROM company_change_requests WHERE status = 'pending'"
+    );
+    res.json({ count: row ? row.cnt : 0 });
+  }
+);
+
+router.post(
+  "/company-requests/:id/approve",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const reqId = Number(req.params.id);
+    if (!Number.isFinite(reqId)) return res.status(400).json({ error: "Invalid request ID." });
+
+    try {
+      const result = await query(
+        "UPDATE company_change_requests SET status = 'approved', adminId = ?, decidedAt = NOW() WHERE id = ? AND status = 'pending'",
+        [req.user.id, reqId]
+      );
+      if (result.affectedRows === 0) {
+        return res.status(409).json({ error: "Request already decided or not found." });
+      }
+
+      const cr = await queryOne("SELECT companyId, payload FROM company_change_requests WHERE id = ?", [reqId]);
+      if (cr) {
+        let payload;
+        try { payload = typeof cr.payload === "string" ? JSON.parse(cr.payload) : cr.payload; } catch (e) { payload = {}; }
+        const sets = [];
+        const vals = [];
+        for (const key of COMPANY_EDIT_WHITELIST) {
+          if (payload[key] && payload[key].to !== undefined) {
+            sets.push(`${key} = ?`);
+            vals.push(payload[key].to);
+          }
+        }
+        if (sets.length) {
+          vals.push(cr.companyId);
+          await query(`UPDATE operator_companies SET ${sets.join(", ")} WHERE id = ?`, vals);
+        }
+
+        const adminUser = await queryOne("SELECT name FROM users WHERE id = ?", [req.user.id]);
+        const diffSummary = Object.keys(payload).map(k => `${k}: ${payload[k].from || "(empty)"} -> ${payload[k].to || "(empty)"}`).join("; ");
+        await query(
+          "INSERT INTO company_pricing_changelog (companyId, actorName, changes) VALUES (?, ?, ?)",
+          [cr.companyId, adminUser ? adminUser.name : "Admin", "APPROVED profile change: " + diffSummary]
+        );
+      }
+
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[admin] approve request failed:", err.message);
+      res.status(500).json({ error: "Could not approve request." });
+    }
+  }
+);
+
+router.post(
+  "/company-requests/:id/reject",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const reqId = Number(req.params.id);
+    if (!Number.isFinite(reqId)) return res.status(400).json({ error: "Invalid request ID." });
+    const note = (req.body && req.body.note) ? String(req.body.note).slice(0, 512) : "";
+
+    try {
+      const result = await query(
+        "UPDATE company_change_requests SET status = 'rejected', adminId = ?, adminNote = ?, decidedAt = NOW() WHERE id = ? AND status = 'pending'",
+        [req.user.id, note, reqId]
+      );
+      if (result.affectedRows === 0) {
+        return res.status(409).json({ error: "Request already decided or not found." });
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[admin] reject request failed:", err.message);
+      res.status(500).json({ error: "Could not reject request." });
+    }
+  }
+);
+
+// PATCH /api/admin/companies/:id — direct admin edit of company fields.
+router.patch(
+  "/companies/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      return res.status(400).json({ error: "Invalid company ID." });
+    }
+    const allowedFields = ["name", "logoUrl", "contactEmail", "contactPhone", "description", "active", "fleetSize"];
+    const body = req.body || {};
+    const sets = [];
+    const vals = [];
+    const diffs = [];
+
+    const current = await queryOne("SELECT * FROM operator_companies WHERE id = ?", [companyId]);
+    if (!current) return res.status(404).json({ error: "Company not found." });
+
+    for (const key of allowedFields) {
+      if (key in body) {
+        const val = body[key];
+        sets.push(`${key} = ?`);
+        vals.push(val);
+        const oldVal = current[key] === null || current[key] === undefined ? "(empty)" : String(current[key]);
+        const newVal = val === null || val === undefined ? "(empty)" : String(val);
+        if (oldVal !== newVal) diffs.push(`${key}: ${oldVal} -> ${newVal}`);
+      }
+    }
+    if (!sets.length) return res.status(400).json({ error: "No editable fields provided." });
+
+    try {
+      vals.push(companyId);
+      await query(`UPDATE operator_companies SET ${sets.join(", ")} WHERE id = ?`, vals);
+
+      if (diffs.length) {
+        const adminUser = await queryOne("SELECT name FROM users WHERE id = ?", [req.user.id]);
+        await query(
+          "INSERT INTO company_pricing_changelog (companyId, actorName, changes) VALUES (?, ?, ?)",
+          [companyId, adminUser ? adminUser.name : "Admin", "Admin direct edit: " + diffs.join("; ")]
+        );
+      }
+
+      const updated = await queryOne("SELECT * FROM operator_companies WHERE id = ?", [companyId]);
+      res.json({ company: updated });
+    } catch (err) {
+      console.error("[admin] company PATCH failed:", err.message);
+      res.status(500).json({ error: "Could not update company." });
+    }
+  }
+);
+
 module.exports = router;
