@@ -2352,12 +2352,30 @@ function adminPageCanLoadMore() {
   return nextFetch < pageCap && nextFetch < adminUsersTotal;
 }
 
+function adminUsersSkeleton() {
+  var rows = '';
+  var widths = [140, 120, 160, 130];
+  var emailWidths = [180, 200, 170, 190];
+  for (var i = 0; i < 4; i++) {
+    rows +=
+      '<div class="adm-skeleton-row">' +
+        '<div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div>' +
+        '<div style="flex:1">' +
+          '<div class="adm-skeleton" style="height:14px;width:' + widths[i] + 'px;border-radius:4px;margin-bottom:6px"></div>' +
+          '<div class="adm-skeleton" style="height:12px;width:' + emailWidths[i] + 'px;border-radius:4px"></div>' +
+        '</div>' +
+        '<div class="adm-skeleton" style="height:22px;width:' + (56 + i * 8) + 'px;border-radius:11px"></div>' +
+      '</div>';
+  }
+  return rows;
+}
+
 async function loadAdminUsersChunk(showInitialLoading) {
   const listHost = document.getElementById('admin-users-list');
   if (!listHost || adminUsersLoading) return;
 
   if (showInitialLoading && adminUsers.length === 0) {
-    listHost.innerHTML = '<div class="op-empty"><div class="op-empty-sub">Fetching users...</div></div>';
+    listHost.innerHTML = adminUsersSkeleton();
   }
 
   const fetchOffset = adminPageStartOffset() + adminUsers.length;
@@ -2385,10 +2403,10 @@ async function loadAdminUsersChunk(showInitialLoading) {
       adminUsers = [];
       adminUsersTotal = 0;
       listHost.innerHTML =
-        '<div class="op-empty">' +
-        '<div class="op-empty-icon">🔒</div>' +
-        '<div class="op-empty-title">Tailscale required</div>' +
-        '<div class="op-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
+        '<div class="adm-empty">' +
+        '<div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>' +
+        '<div class="adm-empty-title">Tailscale required</div>' +
+        '<div class="adm-empty-sub">' + escapeHtml(data.error || 'Connect via Tailscale to use the admin panel.') + '</div>' +
         '</div>';
       document.getElementById('admin-users-pager').innerHTML = '';
       document.getElementById('admin-users-meta').textContent = '';
@@ -2402,8 +2420,10 @@ async function loadAdminUsersChunk(showInitialLoading) {
     adminUsers = [];
     adminUsersTotal = 0;
     listHost.innerHTML =
-      '<div class="op-empty"><div class="op-empty-title">Could not load users</div>' +
-      '<div class="op-empty-sub">Please try again in a moment.</div></div>';
+      '<div class="adm-empty">' +
+      '<div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>' +
+      '<div class="adm-empty-title">Could not load users</div>' +
+      '<div class="adm-empty-sub">Please try again in a moment.</div></div>';
     document.getElementById('admin-users-pager').innerHTML = '';
     return;
   } finally {
@@ -2437,17 +2457,16 @@ function renderAdminUsers() {
 
   if (metaHost) {
     metaHost.textContent = adminUsersTotal
-      ? 'Showing ' + (adminUsers.length ? (pageStart + 1) : 0) + '–' + showingEnd + ' of ' + adminUsersTotal +
-        ' · Page ' + (adminUserPage + 1) + ' of ' + adminPageCount() + ' · loads 6 at a time'
+      ? 'Showing ' + (adminUsers.length ? (pageStart + 1) : 0) + '–' + showingEnd + ' of ' + adminUsersTotal
       : '';
   }
 
   if (!adminUsers.length) {
     listHost.innerHTML =
-      '<div class="op-empty">' +
-      '<div class="op-empty-icon">👥</div>' +
-      '<div class="op-empty-title">No ' + (adminUserTab === 'operator' ? 'pilots' : 'passengers') + ' found</div>' +
-      '<div class="op-empty-sub">New accounts will show up here once they register or are added by an admin.</div>' +
+      '<div class="adm-empty">' +
+      '<div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>' +
+      '<div class="adm-empty-title">No ' + (adminUserTab === 'operator' ? 'pilots' : 'passengers') + ' found</div>' +
+      '<div class="adm-empty-sub">New accounts will show up here once they register or are added by an admin.</div>' +
       '</div>';
   } else {
     var filtered = adminUsers;
@@ -2460,49 +2479,49 @@ function renderAdminUsers() {
     }
     if (!filtered.length && adminUserCompanyFilter) {
       listHost.innerHTML =
-        '<div class="op-empty">' +
-        '<div class="op-empty-icon">🔍</div>' +
-        '<div class="op-empty-title">No pilots in this company</div>' +
-        '<div class="op-empty-sub">Try a different company filter or add a pilot to this company.</div>' +
+        '<div class="adm-empty">' +
+        '<div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
+        '<div class="adm-empty-title">No pilots in this company</div>' +
+        '<div class="adm-empty-sub">Try a different company filter or add a pilot to this company.</div>' +
         '</div>';
     } else {
     listHost.innerHTML = filtered.map(function (u) {
       const initial = String((u.name || u.email || '?')).trim().charAt(0).toUpperCase() || '?';
-      const bannedBadge = u.banned
-        ? ' <span class="op-status-badge op-badge--red">Banned</span>'
-        : '';
-      var companyChip = '';
+      var tags = roleBadgeHtml(u.role);
       if (u.role === 'operator') {
         if (u.companyName) {
-          companyChip = '<span class="op-status-badge op-badge--blue">' + escapeHtml(u.companyName) + '</span>';
+          tags += '<span class="op-status-badge op-badge--blue">' + escapeHtml(u.companyName) + '</span>';
         } else {
-          companyChip = '<span class="op-status-badge op-badge--amber">Unassigned</span>';
+          tags += '<span class="op-status-badge op-badge--amber">Unassigned</span>';
         }
       }
-      let actions;
+      if (u.banned) {
+        tags += '<span class="op-status-badge op-badge--red">Banned</span>';
+      }
+      var actions;
       if (u.role === 'admin') {
         actions = '<span class="admin-user-note">Password via .env bootstrap</span>';
       } else {
         actions =
           '<div class="admin-user-actions">' +
-          '<button type="button" class="admin-btn-sm primary" onclick="event.stopPropagation();adminResetPassword(' + u.id + ')">Reset password</button>' +
-          '<button type="button" class="admin-btn-sm" onclick="event.stopPropagation();adminSendResetOtp(' + u.id + ')">Email OTP</button>' +
+          '<button type="button" class="admin-btn-sm primary" onclick="event.stopPropagation();adminResetPassword(' + u.id + ')">Reset</button>' +
+          '<button type="button" class="admin-btn-sm" onclick="event.stopPropagation();adminSendResetOtp(' + u.id + ')">OTP</button>' +
           '<button type="button" class="admin-btn-sm" onclick="event.stopPropagation();adminBanUser(' + u.id + ',' + (!u.banned) + ')">' +
             (u.banned ? 'Unban' : 'Ban') + '</button>' +
           '<button type="button" class="admin-btn-sm danger" onclick="event.stopPropagation();adminDeleteUser(' + u.id + ')">Delete</button>' +
           '</div>';
       }
-      const chevron = '<span class="admin-user-chevron" aria-hidden="true">›</span>';
+      var chevronSvg = '<span class="admin-user-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></span>';
       return (
         '<div class="admin-user-card" role="button" tabindex="0" onclick="openAdminUserDrawer(' + u.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openAdminUserDrawer(' + u.id + ')}">' +
           '<div class="admin-user-id">' + escapeHtml(initial) + '</div>' +
           '<div class="admin-user-main">' +
-            '<div class="admin-user-name">' + escapeHtml(u.name || '--') + bannedBadge + companyChip + '</div>' +
+            '<div class="admin-user-name">' + escapeHtml(u.name || '--') + '</div>' +
             '<div class="admin-user-email">' + escapeHtml(u.email || '') + '</div>' +
           '</div>' +
-          roleBadgeHtml(u.role) +
+          '<div class="admin-user-tags">' + tags + '</div>' +
           actions +
-          chevron +
+          chevronSvg +
         '</div>'
       );
     }).join('');
@@ -2510,17 +2529,23 @@ function renderAdminUsers() {
   }
 
   if (pagerHost) {
-    const loadMore = adminPageCanLoadMore();
+    var prevSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>';
+    var nextSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>';
+    var loadMore = adminPageCanLoadMore();
     pagerHost.innerHTML =
+      '<span class="admin-pager-info">' +
+        (adminUsersTotal ? 'Showing ' + (adminUsers.length ? (pageStart + 1) : 0) + '–' + showingEnd + ' of ' + adminUsersTotal : '') +
+      '</span>' +
       '<div class="admin-pager-btns">' +
-        '<button type="button" class="admin-load-more" onclick="adminUsersPrevPage()" ' +
-          (adminUserPage <= 0 ? 'disabled' : '') + '>← Prev page</button>' +
-        '<button type="button" class="admin-load-more" onclick="adminUsersNextPage()" ' +
-          (adminUserPage >= adminPageCount() - 1 ? 'disabled' : '') + '>Next page →</button>' +
+        '<button type="button" class="admin-pager-btn" onclick="adminUsersPrevPage()" ' +
+          (adminUserPage <= 0 ? 'disabled' : '') + '>' + prevSvg + '</button>' +
+        '<span class="admin-pager-page">' + (adminUserPage + 1) + ' / ' + adminPageCount() + '</span>' +
+        '<button type="button" class="admin-pager-btn" onclick="adminUsersNextPage()" ' +
+          (adminUserPage >= adminPageCount() - 1 ? 'disabled' : '') + '>' + nextSvg + '</button>' +
       '</div>' +
       (loadMore
-        ? '<button type="button" class="admin-load-more" onclick="loadAdminUsersChunk(false)">Load 6 more on this page</button>'
-        : '<span class="admin-users-meta admin-users-meta--flush">All loaded for this page</span>');
+        ? '<button type="button" class="admin-load-more" onclick="loadAdminUsersChunk(false)">Load more</button>'
+        : '');
   }
 }
 

@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us102-kpi-cards">
+  <link rel="stylesheet" href="/css/app.css?v=us103-users-table">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1032,22 +1032,27 @@
           </div>
         </div>
         <div id="admin-users-panel">
-          <div class="admin-user-tabs">
-            <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
-            <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Pilots</button>
+          <div class="admin-users-toolbar">
+            <div class="admin-user-tabs">
+              <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
+              <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Pilots</button>
+            </div>
+            <div id="admin-users-company-filter" class="admin-company-filter" hidden>
+              <select id="admin-users-company-select" class="admin-form-select admin-company-filter-select" onchange="filterAdminUsersByCompany()">
+                <option value="">All companies</option>
+              </select>
+            </div>
+            <div id="admin-users-meta" class="admin-users-meta"></div>
           </div>
-          <div id="admin-users-company-filter" class="admin-company-filter" hidden>
-            <select id="admin-users-company-select" class="admin-form-select admin-company-filter-select" onchange="filterAdminUsersByCompany()">
-              <option value="">All companies</option>
-            </select>
-          </div>
-          <div id="admin-users-meta" class="admin-users-meta"></div>
-          <div id="admin-users-list">
-            <div class="op-empty"><div class="op-empty-sub">Fetching users...</div></div>
+          <div id="admin-users-list" class="admin-users-list-card">
+            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:140px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:180px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:64px;border-radius:11px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:120px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:200px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:72px;border-radius:11px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:160px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:170px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:56px;border-radius:11px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:130px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:190px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:68px;border-radius:11px"></div></div>
           </div>
           <div id="admin-users-pager" class="admin-users-pager"></div>
         </div>
-        <p class="admin-users-meta admin-meta-footer">Tap any user to open their profile, trips and fare breakdown.</p>
+        <p class="admin-users-meta admin-meta-footer">Click any row to open their profile, trips and fare breakdown.</p>
       </section>
 
       <!-- Operators Live Map section -->
@@ -1384,6 +1389,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=739523ae"></script>
+<script src="/js/app.bundle.js?v=295b4d13"></script>
 </body>
 </html>
