@@ -837,3 +837,37 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The cp-* CSS class prefix is for company pilots section -- matches the cf-* prefix pattern from company flights
   - companyOfficesLoaded flag caches the offices list for the add-pilot form -- avoids re-fetching on repeated form opens
 ---
+
+## 2026-07-06 - US-128
+- What was implemented: Company price rules -- per-company rate card overrides that actually price fares. Full fare honesty chain from feasibility -> booking -> quote -> pay. Dispatch preference for the booking company's pilots. Payout correctness via persisted operatorPayout with legacy fallback. Company and admin UI for price rules.
+- Files changed: src/schema.js (company_service_pricing + company_pricing_changelog CREATE TABLE IF NOT EXISTS), src/pricing.js (loadCompanyPricing with 60s cache, _servicePricing override in estimateFare), src/fare-breakdown.js (_servicePricing override in fareBreakdown), src/booking-routes.js (company pricing in POST /api/bookings, fareBaseForUser, feasibility), src/dispatch.js (applyCompanyPreference sorts booking company pilots first), src/operator-routes.js (earnings uses persisted operatorPayout), src/admin-routes.js (revenue uses persisted operatorPayout, GET /api/admin/companies/:id/pricing), src/profile-stats.js (operatorStats uses persisted operatorPayout), src/company-routes.js (GET/POST /api/company/pricing), js/app/10-company.js (pricing UI: cards, save, changelog), js/app/03-admin-profile.js (toggleCompanyPricing in admin partner cards), app.html (company-pricing-body div, CSS cache-buster), css/app.css (cpr-* pricing card styles), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - Schema: `CREATE TABLE IF NOT EXISTS company_service_pricing` at schema.js:434, `company_pricing_changelog` at schema.js:446
+  - Pricing engine: `loadCompanyPricing(companyId, service)` at pricing.js:111, `_servicePricing` override at pricing.js:131 and fare-breakdown.js:10
+  - Fare honesty chain (3 call sites):
+    1. POST /api/bookings: `loadCompanyPricing(bookingCompanyId, service)` at booking-routes.js:255
+    2. fareBaseForUser (used by /quote and /pay): `loadCompanyPricing(booking.companyId, booking.service)` at booking-routes.js:100
+    3. POST /api/bookings/feasibility: `loadCompanyPricing(feasCompanyId, service)` at booking-routes.js:467
+  - Dispatch preference: `applyCompanyPreference(nearbyRaw, booking.companyId)` at dispatch.js:259 -- sorts preferred company first, others remain eligible fallbacks; fare stands as priced (territory pricing) regardless of who accepts
+  - Payout readers using persisted operatorPayout:
+    - operator-routes.js: `COALESCE(operatorPayout, fareEstimate * (1 - ?))` in total/month/daily aggregations
+    - admin-routes.js: `COALESCE(b.operatorPayout, b.fareEstimate * ?)` in operatorPayouts query
+    - profile-stats.js: `r.operatorPayout != null ? r.operatorPayout : (r.fareEstimate || 0) * (1 - commRate)` per-row
+  - Company endpoints: GET /api/company/pricing at company-routes.js:337, POST /api/company/pricing at company-routes.js:371 with 0.5x-3x validation bounds
+  - Admin endpoint: GET /api/admin/companies/:id/pricing at admin-routes.js:614
+  - UI: `loadCompanyPricing()` at 10-company.js:588, `saveCompanyPricing(service)` at 10-company.js:608, pricing cards with cpr-* CSS classes
+  - Admin partner card: `toggleCompanyPricing(this, companyId)` at 03-admin-profile.js:683
+  - demo-routes.js `estimateFare('taxi', distanceKm)` untouched (no opts, uses platform defaults)
+  - pdStat() not affected (unchanged, still used by profile/compliance)
+  - loadAdminUsers endpoint/params untouched
+  - npm run build:js succeeded (v=d495c9bc); CSS cache-buster v=us128-company-pricing; npm run typecheck passes
+  - Server boots clean; DB not available locally for curl verification
+- **Learnings for future iterations:**
+  - The _servicePricing override is the designated swap point for per-company base/perKm pricing -- it parallels the existing _rates pattern for surcharges/GST
+  - loadCompanyPricing uses a Map-based cache keyed by `companyId:service` with 60s TTL, same pattern as loadPricingConfig
+  - The fare honesty chain has THREE call sites that must all resolve company pricing: booking creation (POST /api/bookings), fareBaseForUser (used by /quote + /pay), and feasibility
+  - applyCompanyPreference is NOT a hard filter -- it sorts the booking company's pilots first but keeps all pilots eligible, preserving dispatch liquidity for small fleets
+  - Payout readers now use COALESCE(operatorPayout, fareEstimate * fallback) -- historical payouts no longer change when the commission rate changes
+  - The cpr-* CSS prefix is for company pricing section, continuing the cf-*/cp-* prefix convention
+  - POST /api/company/pricing uses ON DUPLICATE KEY UPDATE for idempotent upserts, matching the pricing_config pattern
+---
