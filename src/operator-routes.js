@@ -481,27 +481,32 @@ router.get(
 
     const [totalAgg, monthAgg, dailyRows, recentTrips] = await Promise.all([
       queryOne(
-        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross, COUNT(*) AS trips
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross,
+                COALESCE(SUM(COALESCE(operatorPayout, fareEstimate * (1 - ?))), 0) AS net,
+                COUNT(*) AS trips
          FROM bookings WHERE operatorId = ? AND status = 'completed'`,
-        [req.user.id]
+        [commissionRate, req.user.id]
       ),
       queryOne(
-        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross, COUNT(*) AS trips
+        `SELECT COALESCE(SUM(fareEstimate), 0) AS gross,
+                COALESCE(SUM(COALESCE(operatorPayout, fareEstimate * (1 - ?))), 0) AS net,
+                COUNT(*) AS trips
          FROM bookings WHERE operatorId = ? AND status = 'completed'
            AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`,
-        [req.user.id]
+        [commissionRate, req.user.id]
       ),
       query(
         `SELECT DATE(createdAt) AS day,
                 COALESCE(SUM(fareEstimate), 0) AS gross,
+                COALESCE(SUM(COALESCE(operatorPayout, fareEstimate * (1 - ?))), 0) AS net,
                 COUNT(*) AS trips
          FROM bookings WHERE operatorId = ? AND status = 'completed'
            AND createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
          GROUP BY DATE(createdAt) ORDER BY day`,
-        [req.user.id]
+        [commissionRate, req.user.id]
       ),
       query(
-        `SELECT id, service, distanceKm, fareEstimate, pickupName, destName, createdAt
+        `SELECT id, service, distanceKm, fareEstimate, operatorPayout, pickupName, destName, createdAt
          FROM bookings WHERE operatorId = ? AND status = 'completed'
          ORDER BY createdAt DESC LIMIT 10`,
         [req.user.id]
@@ -509,21 +514,23 @@ router.get(
     ]);
 
     const totalGross = Number(totalAgg?.gross) || 0;
+    const totalNet = Number(totalAgg?.net) || 0;
     const monthGross = Number(monthAgg?.gross) || 0;
+    const monthNet = Number(monthAgg?.net) || 0;
 
     res.json({
       totalGross: Math.round(totalGross),
-      totalNet: Math.round(totalGross * (1 - commissionRate)),
-      totalCommission: Math.round(totalGross * commissionRate),
+      totalNet: Math.round(totalNet),
+      totalCommission: Math.round(totalGross - totalNet),
       completedTrips: Number(totalAgg?.trips) || 0,
       monthGross: Math.round(monthGross),
-      monthNet: Math.round(monthGross * (1 - commissionRate)),
+      monthNet: Math.round(monthNet),
       monthTrips: Number(monthAgg?.trips) || 0,
       commissionRate: Math.round(commissionRate * 100),
       dailyChart: dailyRows.map(r => ({
         day: r.day,
         gross: Math.round(Number(r.gross)),
-        net: Math.round(Number(r.gross) * (1 - commissionRate)),
+        net: Math.round(Number(r.net)),
         trips: r.trips,
       })),
       recentTrips: recentTrips.map(r => ({
@@ -531,7 +538,7 @@ router.get(
         service: r.service,
         distanceKm: r.distanceKm,
         fare: Math.round(r.fareEstimate),
-        net: Math.round(r.fareEstimate * (1 - commissionRate)),
+        net: Math.round(r.operatorPayout != null ? r.operatorPayout : r.fareEstimate * (1 - commissionRate)),
         route: `${r.pickupName} → ${r.destName}`,
         createdAt: r.createdAt,
       })),

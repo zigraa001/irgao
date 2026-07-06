@@ -630,6 +630,10 @@ async function loadAdminCompanies() {
             '<span>View offices</span><svg class="partner-chevron" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>' +
           '</button>' +
           '<div class="partner-offices" id="partner-offices-' + c.id + '"></div>' +
+          '<button type="button" class="partner-offices-toggle" onclick="toggleCompanyPricing(this,' + c.id + ')">' +
+            '<span>View pricing</span><svg class="partner-chevron" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>' +
+          '</button>' +
+          '<div class="partner-offices" id="partner-pricing-' + c.id + '"></div>' +
         '</div>';
       }).join('');
     }
@@ -673,6 +677,51 @@ async function toggleCompanyOffices(btn, companyId) {
     container.innerHTML = '<div class="op-empty-sub">Network error.</div>';
     container.classList.add('open');
     btn.querySelector('span').textContent = 'Hide offices';
+  }
+}
+
+async function toggleCompanyPricing(btn, companyId) {
+  var container = document.getElementById('partner-pricing-' + companyId);
+  if (!container) return;
+  if (container.classList.contains('open')) {
+    container.classList.remove('open');
+    container.innerHTML = '';
+    btn.querySelector('span').textContent = 'View pricing';
+    return;
+  }
+  btn.querySelector('span').textContent = 'Loading...';
+  try {
+    var res = await apiFetch('/api/admin/companies/' + companyId + '/pricing');
+    var data = await res.json();
+    if (!res.ok || !data.overrides) { container.innerHTML = '<div class="op-empty-sub">Could not load pricing.</div>'; return; }
+    if (!data.overrides.length) {
+      container.innerHTML = '<div class="partner-offices-empty">No pricing overrides -- using platform defaults.</div>';
+    } else {
+      container.innerHTML = data.overrides.map(function (o) {
+        var svcLabel = (typeof SERVICE_LABELS !== 'undefined' && SERVICE_LABELS[o.service]) || o.service;
+        return '<div class="partner-office-row">' +
+          '<div class="partner-office-city">' + escapeHtml(svcLabel) + '</div>' +
+          '<div class="partner-office-meta">' +
+            '<span>Base: ' + INR(o.baseFare) + '</span>' +
+            '<span>Per km: ' + INR(o.perKm) + '</span>' +
+            '<span class="op-status-badge ' + (o.active ? 'op-badge--green' : 'op-badge--gray') + ' op-status-badge-sm">' + (o.active ? 'Active' : 'Inactive') + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      if (data.changelog && data.changelog.length) {
+        container.innerHTML += '<div style="padding:8px 0 4px;font-size:11px;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px">Recent changes</div>';
+        container.innerHTML += data.changelog.map(function (c) {
+          var date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+          return '<div class="partner-office-row" style="padding:4px 0"><div class="partner-office-meta"><span>' + escapeHtml(c.actorName) + ' &middot; ' + date + '</span><span>' + escapeHtml(c.changes) + '</span></div></div>';
+        }).join('');
+      }
+    }
+    container.classList.add('open');
+    btn.querySelector('span').textContent = 'Hide pricing';
+  } catch (e) {
+    container.innerHTML = '<div class="op-empty-sub">Network error.</div>';
+    container.classList.add('open');
+    btn.querySelector('span').textContent = 'Hide pricing';
   }
 }
 

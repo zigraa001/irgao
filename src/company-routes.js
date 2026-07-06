@@ -331,4 +331,99 @@ router.patch("/pilots/:id/status", async (req, res) => {
   }
 });
 
+// ── Company pricing (per-service rate card overrides) ─────────────────
+const { SERVICE_PRICING, SERVICES } = require("./pricing");
+
+// GET /api/company/pricing — platform defaults + company overrides per service
+router.get("/pricing", async (req, res) => {
+  const cid = req.company.id;
+  try {
+    const overrides = await query(
+      "SELECT service, baseFare, perKm, active, updatedAt FROM company_service_pricing WHERE companyId = ?",
+      [cid]
+    );
+    const overrideMap = {};
+    for (const r of overrides) overrideMap[r.service] = r;
+
+    const services = SERVICES.map((svc) => {
+      const platform = SERVICE_PRICING[svc];
+      const ov = overrideMap[svc];
+      return {
+        service: svc,
+        platform: { base: platform.base, perKm: platform.perKm },
+        override: ov ? { baseFare: ov.baseFare, perKm: ov.perKm, active: Boolean(ov.active), updatedAt: ov.updatedAt } : null,
+        bounds: { minBase: platform.base * 0.5, maxBase: platform.base * 3, minPerKm: platform.perKm * 0.5, maxPerKm: platform.perKm * 3 },
+      };
+    });
+
+    const changelog = await query(
+      "SELECT actorName, changes, createdAt FROM company_pricing_changelog WHERE companyId = ? ORDER BY createdAt DESC LIMIT 20",
+      [cid]
+    );
+
+    res.json({ services, changelog, company: { id: cid, name: req.company.name, code: req.company.code } });
+  } catch (err) {
+    console.error("[company] pricing GET failed:", err.message);
+    res.status(500).json({ error: "Could not load pricing." });
+  }
+});
+
+// POST /api/company/pricing — set/update a per-service rate card override
+router.post("/pricing", async (req, res) => {
+  const cid = req.company.id;
+  const { service, baseFare, perKm } = req.body || {};
+
+  if (!service || !SERVICES.includes(service)) {
+    return res.status(400).json({ error: "A valid service is required (taxi, golden, shuttle)." });
+  }
+  const base = Number(baseFare);
+  const km = Number(perKm);
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(km) || km <= 0) {
+    return res.status(400).json({ error: "baseFare and perKm must be positive numbers." });
+  }
+
+  const platform = SERVICE_PRICING[service];
+  if (base < platform.base * 0.5 || base > platform.base * 3) {
+    return res.status(400).json({ error: `baseFare must be between ${platform.base * 0.5} and ${platform.base * 3} for ${service}.` });
+  }
+  if (km < platform.perKm * 0.5 || km > platform.perKm * 3) {
+    return res.status(400).json({ error: `perKm must be between ${platform.perKm * 0.5} and ${platform.perKm * 3} for ${service}.` });
+  }
+
+  try {
+    const existing = await queryOne(
+      "SELECT baseFare, perKm FROM company_service_pricing WHERE companyId = ? AND service = ?",
+      [cid, service]
+    );
+
+    await query(
+      `INSERT INTO company_service_pricing (companyId, service, baseFare, perKm, updatedBy)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE baseFare = VALUES(baseFare), perKm = VALUES(perKm), active = 1, updatedBy = VALUES(updatedBy)`,
+      [cid, service, base, km, req.user.id]
+    );
+
+    // Changelog diff
+    const diffs = [];
+    if (existing) {
+      if (existing.baseFare !== base) diffs.push(`${service} base: ${existing.baseFare} -> ${base}`);
+      if (existing.perKm !== km) diffs.push(`${service} perKm: ${existing.perKm} -> ${km}`);
+    } else {
+      diffs.push(`${service} base: ${platform.base} (platform) -> ${base}, perKm: ${platform.perKm} (platform) -> ${km}`);
+    }
+    if (diffs.length) {
+      const userName = await queryOne("SELECT name FROM users WHERE id = ?", [req.user.id]);
+      await query(
+        "INSERT INTO company_pricing_changelog (companyId, actorName, changes) VALUES (?, ?, ?)",
+        [cid, userName ? userName.name : "Company user", diffs.join("; ")]
+      );
+    }
+
+    res.json({ ok: true, service, baseFare: base, perKm: km });
+  } catch (err) {
+    console.error("[company] pricing POST failed:", err.message);
+    res.status(500).json({ error: "Could not save pricing." });
+  }
+});
+
 module.exports = router;

@@ -15,6 +15,7 @@ const {
   applyNewFlyerDiscount,
   loadPricingConfig,
   getSurchargeRates,
+  loadCompanyPricing,
 } = require("./pricing");
 const { estimateCarbonSavedKg, carbonComparison, CREDITS_PER_KM } = require("./carbon");
 const { startDispatch, stopDispatch, setOperatorDuty, listAvailableOperatorsNear } = require("./dispatch");
@@ -95,7 +96,10 @@ async function fareBaseForUser(booking, userId, surchargeOpts = {}) {
   const completedFlights = row ? Number(row.n) : 0;
   const cfg = await loadPricingConfig();
   const rates = getSurchargeRates(cfg);
+  // Resolve company pricing: use booking.companyId to load per-company rate card
+  const companyPricing = await loadCompanyPricing(booking.companyId, booking.service);
   const optsWithRates = { ...surchargeOpts, _rates: rates };
+  if (companyPricing) optsWithRates._servicePricing = companyPricing;
   const baseFare = estimateFare(booking.service, booking.distanceKm, optsWithRates);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   const fb = fareBreakdown(booking.service, booking.distanceKm, discountInfo, 0, null, optsWithRates);
@@ -223,9 +227,6 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
   const cfg = await loadPricingConfig();
   const rates = getSurchargeRates(cfg);
   const surchargeOpts = { bookingType, weatherRisk, _rates: rates };
-  const baseFare = estimateFare(service, distanceKm, surchargeOpts);
-  const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
-  let fareEstimate = discountInfo.fare;
 
   const carbonSavedKg = estimateCarbonSavedKg(service, distanceKm);
 
@@ -249,6 +250,14 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
 
   const bookingCompanyId = nearestOffice ? nearestOffice.companyId : null;
   const bookingOfficeId = nearestOffice ? nearestOffice.id : null;
+
+  // Company pricing: territory-based rate card override
+  const companyPricing = await loadCompanyPricing(bookingCompanyId, service);
+  if (companyPricing) surchargeOpts._servicePricing = companyPricing;
+
+  const baseFare = estimateFare(service, distanceKm, surchargeOpts);
+  const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
+  let fareEstimate = discountInfo.fare;
 
   const result = await query(
     `INSERT INTO bookings
@@ -442,6 +451,22 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
   const cfgF = await loadPricingConfig();
   const ratesF = getSurchargeRates(cfgF);
   const surchargeOpts = { bookingType, weatherRisk: weather.riskLevel, _rates: ratesF };
+
+  // Resolve nearest company for territory pricing (mirrors POST /api/bookings)
+  let feasCompanyId = null;
+  try {
+    const offices = await query(
+      "SELECT ro.companyId, ro.lat, ro.lng FROM regional_offices ro JOIN operator_companies oc ON oc.id = ro.companyId WHERE ro.active = 1 AND oc.active = 1"
+    );
+    let minDist = Infinity;
+    for (const o of offices) {
+      const d = haversineKm(pickupLat, pickupLng, o.lat, o.lng);
+      if (d < minDist) { minDist = d; feasCompanyId = o.companyId; }
+    }
+  } catch {}
+  const feasCompanyPricing = await loadCompanyPricing(feasCompanyId, service);
+  if (feasCompanyPricing) surchargeOpts._servicePricing = feasCompanyPricing;
+
   const baseFare = estimateFare(service, distanceKm, surchargeOpts);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   const creditsRate = CREDITS_PER_KM[service] || CREDITS_PER_KM.taxi;

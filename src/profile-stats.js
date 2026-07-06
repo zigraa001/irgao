@@ -92,7 +92,7 @@ async function customerStats(userId) {
 
 async function operatorStats(userId) {
   const rows = await query(
-    `SELECT id, service, status, distanceKm, fareEstimate, carbonSavedKg,
+    `SELECT id, service, status, distanceKm, fareEstimate, operatorPayout, carbonSavedKg,
             pickupName, destName, createdAt
        FROM bookings
        WHERE operatorId = ?
@@ -109,7 +109,12 @@ async function operatorStats(userId) {
     );
     if (commRow) commRate = commRow.settingValue / 100;
   } catch {}
-  const earnings = Math.round(sumRows(completedRows, "fareEstimate") * (1 - commRate));
+  // Use persisted operatorPayout per row with legacy fallback
+  let earnings = 0;
+  for (const r of completedRows) {
+    earnings += r.operatorPayout != null ? r.operatorPayout : (r.fareEstimate || 0) * (1 - commRate);
+  }
+  earnings = Math.round(earnings);
 
   const totals = {
     assigned: rows.length,

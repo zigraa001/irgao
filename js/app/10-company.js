@@ -24,6 +24,7 @@ function showCompanySection(name) {
   if (name === 'dashboard') loadCompanyDashboard();
   if (name === 'flights') loadCompanyFlights();
   if (name === 'pilots') loadCompanyPilots();
+  if (name === 'pricing') loadCompanyPricing();
 }
 
 function toggleCompanyDrawer() {
@@ -497,6 +498,149 @@ async function companyTogglePilot(pilotId, activate) {
     }
   } catch (e) {
     alert('Could not reach the server.');
+  }
+}
+
+// ===== Company Pricing Section =====
+var companyPricingData = null;
+var companyPricingLoaded = false;
+
+function companyPricingSkeleton() {
+  var html = '<div class="cpr-grid">';
+  for (var i = 0; i < 3; i++) {
+    html += '<div class="cpr-card"><div class="adm-skeleton adm-skeleton-kpi" style="--w:100%;height:200px"></div></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function companyPricingCardHtml(svc) {
+  var label = SERVICE_LABELS[svc.service] || svc.service;
+  var p = svc.platform;
+  var ov = svc.override;
+  var b = svc.bounds;
+  var hasOverride = ov && ov.active;
+  var currentBase = hasOverride ? ov.baseFare : p.base;
+  var currentPerKm = hasOverride ? ov.perKm : p.perKm;
+
+  var html = '<div class="cpr-card">' +
+    '<div class="cpr-card-header">' +
+      '<div class="cpr-svc-name">' + escapeHtml(label) + '</div>' +
+      (hasOverride
+        ? '<span class="cpr-badge cpr-badge--active">Custom rate</span>'
+        : '<span class="cpr-badge cpr-badge--default">Platform default</span>') +
+    '</div>' +
+    '<div class="cpr-defaults">' +
+      '<span class="cpr-default-label">Platform default:</span> ' +
+      '<span class="cpr-default-val">' + INR(p.base) + ' base + ' + INR(p.perKm) + '/km</span>' +
+    '</div>' +
+    '<div class="cpr-form" id="cpr-form-' + svc.service + '">' +
+      '<div class="cpr-field">' +
+        '<label class="cpr-label">Base fare (INR)</label>' +
+        '<input type="number" class="pd-input cpr-input" id="cpr-base-' + svc.service + '" value="' + currentBase + '" min="' + b.minBase + '" max="' + b.maxBase + '" step="1">' +
+        '<div class="cpr-bounds">Min ' + INR(b.minBase) + ' - Max ' + INR(b.maxBase) + '</div>' +
+      '</div>' +
+      '<div class="cpr-field">' +
+        '<label class="cpr-label">Per km (INR)</label>' +
+        '<input type="number" class="pd-input cpr-input" id="cpr-perkm-' + svc.service + '" value="' + currentPerKm + '" min="' + b.minPerKm + '" max="' + b.maxPerKm + '" step="1">' +
+        '<div class="cpr-bounds">Min ' + INR(b.minPerKm) + ' - Max ' + INR(b.maxPerKm) + '</div>' +
+      '</div>' +
+      '<div class="cpr-note">Changes take effect immediately for new bookings.</div>' +
+      '<div id="cpr-error-' + svc.service + '" class="auth-error" hidden></div>' +
+      '<div class="cpr-actions">' +
+        '<button type="button" class="admin-add-member-btn cpr-save-btn" id="cpr-save-' + svc.service + '" onclick="saveCompanyPricing(\'' + svc.service + '\')">Save ' + escapeHtml(label) + '</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+  return html;
+}
+
+function companyPricingChangelogHtml(changelog) {
+  if (!changelog || !changelog.length) return '';
+  var html = '<div class="cpr-changelog-card">' +
+    '<div class="cpr-changelog-title">Change history</div>';
+  for (var i = 0; i < changelog.length; i++) {
+    var c = changelog[i];
+    var date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    html += '<div class="cpr-changelog-entry">' +
+      '<div class="cpr-changelog-meta">' + escapeHtml(c.actorName || '') + ' &middot; ' + date + '</div>' +
+      '<div class="cpr-changelog-diff">' + escapeHtml(c.changes || '') + '</div>' +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderCompanyPricing() {
+  var body = document.getElementById('company-pricing-body');
+  if (!body || !companyPricingData) return;
+
+  var html = '<div class="cpr-grid">';
+  var svcs = companyPricingData.services || [];
+  for (var i = 0; i < svcs.length; i++) {
+    html += companyPricingCardHtml(svcs[i]);
+  }
+  html += '</div>';
+  html += companyPricingChangelogHtml(companyPricingData.changelog);
+  body.innerHTML = html;
+}
+
+async function loadCompanyPricing() {
+  var body = document.getElementById('company-pricing-body');
+  if (!body) return;
+  body.innerHTML = companyPricingSkeleton();
+
+  try {
+    var res = await apiFetch('/api/company/pricing');
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.services) {
+      companyPricingData = data;
+      companyPricingLoaded = true;
+      renderCompanyPricing();
+    } else {
+      body.innerHTML = '<div class="adm-error">Could not load pricing. <button type="button" onclick="loadCompanyPricing()" class="adm-retry-btn">Retry</button></div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="adm-error">Could not reach the server. <button type="button" onclick="loadCompanyPricing()" class="adm-retry-btn">Retry</button></div>';
+  }
+}
+
+async function saveCompanyPricing(service) {
+  var baseEl = document.getElementById('cpr-base-' + service);
+  var perKmEl = document.getElementById('cpr-perkm-' + service);
+  var errEl = document.getElementById('cpr-error-' + service);
+  var saveBtn = document.getElementById('cpr-save-' + service);
+  if (!baseEl || !perKmEl) return;
+
+  if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+
+  var baseFare = Number(baseEl.value);
+  var perKm = Number(perKmEl.value);
+
+  if (!baseFare || baseFare <= 0 || !perKm || perKm <= 0) {
+    if (errEl) { errEl.textContent = 'Both values must be positive numbers.'; errEl.hidden = false; }
+    return;
+  }
+
+  var origText = saveBtn ? saveBtn.textContent : '';
+  if (saveBtn) { saveBtn.textContent = 'Saving...'; saveBtn.disabled = true; }
+
+  try {
+    var res = await apiFetch('/api/company/pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service: service, baseFare: baseFare, perKm: perKm }),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.ok) {
+      loadCompanyPricing();
+    } else {
+      if (errEl) { errEl.textContent = data.error || 'Could not save.'; errEl.hidden = false; }
+    }
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Could not reach the server.'; errEl.hidden = false; }
+  } finally {
+    if (saveBtn) { saveBtn.textContent = origText; saveBtn.disabled = false; }
   }
 }
 

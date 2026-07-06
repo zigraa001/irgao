@@ -106,6 +106,21 @@ async function listAvailableOperatorsNear(pickupLat, pickupLng, excludeIds = [])
   return candidates;
 }
 
+// Dispatch preference: sort booking company's pilots first, preserving
+// nearest-first within each group. Other companies remain eligible fallbacks
+// so small fleets do not spike no_pilot outcomes. The fare stands as priced
+// (territory pricing) regardless of who accepts.
+function applyCompanyPreference(candidates, bookingCompanyId) {
+  if (!bookingCompanyId) return candidates;
+  const preferred = [];
+  const rest = [];
+  for (const c of candidates) {
+    if (c.companyId === bookingCompanyId) preferred.push(c);
+    else rest.push(c);
+  }
+  return preferred.concat(rest);
+}
+
 async function expireOffer(offerId) {
   const offer = await queryOne("SELECT * FROM dispatch_offers WHERE id = ?", [
     offerId,
@@ -236,11 +251,12 @@ async function offerToNextOperator(bookingId, triedOperatorIds = []) {
     ...triedOperatorIds,
   ];
 
-  const nearby = await listAvailableOperatorsNear(
+  const nearbyRaw = await listAvailableOperatorsNear(
     booking.pickupLat,
     booking.pickupLng,
     excludeIds
   );
+  const nearby = applyCompanyPreference(nearbyRaw, booking.companyId);
 
   // Attempt cap: if we've already tried MAX_OFFER_ATTEMPTS nearby pilots (or
   // there are no more nearby pilots at all within the radius), give up

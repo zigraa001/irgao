@@ -430,6 +430,28 @@ async function initSchema() {
   // Operator earnings tracking: operator gets (100% - commission) of fare.
   await ensureColumn("bookings", "operatorPayout", "operatorPayout DOUBLE NULL");
 
+  // ── Company service pricing (per-company rate card overrides) ──────────
+  await query(`CREATE TABLE IF NOT EXISTS company_service_pricing (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    companyId   INT NOT NULL,
+    service     VARCHAR(64) NOT NULL,
+    baseFare    DOUBLE NOT NULL,
+    perKm       DOUBLE NOT NULL,
+    active      TINYINT(1) NOT NULL DEFAULT 1,
+    updatedAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updatedBy   INT NULL,
+    UNIQUE KEY uq_company_service (companyId, service)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  await query(`CREATE TABLE IF NOT EXISTS company_pricing_changelog (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    companyId   INT NOT NULL,
+    actorName   VARCHAR(255) NOT NULL,
+    changes     TEXT NOT NULL,
+    createdAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_cpc_company (companyId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
   // ── Drone rental system ────────────────────────────────────────────────
 
   await query(`CREATE TABLE IF NOT EXISTS drone_services (

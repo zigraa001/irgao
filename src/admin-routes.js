@@ -609,6 +609,30 @@ router.get(
   }
 );
 
+// GET /api/admin/companies/:id/pricing — read-only view of a company's rate card overrides + changelog
+router.get(
+  "/companies/:id/pricing",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const companyId = Number(req.params.id);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      return res.status(400).json({ error: "Invalid company id" });
+    }
+    const company = await queryOne("SELECT id, name, code FROM operator_companies WHERE id = ?", [companyId]);
+    if (!company) return res.status(404).json({ error: "Company not found" });
+    const overrides = await query(
+      "SELECT service, baseFare, perKm, active, updatedAt FROM company_service_pricing WHERE companyId = ?",
+      [companyId]
+    );
+    const changelog = await query(
+      "SELECT actorName, changes, createdAt FROM company_pricing_changelog WHERE companyId = ? ORDER BY createdAt DESC LIMIT 5",
+      [companyId]
+    );
+    res.json({ company, overrides, changelog });
+  }
+);
+
 // ── Admin pricing configuration ─────────────────────────────────────────
 // GET /api/admin/pricing — all pricing config as key-value pairs.
 router.get(
@@ -707,13 +731,15 @@ router.get(
       query(
         `SELECT b.operatorId, u.name AS operatorName, u.email AS operatorEmail,
                 COUNT(*) AS trips,
-                COALESCE(SUM(b.fareEstimate), 0) AS grossRevenue
+                COALESCE(SUM(b.fareEstimate), 0) AS grossRevenue,
+                COALESCE(SUM(COALESCE(b.operatorPayout, b.fareEstimate * ?)), 0) AS netPayout
          FROM bookings b
          JOIN users u ON u.id = b.operatorId
          WHERE b.status = 'completed' AND b.operatorId IS NOT NULL
          GROUP BY b.operatorId
          ORDER BY grossRevenue DESC
-         LIMIT 50`
+         LIMIT 50`,
+        [1 - commissionRate]
       ),
     ]);
 
@@ -728,8 +754,8 @@ router.get(
       email: r.operatorEmail,
       trips: r.trips,
       grossRevenue: Math.round(Number(r.grossRevenue)),
-      commission: Math.round(Number(r.grossRevenue) * commissionRate),
-      netPayout: Math.round(Number(r.grossRevenue) * (1 - commissionRate)),
+      commission: Math.round(Number(r.grossRevenue) - Number(r.netPayout)),
+      netPayout: Math.round(Number(r.netPayout)),
     }));
 
     res.json({

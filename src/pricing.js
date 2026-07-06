@@ -102,8 +102,33 @@ function getSurchargeRates(cfg) {
   };
 }
 
+// Per-company pricing overrides, cached with 60s TTL per companyId+service.
+// Designated swap point: callers thread company pricing into estimateFare /
+// fareBreakdown via opts._servicePricing = { base, perKm }.
+const _companyPricingCache = new Map();
+const COMPANY_PRICING_TTL_MS = 60_000;
+
+async function loadCompanyPricing(companyId, service) {
+  if (!companyId || !service) return null;
+  const key = `${companyId}:${service}`;
+  const cached = _companyPricingCache.get(key);
+  if (cached && Date.now() - cached.at < COMPANY_PRICING_TTL_MS) return cached.val;
+  try {
+    const { queryOne: qo } = require("./db");
+    const row = await qo(
+      "SELECT baseFare, perKm FROM company_service_pricing WHERE companyId = ? AND service = ? AND active = 1",
+      [companyId, service]
+    );
+    const val = row ? { base: row.baseFare, perKm: row.perKm } : null;
+    _companyPricingCache.set(key, { val, at: Date.now() });
+    return val;
+  } catch {
+    return null;
+  }
+}
+
 function estimateFare(service, distanceKm, opts = {}) {
-  const pricing = SERVICE_PRICING[service];
+  const pricing = opts._servicePricing || SERVICE_PRICING[service];
   if (!pricing) {
     throw new Error(`Unknown service: ${service}`);
   }
@@ -155,4 +180,5 @@ module.exports = {
   WEATHER_SURCHARGE,
   loadPricingConfig,
   getSurchargeRates,
+  loadCompanyPricing,
 };

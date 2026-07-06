@@ -7,7 +7,7 @@ function round2(n) {
 const GST_RATE = 0.18;
 
 function fareBreakdown(service, distanceKm, discountInfo, creditsUsed, couponInfo, opts = {}) {
-  const pricing = SERVICE_PRICING[service];
+  const pricing = opts._servicePricing || SERVICE_PRICING[service];
   if (!pricing) throw new Error(`Unknown service: ${service}`);
   const km = Math.max(0, Number(distanceKm) || 0);
   const kmCharge = round2(pricing.perKm * km);
