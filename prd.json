@@ -128,22 +128,24 @@
         "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Grep evidence in progress.txt 2026-07-06 US-107 entry."
     },
     {
       "id": "US-108",
       "title": "Compliance status board and terminal-style Logs",
       "description": "As an admin, I want Compliance to read as a status board with clear severity zones, and Logs to feel like a purposeful terminal view instead of a bare text list.",
       "acceptanceCriteria": [
-        "Compliance KPIs: renderComplianceSummary (js/app/03-admin-profile.js ~1452) switches from pdStat() to .adm-kpi cards (Total Pilots, Checked In 24h green, Missing amber, Failed red) with SVG icons; container id kept",
-        "Status-board grid: 'Missing Checklist (24h)' and 'Failed Checklists (7 days)' cards sit side by side (.adm-span-6 each, stack <=1024px) with a colored left accent bar (amber/red), count chip in the card header, and divider-only rows; 'Recent Checklists' becomes a full-width card with table-like rows and PASS/FAIL chips right-aligned",
-        "Row anatomy in all three lists: pilot monogram avatar, name 14px/600, email/time muted 12.5px, chip right-aligned - upgrade the renderer markup (renderComplianceMissing/Failed/Recent) with new adm-* classes",
-        "Logs: #admin-logs-scroll becomes a dark terminal card (deep navy #0B1F3A-family bg, var(--radius-lg)), 65vh height, monospace 12.5px, thin custom scrollbar; grep the logs renderer in js/app for the row/level markup it outputs and colorize levels as small chips or colored level tokens (error red / warn amber / info gray-blue); timestamps muted; scroll-up lazy-load behaviour untouched",
-        "Logs header row: #admin-logs-meta styles as a sticky meta bar above the terminal (count + hint) with a monospace-feel; 'Fetching older logs...' indicator restyled to fit the dark surface",
-        "Skeletons for the compliance fetch; logs keep their incremental loader",
-        "Grep evidence in progress.txt: no pdStat call remains in compliance functions, accent-card CSS, terminal CSS rule, logs renderer lines with level colorization, proof lazy-load scroll handler unchanged",
-        "npm run build:js; bump ?v= cache-busters; npm run typecheck passes"
+        "Compliance KPIs: renderComplianceSummary (locate by name in js/app/03-admin-profile.js; ~1585 at review, drifting) switches from pdStat() to admKpi()-based .adm-kpi cards reusing admKpi()/ADM_ICONS from US-102 (Total Pilots, Checked In 24h green, Missing amber, Failed red); in app.html swap the container class profile-stats-grid for the grid classes on #admin-compliance-summary (id kept) - do NOT modify .profile-stats-grid itself and do NOT delete pdStat (still used by the profile modal); after the class swap the renderer must emit its own .adm-grid > .adm-span-3 wrapper or the cards stack",
+        "Status-board grid: wrap #admin-compliance-missing and #admin-compliance-failed in a new .adm-grid wrapper IN app.html (ids kept, .adm-span-6 each) with a colored left accent bar (amber/red) and count chip in each card header; add a SCOPED stacking rule for <=1024px (e.g. a modifier class on this wrapper) instead of changing the global .adm-span-6 breakpoint (that would reflow the shipped US-102 dashboard); 'Recent Checklists' becomes a full-width card with table-like rows and PASS/FAIL chips right-aligned",
+        "Empty-state fix: renderComplianceMissing/renderComplianceFailed currently set host.innerHTML='' when their list is empty, collapsing the board on a healthy day - instead render an in-card positive empty state (e.g. 'All pilots checked in during the last 24h') so the composition holds",
+        "Row anatomy in all three lists: pilot monogram avatar, name 14px/600, email/time muted 12.5px, chip right-aligned - upgrade the renderer markup (renderComplianceMissing/Failed/Recent) with new adm-* classes; keep using the existing op-status-badge/op-badge--* classes for chips without restyling them globally",
+        "Logs terminal: the dark treatment ALREADY exists (.admin-logs-scroll: gray-900 bg, monospace 12px, 60vh, radius) - the delta is: re-tint background to the navy family via var(--navy)-derived tokens (NO raw hex - US-110 gate), height 60vh -> 65vh, font-size 12px -> 12.5px, thin custom scrollbar (::-webkit-scrollbar + scrollbar-width) scoped to .admin-logs-scroll; the row renderer is fetchAdminLogsPage in js/app/08-actions.js (~332-336 at review) - emit a per-line level token/chip: error red, info gray-blue, plus a defensive warn amber rule (note: src/log-bus.js only wraps console.log->info and console.error->error, so warn never occurs today - say so in evidence rather than claiming to have seen it); keep the escapeHtml calls",
+        "Lazy-load preservation: keep #admin-logs-loading and #admin-logs-list INSIDE #admin-logs-scroll in that DOM order, keep the onscroll assignment in loadAdminLogs and the insertAdjacentHTML('afterbegin') prepend + scrollTop compensation in onAdminLogsScroll byte-identical - quote them verbatim in progress.txt as proof; do not attach competing scroll handlers",
+        "Logs header row: style #admin-logs-meta via its ID or a new adm-* class (its admin-users-meta class is SHARED with the Users and Live sections) as a meta bar above the terminal (count + hint), kept as a sibling ABOVE #admin-logs-scroll (do not move it inside to fake stickiness); restyle #admin-logs-loading by id, not via .pd-loading; note loadAdminLogs writes textContent to the meta - if the new bar uses child elements, adjust that write accordingly (then rebuild the bundle)",
+        "Skeletons for the compliance fetch (loadAdminCompliance) replacing its 'Fetching compliance data...' text; logs keep their incremental loader",
+        "Grep evidence in progress.txt: 'grep pdStat' scoped to compliance functions returns nothing while pdStat survives; accent-card CSS quoted; terminal CSS rule quoted (tokens only); fetchAdminLogsPage level markup quoted; onAdminLogsScroll + afterbegin prepend quoted as unchanged",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 8,
       "passes": false,
@@ -154,14 +156,14 @@
       "title": "Drones admin: segmented tabs, service card grid, consistent forms",
       "description": "As an admin, I want Drone Management to match the rest of the transformed console - segmented sub-tabs, a scannable services grid, and clean lists - instead of loose pills and raw lists.",
       "acceptanceCriteria": [
-        "The three sub-tab buttons (#drone-admin-tab-services/-operators/-bookings) currently use the SHARED .dashboard-pill class (also used by the passenger drone panel in js/app/09-drones.js:35-37) - add a new class in the admin markup (e.g. adm-seg-tab) alongside the existing one and style THAT as a segmented control matching US-103's Users tabs; showDroneAdminTab wiring unchanged; passenger drone pills visually unchanged (grep proof)",
-        "Services list (grep the renderer for #drone-admin-services-list in js/app/09-drones.js): cards on a responsive auto-fill grid - service name 14px/700, category chip, price emphasized right, status chip (active/inactive), compact edit/action buttons; existing handlers unchanged",
-        "Operators and Bookings sub-tabs: rows upgraded to the aligned divider-only row language (avatar/monogram, name+meta stack, status chip, right-aligned values); bookings stats strip (#drone-admin-bookings-stats) uses compact .adm-kpi tiles",
-        "Add Service / Add Operator forms (showDroneServiceForm/showDroneOperatorForm renderers): form fields adopt the 44px rounded + focus-ring language via new adm-* or scoped classes; single primary CTA; cancel as ghost button; wiring unchanged",
-        "Sub-header rows (.drone-sub-header) align sub-heading left + action button right, action button styled like the Users header action",
-        "Skeletons replace the three 'Fetching drone ...' loading texts within the admin drones section only",
-        "Grep evidence in progress.txt: segmented tab markup with both classes present, passenger pill renderer untouched (quote js/app/09-drones.js:35-37), services grid CSS, form field classes, proof all onclick handlers survived",
-        "npm run build:js; bump ?v= cache-busters; npm run typecheck passes"
+        "The three sub-tab buttons (#drone-admin-tab-services/-operators/-bookings, app.html inside #admin-section-drones) use the SHARED .dashboard-pill class (also rendered by the passenger drone panel at js/app/09-drones.js:35-37) - ADD a new class (e.g. adm-seg-tab) alongside the existing one in the admin markup only and style THAT as a segmented control; before styling, grep css/app.css for the tab classes US-103 actually shipped for the Users tabs and match them so the two segmented controls look identical; the new rules need enough specificity to override .dashboard-pill.active, .dashboard-pill:hover AND the global .dashboard-pill:active { transform: scale(.97) } (e.g. prefix with .drone-tab-bar); the active state keys off the literal 'active' class showDroneAdminTab already toggles - do not introduce a different state class or touch the JS",
+        "Services: renderDroneAdminServices currently emits an .admin-table TABLE (not a list) - rewrite its output to cards on a responsive auto-fill grid using NEW classes (service name 14px/700, category chip, price emphasized right, status chip active/inactive, compact edit button); do NOT restyle .admin-table/.admin-table-wrap (revenue payouts uses them); each card keeps its onclick=\"editDroneService(...)\" verbatim",
+        "Operators and Bookings: renderDroneAdminOperators/renderDroneAdminBookings also emit .admin-table tables - convert to the aligned divider-only row language (avatar/monogram, name+meta stack, status, right-aligned values) with new classes; CRITICAL: the bookings status cell is an interactive <select class=\"drone-status-select\" onchange=\"updateDroneBookingStatus(...)\"> - it MUST remain a select (restyled to chip-like appearance via scoped CSS), a static chip would remove admin functionality; #drone-admin-bookings-stats switches from its .drone-stat-card markup to admKpi() tiles with the existing .adm-kpi--compact variant instead of inventing a third KPI system",
+        "Add Service / Add Operator forms (showDroneServiceForm/showDroneOperatorForm renderers): fields adopt the 44px rounded + focus-ring language via a scoped selector (e.g. a new form wrapper class) or classes added alongside .pd-input in the renderer strings - never edit the global .pd-input rules (pricing and partner forms share them); primary CTA keeps onclick=\"saveDroneService/saveDroneOperator(...)\", cancel keeps onclick=\"hideDroneServiceForm()/hideDroneOperatorForm()\" as a ghost button",
+        "Sub-header rows: .drone-sub-header already aligns left/right via flex space-between - the real work is styling the .op-btn action buttons via a NEW class alongside (matching .admin-add-member-btn) without restyling .op-btn (operator console shares it); the Bookings sub-tab has NO sub-header today - add one for consistency (title + count)",
+        "Skeletons replace ONLY the three 'Fetching drone ...' .pd-loading divs inside #admin-section-drones in app.html; the byte-identical passenger text ('Fetching drone services...') in the passenger drone panel section of app.html must remain untouched - quote it in progress.txt as proof a blanket search-replace did not hit it",
+        "Grep evidence in progress.txt: segmented tab markup showing BOTH classes present; quote js/app/09-drones.js:35-37 unchanged AND state that no .dashboard-pill rule in css/app.css changed; services grid CSS; exact handler-survival greps each still present on button/select elements: onclick=\"editDroneService(, onclick=\"editDroneOperator(, onchange=\"updateDroneBookingStatus(, onclick=\"saveDroneService(, onclick=\"hideDroneServiceForm()\", onclick=\"saveDroneOperator(, onclick=\"hideDroneOperatorForm()\"",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 9,
       "passes": false,
@@ -172,16 +174,255 @@
       "title": "Polish sweep and static audit evidence (gate)",
       "description": "As an admin, I want the whole console to feel cohesive and alive - consistent motion, hover states, spacing rhythm, responsive behaviour - and as the team, we want machine-checkable evidence that the transformation is complete and regression-free.",
       "acceptanceCriteria": [
-        "Section-switch motion: showAdminSection() target sections get a subtle fade+4px-rise entrance (CSS animation ~180ms on .admin-section when shown), fully disabled under prefers-reduced-motion; wiring unchanged",
-        "Interactive-state sweep across ALL new adm-* elements: every button/card/row/tab/chip added in US-101..US-109 has hover, focus-visible (var(--focus-ring)), and where relevant active/disabled states - fix stragglers found by grepping the new classes against css/app.css",
-        "Skeleton coverage: every admin section fetch shows .adm-skeleton shapes (no bare 'Fetching ...' text remains inside #admin-view sections - grep app.html and the admin renderers; the passenger/operator .pd-loading usages stay untouched)",
-        "Spacing rhythm audit: section padding, card padding (20-24px), grid gaps (16-20px), and header margins follow a 4px base - normalize offenders in the admin CSS block",
+        "Section-switch motion: add a ~180ms ease-out entrance (opacity 0->1, translateY(4px)->0) on .admin-section - the rule at css/app.css is currently EMPTY and visibility is driven by the hidden ATTRIBUTE in showAdminSection (re-showing restarts CSS animations, so pure CSS works with ZERO JS changes); LANDMINE: do NOT add any 'display:' declaration to .admin-section (it would outrank the UA [hidden] display:none and render all 11 sections stacked) - optionally add .admin-section[hidden]{display:none!important} as a safety net; reduced-motion is ALREADY handled by the existing animation:none block listing .admin-section - verify it is still listed, do not duplicate; animation must end with no residual transform and stay shorter than the 250ms live-map invalidateSize timeout in showAdminSection",
+        "Interactive-state sweep restricted to adm-* selectors: every button/card/row/tab/chip added in US-101..US-109 has hover, focus-visible (var(--focus-ring)), and where relevant active/disabled states - fix stragglers; do not let the sweep widen into shared classes (constraint 7)",
+        "Skeleton coverage: every admin section fetch shows .adm-skeleton shapes - no bare 'Fetching ...' text remains inside #admin-view (grep BOTH the app.html #admin-view region AND the js/app renderers that inject text at fetch time), with ONE allowed exception: the #admin-logs-loading incremental loader US-108 deliberately keeps - list it as an explicit exception in the audit; passenger/operator loading texts elsewhere in app.html must be byte-identical",
+        "Residual gap-closes from shipped stories (verify against the tree, fix what remains): (a) the five dashboard secondary tiles should use the .adm-kpi--compact variant (the class exists in CSS but may be applied to nothing) with a span mix that leaves no orphan tile wrapping alone; (b) inline style= attributes inside adminDashboardHtml/adminDashboardSkeleton and the inline-styled Retry buttons in 03-admin-profile.js move to utility classes; (c) the Settings toggle switch: confirm the inline knob/track constants JS writes (loadAdminSettings/toggleEmergencyBypass/toggleDemoMode set knob.style.left and track background) geometrically agree with the final CSS switch size - a CSS-only restyle with stale JS px constants is visibly broken; rebuild the bundle if JS changes",
+        "Spacing rhythm audit: section padding, card padding (20-24px), grid gaps (16-20px), and header margins follow a 4px base - normalize offenders BY SELECTOR (admin rules are interleaved with shared rules in css/app.css, never normalize by line range)",
         "Responsive audit by CSS review (no browser): verify and fix rules so the admin shell has no fixed widths that overflow at 360/768/1024/1440/1920 - drawer collapses per existing toggleAdminDrawer behaviour at <=768px, grids collapse per US-101, map/table wrappers scroll internally; document the checked breakpoints",
-        "Write tasks/admin-transform-audit.md: one row per admin section [section | page header present (quote line) | grid composition used (classes) | skeleton loading (yes/renderer line) | remaining inline style= count (must be 0 for admin markup) | hardcoded hex in its new CSS (must be 0, tokens only) | shared classes untouched (grep proof)] plus a final constraint checklist (ids intact, bundle rebuilt, ?v= bumped, typecheck passing)",
-        "MANDATORY gate: only set passes:true when tasks/admin-transform-audit.md exists AND every row shows header=yes, skeletons=yes, 0 inline styles, 0 hardcoded hex in new CSS; record the audit path in notes; do NOT claim visual/browser verification",
-        "npm run build:js; bump ?v= cache-busters; npm run typecheck passes"
+        "Write tasks/admin-transform-audit.md: one row per admin section [section | page header present | grid composition classes | skeleton loading | inline style= count in static #admin-view markup (must be 0; data-driven values allowed ONLY as CSS-custom-property carriers like style=\"--h:42%\" or JS el.style writes, every exception enumerated: chart bars, toggle knobs) | hardcoded color literals in its new CSS (must be 0 - grep hex AND rgb(/rgba(/hsl(; whitelist only the white-alpha overlays on the dark logs terminal, each quoted) | shared classes untouched (grep proof)]; EVERY cell must contain the exact grep command AND its matched output line, not a bare yes/0 - and all evidence must be regenerated immediately before writing the file (earlier line numbers have drifted)",
+        "MANDATORY gate: only set passes:true when tasks/admin-transform-audit.md exists, every row meets the criteria above, AND US-101..US-109 are ALL passes:true in prd.json; record the audit path in notes; do NOT claim visual/browser verification",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-111",
+      "title": "Landing-zone picker: fix flow integration and interaction defects (booking)",
+      "description": "As a passenger, the new landing-zone picker (commit d754779) should be a deliberate refinement step, not a popup that fires on every location set, fights the auto-search flow, renders into hidden panels, and has dead map markers and keyboard-unreachable rows. This story authorizes replacing the picker's inline onclick wiring with addEventListener.",
+      "acceptanceCriteria": [
+        "Intent gating: setPickup/setDest currently call showLandingPicker unconditionally (js/app/05-map.js, end of both functions) - the picker must NOT fire during the silent auto-GPS pickup on page load, and must NOT fire (or must be dismissed with its markers cleared) when #panel-locations is hidden because results are showing (searchRides hides it in js/app/06-booking.js)",
+        "Race fix: onRouteReady auto-calls searchRides when both coords are set - either gate that auto-search until a pending picker is resolved/skipped, or make searchRides cancel the pending Overpass fetch, remove the letter markers, and skip the picker's fitBounds so the map never yanks away from the just-drawn route; selecting a popular route (selectRoute sets both ends) must trigger at most ONE picker, not two 200ms apart",
+        "Re-open affordance: add a small 'Refine pickup/landing spot' chip on the confirmed location row that reopens the picker on demand (Uber pattern), so gating it does not strand the feature",
+        "Map markers become interactive: each landing-zone L.marker gets a click handler that selects the zone (the hover-sync pattern between list and markers already exists nearby in 05-map.js - follow it); list rows become <button> elements (or role=button + tabindex=0 + Enter/Space) so keyboard users can pick",
+        "Replace the inline onclick string wiring for rows: the current code builds onclick=\"selectLandingPoint(...,'name',...)\" from escapeHtml'd names - escapeHtml already turns ' into &#39; which the HTML parser decodes back inside the attribute, so any OSM name with an apostrophe (e.g. St. Mary's Ground) is a JS syntax error and a dead row - wire via addEventListener with the zone index instead (explicitly authorized)",
+        "Display bug: the list is shown via list.style.display='block' while its CSS declares display:flex with gap 4px - the gaps are silently dropped; toggle visibility via the hidden attribute or a class so the flex layout applies",
+        "Feedback states persist: the empty ('No landing points found') and error ('Could not scan') states currently auto-dismiss the whole picker on 2.5-3s timers and the error string permanently overwrites the default empty copy - keep the state visible with the existing Skip button as the dismiss, and reset the empty-state copy on every invocation",
+        "All edits in js/app/05-map.js (+ 06-booking.js if the search gating needs it); no element ids renamed; setPickup/setDest/selectLandingPoint/searchRides keep their names and signatures; npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quote the new guard conditions, the addEventListener row wiring, the marker click handler, the fetch-cancellation/marker-cleanup path, and grep proof that no picker call remains in the auto-GPS path"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-112",
+      "title": "Landing-zone picker + Photon autocomplete: design-system conformance and a11y",
+      "description": "As a passenger, the new geocoding UI should speak the app's design language - it currently ships a foreign Tailwind palette, hardcoded radii/transitions, -apple-system font overrides, letter badges, and a dropdown with no ARIA and unstable results.",
+      "acceptanceCriteria": [
+        "Re-skin all lp-* CSS rules onto tokens: var(--radius-md)/var(--radius-sm) instead of hardcoded 10px/8px/6px, var(--surface) instead of #fff, var(--border-subtle) instead of var(--gray-200) borders, var(--transition) instead of 'all 0.15s'; remove the one-off -apple-system font-family declarations on .lp-item-icon and .lz-marker-letter (body Inter must cascade)",
+        "Category palette: LANDING_ZONE_CATEGORIES in js/app/05-map.js hardcodes Tailwind hues (#10B981, #22C55E, #3B82F6, #8B5CF6, #F59E0B, #EC4899) - replace with a palette derived from the app system (--blue #0057B8 family, greens, --amber family, navy tints); prefer category CSS classes consumed by both list icons and map markers over JS-injected hex where feasible",
+        "Replace the letter badges (H/P/S/K/G/R) with the app's stroke-SVG icon language + the existing .lp-item-cat text label (the letters have no legend anywhere and add nothing)",
+        "Photon dropdown stability: renderDropdown currently resets activeIdx=-1 and fully re-renders when the debounced Photon response lands, wiping arrow-key selection and shifting results under the cursor - patch/append the remote-results section into the existing DOM instead, preserve the active item across the update, and show a small inline loading row under 'Search results' while the fetch is in flight",
+        "Dropdown a11y: combobox semantics - role=listbox on the dropdown, role=option + unique ids on items, aria-expanded on the input wrapper, aria-activedescendant tracking the active item; items become keyboard-activatable (currently mousedown-only divs); this story authorizes converting item wiring to addEventListener",
+        "No behavior regressions: debounce timing, local+remote merge order, and selection callbacks unchanged; setPickup/setDest signatures untouched",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: grep proof zero hardcoded Tailwind hex remains in the lp/landing-zone code paths, quoted token-based lp-* rules, quoted ARIA attributes in the dropdown renderer, quoted activeIdx preservation logic"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-113",
+      "title": "Ride results: keep the query visible, dedupe stats, remove fake signals, honest validation",
+      "description": "As a passenger comparing flights, I need to see and edit the route I searched (it currently disappears), trust the signals shown (the Live badge and road-time comparison are fabricated), and get real validation instead of a silent teleport to a demo route.",
+      "acceptanceCriteria": [
+        "Query context: searchRides currently hard-hides #panel-locations - add a collapsed route summary card at the top of the results area ('Pickup name -> Destination name · X km' with the pickup/dest dot motif) and an Edit affordance that re-expands the location inputs inline WITHOUT discarding the current results; the back button keeps its current behavior",
+        "Ride card dedupe: time and distance currently render twice per card (meta line AND stat chips, same clock icon for two different stats) - keep price prominent right, one time·distance meta line, and ONE differentiating comparison chip; the fabricated road-time (flight time x 3.5) must be phrased as an estimate ('~3.5x faster than road') not a precise minutes figure",
+        "Honest liveness: the pulsing 'Live' dot in the rides header sits over a hardcoded static rideOptions array - either remove it or drive it from a real signal (e.g. currentNearbyOperators count when available); no fake liveness cues remain",
+        "Empty-search validation: searching with BOTH fields empty currently teleports to a hardcoded Connaught Place -> Dwarka demo route via chained setTimeouts - replace with the same inline-error + focus pattern the pickup-only case already uses ('Where are you flying from?' style); remove the hardcoded demo coordinates from that path",
+        "alert() removal: useCurrentLocation falls back to a blocking alert() for unsupported geolocation - replace with the app's toast/inline error pattern",
+        "Popular routes survival: selectRoute currently destroys #popular-routes-area with innerHTML='' permanently - collapse the existing disclosure instead, and re-render the routes (renderPopularRoutes) in resetBooking/backToSearch so repeat bookings keep the shelf",
+        "Wiring preserved: searchRides/selectRide/bookRide/switchService/selectRoute keep names and callers; all element ids survive; edits in js/app/06-booking.js + 05-map.js (+minimal app.html markup for the summary card)",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quote the summary-card renderer + Edit re-expand path, the single-stats card template, the removed/re-driven Live badge, the new empty-search branch (no demo coords), grep proof alert( is gone from 05-map.js"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-114",
+      "title": "Booking desktop space: drone catalog full-width, tracking docked, nav consolidated",
+      "description": "As a passenger on desktop, the Drones tab should not be a 420px strip beside 75% empty gray, live tracking should not float over the map it wants to show, and the nav should not need four elements for two jobs.",
+      "acceptanceCriteria": [
+        "Drone catalog: when service==='drones' the map is hidden but #drone-panel inherits .booking-panel's 420px width - give #drone-panel a full-width catalog layout (width:100%, centered content column ~1100-1200px max) so .drone-grid's auto-fill minmax(200px,1fr) breathes at 3-4 cards per row; mobile bottom-sheet behavior stays for the other services",
+        "Tracking layout: on desktop (>900px) dock the tracking card into the left panel slot (where #booking-panel sits) instead of the current 600px sheet floating bottom-center OVER the route; keep the floating-sheet treatment at <=900px; the map stays unobstructed during tracking",
+        "Cancel vs Done: #tracking-cancel-btn (destructive) and the end-tracking button currently share the identical .btn-end-tracking style - give Cancel a red outline destructive variant via an added class (ids and onclick wiring unchanged)",
+        "Follow pill: the map auto-follow pill is built from inline style.cssText with hardcoded rgba colors, a hardcoded 'Inter' string and emoji glyphs - move it to CSS classes on tokens with the existing stroke-SVG plane icon (JS keeps toggling the same element/state)",
+        "Nav consolidation: collapse the separate 'Profile' and 'Log out' text buttons into a dropdown on the existing .nav-avatar (a .nav-profile-dropdown component already exists in css/app.css - reuse it); the dead .nav-bell (no handler anywhere) is either removed or hidden until notifications exist; the in-panel 'My Profile' .profile-account-section duplicating the same actions is removed from #booking-panel ONLY IF grep proves no unique JS-referenced ids/classes are lost (the profile-display-* classes are filled globally - they exist in the profile modal too; verify each before removing) - otherwise hide it and note why",
+        "Inline-style hygiene in the booking view: the map legend's inline hex colors, the locations-section/drone-filter inline style= attributes, and the popular-route emoji move to token-based classes and the service SVG icon set",
+        "Wiring preserved: switchService/showTracking/endTracking/cancelRide names and ids intact; logout link keeps working; edits in app.html + css/app.css + js/app/06-booking.js/07-tracking.js/05-map.js as needed",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quoted #drone-panel layout rules, quoted desktop tracking dock rules + the <=900px override, quoted dropdown markup with preserved logout/profile wiring, grep proof of removed inline hex in the legend"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-115",
+      "title": "Operator console layout: wide workspace for non-map sections, overlays anchored, altitude polish",
+      "description": "As a pilot, Earnings/Checklist/Account currently render in a phone-width 420px strip while an idle map burns 70% of my desktop screen; overlays are positioned by magic numbers; the altitude section is a clipped admin widget with a developer-facing title.",
+      "acceptanceCriteria": [
+        "Wide mode: showOperatorSection() gains a class toggle (e.g. .op-panel--wide on #op-panel or a body-level class) so checklist/earnings/account sections expand the panel to ~720-900px and collapse/hide the map on desktop; Trips (and altitude if it stays map-relevant) keep the current 420px + map split; at <=900px nothing changes; the section display toggling and all section ids stay as-is (adding a classList line to showOperatorSection is authorized - it is not inline wiring)",
+        "Section transitions: ~150ms fade/slide entrance on .op-section activation, reduced-motion safe (reuse the app's existing prefers-reduced-motion pattern)",
+        "Heading cleanup: showOperatorSection writes section titles into #op-section-heading which lives only inside the trips section (hidden when others show) while every section carries its own static heading - delete the OP_SECTION_HEADINGS write (keep the element and id), keep the per-section static headings as the single source",
+        "Map overlays anchored: .op-map-badge/.op-map-legend use left:432px magic numbers tied to the panel width - anchor them to the map container (positioned wrapper) or drive the offset with a CSS custom property set from the panel width, so wide-mode does not misplace them",
+        "Legend tokens: the operator map legend's inline hex glyph colors in app.html move to class-styled swatches on amber/red/green tokens",
+        "Altitude section: give the operator's altitude widget its own class with a taller max-height than the current 200px clip (the section is otherwise empty), rename the pilot-facing title from 'Altitude (3D)' to something meaningful (e.g. 'Airspace altitude bands') in BOTH app.html and the JS that writes it (grep 05-map.js), and move the inline zone-color styles to zoneType-keyed classes where static",
+        "Wiring preserved: showOperatorSection/toggleOperatorDuty/openTripDetails names, all op-* ids, checkbox ids, and inline onclick attributes in markup unchanged except where explicitly authorized above",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quoted wide-mode class toggle + CSS, quoted anchored overlay rules (no 432px remains - grep), quoted altitude title change in both files, transition rule quoted with reduced-motion proof"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-116",
+      "title": "Dispatch offers get pilot agency; trip cards become accessible and decision-ready",
+      "description": "As a pilot, dispatch offers currently hide the Accept/Reject buttons and silently auto-accept after 1.5s - I have zero agency over my core job. Trip cards are mouse-only divs missing the data I triage by. This story deliberately changes dispatch behavior (product decision recorded here) and authorizes the required wiring changes.",
+      "acceptanceCriteria": [
+        "Dispatch modal: remove the inline display:none on the .dispatch-actions row so Accept/Reject render; drive a REAL countdown from the offer's expiry (the markup already promises 'Respond within 30s' and a dispatchCountdownTimer variable exists but never starts): visible numeric countdown + progress ring/bar, auto-REJECT (not accept) at zero; the existing respondDispatchOffer(true/false) handlers are the only response path",
+        "Demo-mode exception: the current silent auto-accept exists for demo flows - if a client-visible demo/platform flag is available (grep js/app + the settings the client already fetches), keep auto-accept ONLY behind that flag and make it visible ('Auto-accepting in 3..2..1' with a Cancel); if no such flag reaches the client, default to manual accept and note the decision in progress.txt",
+        "Emergency offers: dispatch-tag--emergency offers get a distinct urgent treatment (red accent, subtle pulse, reduced-motion safe)",
+        "Trip cards keyboard-accessible: op-trip-card renders as a div with onclick only - re-render as <button class=\"op-trip-card\"> (or role=button + tabindex=0 + Enter/Space) so the existing but unreachable .op-trip-card:focus-visible rule finally fires; openTripDetails wiring keeps working (authorized change)",
+        "Trip card hierarchy: route as the title row with status badge, a second row of hard numbers (fare via the existing INR formatter, distanceKm, relative requested time), customer + aircraft demoted to a muted third line using the stroke-SVG icon set instead of the current emoji prefix, right-aligned chevron affordance",
+        "Empty states with action: the trips empty state gains a CTA - off duty: an inline 'Go on duty' button reusing toggleOperatorDuty; on duty: a 'Waiting for dispatch' state with the pulsing dot motif; unify the static app.html empty state with the JS-rendered one (they currently differ)",
+        "Skeletons: operator trips/duty loading texts ('Fetching your assigned trips...', 'Checking status...') become shimmer skeleton shapes scoped to the operator panel (never restyle .op-empty/.pd-loading globally)",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quote the countdown implementation + auto-reject path, the demo-flag decision with evidence, the new trip-card template with button/keyboard wiring, the empty-state CTA markup, grep proof respondDispatchOffer/openTripDetails/toggleOperatorDuty still wired"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-117",
+      "title": "Operator earnings, duty status, and pre-flight checklist UX",
+      "description": "As a pilot, my earnings screen is a stale wall of tiles with vestigial emoji args and an orphaned fourth tile, my duty state fails contrast standards, and the checklist doesn't tell me which items are critical or show progress.",
+      "acceptanceCriteria": [
+        "Earnings layout: drop the dead emoji arguments passed to pdStat in the earnings renderer (CSS already hides .pd-stat-emoji), use a 2x2 KPI grid in panel mode (fixes the orphaned 4th tile in a 3-col grid) or a full row in wide mode (US-115), make Net Earnings the dominant number (larger, green accent) with gross/commission demoted, and restyle the flat 'This Month' cards to the card language",
+        "Earnings trend: add a small inline SVG bar chart of recent weekly net earnings USING ONLY fields the earnings endpoint already returns (grep loadOperatorEarnings/renderOperatorEarnings and the server route first; if no time-series field exists, render the trips-based breakdown that does exist and note it - do NOT change the API)",
+        "Data freshness: loadOperatorEarnings() and loadComplianceHistory() currently run once at login only - refetch on section activation in showOperatorSection (earnings/checklist respectively, throttled with a lastFetched timestamp is fine) and refresh earnings after a trip completes in the trip-action path",
+        "Duty status: replace the gray-400 status text (fails AA contrast) with a proper state pill - green dot + 'ON DUTY' on green-50, gray dot + 'OFF DUTY' on gray-100 - driven by a class toggled in the same JS that already writes the status text (the current green color relies on a :has() selector with no fallback - the class approach replaces it); show a pending state while the duty POST is in flight (button currently just disables silently)",
+        "Checklist UX: split the 8 checkbox rows into 'Critical' and 'Recommended' groups matching the server's actual critical-item set (grep the server checklist validation in src/ for which items are critical - the failure copy already references critical items), add a live 'N / 8 checked' progress line, disable the submit button with a busy state during the request (double-submit is possible today), and render the outcome as a banner card (green 'Cleared for flight' / red with the missing critical items listed) instead of bare colored text; move the textarea/button inline styles to classes",
+        "Compliance history rows: pass/fail rendered with the existing op-status-badge pill classes (not restyled), plus relative timestamps ('2h ago')",
+        "Wiring preserved: submitComplianceChecklist/toggleOperatorDuty/loadOperatorEarnings names and all op-ck-* checkbox ids unchanged; edits in js/app/03-admin-profile.js, 04-operator.js, 08-actions.js, app.html, css/app.css",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quoted new earnings grid + dominant-net markup, quoted refetch calls in showOperatorSection, quoted duty pill class toggle (no :has() dependency), quoted critical-item grouping with the server-side evidence for which items are critical, quoted submit busy-state"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-118",
+      "title": "Dialog accessibility: focus management, Escape handling, accessible names (all roles)",
+      "description": "As a keyboard or screen-reader user, the profile modal, admin user drawer, and forced-reset overlay are unusable: focus never enters them, Tab keeps cycling the obscured page behind, the profile modal has a dangling aria-labelledby naming nothing, and password toggles are keyboard-unreachable.",
+      "acceptanceCriteria": [
+        "Shared dialog helper (~40 lines in js/app, new file or 08-actions.js): on open - save document.activeElement, move focus to the close button or first field, set aria-modal='true'; while open - trap Tab/Shift+Tab within the dialog; on Escape - close (each handler guarded so it only acts when ITS dialog is open - the current profile Escape handler fires page-wide unconditionally); on close - restore focus to the saved trigger; applied to #profile-modal, #admin-user-drawer, and #must-reset-overlay via their existing open/close functions (openProfileModal/closeProfileModal/openAdminUserDrawer/closeAdminUserDrawer + the must-reset show path)",
+        "Accessible name fix: the profile modal's aria-labelledby='profile-modal-title' points at an id that no longer exists - add that id to the hero name element or switch to aria-label='Your profile'; delete the dead .profile-modal-title CSS rule",
+        "Admin drawer gets Escape-to-close through the shared helper (it has none today)",
+        "Password toggles keyboard-reachable: remove tabindex='-1' from every .password-toggle (login + register + any others - grep app.html) and add .password-toggle:focus-visible to the existing focus-visible rule group",
+        "No dialog behavioral regressions: open/close still work from all existing triggers (js-open-profile buttons across roles, user rows opening the admin drawer, forced-reset on login); body scroll-lock classes unchanged",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quote the helper's trap/restore logic, the three dialogs' open/close functions calling it, the fixed aria wiring line, grep proof no tabindex=-1 remains on password toggles and the dead CSS rule is gone"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-119",
+      "title": "Auth experience: desktop backdrop, motion, OTP inputs, form order, honest reset overlay",
+      "description": "As a user signing in on desktop, the auth screen is a lone 420px card on 92% empty gray with zero motion, plain 14px OTP inputs, optional demographics blocking the essential path, and a forced-reset overlay dressed as a payment success.",
+      "acceptanceCriteria": [
+        "Desktop backdrop (pick ONE and note the choice): (a) at >=1024px a split layout - left ~45% brand panel (navy gradient on tokens, tagline, subtle route-line/cloud motif - js/canvas-clouds.js and js/canvas-hero.js exist unused) with the existing card centered in the right 55%; or (b) keep the centered card but add a low-opacity aurora/mesh blob + faint dotted flight-path SVG behind it and strengthen the card's border/shadow; either way the auth card markup and all ids are untouched",
+        "Motion: an authCardIn entrance (~180ms opacity+translateY, reduced-motion safe) applied via the existing show*Card()/hideAllAuthCards() helpers when cards swap - no more instant display jumps; this story authorizes adding a class-toggle line to those helpers",
+        "OTP inputs: the three 6-digit code inputs (login OTP, reset code, register verify - grep app.html for maxlength=\"6\") get an .otp-input treatment - 24px centered tabular digits with wide letter-spacing - and auto-submit when 6 digits are entered (reusing each card's existing submit function; authorized JS addition)",
+        "Busy buttons: setBusy() currently swaps textContent only, so auto-width buttons visibly change size mid-press - pin min-width from offsetWidth and show an inline spinner via an .is-busy class",
+        "Register form order: essentials first - Name, Email, Password; Gender/Age move below the password (one two-column row) or behind an 'Add optional details' disclosure; no field ids change, only markup order (server payload building must be re-checked after reorder - grep doRegister)",
+        "Must-reset overlay: replace the green .confirm-check success circle with a neutral blue lock icon chip (nothing succeeded yet), swap the placeholder-only inputs for the standard .auth-field label+input pattern with the existing .password-input-wrap show/hide toggle, and show the min-length rule as a static hint; ids and the submit handler unchanged",
+        "CSS debt cleanup: resolve the duplicate .auth-forgot-link definitions (the later wrapper-era block leaks margins onto the login card's inline button - scope or remove it), delete the dead flex .profile-quick-stats block (a later grid rule overrides it), and align the legacy .auth-input/.auth-btn heights with the canonical 48px auth rules (or remove them if unused - grep first)",
+        "Copy: setBusy call sites saying 'Sign In' become 'Sign in' to match the static markup and the rest of the auth sentence-case copy",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quoted backdrop markup/CSS choice, quoted keyframe + reduced-motion guard, quoted .otp-input rule + auto-submit wiring, quoted reordered register fields with doRegister payload proof, quoted must-reset overlay structure, grep proof the duplicate/dead CSS blocks are resolved"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-120",
+      "title": "Profile modal: tabbed IA, fixed hero geometry, differentiated badges, lazy loading",
+      "description": "As any signed-in user, the profile modal is a 440px single column stacking 4-5 screen-heights of content, firing three fetches on every open, with a hero whose corners and margins don't fit the card and three role badges that all look identical.",
+      "acceptanceCriteria": [
+        "Tabbed IA: a segmented control under the hero - Overview / Rides / Security - showing one pane at a time (reuse the .auth-role-switcher pill pattern); Overview = quick stats + dashboard, Rides = ride history (fetch lazily on first tab visit instead of eagerly on open - authorized change to the open sequence), Security = change password + danger zone; 'Delete account' moves under Security behind a 'Danger zone' divider with destructive styling",
+        "Desktop width: the modal card grows from 440px to ~560px at >=600px (the single narrow column is a phone layout on desktop today)",
+        "Hero geometry fixes: top corner radius must match the card's (currently 14px hero inside a 24px card leaving white slivers), the mobile negative margins must match the mobile padding (currently hardcoded to desktop 24px causing 12px overflow), and the drag handle renders INSIDE the dark hero as a light pill instead of a white strip above it",
+        "Hero visual: navy gradient (tokens) + the navy-to-blue gradient avatar (precedent exists on the admin drawer avatar); badge differentiation - verified gets a green tint + check glyph, admin amber tint, operator blue tint (the three current rules are byte-identical rgba(255,255,255,.1) no-ops - replace them)",
+        "Skeletons: profile dashboard/rides/user-drawer loading texts become shimmer skeleton shapes via NEW classes or scoped selectors (never restyle .pd-loading globally - it is shared)",
+        "All ids survive (profile-quick-stats, profile-dashboard, profile-rides, pd-refresh-btn, rides-refresh-btn, profile-display-* class contract); js-open-profile/js-close-profile wiring untouched; the tab control is new markup with new ids",
+        "npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes",
+        "HEADLESS structural verification in progress.txt: quoted tab markup + lazy-load gating, quoted corrected hero geometry rules (desktop + mobile), quoted differentiated badge rules, proof all three fetch functions still fire (two eager, rides lazy)"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-121",
+      "title": "Marketing conversion: real contact form, responsive contact layout, dead links and placeholder content",
+      "description": "As a prospective customer or partner, the contact form silently discards my message while telling me it sent, the emergency number is literally blank, footer links 404 into missing anchors, and the two-column layout crushes on phones. SCOPE: marketing files + server.js only - never app.html/css/app.css/js/app.",
+      "acceptanceCriteria": [
+        "Real form submission: add a POST /api/contact endpoint to the existing server (persist to a contact_messages table via the existing DB layer AND/OR send via the configured SMTP mailer - grep src/ for the OTP mail transport and reuse it; graceful failure message if mail is unconfigured); contact.html's fake setTimeout success handler is replaced with a real fetch to the endpoint with distinct success/error states and an aria-live status region; add a honeypot field ignored server-side",
+        "Responsive contact layout: the inline grid-template-columns:1fr 1fr on .grid-split and the name-fields row move into a stylesheet class with stacking at <=768px (and <=480px for the name row) - grep confirms .grid-split currently has NO rule in any CSS file",
+        "Emergency contact: the 'Contact number:' lines that trail off into nothing (two places on contact.html) get a real tel: number if one exists in the repo/env, otherwise the row is removed until one exists - no blank placeholders shipped",
+        "Dead links: the contact footer's four /#anchor links point at ids that do not exist in index.html - repoint to the real section ids or replace with the standard footer; index.html's 'View All Use Cases' href='#' button is removed or pointed at a real target",
+        "Footer unification: contact.html's divergent old footer (different tagline, '(c) 2025 Irago', 'Platform Online') is replaced with the index.html footer content; the empty .footer-socials/.footer-bottom-links divs across ALL four pages are populated with real links or deleted",
+        "Team page QA: resolve the ISHAAN RAO comment vs 'Ishant Rao' rendered-name mismatch to one consistent spelling (pick the rendered one unless the repo indicates otherwise, note the ambiguity for the founders in progress.txt)",
+        "VERIFICATION (this story is server-verifiable headlessly): node server.js boots clean; curl -X POST the new endpoint with a sample payload returns success and the message is retrievable (query the table or log); curl with honeypot filled is silently dropped; quote both curl transcripts in progress.txt; grep proof no /#dead-anchor links remain",
+        "npm run typecheck passes; app.html, css/app.css, js/app/* untouched (git status proof in progress.txt)"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-122",
+      "title": "Marketing brand alignment: Inter, rounded shape language, real heroes, inline-style extraction",
+      "description": "As a visitor moving between the marketing site and the app, I currently experience two brands: the site runs Helvetica/Arial with every radius zeroed and shadows removed while the app is Inter with rounded cards and soft shadows. SCOPE: marketing files only.",
+      "acceptanceCriteria": [
+        "Typography: add the same Inter preconnect + Google Fonts link the app uses to all four marketing pages and switch --font-display/--font-body in css/tokens.css to the Inter stack - app.css defines its own fonts independently so this cannot affect the app",
+        "Shape language: port the app's radius scale into css/tokens.css (--radius-sm 8px ... --radius-2xl 24px, --radius-pill fully rounded) and replace --shadow-card:none with the app's layered soft-shadow recipes (rgba(15,23,42,...)); remove the .btn border-radius:0 override so buttons inherit the token; since all marketing components consume the tokens, this single change modernizes every card/button/badge/form",
+        "Sub-page heroes: replace the three flat-navy hero rectangles (team/vision/contact) with one shared .page-hero treatment - navy gradient + soft blue glow orb or faint route-line SVG pattern, one consistent h1 clamp (the three pages currently use three different clamps) - implemented in components.css, referenced by all three pages",
+        "Off-palette cleanup: the Tailwind red rgba(239,68,68) badge/icon rules move to the existing --emergency token family, the select chevron's #A1A1AA data-URI is re-encoded with the --text-hint value, and the sky-blue rgba(74,144,217) aligns with --sky",
+        "Inline-style extraction: extract the repeated inline card-heading/stat/hero declarations into shared classes (.card-title, .card-text, .stat-value, .form-select etc. in components.css) - measurable target: style= attribute count drops from ~89/62/33/24 (index/vision/team/contact) to under 20 per page; quote before/after grep -c counts",
+        "Visual QA by static audit: no page references a removed class; every var() used exists in tokens.css; quote the changed token block and 2-3 representative converted components",
+        "app.html, css/app.css, js/app/* untouched (git status proof); npm run typecheck passes"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-123",
+      "title": "Marketing performance, SEO and motion hygiene",
+      "description": "As a visitor on a normal connection, the homepage ships ~7MB of unoptimized media with no lazy loading; shared links render with no preview; dead animation JS observes hundreds of nodes for zero effect. SCOPE: marketing files only.",
+      "acceptanceCriteria": [
+        "Images: convert the three 1.7-1.8MB use-case PNGs and the 864KB hero PNG to WebP (or recompress aggressively) using whatever tool exists in the environment (check for cwebp/ImageMagick/sharp via npx; if none can be installed offline, document and do the best available lossless/quality-80 recompression); update the <img> references; add loading='lazy' decoding='async' and explicit width/height attributes to every below-the-fold image; quote before/after file sizes in progress.txt",
+        "Hero video: preload='auto' becomes preload='metadata'; add a prefers-reduced-motion rule so the video hides and the poster shows (the current reduced-motion block only handles canvas); keep autoplay muted loop for everyone else",
+        "SEO/social meta: every marketing page gets og:title/og:description/og:image (1200x630 - reuse the hero poster)/og:url, twitter:card=summary_large_image, and a canonical link; index.html additionally gets Organization JSON-LD; quote one rendered head block",
+        "Dead plumbing: either re-enable a tasteful scroll-reveal (opacity+12px translateY, reduced-motion safe - the JS already exists but CSS was force-disabled) or delete scroll-animations.js + the .reveal CSS and its script tags; fix or remove main.js's dead data-section nav-highlight block; replace the filter:brightness(100) white-logo hack with a proper white logo asset (SVG preferred)",
+        "No regressions: all four pages still reference only assets that exist (grep every src/href against the filesystem); app files untouched (git status proof)",
+        "npm run typecheck passes"
+      ],
+      "priority": 23,
       "passes": false,
       "notes": ""
     }

@@ -37,6 +37,11 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Amber tokens available: --amber, --amber-dark, --amber-50, --amber-light; Purple: --purple-50, --purple-light
 - For JS-managed visibility toggles, use `el.hidden = true/false` + HTML `hidden` attribute (NOT CSS display:none class + el.style.display)
 - `.admin-section-card` (max-width:640px, margin-bottom:20px) for admin content containers; `--narrow` (560px) for settings
+- `.adm-chart-header` + `.adm-chart-title` + `.adm-chart-total` for card headers with title + right-aligned metric
+- `.adm-pilot-cell` + `.adm-pilot-avatar` for table rows with monogram avatar + name; uses `pilotInitials()` from 05-map.js
+- `.adm-num-cell` for right-aligned numeric table columns with tabular-nums
+- `.adm-error` + `.adm-retry-btn` for scoped error/retry states (does NOT modify shared .pd-error)
+- Chart x-axis label decimation: nth-child(5n) on `.admin-bar-col` (not the label) because each label is the only child in its column
 - `.drone-sub-title` overrides .op-section-title to 14px for sub-section headings in admin
 - `.disclosure-toggle` + `.disclosure-content` is the reusable progressive disclosure pattern -- toggle button (12px uppercase) gets `.open` class for chevron rotation, content container toggles display:none/block with slideUp animation; use `.disclosure-count` for a count badge
 - `.service-details-area:empty` auto-hides via CSS -- no JS needed to manage visibility of empty containers
@@ -578,4 +583,33 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.adm-toggle-chip` / `.adm-toggle-chip--on` are reusable status chips (gray disabled, green active) -- use for any on/off state display
   - Toggle knob left position changed from 25px to 22px to match 48x28 track with 22x22 knob -- all three toggle functions (loadAdminSettings, toggleDemoMode, toggleEmergencyBypass) updated
   - Settings status now uses innerHTML instead of textContent because it renders chip markup -- ensure any user-provided text in status is escaped (currently all text is hardcoded)
+---
+
+## 2026-07-06 - US-107
+- What was implemented: Revenue section transformed into a finance dashboard -- KPI cards using admKpi()/ADM_ICONS (Total Revenue, This Month, Platform Commission with rate%, Completed Trips), modernized 30-day chart card (240px min-height, blue-to-sky gradient bars, CSS gridlines, y-max label, nth-child x-axis label decimation, header with total-for-period), confident payouts table (pilot monogram avatars, right-aligned numeric columns with tabular-nums, commission muted gray, net payout semibold navy), skeleton loading for KPIs + chart block, scoped error state with retry button, grid composition (KPIs row + chart/payouts as .adm-span-12)
+- Files changed: js/app/03-admin-profile.js (ADM_ICONS extended with building/calendar, adminRevenueSkeleton function, renderRevenueKPIs switched from pdStat to admKpi with adm-grid wrapper, renderRevenueChart with adm-comp-card + chart header + chart area + y-max + total-for-period, renderRevenuePayouts with adm-comp-card + pilot avatar monograms + adm-num-cell + empty state, loadAdminRevenue uses skeleton + adm-error), css/app.css (--blue-sky token, admin-bar-chart 240px + CSS gridlines + gap, admin-bar-fill gradient + hover, admin-bar-label nth-child decimation replacing vertical-rl, admin-payouts-wrap max-width removed, td-commission amber->gray-500, td-bold +navy, adm-chart-header/title/total/area/ymax/empty, adm-pilot-cell/avatar, adm-num-cell, adm-error/retry-btn, adm-skeleton-chart), app.html (profile-stats-grid + admin-section-card dropped from revenue containers, adm-grid wrapper with adm-span-12 for chart/payouts, CSS cache-buster bumped), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - pdStat in revenue functions (lines 1547-1640): 0 hits (PASS); pdStat function definition alive at line 119 with 31 total calls in file (profile/compliance/earnings)
+  - New renderer: `admKpi(ADM_ICONS.revenue, 'green'` / `admKpi(ADM_ICONS.calendar, 'blue'` / `admKpi(ADM_ICONS.building, 'navy'` / `admKpi(ADM_ICONS.check, 'green'` in renderRevenueKPIs
+  - Chart CSS: `.admin-bar-chart { min-height: 240px; background: repeating-linear-gradient(...var(--border-subtle)...25%); }` `.admin-bar-fill { background: linear-gradient(to top, var(--blue), var(--blue-sky)); }` `.admin-bar-col:hover .admin-bar-fill { opacity: 0.75; }` `.admin-bar-label { display: none; }` `.admin-bar-chart .admin-bar-col:nth-child(5n) .admin-bar-label { display: block; }`
+  - Payouts CSS: `.admin-payouts-wrap { overflow-x: auto; }` (max-width:800px REMOVED); `.td-commission { color: var(--gray-500); }` (was amber-dark); `.td-bold { font-weight: 600; color: var(--navy); }`
+  - loadAdminRevenue endpoint unchanged: `apiFetch('/api/admin/revenue')` at line 1568
+  - #admin-revenue-kpis: `<div id="admin-revenue-kpis"></div>` (no profile-stats-grid, no admin-section-card)
+  - Grid composition: `<div class="adm-grid"><div class="adm-span-12" id="admin-revenue-chart"></div><div class="adm-span-12" id="admin-revenue-payouts"></div></div>`
+  - Skeleton: `adminRevenueSkeleton()` at line 1549, called at line 1562; adm-skeleton-chart CSS at line 5088
+  - Error state: `adm-error` + `adm-retry-btn` classes (scoped, NOT restyling pd-error globally)
+  - Shared classes untouched: pd-loading, pd-error, profile-stats-grid, admin-table, admin-table-wrap all retain original global rules
+  - No hardcoded hex in new revenue CSS (0 matches)
+  - npm run build:js (v=0d397c07); CSS cache-buster bumped to v=us107-revenue; npm run typecheck passes
+- **Learnings for future iterations:**
+  - `ADM_ICONS.building` (office building) and `ADM_ICONS.calendar` (calendar with day dots) added for Revenue KPIs -- reuse for any admin section needing these icons
+  - `adminRevenueSkeleton()` generates a 4-card KPI row + a tall chart skeleton block -- adapts the dashboard skeleton pattern for section-specific layouts
+  - `--blue-sky` (#7DD3FC) is a new token for sky-blue gradient endpoints -- used in the chart bar gradient (blue -> sky)
+  - `.adm-chart-header` / `.adm-chart-title` / `.adm-chart-total` are reusable for any card with a title + right-aligned summary value
+  - `.adm-chart-area` wraps the chart with a left padding for the y-max label positioned absolutely
+  - `.adm-pilot-cell` + `.adm-pilot-avatar` is the reusable pattern for table cells with a monogram avatar + name -- uses `pilotInitials()` from 05-map.js
+  - `.adm-num-cell` sets `text-align: right; font-variant-numeric: tabular-nums` for numeric table columns
+  - `.adm-error` + `.adm-retry-btn` provide a scoped error/retry pattern that doesn't modify the shared `.pd-error` class
+  - Chart x-axis label decimation uses nth-child on the COLUMN (not the label) because each label is the only child in its column -- `.admin-bar-chart .admin-bar-col:nth-child(5n) .admin-bar-label { display: block; }`
+  - The chart's horizontal gridlines use a CSS `repeating-linear-gradient` at 25% intervals -- no extra markup needed
 ---
