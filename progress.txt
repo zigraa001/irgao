@@ -494,3 +494,35 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The pager now uses `.admin-pager-btn` (32px square, SVG chevrons) instead of `.admin-load-more` for prev/next; `.admin-load-more` is kept only for the "Load more" button
   - At 768px, tags column hides and grid collapses to 4 columns; at 360px, further collapse to 4 smaller columns with compact buttons
 ---
+
+## 2026-07-06 - US-104
+- What was implemented: Live Map section transformed into an immersive hero experience -- tall map with clamp() height, floating overlay status chips, circular fullscreen toggle, side-by-side panels with scroll areas, structured flight card rows with status dots, fleet rows with gradient monogram avatars and GPS freshness indicators, skeleton loading states, admin-scoped empty states with SVG icons
+- Files changed: css/app.css (admin-live-map height clamp + radius-xl, admin-live-map-fs circular + shadow-md, admin-live-meta-chips floating overlay + backdrop-filter blur, admin-live-chip with colored dots, admin-live-layout 2-col grid + 900px collapse, admin-live-panel padding/heading upgrade, admin-flight-card grid rows with status dots, admin-fleet-row 3-col grid with avatar, admin-fleet-avatar gradient monogram, admin-fleet-gps with freshness dots, admin-live-list thin scrollbar + 340px max-height, admin-live-skeleton rows, 480px responsive chips), app.html (admin-live-meta moved inside map-wrap as overlay, skeleton initial states for flights/fleet, panel count badges, CSS cache-buster bumped), js/app/05-map.js (adminLiveChip/adminLiveSkeleton/adminFleetSkeleton/pilotInitials helpers, refreshAdminLiveFlights renders overlay chips + structured flight cards + fleet rows with avatars + panel counts + adm-empty states), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - New map height rule: `.admin-live-map { height: clamp(420px, 62vh, 680px); border-radius: var(--radius-xl); }` at line 3639
+  - Fullscreen button circular: `.admin-live-map-fs { border-radius: 50%; border: none; box-shadow: var(--shadow-md); }` at line 3652
+  - Overlay chip CSS: `.admin-live-meta-chips { position: absolute; top: 12px; left: 12px; z-index: 1100; }` at line 3689
+  - Chip renderer: `adminLiveChip()` at line 411, produces `<span class="admin-live-chip">` with colored dots
+  - Renderer injects chips: `metaEl.innerHTML = adminLiveChip(...)` at line 467 for flights/pilots/dispatching
+  - `@supports not (backdrop-filter)` fallback at line 3714: `.admin-live-chip { background: rgba(255,255,255,0.95); }`
+  - 2-col layout: `.admin-live-layout { grid-template-columns: 1fr 1fr; gap: 20px; }` at line 3725
+  - <=900px collapse: `@media (max-width: 900px) { .admin-live-layout { grid-template-columns: 1fr; } }` at line 3731
+  - Panel scroll: `.admin-live-list { max-height: 340px; overflow-y: auto; scrollbar-width: thin; }` at line 3777
+  - Fleet avatar: `.admin-fleet-avatar { background: linear-gradient(135deg, var(--navy), var(--blue)); }` at line 3791
+  - GPS freshness: `.admin-fleet-gps-fresh { background: var(--green); }` / `.admin-fleet-gps-stale { background: var(--gray-400); }` at lines 3812-3813
+  - Skeleton CSS: `.admin-live-skeleton { padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }` at line 3815
+  - 5-second polling UNCHANGED: `setInterval(refreshAdminLiveFlights, 5000)` at line 386
+  - toggleAdminMapFullscreen UNCHANGED: function at line 392, Escape handler at line 407
+  - Fullscreen mode CSS UNCHANGED: `.admin-live-map-wrap.fs` at lines 3673-3687
+  - Shared classes NOT modified globally: .pd-stat, .pd-loading, .pd-breakdown, .profile-stats-grid, .op-section-title, .op-empty, .op-btn, .dashboard-pill, .op-status-badge all retain original rules; new code uses .adm-empty instead of .op-empty
+  - npm run build:js succeeded (v=0ed53df2); npm run typecheck passes; CSS cache-buster bumped to v=us104-live-map
+- **Learnings for future iterations:**
+  - `adminLiveChip()` produces floating status chips with colored dots -- reusable pattern for any map overlay indicators
+  - `pilotInitials()` extracts initials from a name string for monogram avatars -- reuse for any avatar where no image is available
+  - The `#admin-live-meta` element is now inside `.admin-live-map-wrap` as an overlay (position:absolute) -- it uses innerHTML not textContent; `updateAdminMapZoomHint()` in 08-actions.js only sets data attributes (data-irago-hint, title) so no conflict
+  - Panel count badges (`#admin-live-flight-count`, `#admin-live-fleet-count`) are updated by refreshAdminLiveFlights -- the count includes both flights + dispatching for the flight panel
+  - `.admin-live-list` now has thin scrollbar styling (scrollbar-width:thin + webkit) for a cleaner look in scroll areas
+  - Flight cards use CSS Grid (1fr auto) instead of flexbox for better alignment of status badges
+  - Fleet rows use a 3-col grid (avatar | identity | status) with the avatar as a 32px gradient monogram circle
+  - GPS freshness is a simple binary: green dot if lat != null (reporting), gray if not -- no timestamp-based staleness calculation available from the API
+---
