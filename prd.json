@@ -543,8 +543,8 @@
         "VERIFICATION: full curl chain in progress.txt - company submits request -> admin lists it (badge count 1) -> admin approves -> operator_companies row updated (SELECT proof) + request approved + second approve attempt 409s -> company request history shows approved; separate reject path with note visible to the company; npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in commit e1e7c6e. Admin endpoints: GET /api/admin/company-requests (with status filter), GET /api/admin/company-requests/count (badge), POST approve (atomic claim pattern, applies whitelisted fields to operator_companies, audit line), POST reject (stores note), PATCH /api/admin/companies/:id (direct admin edit with audit). Admin Approvals section under Governance nav with pending-count badge. Pending/Decided tabs, diff cards, approve/reject-with-note actions, busy states, optimistic list removal. All quality checks pass."
     },
     {
       "id": "US-131",

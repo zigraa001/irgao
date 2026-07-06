@@ -913,3 +913,45 @@ Date: 2026-07-06
 - Cross-company isolation: cancel route checks row.companyId === req.company.id
 - cprf-* CSS prefix continues the cf-*/cp-*/cpr-* naming convention per section
 ---
+
+## US-130: Admin approvals queue: review and decide company change requests [COMPLETE]
+Commit: e1e7c6e
+Date: 2026-07-06
+
+### Admin endpoints (src/admin-routes.js)
+- GET /api/admin/company-requests?status=pending|all (line 833): JOINs operator_companies + users for name/code/requester
+- GET /api/admin/company-requests/count (line 855): pending count for badge
+- POST /api/admin/company-requests/:id/approve (line 867): atomic claim pattern — UPDATE ... WHERE id=? AND status='pending' (0 rows → 409 already-decided); applies COMPANY_EDIT_WHITELIST fields to operator_companies; writes audit line to company_pricing_changelog
+- POST /api/admin/company-requests/:id/reject (line 917): stores adminNote, doesn't touch company row
+- PATCH /api/admin/companies/:id (line 941): direct admin edit (name/logoUrl/contactEmail/contactPhone/description/active/fleetSize) with audit trail
+
+### Admin UI (js/app/03-admin-profile.js)
+- Approvals section under GOVERNANCE nav group (data-admin-section='approvals')
+- showAdminSection('approvals') → loadAdminApprovals() at line 504
+- Pending-count badge: #admin-approvals-badge with .admin-nav-badge class (red pill, hidden at zero)
+- Badge populated at admin load via refreshApprovalsBadge() piggybacked in loadAdminPlatformStats (line 881)
+- Badge refreshed after every approve/reject decision (lines 2086, 2112)
+- Pending tab: cards with company monogram, requester, relative time, old→new diff, Approve (green) + Reject (red, expand note textarea)
+- Decided tab: history with status chips (approved green / rejected red / superseded gray)
+- Empty state: "No pending requests — partner changes will appear here"
+- Busy states: button disabled + text change during API call, optimistic opacity fade
+
+### HTML (app.html)
+- Approvals nav button at line 995 with badge span
+- admin-section-approvals section with Pending/Decided tabs and #admin-approvals-body
+
+### CSS (css/app.css)
+- .admin-nav-badge (red pill, line 6759) — creates the drawer badge pattern
+- .appr-* prefix for all approval styles (tabs, cards, diff table, monogram, actions, reject form, chips, empty state)
+
+### Quality checks
+- npm run build:js → v=2ce914b3 (10 modules, no errors)
+- npm run typecheck → passes (tsc --noEmit, 0 errors)
+- Server boot → OK (port 3000)
+
+### Key patterns
+- Atomic claim: UPDATE WHERE status='pending' + affectedRows check mirrors dispatch_offers acceptOffer pattern
+- COMPANY_EDIT_WHITELIST at line 830: ["name", "logoUrl", "contactEmail", "contactPhone", "description"]
+- Audit trail: reuses company_pricing_changelog table (prefixed "APPROVED profile change:" or "Admin direct edit:")
+- Badge auto-refresh: piggybacked on loadAdminPlatformStats + post-decision refresh
+---
