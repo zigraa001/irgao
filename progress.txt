@@ -1129,3 +1129,49 @@ Both calls pass suppress=true → at most ZERO pickers for popular routes.
   - For empty-search validation, reuse the existing `showAuthError` + focus pattern rather than falling back to demo data -- keeps the validation honest and consistent
   - `selectRoute` should collapse the disclosure rather than destroying innerHTML -- this preserves the route list for repeat use without re-rendering
 ---
+
+## 2026-07-06 - US-114
+- What was implemented: Booking desktop space -- drone catalog full-width on desktop, tracking panel docked into left panel slot, nav consolidated into avatar dropdown, cancel button destructive variant, follow pill CSS classes + SVG icons, inline-style extraction (legend, drone-filter, location-inputs, popular-route emoji -> SVG)
+- Files changed: app.html (booking nav dropdown, profile-account-section removed, cancel btn class, legend classes, drone panel inline styles removed, location-inputs style removed, CSS cache-buster), css/app.css (drone panel full-width @media, tracking dock @media, btn-end-tracking--destructive, map-follow-pill classes, legend-restricted/nofly/count, drone-category-filter/drone-services-list/drone-my-heading, location-inputs margin-top, route-tag-chip, booking-view .nav-bell/.nav-text-btn hide), js/app/05-map.js (updateFollowPill rewritten with CSS classes + SVG icons), js/app/06-booking.js (ROUTE_ICON_SVG, renderPopularRoutes uses SVG + route-tag-chip), js/app/03-admin-profile.js (closeAllProfileDropdowns, bindProfileActions dropdown toggle with keyboard support), js/app.bundle.js (rebuilt)
+- **HEADLESS structural verification:**
+  - **#drone-panel layout rules:**
+    ```
+    @media (min-width: 901px) {
+      #drone-panel { width: 100%; max-width: 100%; border-right: none; }
+      #drone-panel > .panel-section { max-width: 1160px; margin-inline: auto; width: 100%; }
+    }
+    ```
+  - **Desktop tracking dock rules:**
+    ```
+    @media (min-width: 901px) {
+      .tracking-panel.active {
+        position: static; transform: none; width: 420px; max-width: 420px;
+        border-right: 1px solid var(--border-subtle); border-radius: 0;
+        max-height: 100%; order: -1; flex-shrink: 0; animation: none; box-shadow: none;
+      }
+    }
+    ```
+  - **<=900px override preserved:** `.tracking-panel` base rule unchanged (position:absolute, bottom:24px, left:50%, transform:translateX(-50%), max-width:600px, animation:slideUp); mobile booking-panel rule at @media (max-width:900px) unchanged
+  - **Dropdown markup with preserved wiring:**
+    - `.nav-profile-avatar` class on avatar (id="nav-avatar" preserved): `<div class="nav-avatar nav-profile-avatar" id="nav-avatar" tabindex="0" role="button" aria-expanded="false" aria-haspopup="true">`
+    - `.js-open-profile` on dropdown item: `<button type="button" class="nav-profile-dropdown-item js-open-profile">`
+    - `/logout` href: `<a href="/logout" class="nav-profile-dropdown-item nav-profile-dropdown-logout nav-logout-link">`
+    - `profile-display-name/email/role` classes in dropdown head for syncProfileUI population
+  - **Profile-account-section removal decision:** removed from #booking-panel; all profile-display-* classes have surviving instances (operator panel lines 877-885, profile modal lines 1543-1548, new dropdown lines 301-303); no unique JS-referenced ids/classes lost
+  - **Booking bell removal:** element removed from booking nav HTML; CSS safety net `#booking-view .nav-bell { display: none }` added; operator bell (line 749) and admin bell (line 946) untouched
+  - **Cancel vs Done:** `#tracking-cancel-btn` has added class `btn-end-tracking--destructive` (red outline); `.btn-end-tracking` BASE rule unchanged (8px 16px padding, 40px min-height, radius-md, surface-subtle bg, gray-600 text, border-subtle border)
+  - **Follow pill:** CSS classes `.map-follow-pill` / `.map-follow-pill--paused`; SVG plane/map icons replacing emoji; `pill.className = 'map-follow-pill'` instead of `pill.style.cssText`; no inline styles remain
+  - **Booking legend hex removed:** `grep 'style.*#' app.html | grep booking-map-legend` returns 0 hits; replaced with `.legend-restricted { color: var(--amber-dark) }` and `.legend-nofly { color: var(--red-dark) }`
+  - **Drone filter inline style removed:** `<div class="drone-category-filter" id="drone-category-filter">` (no style= attribute); CSS `.drone-category-filter { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }`; JS `style.display = 'none'/'flex'` in 09-drones.js lines 80/90 still work (inline overrides CSS)
+  - **Popular-route emoji -> SVG:** `ROUTE_ICON_SVG` object with plane/heart/globe SVGs; `renderPopularRoutes` uses `routeSvg` instead of `r.emoji`; `.route-tag-chip` class replaces inline-styled tag spans
+  - **Location-inputs:** inline `style="margin-top:10px"` removed; CSS `.location-inputs { margin-top: 10px; }` added
+  - **loc-input-group:** inline `style="position:relative"` removed from both instances (CSS already declares `position:relative`)
+  - **Wiring preserved:** switchService (1 def), startTracking (1 def), endTracking (1 def), cancelBooking (1 def); #tracking-cancel-btn onclick="cancelBooking()", #tracking-end-btn onclick="endTracking()", #tracking-rate-submit onclick="submitRating()"; #drone-category-filter display owned by JS; logout `/logout` href preserved
+  - npm run build:js succeeded (v=bc41cf46); npm run typecheck passes; CSS cache-buster bumped to v=us114-booking-desktop
+- **Learnings for future iterations:**
+  - When docking a floating panel into a flex layout, set `position:static`, `order:-1`, and `flex-shrink:0` in a desktop media query -- the existing `map.invalidateSize()` calls handle the map resize
+  - `#drone-category-filter` display is owned by JS (`style.display = 'none'/'flex'`) -- moving layout styles to CSS is safe because inline `style.display` overrides CSS `display`
+  - The `.nav-profile-dropdown` CSS is fully styled and ready-to-use (was defined but unused before this story)
+  - `closeAllProfileDropdowns()` returns a boolean so Escape can short-circuit (close dropdown first, then modal)
+  - The `emoji` fields in `popularRoutes` data are now dead code but harmless -- the renderer uses `ROUTE_ICON_SVG[service]` instead
+---

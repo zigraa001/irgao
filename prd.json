@@ -260,8 +260,8 @@
         "HEADLESS structural verification in progress.txt: quoted #drone-panel layout rules, quoted desktop tracking dock rules + the <=900px override, quoted dropdown markup with preserved logout/profile wiring, grep proof of removed inline hex in the legend"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Drone catalog full-width on desktop (width:100%, centered 1160px content). Tracking panel docked into left panel slot on desktop (position:static, order:-1, width:420px) with floating sheet preserved at <=900px. Cancel button gets btn-end-tracking--destructive red outline variant. Follow pill uses CSS classes + SVG icons (no inline styles/emoji). Nav consolidated: avatar dropdown with .nav-profile-dropdown (Profile + Logout), .profile-account-section removed from booking panel, bell hidden via CSS. Inline-style hygiene: legend hex -> .legend-restricted/.legend-nofly classes, drone-filter/services-list/bookings-heading/location-inputs inline styles extracted to CSS, popular-route emoji replaced with stroke-SVG icons + .route-tag-chip classes. All wiring preserved. Grep evidence in progress.txt US-114 entry."
     },
     {
       "id": "US-115",
