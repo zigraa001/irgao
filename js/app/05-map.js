@@ -605,6 +605,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   var photonTimer = null;
   var photonAbort = null;
   var lastPhotonQuery = '';
+  var lastPhotonResults = [];
+  var photonPending = false;
+
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-expanded', 'false');
+  input.setAttribute('aria-controls', suggestId);
+  input.setAttribute('aria-autocomplete', 'list');
+  dropdown.setAttribute('role', 'listbox');
 
   function highlightMatch(name, query) {
     if (!query) return escapeHtml(name);
@@ -642,6 +650,31 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   var searchSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
   var globeSvg = '<svg class="loc-suggest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
 
+  function showDd() {
+    dropdown.style.display = 'block';
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  function hideDd() {
+    dropdown.style.display = 'none';
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+  }
+
+  function wireItems(container) {
+    var items = container.querySelectorAll('.loc-suggest-item');
+    for (var j = 0; j < items.length; j++) {
+      (function (el) {
+        el.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          pickItem(parseInt(el.getAttribute('data-idx')));
+        });
+      })(items[j]);
+    }
+  }
+
+  function optionId(idx) { return suggestId + '-opt-' + idx; }
+
   function renderDropdown(vertiports, photonResults, query) {
     activeIdx = -1;
     var q = (query || '').trim();
@@ -659,7 +692,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     var html = '';
     currentMatches.forEach(function (m, idx) {
       if (m.name === MAP_PICK_OPTION) {
-        html += '<div class="loc-suggest-item loc-suggest-map" data-idx="' + idx + '">' +
+        html += '<div class="loc-suggest-item loc-suggest-map" role="option" id="' + optionId(idx) + '" data-idx="' + idx + '">' +
           mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>';
         if (q.length < 1) {
           html += '<div class="loc-suggest-label">Popular vertiports</div>';
@@ -673,33 +706,98 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         return;
       }
       if (m.photon) {
-        html += '<div class="loc-suggest-item loc-suggest-photon" data-idx="' + idx + '">' +
+        html += '<div class="loc-suggest-item loc-suggest-photon" role="option" id="' + optionId(idx) + '" data-idx="' + idx + '">' +
           globeSvg +
           '<div class="loc-suggest-text"><span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span>' +
           (m.address ? '<span class="loc-suggest-addr">' + escapeHtml(m.address) + '</span>' : '') +
           '</div></div>';
       } else {
-        html += '<div class="loc-suggest-item" data-idx="' + idx + '">' +
+        html += '<div class="loc-suggest-item" role="option" id="' + optionId(idx) + '" data-idx="' + idx + '">' +
           pinSvg + '<span class="loc-suggest-name">' + highlightMatch(m.name, q) + '</span></div>';
       }
     });
 
-    if (q.length >= 2 && !vertiports.length && (!photonResults || !photonResults.length)) {
+    if (q.length >= 2 && !vertiports.length && (!photonResults || !photonResults.length) && !photonPending) {
       html += '<div class="loc-suggest-empty">No matching places</div>';
     }
 
     dropdown.innerHTML = html;
-    dropdown.style.display = 'block';
+    showDd();
+    input.removeAttribute('aria-activedescendant');
+    wireItems(dropdown);
+  }
 
-    var items = dropdown.querySelectorAll('.loc-suggest-item');
-    for (var j = 0; j < items.length; j++) {
-      (function (el) {
-        var idx = parseInt(el.getAttribute('data-idx'));
-        el.onmousedown = function (e) {
-          e.preventDefault();
-          pickItem(idx);
-        };
-      })(items[j]);
+  function showPhotonLoading() {
+    var existing = dropdown.querySelector('.loc-suggest-photon-loading');
+    if (existing) existing.remove();
+    if (dropdown.style.display === 'none') return;
+    var label = dropdown.querySelector('.loc-suggest-label-search');
+    if (!label) {
+      dropdown.insertAdjacentHTML('beforeend',
+        '<div class="loc-suggest-label loc-suggest-label-search">' + searchSvg + ' Search results</div>');
+    }
+    var afterLabel = dropdown.querySelector('.loc-suggest-label-search');
+    if (afterLabel) {
+      afterLabel.insertAdjacentHTML('afterend',
+        '<div class="loc-suggest-photon-loading">' +
+          '<span class="lp-picker-spinner"></span> Searching...' +
+        '</div>');
+    }
+  }
+
+  function patchPhotonResults(results, query) {
+    var q = (query || '').trim();
+    var oldActiveIsPhoton = activeIdx >= 0 && currentMatches[activeIdx] && currentMatches[activeIdx].photon;
+
+    var spliceAt = -1;
+    for (var i = 0; i < currentMatches.length; i++) {
+      if (currentMatches[i].name === PHOTON_SEARCH_OPTION) { spliceAt = i; break; }
+    }
+    if (spliceAt >= 0) currentMatches.length = spliceAt;
+
+    if (results && results.length) {
+      currentMatches.push({ name: PHOTON_SEARCH_OPTION });
+      results.forEach(function (r) { currentMatches.push(r); });
+    }
+
+    var toRemove = dropdown.querySelectorAll('.loc-suggest-label-search, .loc-suggest-photon, .loc-suggest-photon-loading');
+    for (var r = 0; r < toRemove.length; r++) toRemove[r].remove();
+
+    if (results && results.length) {
+      var emptyEl = dropdown.querySelector('.loc-suggest-empty');
+      if (emptyEl) emptyEl.remove();
+    }
+
+    var html = '';
+    if (results && results.length) {
+      html += '<div class="loc-suggest-label loc-suggest-label-search">' + searchSvg + ' Search results</div>';
+      for (var j = 0; j < results.length; j++) {
+        var mIdx = currentMatches.length - results.length + j;
+        var item = results[j];
+        html += '<div class="loc-suggest-item loc-suggest-photon" role="option" id="' + optionId(mIdx) + '" data-idx="' + mIdx + '">' +
+          globeSvg +
+          '<div class="loc-suggest-text"><span class="loc-suggest-name">' + highlightMatch(item.name, q) + '</span>' +
+          (item.address ? '<span class="loc-suggest-addr">' + escapeHtml(item.address) + '</span>' : '') +
+          '</div></div>';
+      }
+    }
+
+    if (html) {
+      dropdown.insertAdjacentHTML('beforeend', html);
+      var newItems = dropdown.querySelectorAll('.loc-suggest-photon');
+      for (var k = 0; k < newItems.length; k++) {
+        (function (el) {
+          el.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            pickItem(parseInt(el.getAttribute('data-idx')));
+          });
+        })(newItems[k]);
+      }
+    }
+
+    if (oldActiveIsPhoton) {
+      activeIdx = -1;
+      input.removeAttribute('aria-activedescendant');
     }
   }
 
@@ -726,11 +824,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     if (q.length < 2) return;
     if (q === lastPhotonQuery) return;
     lastPhotonQuery = q;
+    lastPhotonResults = [];
 
     if (photonTimer) clearTimeout(photonTimer);
     if (photonAbort) { photonAbort.abort(); photonAbort = null; }
 
+    photonPending = true;
     photonTimer = setTimeout(function () {
+      showPhotonLoading();
       var center = map ? map.getCenter() : { lat: 20.5937, lng: 78.9629 };
       var controller = new AbortController();
       photonAbort = controller;
@@ -742,29 +843,39 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         .then(function (res) { return res.json(); })
         .then(function (data) {
           photonAbort = null;
-          if (!data.features || !data.features.length) return;
+          photonPending = false;
           if (input.value.trim() !== q) return;
 
-          var results = data.features.map(function (feat) {
-            var props = feat.properties;
-            var name = props.name || props.street || 'Unknown';
-            var addrParts = [props.street, props.city || props.town, props.state, props.country].filter(Boolean);
-            var address = addrParts.join(', ');
-            var coords = feat.geometry.coordinates;
-            return { name: name, address: address, coord: [coords[1], coords[0]], photon: true };
-          });
+          var results = [];
+          if (data.features && data.features.length) {
+            results = data.features.map(function (feat) {
+              var props = feat.properties;
+              var name = props.name || props.street || 'Unknown';
+              var addrParts = [props.street, props.city || props.town, props.state, props.country].filter(Boolean);
+              var address = addrParts.join(', ');
+              var coords = feat.geometry.coordinates;
+              return { name: name, address: address, coord: [coords[1], coords[0]], photon: true };
+            });
+          }
 
-          var localMatches = getLocalMatches(q);
-          renderDropdown(localMatches, results, q);
+          lastPhotonResults = results;
+          patchPhotonResults(results, q);
         })
-        .catch(function () { photonAbort = null; });
+        .catch(function () {
+          photonAbort = null;
+          photonPending = false;
+          var loadingEl = dropdown.querySelector('.loc-suggest-photon-loading');
+          if (loadingEl) loadingEl.remove();
+        });
     }, 350);
   }
 
   function render(query) {
     var q = (query || '').trim();
     var localMatches = getLocalMatches(q);
-    renderDropdown(localMatches, [], q);
+    var cachedPhoton = (q === lastPhotonQuery && lastPhotonResults.length) ? lastPhotonResults : [];
+    photonPending = (q.length >= 2 && !cachedPhoton.length);
+    renderDropdown(localMatches, cachedPhoton, q);
 
     if (q.length >= 2) {
       searchPhoton(q);
@@ -774,10 +885,10 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
   function pickItem(idx) {
     if (idx < 0 || idx >= currentMatches.length) return;
     var match = currentMatches[idx];
-    if (match.name === MAP_PICK_OPTION) { dropdown.style.display = 'none'; currentMatches = []; startMapPick(target); return; }
+    if (match.name === MAP_PICK_OPTION) { hideDd(); currentMatches = []; startMapPick(target); return; }
     if (match.name === PHOTON_SEARCH_OPTION) return;
 
-    dropdown.style.display = 'none';
+    hideDd();
     var name = match.name;
     var coord = match.photon ? match.coord : demoLocations[name];
     if (!coord) return;
@@ -789,11 +900,18 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
 
   function setActive(idx) {
     var items = dropdown.querySelectorAll('.loc-suggest-item');
-    for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.remove('active');
+      items[i].removeAttribute('aria-selected');
+    }
     activeIdx = idx;
     if (idx >= 0 && idx < items.length) {
       items[idx].classList.add('active');
+      items[idx].setAttribute('aria-selected', 'true');
       items[idx].scrollIntoView({ block: 'nearest' });
+      input.setAttribute('aria-activedescendant', items[idx].id);
+    } else {
+      input.removeAttribute('aria-activedescendant');
     }
   }
 
@@ -802,7 +920,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     render(this.value);
   });
   input.addEventListener('blur', function () {
-    setTimeout(function () { dropdown.style.display = 'none'; }, 150);
+    setTimeout(function () { hideDd(); }, 150);
   });
   input.addEventListener('keydown', function (e) {
     if (dropdown.style.display === 'none' || !currentMatches.length) return;
@@ -821,7 +939,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
       if (activeIdx >= 0) pickItem(activeIdx);
       else if (currentMatches.length === 1) pickItem(0);
     } else if (e.key === 'Escape') {
-      dropdown.style.display = 'none';
+      hideDd();
     }
   });
 }
@@ -833,13 +951,22 @@ var landingZoneFetchAbort = null;
 var pendingLandingPick = null;
 var _currentLandingZones = [];
 
+var LZ_ICONS = {
+  helipad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 8v8m8-8v8m-8-4h8"/></svg>',
+  park: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22v-6m0 0c-3 0-5-2.2-5-5s2-5 5-5 5 2.2 5 5-2 5-5 5z"/></svg>',
+  pitch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>',
+  parking: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
+  ground: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="3"/><path d="M3 17l4-4 3 3 4-4 4 4"/><path d="M3 21h18"/></svg>',
+  rooftop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>',
+};
+
 var LANDING_ZONE_CATEGORIES = {
-  helipad:    { label: 'Helipad',       color: '#10B981', icon: 'H', priority: 1 },
-  park:       { label: 'Park / Garden', color: '#22C55E', icon: 'P', priority: 2 },
-  pitch:      { label: 'Sports Field',  color: '#3B82F6', icon: 'S', priority: 3 },
-  parking:    { label: 'Parking Lot',   color: '#8B5CF6', icon: 'K', priority: 4 },
-  ground:     { label: 'Open Ground',   color: '#F59E0B', icon: 'G', priority: 5 },
-  rooftop:    { label: 'Rooftop',       color: '#EC4899', icon: 'R', priority: 6 },
+  helipad:    { label: 'Helipad',       cssClass: 'lp-cat-helipad',  priority: 1 },
+  park:       { label: 'Park / Garden', cssClass: 'lp-cat-park',     priority: 2 },
+  pitch:      { label: 'Sports Field',  cssClass: 'lp-cat-pitch',    priority: 3 },
+  parking:    { label: 'Parking Lot',   cssClass: 'lp-cat-parking',  priority: 4 },
+  ground:     { label: 'Open Ground',   cssClass: 'lp-cat-ground',   priority: 5 },
+  rooftop:    { label: 'Rooftop',       cssClass: 'lp-cat-rooftop',  priority: 6 },
 };
 
 function classifyOsmElement(tags) {
@@ -1058,12 +1185,12 @@ async function showLandingPicker(lat, lon, target, locationName) {
   zones.forEach(function (z, idx) {
     var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
     var iconHtml =
-      '<div class="lz-marker" style="background:' + catInfo.color + ';">' +
-        '<span class="lz-marker-letter">' + catInfo.icon + '</span>' +
+      '<div class="lz-marker ' + catInfo.cssClass + '">' +
+        '<span class="lz-marker-icon">' + LZ_ICONS[z.cat] + '</span>' +
       '</div>';
     var marker = L.marker(z.center, {
       icon: L.divIcon({
-        html: iconHtml, className: 'lz-marker-wrap',
+        html: iconHtml, className: 'lz-marker-wrap ' + catInfo.cssClass,
         iconSize: [28, 28], iconAnchor: [14, 14],
       }),
     }).addTo(map);
@@ -1087,11 +1214,11 @@ async function showLandingPicker(lat, lon, target, locationName) {
     var areaLabel = z.area > 0 ? (z.area > 10000 ? (z.area / 10000).toFixed(1) + ' ha' : Math.round(z.area) + ' m²') : '';
 
     return '<button type="button" class="lp-item" data-idx="' + idx + '">' +
-      '<div class="lp-item-icon" style="background:' + catInfo.color + ';">' + catInfo.icon + '</div>' +
+      '<div class="lp-item-icon ' + catInfo.cssClass + '">' + LZ_ICONS[z.cat] + '</div>' +
       '<div class="lp-item-info">' +
         '<div class="lp-item-name">' + escapeHtml(z.name) + '</div>' +
         '<div class="lp-item-meta">' +
-          '<span class="lp-item-cat" style="color:' + catInfo.color + ';">' + catInfo.label + '</span>' +
+          '<span class="lp-item-cat ' + catInfo.cssClass + '">' + catInfo.label + '</span>' +
           '<span class="lp-item-dot">·</span>' +
           '<span>' + distLabel + '</span>' +
           (areaLabel ? '<span class="lp-item-dot">·</span><span>' + areaLabel + '</span>' : '') +

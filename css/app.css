@@ -5013,8 +5013,9 @@ body.admin-map-fs { overflow: hidden; }
 
 /* ── Landing Point Picker Panel ── */
 .lp-picker {
-  background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 10px;
-  padding: 12px; margin-top: 12px; animation: lp-slide-in 0.2s ease-out;
+  background: var(--surface-subtle, var(--gray-50)); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 12px; margin-top: 12px;
+  animation: lp-slide-in 0.2s ease-out;
 }
 @keyframes lp-slide-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 .lp-picker-header {
@@ -5027,9 +5028,9 @@ body.admin-map-fs { overflow: hidden; }
 }
 .lp-picker-title svg { color: var(--blue); flex-shrink: 0; }
 .lp-picker-skip {
-  background: none; border: 1px solid var(--gray-300); border-radius: 6px;
+  background: none; border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
   padding: 4px 12px; font-size: 12px; font-weight: 500; color: var(--gray-500);
-  cursor: pointer; transition: all 0.15s;
+  cursor: pointer; transition: var(--transition);
 }
 .lp-picker-skip:hover { background: var(--gray-100); color: var(--gray-700); }
 .lp-picker-loading {
@@ -5043,25 +5044,34 @@ body.admin-map-fs { overflow: hidden; }
 }
 @keyframes lp-spin { to { transform: rotate(360deg); } }
 .lp-picker-empty {
-  padding: 12px 0; font-size: 13px; color: var(--gray-400); text-align: center;
+  padding: 12px 0; font-size: 13px; color: var(--gray-500); text-align: center;
 }
 .lp-picker-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
 #lp-picker-list[hidden],
 #lp-picker-loading[hidden] { display: none; }
 
+/* Landing zone category colors (corporate palette) */
+.lp-cat-helipad { --lp-cat: var(--green); }
+.lp-cat-park { --lp-cat: var(--green-dark); }
+.lp-cat-pitch { --lp-cat: var(--blue); }
+.lp-cat-parking { --lp-cat: var(--purple); }
+.lp-cat-ground { --lp-cat: var(--amber-dark); }
+.lp-cat-rooftop { --lp-cat: var(--navy); }
+
 .lp-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; background: #fff; border: 1px solid var(--gray-200);
-  border-radius: 8px; cursor: pointer; transition: all 0.15s;
+  padding: 10px 12px; background: var(--surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition);
   font: inherit; text-align: left; width: 100%; color: inherit;
 }
 .lp-item:hover { border-color: var(--blue); background: var(--blue-50); }
+.lp-item:focus-visible { box-shadow: var(--focus-ring); }
 .lp-item-icon {
-  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: var(--radius-sm); flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 14px; font-weight: 700;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--lp-cat, var(--gray-400));
 }
+.lp-item-icon svg { width: 18px; height: 18px; stroke: #fff; fill: none; }
 .lp-item-info { flex: 1; min-width: 0; }
 .lp-item-name {
   font-size: 13px; font-weight: 600; color: var(--gray-800);
@@ -5071,11 +5081,11 @@ body.admin-map-fs { overflow: hidden; }
   display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
   font-size: 11px; color: var(--gray-500); margin-top: 2px;
 }
-.lp-item-cat { font-weight: 600; }
+.lp-item-cat { font-weight: 600; color: var(--lp-cat, var(--gray-600)); }
 .lp-item-dot { color: var(--gray-300); }
 .lp-item-arrow {
   width: 16px; height: 16px; flex-shrink: 0; color: var(--gray-300);
-  transition: color 0.15s;
+  transition: var(--transition);
 }
 .lp-item:hover .lp-item-arrow { color: var(--blue); }
 
@@ -5084,14 +5094,21 @@ body.admin-map-fs { overflow: hidden; }
 .lz-marker {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
+  background: var(--lp-cat, var(--gray-400));
   box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 0 0 3px rgba(255,255,255,0.6);
-  cursor: pointer; transition: transform 0.15s;
+  cursor: pointer; transition: var(--transition);
 }
 .lz-marker:hover { transform: scale(1.2); }
-.lz-marker-letter {
-  color: #fff; font-size: 13px; font-weight: 700; line-height: 1;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+.lz-marker-icon svg {
+  width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5;
 }
+
+/* Photon search loading indicator */
+.loc-suggest-photon-loading {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; font-size: 12px; color: var(--gray-400);
+}
+.loc-suggest-photon-loading .lp-picker-spinner { width: 12px; height: 12px; border-width: 1.5px; }
 
 /* Refine landing-spot chips */
 .lp-refine-row { display: flex; gap: 8px; padding: 6px 0 2px; }
