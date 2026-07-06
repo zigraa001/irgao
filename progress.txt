@@ -613,3 +613,45 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Chart x-axis label decimation uses nth-child on the COLUMN (not the label) because each label is the only child in its column -- `.admin-bar-chart .admin-bar-col:nth-child(5n) .admin-bar-label { display: block; }`
   - The chart's horizontal gridlines use a CSS `repeating-linear-gradient` at 25% intervals -- no extra markup needed
 ---
+
+## 2026-07-06 - US-108
+- What was implemented: Compliance section transformed into a status board with KPI cards, colored accent cards, positive empty states, and row anatomy with pilot monogram avatars. Logs terminal re-tinted to navy family, upgraded to 65vh/12.5px with thin scrollbar and per-line level token chips (INFO/ERROR/WARN). Skeleton loading for compliance fetch.
+- Files changed: js/app/03-admin-profile.js (ADM_ICONS extended with alert/shield, adminComplianceSkeleton function, renderComplianceSummary switched from pdStat to admKpi with adm-grid wrapper, renderComplianceMissing/Failed with positive empty states + monogram avatar row anatomy + count badges, renderComplianceRecent with card wrapper + row anatomy, loadAdminCompliance uses skeleton + adm-error), js/app/08-actions.js (fetchAdminLogsPage emits per-line admin-log-level chips with INFO/ERROR/WARN classes, loadAdminLogs meta text updated), css/app.css (#admin-logs-meta styled by ID as meta bar, admin-logs-scroll navy bg + 65vh + 12.5px + thin scrollbar, admin-log-level chips, admin-log-line.warn amber, adm-comp-board/card/card--amber/card--red accent cards, adm-comp-row/avatar/identity/name/meta row anatomy, adm-comp-empty/--positive empty states, adm-comp-count count chips, 1024px stacking rule for board, #admin-logs-loading scoped transparent bg), app.html (compliance section restructured: summary div no profile-stats-grid, missing/failed wrapped in adm-grid with adm-span-6 accent cards with count badge spans, CSS cache-buster bumped), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - pdStat in compliance functions: 0 matches (PASS); pdStat function definition alive at line 119 with 27 total calls (profile/earnings)
+  - Compliance KPIs use admKpi: `admKpi(ADM_ICONS.users, 'blue'` / `admKpi(ADM_ICONS.shield, 'green'` / `admKpi(ADM_ICONS.alert, 'amber'` / `admKpi(ADM_ICONS.cancel, 'red'` in renderComplianceSummary (line 1691-1694)
+  - Accent card CSS: `.adm-comp-card--amber { border-left: 3px solid var(--amber); }` at line 4860; `.adm-comp-card--red { border-left: 3px solid var(--red, #EF4444); }` at line 4861
+  - Stacking rule scoped: `@media (max-width: 1024px) { .adm-comp-board > .adm-span-6 { grid-column: span 12; } }` (does NOT change global .adm-span-6)
+  - Empty state fix: renderComplianceMissing renders `adm-comp-empty--positive` "All pilots checked in during the last 24 hours" when list is empty (instead of collapsing)
+  - Empty state fix: renderComplianceFailed renders `adm-comp-empty--positive` "No failed checklists in the last 7 days" when list is empty
+  - Row anatomy: `adm-comp-row` with `adm-comp-avatar` monogram (32px, gradient bg) + `adm-comp-identity` (name 14px/600 + meta 12.5px muted) + right-aligned chip
+  - op-status-badge/op-badge--* used but NOT restyled: op-badge--red/op-badge--green used in renderComplianceFailed/renderComplianceRecent for FAIL/PASS chips
+  - Recent Checklists full-width card: `adm-comp-card adm-comp-card--recent` wrapper with `adm-comp-card-header` title
+  - Terminal CSS: `.admin-logs-scroll { height: 65vh; background: var(--navy, #0A1628); font-size: 12.5px; scrollbar-width: thin; }` (was 60vh, gray-900, 12px)
+  - Thin scrollbar: `.admin-logs-scroll::-webkit-scrollbar { width: 6px; }` + thumb rgba(255,255,255,.15)
+  - Level chips: `<span class="admin-log-level admin-log-level--info">INFO</span>` / `--error` / `--warn`
+  - Level chip CSS: `.admin-log-level--info { background: rgba(100,149,237,.15); color: rgba(147,197,253,1); }` / `--error { ... var(--red-light) }` / `--warn { ... var(--amber-light) }`
+  - Warn is defensive: src/log-bus.js wraps console.log->info and console.error->error only; warn never occurs today
+  - fetchAdminLogsPage level markup: `var lvl = l.level || 'info'` at line 334; `admin-log-level` span at line 339
+  - onAdminLogsScroll UNCHANGED: `scroll.onscroll = onAdminLogsScroll` at line 311, `list.insertAdjacentHTML('afterbegin', html)` at line 345, `scroll.scrollTop = newHeight - prevHeight` at line 366
+  - #admin-logs-loading INSIDE #admin-logs-scroll, BEFORE #admin-logs-list (DOM order preserved)
+  - #admin-logs-meta ABOVE #admin-logs-scroll as sibling (DOM order preserved), styled by ID not shared class
+  - loadAdminLogs writes textContent to meta (line 313) - kept simple, no child elements
+  - Skeletons: adminComplianceSkeleton() generates 4 skeleton KPI cards during fetch (replaces 'Fetching compliance data...' text)
+  - Error state: adm-error + adm-retry-btn (scoped, NOT restyling pd-error globally)
+  - #admin-logs-loading styled by ID (`#admin-logs-loading { background: transparent; color: var(--gray-400); border: none; }`) to override pd-loading on dark bg
+  - Shared classes NOT modified globally: pd-stat, pd-loading, pd-error, pd-breakdown, profile-stats-grid (2 rules), op-section-title, op-empty, op-btn, dashboard-pill, op-status-badge all retain original global rules
+  - loadAdminCompliance endpoint unchanged: `apiFetch('/api/admin/compliance')` at line 1674
+  - npm run build:js (v=d625608f); CSS cache-buster bumped to v=us108-compliance-logs; npm run typecheck passes
+- **Learnings for future iterations:**
+  - `ADM_ICONS.alert` (triangle warning) and `ADM_ICONS.shield` added for compliance section -- reuse for any admin section needing these icons
+  - `adminComplianceSkeleton()` generates 4 skeleton KPI cards in an adm-grid -- adapts the dashboard skeleton pattern for compliance
+  - `.adm-comp-card` / `.adm-comp-card--amber` / `.adm-comp-card--red` are reusable accent cards with colored left border -- good for status boards
+  - `.adm-comp-row` is the row anatomy for compliance lists -- monogram avatar + identity stack + right-aligned chip; similar to admin-fleet-row pattern
+  - The compliance board uses a scoped stacking rule (`adm-comp-board > .adm-span-6`) at 1024px to avoid changing the global .adm-span-6 breakpoint used by the US-102 dashboard
+  - Positive empty states (`adm-comp-empty--positive`) with green check icon replace the board-collapsing `innerHTML = ''` pattern -- composition holds on healthy days
+  - Logs terminal uses navy token for background instead of raw hex -- consistent with brand
+  - Log level chips are purely cosmetic -- src/log-bus.js only wraps info/error; warn chip CSS is defensive for future use
+  - `#admin-logs-meta` styled by ID to avoid modifying the shared `.admin-users-meta` class used by Users and Live sections
+  - `#admin-logs-loading` styled by ID to give transparent bg on the dark terminal, overriding `.pd-loading` without changing it globally
+---
