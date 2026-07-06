@@ -350,20 +350,19 @@ function renderZoneAltitudeStack(zones, hostId) {
   const host = document.getElementById(hostId);
   if (!host) return;
   if (!zones.length) {
-    host.innerHTML = '<h4>Altitude (3D)</h4><div class="op-empty-sub">No zones configured.</div>';
+    host.innerHTML = '<h4>Airspace altitude bands</h4><div class="op-empty-sub">No zones configured.</div>';
     return;
   }
   const maxAlt = Math.max.apply(null, zones.map(function (z) { return z.maxAltitudeM; }).concat([500]));
   host.innerHTML =
-    '<h4>Altitude (3D)</h4>' +
+    '<h4>Airspace altitude bands</h4>' +
     zones.map(function (z) {
       const pctBase = (z.minAltitudeM / maxAlt) * 100;
       const pctH = Math.max(((z.maxAltitudeM - z.minAltitudeM) / maxAlt) * 100, 4);
-      const style = ZONE_STYLES[z.zoneType] || ZONE_STYLES.restricted;
       return '<div class="zone-alt-row">' +
         '<div class="zone-alt-label">' + escapeHtml(z.name) + '</div>' +
         '<div class="zone-alt-bar-track">' +
-          '<div class="zone-alt-bar" style="bottom:' + pctBase + '%;height:' + pctH + '%;background:' + style.fillColor + ';border-color:' + style.color + '"></div>' +
+          '<div class="zone-alt-bar zone-alt-bar--' + z.zoneType + '" style="bottom:' + pctBase + '%;height:' + pctH + '%"></div>' +
         '</div>' +
         '<div class="zone-alt-range">' + z.minAltitudeM + '–' + z.maxAltitudeM + ' m</div>' +
       '</div>';

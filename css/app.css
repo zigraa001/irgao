@@ -2883,7 +2883,7 @@ textarea:focus-visible, a:focus-visible {
 .op-map-badge {
   position: absolute;
   top: 12px;
-  left: 432px;
+  left: 12px;
   z-index: 1000;
   background: rgba(37, 99, 235, 0.92);
   color: #fff;
@@ -2910,7 +2910,7 @@ textarea:focus-visible, a:focus-visible {
 .op-map-legend {
   position: absolute;
   bottom: 16px;
-  left: 432px;
+  left: 12px;
   right: 16px;
   z-index: 1000;
   display: flex;
@@ -2951,6 +2951,16 @@ textarea:focus-visible, a:focus-visible {
 @media (max-width: 720px) {
   .booking-map-legend { font-size: 10px; gap: 8px; max-width: 220px; }
 }
+.op-map-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.op-legend-restricted { color: var(--amber-dark); }
+.op-legend-nofly { color: var(--red-dark); }
+.op-legend-you { color: var(--green-dark); }
+.op-legend-count { margin-left: auto; color: var(--gray-500); }
 .op-panel {
   width: 420px;
 }
@@ -2962,9 +2972,17 @@ textarea:focus-visible, a:focus-visible {
   margin-top: 4px;
   margin-bottom: 0;
 }
-.op-panel .admin-zone-altitude {
-  max-height: 200px;
+@media (min-width: 901px) {
+  .op-panel--wide { width: clamp(720px, 60vw, 900px); }
+  .op-panel--wide ~ .op-map-wrap { display: none; }
+}
+.op-panel .op-zone-altitude {
+  max-height: 400px;
   margin-top: 0;
+}
+.op-zone-altitude h4 {
+  font-size: 13px;
+  color: var(--navy);
 }
 .op-nav {
   display: flex;
@@ -3006,7 +3024,11 @@ textarea:focus-visible, a:focus-visible {
 .op-nav-group-system .op-nav-item { color: var(--gray-400); }
 .op-nav-group-system .op-nav-item:hover { color: var(--gray-600); }
 .op-nav-group-system .op-nav-item.active { color: var(--blue); }
-.op-section { }
+@keyframes opSectionIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.op-section { animation: opSectionIn 150ms ease-out both; }
 .op-role-badge {
   font-size: 12px;
   font-weight: 600;
@@ -3998,6 +4020,9 @@ body.admin-map-fs { overflow: hidden; }
   border: 1px solid;
   opacity: 0.85;
 }
+.zone-alt-bar--flight_corridor { background: #3B82F6; border-color: #1D4ED8; }
+.zone-alt-bar--restricted { background: var(--amber); border-color: var(--amber-dark); }
+.zone-alt-bar--no_fly { background: var(--red); border-color: #B91C1C; }
 .zone-alt-range {
   font-size: 9px;
   color: var(--gray-500);
@@ -7174,6 +7199,7 @@ body.admin-map-fs { overflow: hidden; }
   .dispatch-card,
   .loc-gps-btn.gps-loading svg,
   .op-gps-dot,
+  .op-section,
   .admin-section,
   .adm-skeleton {
     animation: none !important;

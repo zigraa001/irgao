@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us114-booking-desktop">
+  <link rel="stylesheet" href="/css/app.css?v=us115-operator-layout">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -847,8 +847,8 @@
         <div class="op-section" id="op-section-altitude" style="display:none">
           <div class="panel-section">
             <div class="panel-step-heading" id="op-section-heading-altitude">Altitude bands</div>
-            <div id="operator-zone-altitude" class="admin-zone-altitude">
-              <h4>Altitude (3D)</h4>
+            <div id="operator-zone-altitude" class="admin-zone-altitude op-zone-altitude">
+              <h4>Airspace altitude bands</h4>
               <div class="op-empty-sub">Fetching altitude zones...</div>
             </div>
           </div>
@@ -898,16 +898,18 @@
     </div>
 
     <!-- Full-screen map (same layout as passenger #map) -->
-    <div id="op-combined-map"></div>
-    <div class="op-map-badge" id="op-zone-badge">
-      <span class="op-gps-dot"></span>
-      <span id="op-zone-badge-label">Live GPS · loading airspace…</span>
-    </div>
-    <div class="op-map-legend">
-      <span style="color:#D97706">▬ Restricted</span>
-      <span style="color:#DC2626">▬ No-fly</span>
-      <span style="color:#16A34A">✈ You</span>
-      <span id="op-map-legend-count" style="margin-left:auto;color:var(--gray-500)"></span>
+    <div class="op-map-wrap">
+      <div id="op-combined-map"></div>
+      <div class="op-map-badge" id="op-zone-badge">
+        <span class="op-gps-dot"></span>
+        <span id="op-zone-badge-label">Live GPS · loading airspace…</span>
+      </div>
+      <div class="op-map-legend">
+        <span class="op-legend-restricted">▬ Restricted</span>
+        <span class="op-legend-nofly">▬ No-fly</span>
+        <span class="op-legend-you">✈ You</span>
+        <span id="op-map-legend-count" class="op-legend-count"></span>
+      </div>
     </div>
   </div>
 
@@ -1594,6 +1596,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=bc41cf46"></script>
+<script src="/js/app.bundle.js?v=2bac7a31"></script>
 </body>
 </html>

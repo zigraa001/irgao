@@ -820,14 +820,6 @@ async function pollOperatorGpsForRide() {
   } catch (e) { /* ignore */ }
 }
 
-var OP_SECTION_HEADINGS = {
-  trips: 'Assigned trips',
-  checklist: 'Pre-flight Checklist',
-  altitude: 'Altitude bands',
-  earnings: 'Earnings',
-  account: 'Account'
-};
-
 function showOperatorSection(section) {
   document.querySelectorAll('#op-list-section > .op-section').forEach(function (s) {
     s.style.display = 'none';
@@ -837,9 +829,11 @@ function showOperatorSection(section) {
   document.querySelectorAll('.op-nav-item').forEach(function (item) {
     item.classList.toggle('active', item.getAttribute('data-op-section') === section);
   });
-  var heading = document.getElementById('op-section-heading');
-  if (heading && OP_SECTION_HEADINGS[section]) {
-    heading.textContent = OP_SECTION_HEADINGS[section];
+  var panel = document.getElementById('op-panel');
+  var wideMode = section !== 'trips' && section !== 'altitude';
+  if (panel) panel.classList.toggle('op-panel--wide', wideMode);
+  if (!wideMode && opSelfMap) {
+    scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, { showAltitude: true, altitudeHostId: 'operator-zone-altitude' }, 150);
   }
 }
 

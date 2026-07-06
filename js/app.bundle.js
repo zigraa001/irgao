@@ -4374,14 +4374,6 @@ async function pollOperatorGpsForRide() {
   } catch (e) { /* ignore */ }
 }
 
-var OP_SECTION_HEADINGS = {
-  trips: 'Assigned trips',
-  checklist: 'Pre-flight Checklist',
-  altitude: 'Altitude bands',
-  earnings: 'Earnings',
-  account: 'Account'
-};
-
 function showOperatorSection(section) {
   document.querySelectorAll('#op-list-section > .op-section').forEach(function (s) {
     s.style.display = 'none';
@@ -4391,9 +4383,11 @@ function showOperatorSection(section) {
   document.querySelectorAll('.op-nav-item').forEach(function (item) {
     item.classList.toggle('active', item.getAttribute('data-op-section') === section);
   });
-  var heading = document.getElementById('op-section-heading');
-  if (heading && OP_SECTION_HEADINGS[section]) {
-    heading.textContent = OP_SECTION_HEADINGS[section];
+  var panel = document.getElementById('op-panel');
+  var wideMode = section !== 'trips' && section !== 'altitude';
+  if (panel) panel.classList.toggle('op-panel--wide', wideMode);
+  if (!wideMode && opSelfMap) {
+    scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, { showAltitude: true, altitudeHostId: 'operator-zone-altitude' }, 150);
   }
 }
 
@@ -4828,20 +4822,19 @@ function renderZoneAltitudeStack(zones, hostId) {
   const host = document.getElementById(hostId);
   if (!host) return;
   if (!zones.length) {
-    host.innerHTML = '<h4>Altitude (3D)</h4><div class="op-empty-sub">No zones configured.</div>';
+    host.innerHTML = '<h4>Airspace altitude bands</h4><div class="op-empty-sub">No zones configured.</div>';
     return;
   }
   const maxAlt = Math.max.apply(null, zones.map(function (z) { return z.maxAltitudeM; }).concat([500]));
   host.innerHTML =
-    '<h4>Altitude (3D)</h4>' +
+    '<h4>Airspace altitude bands</h4>' +
     zones.map(function (z) {
       const pctBase = (z.minAltitudeM / maxAlt) * 100;
       const pctH = Math.max(((z.maxAltitudeM - z.minAltitudeM) / maxAlt) * 100, 4);
-      const style = ZONE_STYLES[z.zoneType] || ZONE_STYLES.restricted;
       return '<div class="zone-alt-row">' +
         '<div class="zone-alt-label">' + escapeHtml(z.name) + '</div>' +
         '<div class="zone-alt-bar-track">' +
-          '<div class="zone-alt-bar" style="bottom:' + pctBase + '%;height:' + pctH + '%;background:' + style.fillColor + ';border-color:' + style.color + '"></div>' +
+          '<div class="zone-alt-bar zone-alt-bar--' + z.zoneType + '" style="bottom:' + pctBase + '%;height:' + pctH + '%"></div>' +
         '</div>' +
         '<div class="zone-alt-range">' + z.minAltitudeM + '–' + z.maxAltitudeM + ' m</div>' +
       '</div>';
