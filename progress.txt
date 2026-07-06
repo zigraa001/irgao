@@ -35,7 +35,8 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Operator panel uses `.op-nav` with `.op-nav-item[data-op-section]` for section switching via `showOperatorSection()`; `.op-nav-group-system` de-emphasizes overview/account sections with border-top + muted color
 - `.auth-input` and `.auth-btn` are now proper CSS classes for standalone form inputs/buttons outside .auth-field context
 - Amber tokens available: --amber, --amber-dark, --amber-50, --amber-light; Purple: --purple-50, --purple-light
-- For JS-managed visibility toggles, use `el.hidden = true/false` + HTML `hidden` attribute (NOT CSS display:none class + el.style.display)
+- For JS-managed visibility toggles, use `el.hidden = true/false` + HTML `hidden` attribute (NOT CSS display:none class + el.style.display); CAVEAT: `hidden` does NOT override explicit CSS `display: flex/grid` -- add `#element-id[hidden] { display: none; }` for those elements
+- When converting inline onclick to addEventListener in concatenated JS, store the data array in a module-scoped variable so event handlers can index into it (avoids escapeHtml + onclick apostrophe bugs)
 - `.admin-section-card` (max-width:640px, margin-bottom:20px) for admin content containers; `--narrow` (560px) for settings
 - `.adm-chart-header` + `.adm-chart-title` + `.adm-chart-total` for card headers with title + right-aligned metric
 - `.adm-pilot-cell` + `.adm-pilot-avatar` for table rows with monogram avatar + name; uses `pilotInitials()` from 05-map.js
@@ -980,4 +981,107 @@ Date: 2026-07-06
 ### Quality checks
 - npm run typecheck → passes
 - No JS/CSS/HTML changes → no cache-buster bump needed
+---
+
+## 2026-07-06 - US-111
+- What was implemented: Landing-zone picker flow integration and interaction defect fixes -- intent gating (suppress parameter on setPickup/setDest, panel-locations visibility guard in showLandingPicker), race fix (searchRides cancels pending picker), re-open affordance (refine chips), interactive map markers with click handlers, addEventListener replacing inline onclick, display bug fix (hidden attribute instead of style.display='block' that killed flex gap), feedback states persist (no auto-dismiss timers, Skip button as dismiss, empty-state copy reset on each invocation)
+- Files changed: js/app/05-map.js (showLandingPicker guards + hidden + addEventListener + marker clicks + refine chips, setPickup/setDest suppress param, hideLandingPicker abort fetch + hidden, updateRefineChips helper), js/app/06-booking.js (searchRides/backToSearch/resetBooking call hideLandingPicker, selectRoute/chooseFeasibilitySuggestion pass suppress=true), js/app/02-auth.js (auto-GPS setPickup suppress=true), app.html (picker + empty hidden attribute, cache busters), css/app.css (hidden overrides for flex elements, .lp-item button resets, .lp-refine-row/chip styles)
+
+### HEADLESS structural verification
+
+**Guard conditions in showLandingPicker (js/app/05-map.js:949):**
+```
+  var panelLoc = document.getElementById('panel-locations');
+  if (panelLoc && (panelLoc.hidden || panelLoc.style.display === 'none')) return;
+```
+
+**Suppress flag in setPickup (js/app/05-map.js:1132,1143):**
+```
+function setPickup(latlng, name, suppress) {
+  ...
+  if (!suppress) showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', name);
+}
+```
+
+**Suppress flag in setDest (js/app/05-map.js:1146,1157):**
+```
+function setDest(latlng, name, suppress) {
+  ...
+  if (!suppress) showLandingPicker(destCoord[0], destCoord[1], 'dest', name);
+}
+```
+
+**Auto-GPS setPickup invocation with suppress flag (js/app/02-auth.js:1177):**
+```
+  setPickup([lat, lng], name, true);
+```
+The guard inside setPickup (`if (!suppress)`) prevents showLandingPicker from firing during auto-GPS.
+
+**addEventListener row wiring (js/app/05-map.js:1107-1109):**
+```
+    el.addEventListener('click', function () {
+      selectLandingPoint(zones[i].center[0], zones[i].center[1], zones[i].name, target);
+    });
+```
+List items rendered as `<button type="button" class="lp-item">` (line 1089), NO inline onclick.
+Inline onclick count in 05-map.js: `grep -c 'onclick="selectLandingPoint' js/app/05-map.js` → 0
+
+**Marker click handler (js/app/05-map.js:1070-1072):**
+```
+    marker.on('click', function () {
+      selectLandingPoint(z.center[0], z.center[1], z.name, target);
+    });
+```
+
+**Fetch-cancellation + marker-cleanup in hideLandingPicker (js/app/05-map.js:909-915):**
+```
+function hideLandingPicker() {
+  var picker = document.getElementById('landing-point-picker');
+  if (picker) picker.hidden = true;
+  clearLandingZones();
+  if (landingZoneFetchAbort) { landingZoneFetchAbort.abort(); landingZoneFetchAbort = null; }
+  pendingLandingPick = null;
+  _currentLandingZones = [];
+}
+```
+searchRides calls hideLandingPicker at its start (06-booking.js:229), cancelling any pending Overpass fetch and removing all zone markers before the route map draws.
+
+**selectRoute suppression (js/app/06-booking.js:193-194):**
+```
+  if (fromCoord) setPickup(fromCoord, from, true);
+  if (toCoord) setTimeout(() => setDest(toCoord, to, true), 200);
+```
+Both calls pass suppress=true → at most ZERO pickers for popular routes.
+
+**Refine chip handler calls showLandingPicker (js/app/05-map.js:1189-1191):**
+```
+    pickupBtn.addEventListener('click', function () {
+      showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', document.getElementById('pickup-input').value);
+    });
+```
+
+**Display bug fixed: list uses hidden attribute, not style.display='block' (js/app/05-map.js):**
+- `list.hidden = true;` (line 966) and `list.hidden = false;` (line 1103)
+- CSS override: `#lp-picker-list[hidden] { display: none; }` ensures hidden wins over `.lp-picker-list { display: flex }`
+- When hidden is removed, CSS `display: flex` with `gap: 4px` applies correctly
+
+**Feedback states persist (no auto-dismiss):**
+- `grep -c 'setTimeout.*hideLandingPicker' js/app/05-map.js` → 0
+- Empty-state copy reset on every invocation: `empty.textContent = 'No landing points found nearby. Using selected location.';` (line 968)
+- Skip button remains as the sole dismiss mechanism (app.html:344)
+
+**Element IDs preserved:** landing-point-picker, lp-picker-loading, lp-picker-list, lp-picker-empty, lp-picker-label, lp-picker-skip, pickup-input, dest-input, panel-locations -- all present in app.html
+
+**Function names preserved:** selectLandingPoint, setPickup, setDest, searchRides, selectRoute, selectRideCard, bookRide, switchService -- all present
+
+### Quality checks
+- npm run build:js → v=be5bf6b4
+- npm run typecheck → passes
+- CSS cache buster bumped to v=us111-landing-picker
+- Server boots clean
+- **Learnings for future iterations:**
+  - The `hidden` attribute does NOT override CSS `display: flex/grid` rules due to specificity -- add `#element-id[hidden] { display: none; }` for elements with explicit display declarations
+  - `style.display = ''` (empty string) removes the inline style and lets CSS take over -- simpler alternative to hidden for flex elements, but hidden is more semantic
+  - When converting inline onclick to addEventListener in concatenated JS (no modules), store the data array in a module-scoped variable (_currentLandingZones) so event handlers can access it
+  - escapeHtml + onclick attribute strings are fundamentally broken for names with apostrophes -- always use addEventListener with index-based lookups
 ---

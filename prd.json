@@ -204,8 +204,8 @@
         "HEADLESS structural verification in progress.txt: quote the new guard conditions, the addEventListener row wiring, the marker click handler, the fetch-cancellation/marker-cleanup path, and quote the auto-GPS setPickup invocation showing the silent/suppress flag AND the guard inside setPickup/showLandingPicker that honors it (a bare 'no picker call in the geolocation callback' grep proves nothing - the call is indirect via setPickup)"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Intent gating (suppress param + panel-locations guard), race fix (searchRides cancels picker), refine chips, interactive markers, addEventListener (no inline onclick), display bug fixed (hidden attribute), feedback states persist (no auto-dismiss). Grep evidence in progress.txt US-111 entry."
     },
     {
       "id": "US-112",
