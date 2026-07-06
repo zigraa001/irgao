@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us130-admin-approvals">
+  <link rel="stylesheet" href="/css/app.css?v=us111-landing-picker">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -335,7 +335,7 @@
           </button>
         </div>
 
-        <div id="landing-point-picker" class="lp-picker" style="display:none;">
+        <div id="landing-point-picker" class="lp-picker" hidden>
           <div class="lp-picker-header">
             <div class="lp-picker-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
@@ -347,7 +347,7 @@
             <span class="lp-picker-spinner"></span> Scanning nearby landing points...
           </div>
           <div id="lp-picker-list" class="lp-picker-list"></div>
-          <div id="lp-picker-empty" class="lp-picker-empty" style="display:none;">
+          <div id="lp-picker-empty" class="lp-picker-empty" hidden>
             No landing points found nearby. Using selected location.
           </div>
         </div>
@@ -1597,6 +1597,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=2ce914b3"></script>
+<script src="/js/app.bundle.js?v=be5bf6b4"></script>
 </body>
 </html>

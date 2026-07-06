@@ -190,9 +190,8 @@ function toggleRidesDetails() {
 function selectRoute(from, to) {
   const fromCoord = demoLocations[from];
   const toCoord = demoLocations[to];
-  if (fromCoord) setPickup(fromCoord, from);
-  if (toCoord) setTimeout(() => setDest(toCoord, to), 200);
-  // Hide popular routes after selection
+  if (fromCoord) setPickup(fromCoord, from, true);
+  if (toCoord) setTimeout(() => setDest(toCoord, to, true), 200);
   document.getElementById('popular-routes-area').innerHTML = '';
 }
 
@@ -227,6 +226,7 @@ function calcDistance() {
 }
 
 async function searchRides() {
+  hideLandingPicker();
   if (!pickupCoord && destCoord) {
     showAuthError('booking-error', 'Set your pickup point');
     var pi = document.getElementById('pickup-input');
@@ -471,8 +471,8 @@ function renderFeasibilityWarning(data) {
 function chooseFeasibilitySuggestion(which, lat, lng, name) {
   const label = name || (Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4));
   currentRoute = null;
-  if (which === 'pickup') setPickup([lat, lng], label);
-  else setDest([lat, lng], label);
+  if (which === 'pickup') setPickup([lat, lng], label, true);
+  else setDest([lat, lng], label, true);
   showToast('Updated ' + which + ' to ' + label, 'success');
   searchRides();
 }
@@ -871,6 +871,7 @@ function closeConfirm() {
 }
 
 function backToSearch() {
+  hideLandingPicker();
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
   document.getElementById('panel-locations').style.display = 'block';
@@ -932,6 +933,7 @@ function renderCarbonComparison(cc) {
 }
 
 function resetBooking() {
+  hideLandingPicker();
   document.getElementById('rides-area').style.display = 'none';
   document.getElementById('book-btn').style.display = 'none';
   document.getElementById('panel-locations').style.display = 'block';
@@ -963,6 +965,8 @@ function resetBooking() {
   stopDemoTaxiDrift();
   clearAnimatedMarkersByPrefix('real-', map);
   clearAnimatedMarkersByPrefix('track-operator', map);
+  var refineRow = document.getElementById('lp-refine-row');
+  if (refineRow) { refineRow.innerHTML = ''; refineRow.hidden = true; }
   map.setView([28.6139, 77.2090], 12);
 }
 

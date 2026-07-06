@@ -831,6 +831,7 @@ var landingZoneLayers = [];
 var landingZoneCache = new Map();
 var landingZoneFetchAbort = null;
 var pendingLandingPick = null;
+var _currentLandingZones = [];
 
 var LANDING_ZONE_CATEGORIES = {
   helipad:    { label: 'Helipad',       color: '#10B981', icon: 'H', priority: 1 },
@@ -906,9 +907,11 @@ function clearLandingZones() {
 
 function hideLandingPicker() {
   var picker = document.getElementById('landing-point-picker');
-  if (picker) picker.style.display = 'none';
+  if (picker) picker.hidden = true;
   clearLandingZones();
+  if (landingZoneFetchAbort) { landingZoneFetchAbort.abort(); landingZoneFetchAbort = null; }
   pendingLandingPick = null;
+  _currentLandingZones = [];
 }
 
 function skipLandingPick() {
@@ -942,6 +945,9 @@ function selectLandingPoint(lat, lon, name, target) {
 async function showLandingPicker(lat, lon, target, locationName) {
   if (!map) return;
 
+  var panelLoc = document.getElementById('panel-locations');
+  if (panelLoc && (panelLoc.hidden || panelLoc.style.display === 'none')) return;
+
   pendingLandingPick = { target: target, origCoord: [lat, lon], origName: locationName };
 
   var picker = document.getElementById('landing-point-picker');
@@ -954,11 +960,12 @@ async function showLandingPicker(lat, lon, target, locationName) {
   label.textContent = target === 'pickup'
     ? 'Choose landing point near your pickup'
     : 'Choose landing point near destination';
-  picker.style.display = 'block';
-  loading.style.display = 'flex';
+  picker.hidden = false;
+  loading.hidden = false;
   list.innerHTML = '';
-  list.style.display = 'none';
-  empty.style.display = 'none';
+  list.hidden = true;
+  empty.hidden = true;
+  empty.textContent = 'No landing points found nearby. Using selected location.';
 
   var cacheKey = lat.toFixed(3) + ',' + lon.toFixed(3);
   var zones;
@@ -1030,26 +1037,25 @@ async function showLandingPicker(lat, lon, target, locationName) {
     } catch (e) {
       landingZoneFetchAbort = null;
       if (e.name === 'AbortError') return;
-      loading.style.display = 'none';
+      loading.hidden = true;
       empty.textContent = 'Could not scan landing points. Using selected location.';
-      empty.style.display = 'block';
-      setTimeout(hideLandingPicker, 3000);
+      empty.hidden = false;
       return;
     }
   }
 
-  loading.style.display = 'none';
+  loading.hidden = true;
 
   if (!zones.length) {
-    empty.style.display = 'block';
-    setTimeout(hideLandingPicker, 2500);
+    empty.hidden = false;
     return;
   }
 
+  _currentLandingZones = zones;
   clearLandingZones();
   var bounds = [pendingLandingPick.origCoord];
 
-  zones.forEach(function (z) {
+  zones.forEach(function (z, idx) {
     var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
     var iconHtml =
       '<div class="lz-marker" style="background:' + catInfo.color + ';">' +
@@ -1061,6 +1067,9 @@ async function showLandingPicker(lat, lon, target, locationName) {
         iconSize: [28, 28], iconAnchor: [14, 14],
       }),
     }).addTo(map);
+    marker.on('click', function () {
+      selectLandingPoint(z.center[0], z.center[1], z.name, target);
+    });
     landingZoneLayers.push(marker);
     bounds.push(z.center);
   });
@@ -1076,10 +1085,8 @@ async function showLandingPicker(lat, lon, target, locationName) {
     var dist = haversineKmClient(lat, lon, z.center[0], z.center[1]);
     var distLabel = dist < 1 ? Math.round(dist * 1000) + ' m away' : dist.toFixed(1) + ' km away';
     var areaLabel = z.area > 0 ? (z.area > 10000 ? (z.area / 10000).toFixed(1) + ' ha' : Math.round(z.area) + ' m²') : '';
-    var safeName = escapeHtml(z.name).replace(/'/g, "\\'");
 
-    return '<div class="lp-item" data-idx="' + idx + '" ' +
-      'onclick="selectLandingPoint(' + z.center[0] + ',' + z.center[1] + ',\'' + safeName + '\',\'' + target + '\')">' +
+    return '<button type="button" class="lp-item" data-idx="' + idx + '">' +
       '<div class="lp-item-icon" style="background:' + catInfo.color + ';">' + catInfo.icon + '</div>' +
       '<div class="lp-item-info">' +
         '<div class="lp-item-name">' + escapeHtml(z.name) + '</div>' +
@@ -1091,12 +1098,15 @@ async function showLandingPicker(lat, lon, target, locationName) {
         '</div>' +
       '</div>' +
       '<svg class="lp-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>' +
-    '</div>';
+    '</button>';
   }).join('');
-  list.style.display = 'block';
+  list.hidden = false;
 
   var items = list.querySelectorAll('.lp-item');
   items.forEach(function (el, i) {
+    el.addEventListener('click', function () {
+      selectLandingPoint(zones[i].center[0], zones[i].center[1], zones[i].name, target);
+    });
     el.addEventListener('mouseenter', function () {
       if (landingZoneLayers[i]) {
         landingZoneLayers[i].setZIndexOffset(500);
@@ -1119,7 +1129,7 @@ function createMarker(latlng, type) {
   });
 }
 
-function setPickup(latlng, name) {
+function setPickup(latlng, name, suppress) {
   pickupCoord = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
   document.getElementById('pickup-input').value = name;
   document.getElementById('pickup-input').classList.add('has-value');
@@ -1129,10 +1139,11 @@ function setPickup(latlng, name) {
   else map.setView(pickupCoord, 15);
   captureBookingDraft();
   refreshNearbyTaxis();
-  showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', name);
+  updateRefineChips();
+  if (!suppress) showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', name);
 }
 
-function setDest(latlng, name) {
+function setDest(latlng, name, suppress) {
   destCoord = Array.isArray(latlng) ? latlng : [latlng.lat, latlng.lng];
   document.getElementById('dest-input').value = name;
   document.getElementById('dest-input').classList.add('has-value');
@@ -1142,7 +1153,49 @@ function setDest(latlng, name) {
   else map.setView(destCoord, 15);
   captureBookingDraft();
   if (pickupCoord && destCoord) refreshNearbyTaxis();
-  showLandingPicker(destCoord[0], destCoord[1], 'dest', name);
+  updateRefineChips();
+  if (!suppress) showLandingPicker(destCoord[0], destCoord[1], 'dest', name);
+}
+
+function updateRefineChips() {
+  var container = document.getElementById('panel-locations');
+  if (!container) return;
+  var row = document.getElementById('lp-refine-row');
+  if (!row) {
+    row = document.createElement('div');
+    row.id = 'lp-refine-row';
+    row.className = 'lp-refine-row';
+    var picker = document.getElementById('landing-point-picker');
+    if (picker) container.insertBefore(row, picker);
+    else container.appendChild(row);
+  }
+  var html = '';
+  if (pickupCoord) {
+    html += '<button type="button" class="lp-refine-chip" id="lp-refine-pickup">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">' +
+      '<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>' +
+      ' Refine pickup spot</button>';
+  }
+  if (destCoord) {
+    html += '<button type="button" class="lp-refine-chip" id="lp-refine-dest">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">' +
+      '<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>' +
+      ' Refine destination spot</button>';
+  }
+  row.innerHTML = html;
+  row.hidden = !html;
+  var pickupBtn = document.getElementById('lp-refine-pickup');
+  if (pickupBtn) {
+    pickupBtn.addEventListener('click', function () {
+      showLandingPicker(pickupCoord[0], pickupCoord[1], 'pickup', document.getElementById('pickup-input').value);
+    });
+  }
+  var destBtn = document.getElementById('lp-refine-dest');
+  if (destBtn) {
+    destBtn.addEventListener('click', function () {
+      showLandingPicker(destCoord[0], destCoord[1], 'dest', document.getElementById('dest-input').value);
+    });
+  }
 }
 
 function drawRoute() {

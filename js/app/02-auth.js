@@ -1174,7 +1174,7 @@ function routeForRole(user) {
                 }
               } catch (e) {}
               if (!pickupCoord) {
-                setPickup([lat, lng], name);
+                setPickup([lat, lng], name, true);
                 document.getElementById('pickup-input').classList.add('gps-filled');
                 map.setView([lat, lng], 14);
               }
