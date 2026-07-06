@@ -1989,9 +1989,9 @@ async function loadAdminCompanies() {
             '<span class="op-status-badge ' + statusClass + '">' + statusText + '</span>' +
           '</div>' +
           '<div class="partner-stats">' +
-            '<div class="partner-stat"><span class="partner-stat-val">' + (c.pilotCount || 0) + '</span><span class="partner-stat-label">Pilots</span></div>' +
-            '<div class="partner-stat"><span class="partner-stat-val">' + (c.officeCount || 0) + '</span><span class="partner-stat-label">Offices</span></div>' +
-            '<div class="partner-stat"><span class="partner-stat-val">' + (c.fleetSize || 0) + '</span><span class="partner-stat-label">Fleet</span></div>' +
+            '<div class="partner-stat"><svg class="partner-stat-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/></svg><span class="partner-stat-val">' + (c.pilotCount || 0) + '</span><span class="partner-stat-label">pilots</span></div>' +
+            '<div class="partner-stat"><svg class="partner-stat-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg><span class="partner-stat-val">' + (c.officeCount || 0) + '</span><span class="partner-stat-label">offices</span></div>' +
+            '<div class="partner-stat"><svg class="partner-stat-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg><span class="partner-stat-val">' + (c.fleetSize || 0) + '</span><span class="partner-stat-label">fleet</span></div>' +
           '</div>' +
           '<button type="button" class="partner-offices-toggle" onclick="toggleCompanyOffices(this,' + c.id + ')">' +
             '<span>View offices</span><svg class="partner-chevron" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>' +
@@ -2024,6 +2024,7 @@ async function toggleCompanyOffices(btn, companyId) {
     } else {
       container.innerHTML = data.offices.map(function (o) {
         return '<div class="partner-office-row">' +
+          '<svg class="partner-office-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="2"/></svg>' +
           '<div class="partner-office-city">' + escapeHtml(o.city) + '</div>' +
           '<div class="partner-office-meta">' +
             (o.address ? '<span>' + escapeHtml(o.address) + '</span>' : '') +
