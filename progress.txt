@@ -53,6 +53,11 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - Ghost action buttons: `.admin-btn-sm` are transparent by default, colored on hover; `.admin-user-actions` hidden (opacity:0) until row hover; `@media (hover: none)` makes them always visible on touch
 - Admin-scoped empty states: use `.adm-empty` / `.adm-empty-icon` / `.adm-empty-title` / `.adm-empty-sub` with SVG icons (scoped via `.admin-main .adm-empty`); do NOT use `.op-empty` for new admin empty states
 - `adminUsersSkeleton()` generates skeleton loading rows -- adapt pattern for other sections
+- `.adm-seg-tab` scoped via `.drone-tab-bar .adm-seg-tab` overrides `.dashboard-pill` for segmented tab controls without touching global pill rules
+- `.das-grid` / `.das-card` is the admin service card grid (auto-fill 280px, hover lift, click-to-edit); `.das-rows-card` / `.das-row` is the divider-only row pattern with monogram avatars
+- `.adm-drone-btn` matches `.admin-add-member-btn` for consistent admin action buttons; `.das-ghost-btn` for cancel/secondary buttons
+- `droneAdminSkeleton(count)` generates skeleton loading rows for drone admin sub-tabs
+- For admKpi compact variant in JS, use `.replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')` on the admKpi() output
 
 ---
 
@@ -654,4 +659,36 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Log level chips are purely cosmetic -- src/log-bus.js only wraps info/error; warn chip CSS is defensive for future use
   - `#admin-logs-meta` styled by ID to avoid modifying the shared `.admin-users-meta` class used by Users and Live sections
   - `#admin-logs-loading` styled by ID to give transparent bg on the dark terminal, overriding `.pd-loading` without changing it globally
+---
+
+## 2026-07-06 - US-109
+- What was implemented: Drone Management admin section transformed -- segmented pill tabs matching Users tab pattern (adm-seg-tab class alongside dashboard-pill, scoped via .drone-tab-bar for specificity), services as responsive auto-fill card grid with hover lift and edit buttons, operators as divider-only rows with monogram avatars and star ratings, bookings as divider-only rows with interactive status select preserved and chip-styled via scoped CSS, bookings stats switched from drone-stat-card to admKpi() compact tiles, forms styled with primary/ghost button patterns matching admin design language, bookings sub-header added with count display, skeleton loading for all three sub-tabs
+- Files changed: js/app/09-drones.js (renderDroneAdminServices rewritten to card grid, renderDroneAdminOperators rewritten to row layout with avatars, renderDroneAdminBookings rewritten to row layout with select preserved, loadDroneAdminBookings uses admKpi compact for stats + skeleton loading + count badge, showDroneServiceForm/showDroneOperatorForm add form styling classes + primary/ghost buttons, droneAdminSkeleton helper added, all three load functions use skeleton states), css/app.css (drone-tab-bar segmented control overriding dashboard-pill, das-grid auto-fill card grid, das-card with hover lift, das-chip status chips, das-cat-chip category pills, das-rows-card + das-row divider-only rows with avatars, das-status-select chip-styled select, adm-drone-btn primary action button matching admin-add-member-btn, das-ghost-btn ghost cancel button, das-form-actions right-aligned form footer, responsive 768px breakpoint), app.html (adm-seg-tab class added to three tab buttons, adm-drone-btn class added to sub-header op-btn buttons, bookings sub-header added with title + count, pd-loading divs removed from admin drone sub-tabs, CSS cache-buster bumped), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - Segmented tab markup showing BOTH classes: `class="dashboard-pill adm-seg-tab active"` on services tab, `class="dashboard-pill adm-seg-tab"` on operators/bookings tabs (app.html:1287-1289)
+  - js/app/09-drones.js:35-37 UNCHANGED: passenger `dashboard-pill drone-cat-btn` markup identical
+  - No .dashboard-pill rule in css/app.css changed: 6 total rules (focus-visible, base, hover, active, pill:active, pills container) -- same count as before
+  - Services grid CSS: `.das-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }`
+  - Exact handler-survival greps on button/select elements:
+    - `onclick="editDroneService(`: 2 hits (card + edit button)
+    - `onclick="editDroneOperator(`: 1 hit
+    - `onchange="updateDroneBookingStatus(`: 1 hit (select element preserved)
+    - `onclick="saveDroneService(`: 1 hit
+    - `onclick="hideDroneServiceForm()"`: 1 hit
+    - `onclick="saveDroneOperator(`: 1 hit
+    - `onclick="hideDroneOperatorForm()"`: 1 hit
+  - Passenger drone loading text PRESERVED: app.html:420 `<div class="pd-loading">Fetching drone services...</div>` (inside #drone-services-list, passenger panel)
+  - Admin drone loading texts REMOVED: 0 pd-loading divs remain inside #admin-section-drones (replaced by JS skeleton rendering via droneAdminSkeleton)
+  - Bookings select preserved with scoped styling: `<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(...)">`
+  - Bookings stats use admKpi compact: `admKpi(ADM_ICONS.bookings, 'blue', ...).replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')`
+  - Shared classes NOT modified: .dashboard-pill (6 rules unchanged), .op-btn (original rules intact), .pd-input (no new global rules), .admin-table/.admin-table-wrap (not used in new renderers, original rules intact)
+  - npm run build:js (v=cd908f61); CSS cache-buster bumped to v=us109-drone-admin; npm run typecheck passes
+- **Learnings for future iterations:**
+  - `.adm-seg-tab` scoped via `.drone-tab-bar .adm-seg-tab` provides enough specificity to override `.dashboard-pill.active`, `.dashboard-pill:hover`, and `.dashboard-pill:active { transform: scale(.97) }` without touching the global rules
+  - `.das-grid` / `.das-card` is the service card grid pattern for admin -- auto-fill with 280px min, hover lift, click-to-edit
+  - `.das-rows-card` / `.das-row` is the divider-only row pattern with monogram avatars -- reusable for any admin list section
+  - `.das-status-select` gives the booking status `<select>` a chip-like appearance (radius-full, small padding) without removing the interactive select behavior
+  - `.adm-drone-btn` matches `.admin-add-member-btn` styling for consistency across admin action buttons
+  - `droneAdminSkeleton(count)` generates skeleton loading rows -- reuse for any admin list that needs shimmer loading
+  - When bookings stats need admKpi compact tiles, use `.replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')` on the admKpi output since the function doesn't accept a variant parameter
 ---
