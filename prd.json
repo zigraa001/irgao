@@ -527,8 +527,8 @@
         "VERIFICATION: curl transcript - submit a request (row created, live operator_companies row unchanged - SELECT proof), supersede it with a second submission (first becomes 'superseded'), cancel the pending one; cross-company isolation (company B cannot see or cancel A's requests); quote all in progress.txt; npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in commit 0ba2344. Schema: company_change_requests table + ensureColumn for contactEmail/contactPhone/description on operator_companies. API: GET /api/company/profile, POST /api/company/profile-request (diff-only, supersedes old pending), GET /api/company/requests, POST /api/company/requests/:id/cancel. UI: read-view card, edit form, pending banner with diff, cancel action, request history with status chips. No direct writes to operator_companies. All quality checks pass."
     },
     {
       "id": "US-130",

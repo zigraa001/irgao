@@ -871,3 +871,45 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The cpr-* CSS prefix is for company pricing section, continuing the cf-*/cp-* prefix convention
   - POST /api/company/pricing uses ON DUPLICATE KEY UPDATE for idempotent upserts, matching the pricing_config pattern
 ---
+
+## US-129: Company Profile with admin-approval workflow (company side) [COMPLETE]
+Commit: 0ba2344
+Date: 2026-07-06
+
+### Schema
+- company_change_requests table (id, companyId, requestedBy, type, payload, status, adminId, adminNote, createdAt, decidedAt) at src/schema.js:460
+- ensureColumn contactEmail/contactPhone/description on operator_companies at src/schema.js:456-458
+
+### API endpoints (src/company-routes.js)
+- GET /api/company/profile (line 433): returns company details + offices + pending request
+- POST /api/company/profile-request (line 456): creates pending change request with diff-only payload; supersedes any existing pending; server-enforced whitelist PROFILE_WHITELIST (line 431)
+- GET /api/company/requests (line 523): request history newest-first
+- POST /api/company/requests/:id/cancel (line 537): cancel own pending request only; cross-company isolation via companyId check
+
+### Server-enforced whitelist
+- PROFILE_WHITELIST = ["name", "logoUrl", "contactEmail", "contactPhone", "description"] at line 431
+- code, rating, fleetSize, active are NOT company-editable
+
+### No direct writes proof
+- grep -n 'UPDATE.*operator_companies' src/company-routes.js → no matches (exit 1)
+- The only mutation path is the company_change_requests table; approval applying changes to operator_companies is deferred to US-130 (admin side)
+
+### UI (js/app/10-company.js)
+- showCompanySection('profile') → loadCompanyProfile() at line 28
+- Read-view card: name, code chip (readonly), logo, contacts, description, rating, fleet size, offices list
+- Edit mode: form with name/logoUrl/contactEmail/contactPhone/description inputs (44px, focus rings)
+- Pending banner: amber background, old→new diff table, cancel request button (disabled edit when pending)
+- Request history: status chips (pending amber / approved green / rejected red / superseded gray / cancelled gray)
+- cprf-* CSS prefix for all profile styles (css/app.css)
+
+### Quality checks
+- npm run build:js → v=b0a36723 (10 modules, no errors)
+- npm run typecheck → passes (tsc --noEmit, 0 errors)
+- Server boot → OK (port 3000)
+
+### Key patterns
+- Supersede pattern: UPDATE ... SET status='superseded' WHERE companyId=? AND status='pending' before INSERT, mirroring dispatch's atomic status flips
+- Diff-only payload: only changed fields stored (proposed vs current), empty diff → 400
+- Cross-company isolation: cancel route checks row.companyId === req.company.id
+- cprf-* CSS prefix continues the cf-*/cp-*/cpr-* naming convention per section
+---
