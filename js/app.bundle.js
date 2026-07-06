@@ -8305,6 +8305,7 @@ function showCompanySection(name) {
 
   if (name === 'dashboard') loadCompanyDashboard();
   if (name === 'flights') loadCompanyFlights();
+  if (name === 'pilots') loadCompanyPilots();
 }
 
 function toggleCompanyDrawer() {
@@ -8540,6 +8541,245 @@ function populateCompanyPilotFilter() {
     html += '<option value="' + escapeHtml(id) + '">' + escapeHtml(seen[id]) + '</option>';
   }
   sel.innerHTML = html;
+}
+
+// ===== Company Pilots Section =====
+var companyPilots = [];
+var companyPilotsLoaded = false;
+var companyOffices = [];
+var companyOfficesLoaded = false;
+
+function companyPilotsSkeleton() {
+  var rows = '';
+  for (var i = 0; i < 4; i++) {
+    rows += '<div class="cp-row cp-skeleton-row">' +
+      '<div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-40"></div>' +
+      '<div style="--w:1"><div class="adm-skeleton adm-sk-text" style="--w:130px"></div>' +
+      '<div class="adm-skeleton adm-sk-text-sm" style="--w:100px"></div></div></div>' +
+      '<div class="adm-skeleton adm-sk-pill"></div>' +
+      '<div class="adm-skeleton adm-sk-text" style="--w:80px"></div>' +
+      '<div class="adm-skeleton adm-sk-text" style="--w:60px"></div>' +
+      '<div class="adm-skeleton adm-sk-pill"></div>' +
+    '</div>';
+  }
+  return '<div class="cp-list-card">' + rows + '</div>';
+}
+
+function companyPilotDutyPill(pilot) {
+  if (pilot.bannedAt) return '<span class="cp-duty-pill cp-duty-pill--banned">Deactivated</span>';
+  if (pilot.onDuty) return '<span class="cp-duty-pill cp-duty-pill--on">On duty</span>';
+  return '<span class="cp-duty-pill cp-duty-pill--off">Off duty</span>';
+}
+
+function companyPilotGpsFreshness(pilot) {
+  if (!pilot.gpsUpdatedAt) return '<span class="cp-gps cp-gps--none" title="No GPS reported">--</span>';
+  var diff = Date.now() - new Date(pilot.gpsUpdatedAt).getTime();
+  var mins = Math.floor(diff / 60000);
+  if (mins < 5) return '<span class="cp-gps cp-gps--fresh" title="GPS fresh">' + mins + 'm ago</span>';
+  if (mins < 60) return '<span class="cp-gps cp-gps--stale" title="GPS stale">' + mins + 'm ago</span>';
+  var hours = Math.floor(mins / 60);
+  return '<span class="cp-gps cp-gps--stale" title="GPS stale">' + hours + 'h ago</span>';
+}
+
+function companyPilotRowHtml(p) {
+  var initials = pilotInitials(p.name || '?');
+  var avatarClass = p.bannedAt ? 'adm-pilot-avatar cp-avatar--banned' : 'adm-pilot-avatar';
+  var aircraft = p.aircraftType ? escapeHtml(p.aircraftType) : '';
+  var reg = p.aircraftReg ? escapeHtml(p.aircraftReg) : '';
+  var aircraftStr = aircraft + (reg ? ' (' + reg + ')' : '');
+
+  var actionBtn = '';
+  if (p.bannedAt) {
+    actionBtn = '<button type="button" class="cp-action-btn cp-action-btn--activate" onclick="companyTogglePilot(' + p.id + ', true)">Reactivate</button>';
+  } else {
+    actionBtn = '<button type="button" class="cp-action-btn cp-action-btn--deactivate" onclick="companyTogglePilot(' + p.id + ', false)">Deactivate</button>';
+  }
+
+  return '<div class="cp-row' + (p.bannedAt ? ' cp-row--banned' : '') + '">' +
+    '<div class="cp-cell cp-cell-pilot">' +
+      '<div class="' + avatarClass + '">' + escapeHtml(initials) + '</div>' +
+      '<div class="cp-pilot-info">' +
+        '<div class="cp-pilot-name">' + escapeHtml(p.name || '') + '</div>' +
+        '<div class="cp-pilot-meta">' + escapeHtml(p.email || '') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="cp-cell cp-cell-duty">' + companyPilotDutyPill(p) + companyPilotGpsFreshness(p) + '</div>' +
+    '<div class="cp-cell cp-cell-aircraft">' + (aircraftStr || '<span class="cp-no-val">--</span>') + '</div>' +
+    '<div class="cp-cell cp-cell-trips adm-num-cell">' + (p.completedTrips || 0) + '</div>' +
+    '<div class="cp-cell cp-cell-payout adm-num-cell">' + INR(p.netPayout || 0) + '</div>' +
+    '<div class="cp-cell cp-cell-action">' + actionBtn + '</div>' +
+  '</div>';
+}
+
+function renderCompanyPilots() {
+  var body = document.getElementById('company-pilots-body');
+  if (!body) return;
+
+  if (!companyPilots.length) {
+    body.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon">' + ADM_ICONS.users + '</div>' +
+      '<div class="adm-empty-title">No pilots yet</div>' +
+      '<div class="adm-empty-sub">Add your first pilot to start flying with IraGo.</div></div>';
+    return;
+  }
+
+  var html = '<div class="cp-list-card">' +
+    '<div class="cp-header-row">' +
+      '<div class="cp-cell cp-cell-pilot">Pilot</div>' +
+      '<div class="cp-cell cp-cell-duty">Status</div>' +
+      '<div class="cp-cell cp-cell-aircraft">Aircraft</div>' +
+      '<div class="cp-cell cp-cell-trips">Trips</div>' +
+      '<div class="cp-cell cp-cell-payout">Payout</div>' +
+      '<div class="cp-cell cp-cell-action"></div>' +
+    '</div>';
+  for (var i = 0; i < companyPilots.length; i++) {
+    html += companyPilotRowHtml(companyPilots[i]);
+  }
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+async function loadCompanyPilots() {
+  var body = document.getElementById('company-pilots-body');
+  if (!body) return;
+  body.innerHTML = companyPilotsSkeleton();
+
+  try {
+    var res = await apiFetch('/api/company/pilots');
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.pilots) {
+      companyPilots = data.pilots;
+      renderCompanyPilots();
+    } else {
+      body.innerHTML = '<div class="adm-error">Could not load pilots. <button type="button" onclick="loadCompanyPilots()" class="adm-retry-btn">Retry</button></div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="adm-error">Could not reach the server. <button type="button" onclick="loadCompanyPilots()" class="adm-retry-btn">Retry</button></div>';
+  }
+}
+
+function showCompanyAddPilot() {
+  var form = document.getElementById('company-add-pilot-form');
+  if (!form) return;
+  form.hidden = false;
+  var errEl = document.getElementById('cp-pilot-error');
+  var successEl = document.getElementById('cp-pilot-success');
+  if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+  if (successEl) { successEl.hidden = true; successEl.textContent = ''; }
+  loadCompanyOfficesSelect();
+  var nameInput = document.getElementById('cp-pilot-name');
+  if (nameInput) nameInput.focus();
+}
+
+function hideCompanyAddPilot() {
+  var form = document.getElementById('company-add-pilot-form');
+  if (form) form.hidden = true;
+  document.getElementById('cp-pilot-name') && (document.getElementById('cp-pilot-name').value = '');
+  document.getElementById('cp-pilot-email') && (document.getElementById('cp-pilot-email').value = '');
+  document.getElementById('cp-pilot-password') && (document.getElementById('cp-pilot-password').value = '');
+  var officeSelect = document.getElementById('cp-pilot-office');
+  if (officeSelect) officeSelect.selectedIndex = 0;
+}
+
+async function loadCompanyOfficesSelect() {
+  if (companyOfficesLoaded) return;
+  var sel = document.getElementById('cp-pilot-office');
+  if (!sel) return;
+  try {
+    var res = await apiFetch('/api/company/offices');
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.offices) {
+      companyOffices = data.offices;
+      companyOfficesLoaded = true;
+      var html = '<option value="">None (assign later)</option>';
+      for (var i = 0; i < companyOffices.length; i++) {
+        var o = companyOffices[i];
+        html += '<option value="' + o.id + '">' + escapeHtml(o.city || 'Office ' + o.id) + '</option>';
+      }
+      sel.innerHTML = html;
+    }
+  } catch (e) {
+    // silently keep the default option
+  }
+}
+
+async function doCompanyAddPilot() {
+  var nameEl = document.getElementById('cp-pilot-name');
+  var emailEl = document.getElementById('cp-pilot-email');
+  var passEl = document.getElementById('cp-pilot-password');
+  var officeEl = document.getElementById('cp-pilot-office');
+  var errEl = document.getElementById('cp-pilot-error');
+  var successEl = document.getElementById('cp-pilot-success');
+
+  if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+  if (successEl) { successEl.hidden = true; successEl.textContent = ''; }
+
+  var name = nameEl ? nameEl.value.trim() : '';
+  var email = emailEl ? emailEl.value.trim() : '';
+  var password = passEl ? passEl.value : '';
+  var officeId = officeEl && officeEl.value ? Number(officeEl.value) : null;
+
+  if (!name || !email || !password) {
+    if (errEl) { errEl.textContent = 'All fields are required.'; errEl.hidden = false; }
+    return;
+  }
+  if (password.length < 6) {
+    if (errEl) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.hidden = false; }
+    return;
+  }
+
+  var payload = { name: name, email: email, password: password };
+  if (officeId) payload.officeId = officeId;
+
+  try {
+    var res = await apiFetch('/api/company/pilots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.user) {
+      if (successEl) {
+        successEl.textContent = 'Pilot created! They must change the temporary password on first login.';
+        successEl.hidden = false;
+      }
+      if (nameEl) nameEl.value = '';
+      if (emailEl) emailEl.value = '';
+      if (passEl) passEl.value = '';
+      if (officeEl) officeEl.selectedIndex = 0;
+      loadCompanyPilots();
+    } else {
+      if (errEl) { errEl.textContent = data.error || 'Could not create pilot.'; errEl.hidden = false; }
+    }
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Could not reach the server.'; errEl.hidden = false; }
+  }
+}
+
+async function companyTogglePilot(pilotId, activate) {
+  if (!activate) {
+    var pilot = null;
+    for (var i = 0; i < companyPilots.length; i++) {
+      if (companyPilots[i].id === pilotId) { pilot = companyPilots[i]; break; }
+    }
+    var pilotName = pilot ? pilot.name : 'this pilot';
+    if (!confirm('Deactivate ' + pilotName + '? They will not be able to log in or receive dispatch offers.')) return;
+  }
+
+  try {
+    var res = await apiFetch('/api/company/pilots/' + pilotId + '/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: activate }),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (res.ok) {
+      loadCompanyPilots();
+    } else {
+      alert(data.error || 'Could not update pilot status.');
+    }
+  } catch (e) {
+    alert('Could not reach the server.');
+  }
 }
 
 async function loadCompanyDashboard() {

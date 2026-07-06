@@ -4,7 +4,7 @@
 // companyId via re-query of the users table (US-124 decision).
 
 const express = require("express");
-const { requireAuth, requireRole, USER_NOT_DELETED } = require("./auth");
+const { requireAuth, requireRole, USER_NOT_DELETED, hashPassword, invalidateUserStatus } = require("./auth");
 const { query, queryOne } = require("./db");
 
 const router = express.Router();
@@ -193,6 +193,141 @@ router.get("/flights", async (req, res) => {
   } catch (err) {
     console.error("[company] flights failed:", err.message);
     res.status(500).json({ error: "Could not load flights." });
+  }
+});
+
+// GET /api/company/offices — list offices belonging to this company.
+router.get("/offices", async (req, res) => {
+  try {
+    const rows = await query(
+      "SELECT * FROM regional_offices WHERE companyId = ? ORDER BY city",
+      [req.company.id]
+    );
+    res.json({ offices: rows });
+  } catch (err) {
+    console.error("[company] offices failed:", err.message);
+    res.status(500).json({ error: "Could not load offices." });
+  }
+});
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// GET /api/company/pilots — the company's pilot roster with per-pilot stats.
+router.get("/pilots", async (req, res) => {
+  const cid = req.company.id;
+  try {
+    const rows = await query(
+      `SELECT u.id, u.name, u.email, u.onDuty, u.gpsUpdatedAt,
+              u.aircraftType, u.aircraftReg, u.bannedAt, u.createdAt,
+              (SELECT COUNT(*) FROM bookings b WHERE b.operatorId = u.id AND b.status = 'completed') AS completedTrips,
+              COALESCE(
+                (SELECT SUM(COALESCE(b2.operatorPayout, b2.fareEstimate * 0.85))
+                 FROM bookings b2 WHERE b2.operatorId = u.id AND b2.status = 'completed'), 0
+              ) AS netPayout
+         FROM users u
+         WHERE u.role = 'operator' AND u.companyId = ? AND u.deletedAt IS NULL
+         ORDER BY u.bannedAt IS NOT NULL, u.name`,
+      [cid]
+    );
+    const pilots = (rows || []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      onDuty: Boolean(r.onDuty),
+      gpsUpdatedAt: r.gpsUpdatedAt,
+      aircraftType: r.aircraftType,
+      aircraftReg: r.aircraftReg,
+      bannedAt: r.bannedAt,
+      createdAt: r.createdAt,
+      completedTrips: Number(r.completedTrips) || 0,
+      netPayout: Math.round(Number(r.netPayout) || 0),
+    }));
+    res.json({ pilots });
+  } catch (err) {
+    console.error("[company] pilots failed:", err.message);
+    res.status(500).json({ error: "Could not load pilots." });
+  }
+});
+
+// POST /api/company/pilots — create a pilot with companyId forced to caller's company.
+router.post("/pilots", async (req, res) => {
+  const cid = req.company.id;
+  const { name, email, password, officeId } = req.body || {};
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required." });
+  }
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: "A valid email is required." });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters." });
+  }
+
+  const parsedOfficeId = officeId ? Number(officeId) : null;
+  if (parsedOfficeId != null) {
+    const office = await queryOne(
+      "SELECT id FROM regional_offices WHERE id = ? AND companyId = ?",
+      [parsedOfficeId, cid]
+    );
+    if (!office) {
+      return res.status(400).json({ error: "Selected office does not belong to your company." });
+    }
+  }
+
+  const normalizedEmail = String(email).toLowerCase();
+  const existing = await queryOne("SELECT id FROM users WHERE email = ?", [normalizedEmail]);
+  if (existing) {
+    return res.status(409).json({ error: "An account with that email already exists." });
+  }
+
+  try {
+    const passwordHash = await hashPassword(String(password));
+    const result = await query(
+      "INSERT INTO users (name, email, passwordHash, role, emailVerified, mustResetPassword, companyId, officeId) VALUES (?, ?, ?, 'operator', 1, 1, ?, ?)",
+      [String(name), normalizedEmail, passwordHash, cid, parsedOfficeId]
+    );
+    const user = await queryOne("SELECT id, name, email, role, companyId, officeId FROM users WHERE id = ?", [result.insertId]);
+    res.status(201).json({ user });
+  } catch (err) {
+    console.error("[company] create pilot failed:", err.message);
+    res.status(500).json({ error: "Could not create pilot." });
+  }
+});
+
+// PATCH /api/company/pilots/:id/status — deactivate/reactivate a pilot.
+// Only pilots belonging to the caller's company (404 otherwise, no existence leak).
+router.patch("/pilots/:id/status", async (req, res) => {
+  const cid = req.company.id;
+  const pilotId = Number(req.params.id);
+  if (!Number.isInteger(pilotId) || pilotId <= 0) {
+    return res.status(404).json({ error: "Pilot not found." });
+  }
+
+  const pilot = await queryOne(
+    "SELECT id, bannedAt FROM users WHERE id = ? AND companyId = ? AND role = 'operator' AND deletedAt IS NULL",
+    [pilotId, cid]
+  );
+  if (!pilot) {
+    return res.status(404).json({ error: "Pilot not found." });
+  }
+
+  const { active } = req.body || {};
+  if (typeof active !== "boolean") {
+    return res.status(400).json({ error: "active (boolean) is required." });
+  }
+
+  try {
+    if (active) {
+      await query("UPDATE users SET bannedAt = NULL WHERE id = ?", [pilotId]);
+    } else {
+      await query("UPDATE users SET bannedAt = NOW(), onDuty = 0 WHERE id = ?", [pilotId]);
+    }
+    invalidateUserStatus(pilotId);
+    res.json({ ok: true, active });
+  } catch (err) {
+    console.error("[company] pilot status failed:", err.message);
+    res.status(500).json({ error: "Could not update pilot status." });
   }
 });
 

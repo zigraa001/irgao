@@ -6299,6 +6299,91 @@ body.admin-map-fs { overflow: hidden; }
   .cf-summary-strip { gap: 12px; }
 }
 
+/* ── Company Pilots ── */
+.cp-list-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.cp-header-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) 140px 1fr 60px 80px 100px;
+  gap: 0 12px;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cp-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) 140px 1fr 60px 80px 100px;
+  gap: 0 12px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition);
+}
+.cp-row:last-child { border-bottom: none; }
+.cp-row:hover { background: var(--gray-50, #F8FAFC); }
+.cp-row--banned { opacity: 0.65; }
+.cp-cell { font-size: 13px; }
+.cp-cell-pilot { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cp-pilot-info { min-width: 0; }
+.cp-pilot-name { font-weight: 600; font-size: 14px; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-pilot-meta { font-size: 12.5px; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-avatar--banned { opacity: 0.5; }
+.cp-cell-duty { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cp-duty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+.cp-duty-pill--on { background: var(--green-50); color: var(--green-dark, #166534); }
+.cp-duty-pill--off { background: var(--gray-100); color: var(--gray-500); }
+.cp-duty-pill--banned { background: var(--red-50, #FEF2F2); color: var(--red, #EF4444); }
+.cp-gps { font-size: 11px; color: var(--gray-400); }
+.cp-gps--fresh { color: var(--green); }
+.cp-gps--stale { color: var(--gray-400); }
+.cp-gps--none { color: var(--gray-300); }
+.cp-cell-aircraft { font-size: 12.5px; color: var(--gray-600); }
+.cp-no-val { color: var(--gray-300); }
+.cp-action-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: transparent;
+}
+.cp-action-btn--deactivate { color: var(--red, #EF4444); border-color: var(--red, #EF4444); }
+.cp-action-btn--deactivate:hover { background: var(--red-50, #FEF2F2); }
+.cp-action-btn--activate { color: var(--green-dark, #166534); border-color: var(--green); }
+.cp-action-btn--activate:hover { background: var(--green-50); }
+.cp-skeleton-row { pointer-events: none; }
+@media (max-width: 768px) {
+  .cp-header-row { display: none; }
+  .cp-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+  }
+  .cp-cell-pilot { grid-column: 1 / -1; }
+  .cp-cell-duty { grid-column: 1 / -1; }
+  .cp-cell-aircraft { display: none; }
+  .cp-cell-trips { order: 3; }
+  .cp-cell-payout { order: 4; text-align: right; }
+  .cp-cell-action { grid-column: 1 / -1; text-align: right; padding-top: 4px; }
+}
+
 /* ── Reduced motion: disable non-essential animations/transitions ── */
 @media (prefers-reduced-motion: reduce) {
   .confirm-card,

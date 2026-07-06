@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us126-company-flights">
+  <link rel="stylesheet" href="/css/app.css?v=us127-company-pilots">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1439,12 +1439,34 @@
             <h1 class="adm-header-title">Pilots</h1>
             <p class="adm-header-sub">Manage your pilot roster</p>
           </div>
+          <div class="adm-header-actions">
+            <button type="button" class="admin-add-member-btn" onclick="showCompanyAddPilot()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add pilot
+            </button>
+          </div>
         </div>
-        <div class="company-placeholder">
-          <div class="company-placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="company-placeholder-title">Pilots -- coming soon</div>
-          <div class="company-placeholder-sub">Add and manage your pilots directly from here.</div>
+        <div id="company-add-pilot-form" hidden>
+          <div class="admin-form-card" style="max-width:640px">
+            <div class="partner-add-header">
+              <div class="partner-add-title">Add a new pilot</div>
+              <div class="partner-add-help">The pilot must change the temporary password on first login.</div>
+            </div>
+            <div class="admin-form-grid">
+              <div class="auth-field"><label>Full name</label><input type="text" id="cp-pilot-name" class="pd-input" placeholder="Pilot's full name"></div>
+              <div class="auth-field"><label>Email</label><input type="email" id="cp-pilot-email" class="pd-input" placeholder="pilot@example.com"></div>
+              <div class="auth-field"><label>Temporary password</label><input type="text" id="cp-pilot-password" class="pd-input" placeholder="Min 6 characters"></div>
+              <div class="auth-field"><label>Regional office</label><select id="cp-pilot-office" class="pd-input admin-form-select"><option value="">None (assign later)</option></select></div>
+            </div>
+            <div id="cp-pilot-error" class="auth-error" hidden></div>
+            <div id="cp-pilot-success" class="admin-add-success" hidden></div>
+            <div class="admin-form-footer">
+              <button type="button" class="das-ghost-btn" onclick="hideCompanyAddPilot()">Cancel</button>
+              <button type="button" class="admin-add-member-btn" onclick="doCompanyAddPilot()">Create pilot</button>
+            </div>
+          </div>
         </div>
+        <div id="company-pilots-body"></div>
       </section>
 
       <!-- Price Rules -->
@@ -1565,6 +1587,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=57138fa9"></script>
+<script src="/js/app.bundle.js?v=e26a316e"></script>
 </body>
 </html>
