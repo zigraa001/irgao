@@ -2383,7 +2383,7 @@ textarea:focus-visible, a:focus-visible {
 @media (max-width: 768px) {
   .service-tab span { display: none; }
   .service-tab { padding: 8px 12px; gap: 0; }
-  .customer-role-badge, .op-role-badge, .admin-role-badge { display: none; }
+  .customer-role-badge, .op-role-badge, .admin-role-badge, .company-role-badge { display: none; }
 }
 @media (max-width: 600px) {
   .booking-panel, .op-panel { max-height: 65vh; }
@@ -6090,6 +6090,56 @@ body.admin-map-fs { overflow: hidden; }
   .admin-nav-item { padding: 12px; min-height: 44px; }
   .service-tab { min-height: 40px; }
   .auth-forgot-link button { padding: 8px 4px; }
+}
+
+/* ═══════════════════════════════════════════
+   COMPANY (PARTNER) PORTAL
+   ═══════════════════════════════════════════ */
+#company-view {
+  min-height: 100vh;
+  flex-direction: column;
+  background: var(--gray-50);
+}
+.company-role-badge {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--navy);
+  background: var(--blue-50);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+}
+.company-avatar {
+  background: var(--navy);
+}
+.company-code-chip {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--navy);
+  background: var(--blue-50);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+.company-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--gray-500);
+}
+.company-placeholder-icon {
+  margin-bottom: 12px;
+  color: var(--gray-400);
+}
+.company-placeholder-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+.company-placeholder-sub {
+  font-size: 13px;
 }
 
 /* ── Reduced motion: disable non-essential animations/transitions ── */

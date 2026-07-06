@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us110-polish-sweep">
+  <link rel="stylesheet" href="/css/app.css?v=us125-company-portal">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1340,7 +1340,132 @@
   </div>
 </div>
 
-<div id="company-view" class="view"></div>
+<!-- ═══════════════════════════════════════════
+     COMPANY (PARTNER) PORTAL
+     ═══════════════════════════════════════════ -->
+<div id="company-view" class="view">
+  <nav class="booking-nav">
+    <a href="/" class="booking-nav-logo">
+      <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
+    </a>
+    <span class="company-role-badge">Partner Console</span>
+    <div class="nav-profile">
+      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
+      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
+      <div class="nav-avatar company-avatar nav-profile-avatar" id="company-avatar" title="Your account">C</div>
+    </div>
+  </nav>
+
+  <div class="admin-shell">
+    <aside class="admin-drawer" id="company-drawer">
+      <button type="button" class="admin-drawer-toggle" onclick="toggleCompanyDrawer()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <nav class="admin-drawer-nav">
+        <div class="admin-nav-group-label">Overview</div>
+        <button type="button" class="admin-nav-item company-nav-item active" data-company-section="dashboard" onclick="showCompanySection('dashboard')">
+          <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span class="admin-nav-label">Dashboard</span>
+        </button>
+
+        <div class="admin-nav-group-label">Operations</div>
+        <button type="button" class="admin-nav-item company-nav-item" data-company-section="flights" onclick="showCompanySection('flights')">
+          <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span><span class="admin-nav-label">Flights</span>
+        </button>
+        <button type="button" class="admin-nav-item company-nav-item" data-company-section="pilots" onclick="showCompanySection('pilots')">
+          <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="admin-nav-label">Pilots</span>
+        </button>
+
+        <div class="admin-nav-group-label">Commercial</div>
+        <button type="button" class="admin-nav-item company-nav-item" data-company-section="pricing" onclick="showCompanySection('pricing')">
+          <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="admin-nav-label">Price Rules</span>
+        </button>
+
+        <div class="admin-nav-group-system">
+          <div class="admin-nav-group-label">Account</div>
+          <button type="button" class="admin-nav-item company-nav-item" data-company-section="profile" onclick="showCompanySection('profile')">
+            <span class="admin-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><line x1="8" y1="6" x2="8.01" y2="6"/><line x1="16" y1="6" x2="16.01" y2="6"/><line x1="12" y1="6" x2="12.01" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/></svg></span><span class="admin-nav-label">Company Profile</span>
+          </button>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <!-- Dashboard -->
+      <section class="company-section" id="company-section-dashboard">
+        <div class="admin-page-header">
+          <div>
+            <h1 class="op-welcome" id="company-welcome">Partner Dashboard</h1>
+            <p class="adm-header-sub">Your partnership with IraGo at a glance</p>
+          </div>
+          <div class="adm-header-actions">
+            <span class="company-code-chip" id="company-code-badge" hidden></span>
+          </div>
+        </div>
+        <div id="company-dashboard-body"></div>
+      </section>
+
+      <!-- Flights -->
+      <section class="company-section" id="company-section-flights" hidden>
+        <div class="admin-page-header">
+          <div>
+            <h1 class="adm-header-title">Flights</h1>
+            <p class="adm-header-sub">Every flight flown by your pilots on IraGo</p>
+          </div>
+        </div>
+        <div class="company-placeholder">
+          <div class="company-placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
+          <div class="company-placeholder-title">Flights -- coming soon</div>
+          <div class="company-placeholder-sub">Your flight history and pilot performance will appear here.</div>
+        </div>
+      </section>
+
+      <!-- Pilots -->
+      <section class="company-section" id="company-section-pilots" hidden>
+        <div class="admin-page-header">
+          <div>
+            <h1 class="adm-header-title">Pilots</h1>
+            <p class="adm-header-sub">Manage your pilot roster</p>
+          </div>
+        </div>
+        <div class="company-placeholder">
+          <div class="company-placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="company-placeholder-title">Pilots -- coming soon</div>
+          <div class="company-placeholder-sub">Add and manage your pilots directly from here.</div>
+        </div>
+      </section>
+
+      <!-- Price Rules -->
+      <section class="company-section" id="company-section-pricing" hidden>
+        <div class="admin-page-header">
+          <div>
+            <h1 class="adm-header-title">Price Rules</h1>
+            <p class="adm-header-sub">Configure your per-service rate cards</p>
+          </div>
+        </div>
+        <div class="company-placeholder">
+          <div class="company-placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="company-placeholder-title">Price Rules -- coming soon</div>
+          <div class="company-placeholder-sub">Set your per-service pricing to price real fares on IraGo.</div>
+        </div>
+      </section>
+
+      <!-- Company Profile -->
+      <section class="company-section" id="company-section-profile" hidden>
+        <div class="admin-page-header">
+          <div>
+            <h1 class="adm-header-title">Company Profile</h1>
+            <p class="adm-header-sub">Your company details on IraGo</p>
+          </div>
+        </div>
+        <div class="company-placeholder">
+          <div class="company-placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="40" height="40"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><line x1="8" y1="6" x2="8.01" y2="6"/><line x1="16" y1="6" x2="16.01" y2="6"/><line x1="12" y1="6" x2="12.01" y2="6"/></svg></div>
+          <div class="company-placeholder-title">Company Profile -- coming soon</div>
+          <div class="company-placeholder-sub">View and request changes to your company details.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
 
 <!-- Admin user-detail drawer (slide-in from right) -->
 <div id="admin-user-drawer" class="admin-user-drawer" aria-hidden="true">
@@ -1427,6 +1552,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=271aab97"></script>
+<script src="/js/app.bundle.js?v=2e56a0c5"></script>
 </body>
 </html>

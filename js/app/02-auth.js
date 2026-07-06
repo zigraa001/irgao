@@ -1123,6 +1123,7 @@ function routeForRole(user) {
     }
     case 'company': {
       showView('company-view');
+      showCompanySection('dashboard');
       break;
     }
     case 'operator': {

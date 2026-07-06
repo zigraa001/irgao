@@ -14,6 +14,7 @@ const trackingRoutes = require("./tracking-routes");
 const demoRoutes = require("./demo-routes");
 const mobileAuthRoutes = require("./mobile-auth-routes");
 const droneRoutes = require("./drone-routes");
+const companyRoutes = require("./company-routes");
 const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
@@ -113,6 +114,9 @@ router.use("/zones", zoneRoutes);
 
 // Drone rental services.
 router.use("/drones", droneRoutes);
+
+// Company (partner) portal: company-scoped views (NOT Tailscale-gated).
+router.use("/company", companyRoutes);
 
 // Weather: live conditions + flight risk at a lat/lng.
 router.get("/weather", async (req, res) => {
