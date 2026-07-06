@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us109-drone-admin">
+  <link rel="stylesheet" href="/css/app.css?v=us110-polish-sweep">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1045,10 +1045,10 @@
             <div id="admin-users-meta" class="admin-users-meta"></div>
           </div>
           <div id="admin-users-list" class="admin-users-list-card">
-            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:140px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:180px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:64px;border-radius:11px"></div></div>
-            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:120px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:200px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:72px;border-radius:11px"></div></div>
-            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:160px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:170px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:56px;border-radius:11px"></div></div>
-            <div class="adm-skeleton-row"><div class="adm-skeleton" style="width:40px;height:40px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:130px;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:190px;border-radius:4px"></div></div><div class="adm-skeleton" style="height:22px;width:68px;border-radius:11px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton adm-sk-circle-40"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:140px"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:180px"></div></div><div class="adm-skeleton adm-sk-pill" style="--w:64px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton adm-sk-circle-40"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:120px"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:200px"></div></div><div class="adm-skeleton adm-sk-pill" style="--w:72px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton adm-sk-circle-40"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:160px"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:170px"></div></div><div class="adm-skeleton adm-sk-pill" style="--w:56px"></div></div>
+            <div class="adm-skeleton-row"><div class="adm-skeleton adm-sk-circle-40"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:130px"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:190px"></div></div><div class="adm-skeleton adm-sk-pill" style="--w:68px"></div></div>
           </div>
           <div id="admin-users-pager" class="admin-users-pager"></div>
         </div>
@@ -1075,17 +1075,17 @@
           <div class="admin-live-panel">
             <h4>In transit &amp; dispatching <span id="admin-live-flight-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-live-list" class="admin-live-list">
-              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:60%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:80%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:50%;border-radius:4px"></div></div>
-              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:55%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:70%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:45%;border-radius:4px"></div></div>
-              <div class="admin-live-skeleton"><div class="adm-skeleton" style="height:14px;width:65%;border-radius:4px;margin-bottom:8px"></div><div class="adm-skeleton" style="height:12px;width:75%;border-radius:4px"></div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton adm-sk-text" style="--w:60%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:80%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:50%"></div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton adm-sk-text" style="--w:55%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:70%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:45%"></div></div>
+              <div class="admin-live-skeleton"><div class="adm-skeleton adm-sk-text" style="--w:65%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:75%"></div></div>
             </div>
           </div>
           <div class="admin-live-panel">
             <h4>All pilots (GPS) <span id="admin-live-fleet-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-fleet-list" class="admin-live-list">
-              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:50%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:70%;border-radius:4px"></div></div></div></div>
-              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:45%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:60%;border-radius:4px"></div></div></div></div>
-              <div class="admin-live-skeleton"><div style="display:flex;gap:8px;align-items:center"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%;flex-shrink:0"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:55%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:12px;width:65%;border-radius:4px"></div></div></div></div>
+              <div class="admin-live-skeleton"><div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-32"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:50%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:70%"></div></div></div></div>
+              <div class="admin-live-skeleton"><div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-32"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:45%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:60%"></div></div></div></div>
+              <div class="admin-live-skeleton"><div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-32"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:55%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:65%"></div></div></div></div>
             </div>
           </div>
         </div>
@@ -1179,10 +1179,10 @@
         </div>
         <div class="adm-grid adm-pricing-layout">
           <div id="admin-pricing-form" class="admin-form-card adm-span-8">
-            <div class="adm-skeleton" style="height:14px;width:100px;margin-bottom:16px"></div>
-            <div class="adm-skeleton" style="height:44px;margin-bottom:12px"></div>
-            <div class="adm-skeleton" style="height:44px;margin-bottom:12px;width:80%"></div>
-            <div class="adm-skeleton" style="height:44px;margin-bottom:12px"></div>
+            <div class="adm-skeleton adm-sk-heading"></div>
+            <div class="adm-skeleton adm-sk-input"></div>
+            <div class="adm-skeleton adm-sk-input" style="--w:80%"></div>
+            <div class="adm-skeleton adm-sk-input"></div>
           </div>
           <div id="admin-pricing-changelog" class="adm-span-4"></div>
         </div>
@@ -1422,6 +1422,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=cd908f61"></script>
+<script src="/js/app.bundle.js?v=8fe54da8"></script>
 </body>
 </html>

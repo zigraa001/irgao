@@ -516,7 +516,7 @@ async function loadAdminSettings() {
     const knob = document.getElementById('admin-toggle-knob');
     const track = knob?.previousElementSibling;
     if (cb) cb.checked = !!s.emergencyNoFlyBypass;
-    if (knob) knob.style.left = s.emergencyNoFlyBypass ? '22px' : '3px';
+    if (knob) knob.style.left = s.emergencyNoFlyBypass ? '23px' : '3px';
     if (track) track.style.background = s.emergencyNoFlyBypass ? 'var(--green)' : 'var(--gray-300)';
     const status = document.getElementById('admin-bypass-status');
     if (status) status.innerHTML = s.emergencyNoFlyBypass
@@ -527,7 +527,7 @@ async function loadAdminSettings() {
     const dknob = document.getElementById('admin-toggle-demo-knob');
     const dtrack = dknob?.previousElementSibling;
     if (dcb) dcb.checked = !!s.demoMode;
-    if (dknob) dknob.style.left = s.demoMode ? '22px' : '3px';
+    if (dknob) dknob.style.left = s.demoMode ? '23px' : '3px';
     if (dtrack) dtrack.style.background = s.demoMode ? 'var(--green)' : 'var(--gray-300)';
     const dstatus = document.getElementById('admin-demo-status');
     if (dstatus) dstatus.innerHTML = s.demoMode
@@ -539,7 +539,7 @@ async function loadAdminSettings() {
 async function toggleDemoMode(on) {
   const knob = document.getElementById('admin-toggle-demo-knob');
   const track = knob?.previousElementSibling;
-  if (knob) knob.style.left = on ? '22px' : '3px';
+  if (knob) knob.style.left = on ? '23px' : '3px';
   if (track) track.style.background = on ? 'var(--green)' : 'var(--gray-300)';
   try {
     const res = await apiFetch('/api/admin/settings', {
@@ -563,7 +563,7 @@ async function toggleDemoMode(on) {
 async function toggleEmergencyBypass(on) {
   const knob = document.getElementById('admin-toggle-knob');
   const track = knob?.previousElementSibling;
-  if (knob) knob.style.left = on ? '22px' : '3px';
+  if (knob) knob.style.left = on ? '23px' : '3px';
   if (track) track.style.background = on ? 'var(--green)' : 'var(--gray-300)';
   try {
     const res = await apiFetch('/api/admin/settings', {
@@ -740,20 +740,23 @@ function adminDashboardHtml(stats) {
   var t = stats.totals || {};
 
   var primaryRow =
-    '<div class="adm-grid" style="margin-bottom:20px">' +
+    '<div class="adm-grid adm-grid--spaced">' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (t.totalUsers || 0).toLocaleString('en-IN'), 'Total users') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'navy', (t.totalBookings || 0).toLocaleString('en-IN'), 'Total bookings') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live flights', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(t.revenueINR), 'Revenue') + '</div>' +
     '</div>';
 
+  function compactKpi(iconSvg, color, value, label, chipHtml) {
+    return admKpi(iconSvg, color, value, label, chipHtml).replace('adm-kpi"', 'adm-kpi adm-kpi--compact"');
+  }
   var secondaryRow =
-    '<div class="adm-grid" style="margin-bottom:20px">' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', (t.completed || 0).toLocaleString('en-IN'), 'Completed', '<div class="adm-kpi-chip adm-kpi-chip--green">Done</div>') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.cancel, 'red', (t.cancelled || 0).toLocaleString('en-IN'), 'Cancelled') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.leaf, 'green', CO2(t.carbonSavedKg), 'CO2 saved') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.ruler, 'blue', KM(t.distanceKm), 'Distance flown') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.aircraft, 'navy', (t.availableAircraft || 0).toLocaleString('en-IN'), 'Aircraft available') + '</div>' +
+    '<div class="adm-grid-5 adm-grid--spaced">' +
+      compactKpi(ADM_ICONS.check, 'green', (t.completed || 0).toLocaleString('en-IN'), 'Completed', '<div class="adm-kpi-chip adm-kpi-chip--green">Done</div>') +
+      compactKpi(ADM_ICONS.cancel, 'red', (t.cancelled || 0).toLocaleString('en-IN'), 'Cancelled') +
+      compactKpi(ADM_ICONS.leaf, 'green', CO2(t.carbonSavedKg), 'CO2 saved') +
+      compactKpi(ADM_ICONS.ruler, 'blue', KM(t.distanceKm), 'Distance flown') +
+      compactKpi(ADM_ICONS.aircraft, 'navy', (t.availableAircraft || 0).toLocaleString('en-IN'), 'Aircraft available') +
     '</div>';
 
   var usersCard = '';
@@ -797,11 +800,11 @@ function adminDashboardHtml(stats) {
 }
 
 function adminDashboardSkeleton() {
-  var row1 = '<div class="adm-grid" style="margin-bottom:20px">';
+  var row1 = '<div class="adm-grid adm-grid--spaced">';
   for (var i = 0; i < 4; i++) row1 += '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>';
   row1 += '</div>';
-  var row2 = '<div class="adm-grid" style="margin-bottom:20px">';
-  for (var j = 0; j < 5; j++) row2 += '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>';
+  var row2 = '<div class="adm-grid-5 adm-grid--spaced">';
+  for (var j = 0; j < 5; j++) row2 += '<div class="adm-skeleton adm-skeleton-kpi"></div>';
   row2 += '</div>';
   var row3 = '<div class="adm-grid">' +
     '<div class="adm-span-6"><div class="adm-skeleton adm-skeleton-comp"></div></div>' +
@@ -826,10 +829,10 @@ async function loadAdminPlatformStats() {
     if (res.ok && data.stats) {
       host.innerHTML = adminDashboardHtml(data.stats);
     } else {
-      host.innerHTML = '<div class="pd-error">Could not load platform stats. <button type="button" onclick="loadAdminPlatformStats()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:600;text-decoration:underline">Retry</button></div>';
+      host.innerHTML = '<div class="adm-error">Could not load platform stats. <button type="button" onclick="loadAdminPlatformStats()" class="adm-retry-btn">Retry</button></div>';
     }
   } catch (e) {
-    host.innerHTML = '<div class="pd-error">Could not reach the server. <button type="button" onclick="loadAdminPlatformStats()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:600;text-decoration:underline">Retry</button></div>';
+    host.innerHTML = '<div class="adm-error">Could not reach the server. <button type="button" onclick="loadAdminPlatformStats()" class="adm-retry-btn">Retry</button></div>';
   }
 }
 
@@ -1549,7 +1552,7 @@ function renderPricingChangelog(changelog) {
 
 // ── Admin Revenue Dashboard ─────────────────────────────────────────────
 function adminRevenueSkeleton() {
-  return '<div class="adm-grid" style="margin-bottom:20px">' +
+  return '<div class="adm-grid adm-grid--spaced">' +
     '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>' +
     '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>' +
     '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>' +
@@ -1663,7 +1666,7 @@ function adminComplianceSkeleton() {
   for (var i = 0; i < 4; i++) {
     cards += '<div class="adm-span-3"><div class="adm-kpi"><div class="adm-skeleton" style="width:36px;height:36px;border-radius:50%"></div><div class="adm-skeleton" style="width:60px;height:10px;border-radius:4px;margin-top:8px"></div><div class="adm-skeleton" style="width:44px;height:24px;border-radius:4px;margin-top:6px"></div></div></div>';
   }
-  return '<div class="adm-grid" style="margin-bottom:20px">' + cards + '</div>';
+  return '<div class="adm-grid adm-grid--spaced">' + cards + '</div>';
 }
 
 async function loadAdminCompliance() {
@@ -1687,7 +1690,7 @@ function renderComplianceSummary(s) {
   var host = document.getElementById('admin-compliance-summary');
   if (!host) return;
   host.innerHTML =
-    '<div class="adm-grid" style="margin-bottom:20px">' +
+    '<div class="adm-grid adm-grid--spaced">' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (s.totalOperators || 0).toLocaleString('en-IN'), 'Total Pilots') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.shield, 'green', (s.withChecklist24h || 0).toLocaleString('en-IN'), 'Checked In (24h)') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.alert, 'amber', (s.missingChecklist24h || 0).toLocaleString('en-IN'), 'Missing Checklist') + '</div>' +
