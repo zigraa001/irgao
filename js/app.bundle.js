@@ -2076,20 +2076,125 @@ function toggleAdminDrawer() {
   if (drawer) drawer.classList.toggle('open');
 }
 
+function admKpi(iconSvg, iconColor, value, label, chipHtml) {
+  return (
+    '<div class="adm-kpi">' +
+      '<div class="adm-kpi-icon adm-kpi-icon--' + iconColor + '">' + iconSvg + '</div>' +
+      '<div class="adm-kpi-label">' + escapeHtml(label) + '</div>' +
+      '<div class="adm-kpi-value">' + value + '</div>' +
+      (chipHtml || '') +
+    '</div>'
+  );
+}
+
+var ADM_ICONS = {
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  bookings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>',
+  revenue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  cancel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20c4 0 8.68-3.91 9-12z"/><path d="M2 2s7.59 1.94 11 6"/></svg>',
+  ruler: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0z"/><line x1="14.5" y1="12.5" x2="11" y2="16"/><line x1="11.5" y1="9.5" x2="8" y2="13"/><line x1="8.5" y1="6.5" x2="5" y2="10"/></svg>',
+  aircraft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22l1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="M14.5 6.5l3-3a2.12 2.12 0 0 1 3 3l-3 3"/><path d="M10 10l4 4"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>'
+};
+
+function adminDashboardHtml(stats) {
+  if (!stats || stats.scope !== 'admin') return '<div class="pd-error">Could not load dashboard.</div>';
+  var t = stats.totals || {};
+
+  var primaryRow =
+    '<div class="adm-grid" style="margin-bottom:20px">' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (t.totalUsers || 0).toLocaleString('en-IN'), 'Total users') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'navy', (t.totalBookings || 0).toLocaleString('en-IN'), 'Total bookings') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live flights', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(t.revenueINR), 'Revenue') + '</div>' +
+    '</div>';
+
+  var secondaryRow =
+    '<div class="adm-grid" style="margin-bottom:20px">' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', (t.completed || 0).toLocaleString('en-IN'), 'Completed', '<div class="adm-kpi-chip adm-kpi-chip--green">Done</div>') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.cancel, 'red', (t.cancelled || 0).toLocaleString('en-IN'), 'Cancelled') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.leaf, 'green', CO2(t.carbonSavedKg), 'CO2 saved') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.ruler, 'blue', KM(t.distanceKm), 'Distance flown') + '</div>' +
+      '<div class="adm-span-3">' + admKpi(ADM_ICONS.aircraft, 'navy', (t.availableAircraft || 0).toLocaleString('en-IN'), 'Aircraft available') + '</div>' +
+    '</div>';
+
+  var usersCard = '';
+  if (t.users) {
+    var keys = Object.keys(t.users);
+    var max = Math.max.apply(null, keys.map(function (k) { return t.users[k]; })) || 1;
+    var bars = keys.map(function (k) {
+      var v = t.users[k];
+      var pct = Math.max((v / max) * 100, 4);
+      return (
+        '<div class="adm-bar-row">' +
+          '<span class="adm-bar-label">' + escapeHtml(k) + '</span>' +
+          '<span class="adm-bar-track"><span class="adm-bar-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="adm-bar-val">' + v + '</span>' +
+        '</div>'
+      );
+    }).join('');
+    usersCard =
+      '<div class="adm-span-6"><div class="adm-comp-card">' +
+        '<div class="adm-comp-card-header"><span class="adm-comp-card-title">Users by role</span></div>' +
+        bars +
+      '</div></div>';
+  }
+
+  var liveCard =
+    '<div class="adm-span-6"><div class="adm-comp-card">' +
+      '<div class="adm-comp-card-header"><span class="adm-comp-card-title">Live operations</span></div>' +
+      '<div class="adm-live-hero">' +
+        '<div class="adm-live-hero-value">' + (t.live || 0) + '</div>' +
+        '<div class="adm-live-hero-label">flights in progress</div>' +
+        '<button type="button" class="adm-live-btn" onclick="showAdminSection(\'live\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>' +
+          'Open Live Map' +
+        '</button>' +
+      '</div>' +
+    '</div></div>';
+
+  var compRow = '<div class="adm-grid">' + usersCard + liveCard + '</div>';
+
+  return primaryRow + secondaryRow + compRow;
+}
+
+function adminDashboardSkeleton() {
+  var row1 = '<div class="adm-grid" style="margin-bottom:20px">';
+  for (var i = 0; i < 4; i++) row1 += '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>';
+  row1 += '</div>';
+  var row2 = '<div class="adm-grid" style="margin-bottom:20px">';
+  for (var j = 0; j < 5; j++) row2 += '<div class="adm-span-3"><div class="adm-skeleton adm-skeleton-kpi"></div></div>';
+  row2 += '</div>';
+  var row3 = '<div class="adm-grid">' +
+    '<div class="adm-span-6"><div class="adm-skeleton adm-skeleton-comp"></div></div>' +
+    '<div class="adm-span-6"><div class="adm-skeleton adm-skeleton-comp"></div></div>' +
+  '</div>';
+  return row1 + row2 + row3;
+}
+
 async function loadAdminPlatformStats() {
-  const host = document.getElementById('admin-platform-stats');
+  var host = document.getElementById('admin-platform-stats');
   if (!host) return;
-  host.innerHTML = '<div class="pd-loading">Fetching platform stats...</div>';
+  host.innerHTML = adminDashboardSkeleton();
+  var bar = document.getElementById('admin-summary-bar');
+  if (bar) {
+    var now = new Date();
+    bar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+      now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
   try {
-    const res = await apiFetch('/api/me/stats');
-    const data = await res.json().catch(function () { return {}; });
+    var res = await apiFetch('/api/me/stats');
+    var data = await res.json().catch(function () { return {}; });
     if (res.ok && data.stats) {
-      host.innerHTML = statsDashboardHtml(data.stats);
+      host.innerHTML = adminDashboardHtml(data.stats);
     } else {
-      host.innerHTML = '<div class="pd-error">Could not load platform stats. Please try again.</div>';
+      host.innerHTML = '<div class="pd-error">Could not load platform stats. <button type="button" onclick="loadAdminPlatformStats()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:600;text-decoration:underline">Retry</button></div>';
     }
   } catch (e) {
-    host.innerHTML = '<div class="pd-error">Could not reach the server. Please check your connection.</div>';
+    host.innerHTML = '<div class="pd-error">Could not reach the server. <button type="button" onclick="loadAdminPlatformStats()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:600;text-decoration:underline">Retry</button></div>';
   }
 }
 

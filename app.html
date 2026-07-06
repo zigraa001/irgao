@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us022-wayfinding">
+  <link rel="stylesheet" href="/css/app.css?v=us102-kpi-cards">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1014,25 +1014,29 @@
           </div>
         </div>
         <div class="admin-summary-bar" id="admin-summary-bar"></div>
-        <div class="op-section-title">Platform overview</div>
-        <div id="admin-platform-stats" class="admin-platform-stats"><div class="pd-loading">Fetching platform stats...</div></div>
+        <div id="admin-platform-stats" class="admin-platform-stats"></div>
       </section>
 
       <!-- Active Users section -->
       <section class="admin-section" id="admin-section-users" hidden>
-        <div class="admin-section-header">
-          <div class="op-section-title">Active Users</div>
-          <button type="button" class="admin-add-member-btn" onclick="showAdminSection('add')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add member
-          </button>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Active Users</div>
+            <div class="adm-header-sub">Manage passengers, pilots and admins on the platform.</div>
+          </div>
+          <div class="adm-header-actions">
+            <button type="button" class="admin-add-member-btn" onclick="showAdminSection('add')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add member
+            </button>
+          </div>
         </div>
         <div id="admin-users-panel">
           <div class="admin-user-tabs">
             <button type="button" id="admin-tab-customer" class="admin-tab active" onclick="switchAdminUserTab('customer')">Passengers</button>
             <button type="button" id="admin-tab-operator" class="admin-tab" onclick="switchAdminUserTab('operator')">Pilots</button>
           </div>
-          <div id="admin-users-company-filter" class="admin-company-filter" hidden
+          <div id="admin-users-company-filter" class="admin-company-filter" hidden>
             <select id="admin-users-company-select" class="admin-form-select admin-company-filter-select" onchange="filterAdminUsersByCompany()">
               <option value="">All companies</option>
             </select>
@@ -1048,8 +1052,12 @@
 
       <!-- Operators Live Map section -->
       <section class="admin-section" id="admin-section-live" hidden>
-        <div class="op-section-title">Pilots Live Map</div>
-        <p class="admin-users-meta admin-meta-hint">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Pilots Live Map</div>
+            <div class="adm-header-sub">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</div>
+          </div>
+        </div>
         <div id="admin-live-meta" class="admin-users-meta"></div>
         <div id="admin-live-map-wrap" class="admin-live-map-wrap">
           <div id="admin-live-map" class="admin-live-map"></div>
@@ -1076,7 +1084,12 @@
 
       <!-- Add Member section -->
       <section class="admin-section" id="admin-section-add" hidden>
-        <div class="op-section-title">Add Team Member</div>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Add Team Member</div>
+            <div class="adm-header-sub">Create a new pilot or admin account with a temporary password.</div>
+          </div>
+        </div>
         <div class="admin-form-card">
           <div class="admin-form-grid">
             <div class="auth-field">
@@ -1123,8 +1136,12 @@
       <!-- Logs section (observability): in-memory ring buffer, last 50 first,
            older pages load on scroll-up to avoid rendering everything at once. -->
       <section class="admin-section" id="admin-section-companies" hidden>
-        <div class="op-section-title">Operator Companies</div>
-        <p class="admin-users-meta admin-meta-hint">Operator companies employ the pilots who fly IraGo trips. Manage companies and their regional offices across metro cities.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Operator Companies</div>
+            <div class="adm-header-sub">Operator companies employ the pilots who fly IraGo trips. Manage companies and their regional offices across metro cities.</div>
+          </div>
+        </div>
         <div id="admin-companies-list" class="partner-grid"></div>
         <div class="admin-form-card partner-add-form">
           <div class="op-section-title drone-sub-title">Add Company</div>
@@ -1139,8 +1156,12 @@
 
       <!-- Pricing Config section -->
       <section class="admin-section" id="admin-section-pricing" hidden>
-        <div class="op-section-title">Pricing Configuration</div>
-        <p class="admin-users-meta admin-meta-hint">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Pricing Configuration</div>
+            <div class="adm-header-sub">Configure surcharge percentages, GST, and platform commission. Changes apply to new bookings immediately.</div>
+          </div>
+        </div>
         <div id="admin-pricing-form" class="admin-form-card admin-section-card">
           <div class="pd-loading">Fetching pricing configuration...</div>
         </div>
@@ -1149,8 +1170,12 @@
 
       <!-- Revenue Dashboard section -->
       <section class="admin-section" id="admin-section-revenue" hidden>
-        <div class="op-section-title">Revenue Dashboard</div>
-        <p class="admin-users-meta admin-meta-hint">Platform revenue overview with daily trends and operator payout breakdown.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Revenue Dashboard</div>
+            <div class="adm-header-sub">Platform revenue overview with daily trends and operator payout breakdown.</div>
+          </div>
+        </div>
         <div id="admin-revenue-kpis" class="profile-stats-grid admin-section-card">
           <div class="pd-loading">Fetching revenue data...</div>
         </div>
@@ -1160,8 +1185,12 @@
 
       <!-- Compliance Monitor section -->
       <section class="admin-section" id="admin-section-compliance" hidden>
-        <div class="op-section-title">Compliance Monitor</div>
-        <p class="admin-users-meta admin-meta-hint">Pre-flight safety checklist status across all pilots. Pilots without a checklist in 24h are flagged.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Compliance Monitor</div>
+            <div class="adm-header-sub">Pre-flight safety checklist status across all pilots. Pilots without a checklist in 24h are flagged.</div>
+          </div>
+        </div>
         <div id="admin-compliance-summary" class="profile-stats-grid admin-section-card">
           <div class="pd-loading">Fetching compliance data...</div>
         </div>
@@ -1171,8 +1200,12 @@
       </section>
 
       <section class="admin-section" id="admin-section-settings" hidden>
-        <div class="op-section-title">Platform Settings</div>
-        <p class="admin-users-meta admin-meta-hint">Runtime toggles for platform behaviour. Changes take effect immediately.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Platform Settings</div>
+            <div class="adm-header-sub">Runtime toggles for platform behaviour. Changes take effect immediately.</div>
+          </div>
+        </div>
         <div class="admin-form-card admin-section-card--narrow">
           <div class="admin-toggle-row">
             <div>
@@ -1209,7 +1242,12 @@
       </section>
 
       <section class="admin-section" id="admin-section-drones" hidden>
-        <div class="op-section-title">Drone Management</div>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Drone Management</div>
+            <div class="adm-header-sub">Manage drone services, operators and bookings.</div>
+          </div>
+        </div>
 
         <div class="drone-tab-bar">
           <button type="button" class="dashboard-pill active" id="drone-admin-tab-services" onclick="showDroneAdminTab('services')">Services</button>
@@ -1245,8 +1283,12 @@
       </section>
 
       <section class="admin-section" id="admin-section-logs" hidden>
-        <div class="op-section-title">Logs</div>
-        <p class="admin-users-meta admin-meta-hint">Most recent server logs (since this process started). Scroll up to load older entries -- 50 at a time.</p>
+        <div class="admin-page-header">
+          <div>
+            <div class="adm-header-title">Logs</div>
+            <div class="adm-header-sub">Most recent server logs (since this process started). Scroll up to load older entries -- 50 at a time.</div>
+          </div>
+        </div>
         <div id="admin-logs-meta" class="admin-users-meta"></div>
         <div id="admin-logs-scroll" class="admin-logs-scroll">
           <div id="admin-logs-loading" class="pd-loading" hidden>Fetching older logs...</div>
@@ -1342,6 +1384,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=4a4ce648"></script>
+<script src="/js/app.bundle.js?v=739523ae"></script>
 </body>
 </html>
