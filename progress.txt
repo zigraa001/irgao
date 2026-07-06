@@ -59,6 +59,9 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `droneAdminSkeleton(count)` generates skeleton loading rows for drone admin sub-tabs
 - For admKpi compact variant in JS, use `.replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')` on the admKpi() output
 - Skeleton utility classes: `.adm-sk-circle-40`/`-32` (avatar), `.adm-sk-text`/`-sm` (text bars with 6px spacing), `.adm-sk-pill` (badge), `.adm-sk-input` (form field), `.adm-sk-heading` (section label), `.adm-sk-row` (flex container), `.adm-sk-flex` (flex:1) -- use `style="--w:XXpx"` for width variance (CSS custom property carriers are allowed)
+- Phase C (company portal): 'company' is a new DB role; PORTAL_BY_DB_ROLE maps company->'company'; SIGNUP_CONFIG.company has loginOnly:true; company-view is the placeholder div; companyStats uses pilot-employer linkage (bookings JOIN users ON operatorId WHERE companyId)
+- Company routes go in src/company-routes.js mounted at /api/company (NOT under /admin which is Tailscale-gated); every route uses requireAuth + requireRole('company') and resolves companyId via re-query of the users table
+- CREATABLE_ROLES/FILTERABLE_ROLES in admin-routes.js now include 'company'; POST /api/admin/users REQUIRES companyId when role==='company'
 
 ---
 
@@ -714,4 +717,31 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.adm-sk-row` + `.adm-sk-flex` replicate the common avatar-beside-text skeleton pattern without inline styles
   - The section-switch animation, reduced-motion coverage, and [hidden] safety net were already implemented by a prior iteration -- US-110 just verified and documented
   - The admin-user-drawer is OUTSIDE #admin-view (closes at line 1338, drawer starts at 1341) -- its inline styles do not count toward the admin-view audit
+---
+
+## 2026-07-06 - US-124
+- What was implemented: Company role foundation -- 'company' role added to auth system, partner login portal, admin provisioning with required companyId, company-scoped profile stats, WRONG_PORTAL bouncing, login screen Partner tab
+- Files changed: src/auth.js (ROLES += 'company'), src/role-login.js (PORTAL_BY_DB_ROLE += company:'company'), src/auth-routes.js (company login handler + 403 signup stubs), src/admin-routes.js (CREATABLE_ROLES/FILTERABLE_ROLES += 'company', companyId required for role==='company'), src/profile-stats.js (new companyStats function), server.js (company portal routes), js/app/02-auth.js (SIGNUP_CONFIG.company, parsePortalFromLocation regex, portalForDbRole, apiFetch 401-exempt regex, routeForRole company case), js/app/03-admin-profile.js (ROLE_BADGE/ROLE_PROFILE company entries, loginUrlForRole, toggleAddMemberCompany, doAddUser), app.html (Partner auth-role-btn, company-view div, Company account option in admin-add-role), js/app.bundle.js (rebuilt)
+- **HEADLESS server verification (curl transcripts):**
+  - Company creation: `curl -X POST /api/admin/companies -d '{"name":"Test Partner Co","code":"TPC"}'` -> `{"company":{"id":5,...}}`
+  - Company user creation: `curl -X POST /api/admin/users -d '{"name":"Company Manager","email":"company@test.com","password":"company123","role":"company","companyId":5}'` -> `{"user":{"id":2,"name":"Company Manager","email":"company@test.com","role":"company","mustResetPassword":true}}`
+  - Company login: `curl -X POST /api/auth/company/login -d '{"email":"company@test.com","password":"company123"}'` -> `{"user":{"id":2,...,"role":"company","mustResetPassword":true},"token":"eyJ..."}`
+  - WRONG_PORTAL at passenger: `{"error":"This account cannot sign in here...","code":"WRONG_PORTAL","portal":"company"}`
+  - WRONG_PORTAL at operator: same pattern with portal:"company"
+  - WRONG_PORTAL at admin: same pattern with portal:"company"
+  - Signup-request 403: `{"error":"Company accounts are provisioned by an admin only...","code":"ADMIN_PROVISIONED_ONLY"}`
+  - /api/me/stats: `{"stats":{"scope":"company","totals":{"completedFlights":0,"completedThisMonth":0,"grossRevenue":0,"netPayout":0,"totalPilots":0,"onDutyPilots":0,"cancelled":0}}}`
+  - companyId required: `curl -X POST /api/admin/users -d '{"role":"company","name":"Bad","email":"bad@test.com","password":"bad123"}'` -> `{"error":"companyId is required for company accounts"}`
+  - /login/company serves app.html (HTTP 200)
+  - /signup/company redirects to /login/company (HTTP 302)
+  - DB shows mustResetPassword=1 and companyId=5 for the created company user
+  - requireAuth decision: companyId is resolved via re-query in company routes (US-125) rather than widening getUserStatus -- this avoids busting the auth cache contract for all roles; getUserStatus continues to return only deletedAt/bannedAt/role
+  - npm run build:js succeeded (v=271aab97); npm run typecheck passes
+- **Learnings for future iterations:**
+  - PORTAL_BY_DB_ROLE in src/role-login.js is the single source for role->portal mapping used by WRONG_PORTAL responses; adding a role here automatically enables portal bouncing
+  - Company accounts use loginOnly:true in SIGNUP_CONFIG (same as admin) -- no public self-signup; all provisioning via admin Add Member form
+  - companyStats in profile-stats.js uses the pilot-employer linkage (bookings JOIN users ON operatorId WHERE companyId) -- this is the canonical company data scoping pattern for all Phase C stories
+  - The company-view div is a minimal placeholder; US-125 fills it with the full Partner Console shell
+  - toggleAddMemberCompany shows company select but hides office select for company role (office is pilot-specific)
+  - The doLogin WRONG_PORTAL handler already calls switchLoginRole(data.portal) which will now correctly switch to 'company' tab
 ---

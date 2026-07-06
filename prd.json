@@ -442,8 +442,8 @@
         "VERIFICATION (server-verifiable headlessly): node server.js boots; create a company via POST /api/admin/companies and a company user bound to it via POST /api/admin/users (curl with an admin session or direct DB insert + bootstrap pattern); curl POST /api/auth/company/login succeeds and returns role 'company' + mustResetPassword true; login at the wrong portal returns 403 WRONG_PORTAL with portal:'company'; quote all transcripts in progress.txt; npm run build:js; bump BOTH ?v= cache-busters; npm run typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All criteria verified via curl against locally booted server. Company login, WRONG_PORTAL bounces, 403 signup stubs, companyStats, admin provisioning with required companyId, mustResetPassword flow all working."
     },
     {
       "id": "US-125",
