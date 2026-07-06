@@ -745,3 +745,29 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - toggleAddMemberCompany shows company select but hides office select for company role (office is pilot-specific)
   - The doLogin WRONG_PORTAL handler already calls switchLoginRole(data.portal) which will now correctly switch to 'company' tab
 ---
+
+## 2026-07-06 - US-125
+- What was implemented: Company portal shell + dashboard (Partner Console). Full admin-shell-style layout with drawer nav, 5 sections (Dashboard, Flights, Pilots, Price Rules, Company Profile), KPI dashboard reusing admKpi()/ADM_ICONS, skeleton loading, GET /api/company/dashboard endpoint with pilot-employer-linked KPIs, placeholder sections for future stories.
+- Files changed: src/company-routes.js (new: company API router with resolveCompany middleware + dashboard endpoint), src/api.js (mount /api/company routes without Tailscale gate), js/app/10-company.js (new: showCompanySection, toggleCompanyDrawer, loadCompanyDashboard, companyDashboardHtml, companyDashboardSkeleton), js/app/02-auth.js (routeForRole company case bootstraps showCompanySection('dashboard')), app.html (company-view shell with booking-nav, drawer, 5 sections with hidden attribute, cache busters bumped), css/app.css (company-role-badge, company-avatar, company-code-chip, company-placeholder styles), js/app.bundle.js (rebuilt from 10 modules)
+- **Grep evidence:**
+  - Scoped querySelectorAll: `root.querySelectorAll('.company-section')` and `root.querySelectorAll('.company-nav-item')` -- both scoped to `var root = document.getElementById('company-view')`
+  - No cross-wiring: grep 'admin-section' in 10-company.js returns empty; grep 'showAdminSection' in 10-company.js returns empty
+  - 5 company-section IDs: company-section-dashboard, company-section-flights, company-section-pilots, company-section-pricing, company-section-profile
+  - 5 nav items with data-company-section matching the 5 sections
+  - Company routes auth chain: router.use(requireAuth); router.use(requireRole("company")); router.use(resolveCompany)
+  - Pilot-employer linkage in dashboard: `FROM bookings b JOIN users u ON u.id = b.operatorId WHERE u.companyId = ?`
+  - admKpi/ADM_ICONS used 8 times in 10-company.js (no redeclaration)
+  - Nav groups: Overview (Dashboard), Operations (Flights, Pilots), Commercial (Price Rules), Account [system zone] (Company Profile)
+  - routeForRole company case: showView('company-view'); showCompanySection('dashboard')
+  - Bundle includes 10-company.js (grep confirms `// ===== 10-company.js =====`)
+  - Cache busters: CSS v=us125-company-portal, JS v=2e56a0c5
+  - npm run build:js succeeded; npm run typecheck passes
+  - DB not available locally for curl verification; endpoint structure matches companyStats pattern from profile-stats.js
+- **Learnings for future iterations:**
+  - Company portal uses admin STYLING classes (.admin-shell, .admin-drawer, .admin-drawer-nav, .admin-nav-group-label, .admin-page-header, .adm-grid, .adm-span-*, .adm-kpi, .adm-skeleton) but BEHAVIOR hooks on NEW names: .company-section (not .admin-section), .company-nav-item (not .admin-nav-item), data-company-section (not data-admin-section)
+  - showCompanySection() is scoped via getElementById('company-view').querySelectorAll() -- never queries document-wide like showAdminSection does
+  - Company routes are mounted at /api/company (NOT under /admin) so they are NOT Tailscale-gated
+  - resolveCompany middleware runs on every /api/company route, resolving companyId from the users table and checking company.active -- this is the per-request company resolution pattern from US-124
+  - Company portal JS is in 10-company.js -- bundle concatenation order means admKpi/ADM_ICONS (defined in 03-admin-profile.js) are available as globals
+  - Placeholder sections use .company-placeholder styling for 'coming soon' states -- each later story (US-126..US-129) replaces its own placeholder
+---
