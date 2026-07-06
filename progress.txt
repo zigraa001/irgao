@@ -58,6 +58,7 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - `.adm-drone-btn` matches `.admin-add-member-btn` for consistent admin action buttons; `.das-ghost-btn` for cancel/secondary buttons
 - `droneAdminSkeleton(count)` generates skeleton loading rows for drone admin sub-tabs
 - For admKpi compact variant in JS, use `.replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')` on the admKpi() output
+- Skeleton utility classes: `.adm-sk-circle-40`/`-32` (avatar), `.adm-sk-text`/`-sm` (text bars with 6px spacing), `.adm-sk-pill` (badge), `.adm-sk-input` (form field), `.adm-sk-heading` (section label), `.adm-sk-row` (flex container), `.adm-sk-flex` (flex:1) -- use `style="--w:XXpx"` for width variance (CSS custom property carriers are allowed)
 
 ---
 
@@ -691,4 +692,26 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - `.adm-drone-btn` matches `.admin-add-member-btn` styling for consistency across admin action buttons
   - `droneAdminSkeleton(count)` generates skeleton loading rows -- reuse for any admin list that needs shimmer loading
   - When bookings stats need admKpi compact tiles, use `.replace('adm-kpi"', 'adm-kpi adm-kpi--compact"')` on the admKpi output since the function doesn't accept a variant parameter
+---
+
+## 2026-07-06 - US-110
+- What was implemented: Polish sweep and static audit evidence gate -- extracted ~48 inline skeleton styles from static app.html to CSS utility classes (adm-sk-circle-40, adm-sk-circle-32, adm-sk-flex, adm-sk-row, adm-sk-text, adm-sk-text-sm, adm-sk-pill, adm-sk-input, adm-sk-heading), all using --w CSS custom property for width variance. Added :active states for adm-live-btn and adm-retry-btn. Verified section-switch animation (already implemented: 180ms admSectionIn, hidden safety net, reduced-motion coverage). Wrote comprehensive tasks/admin-transform-audit.md with grep evidence for all 11 admin sections covering page headers, grid composition, skeleton loading, inline style counts, hardcoded colors, shared class constraints, responsive breakpoints, and spacing rhythm.
+- Files changed: css/app.css (12 new skeleton utility classes adm-sk-*, adm-live-btn:active, adm-retry-btn:active), app.html (skeleton markup converted from inline styles to CSS classes with --w custom properties in Users/Live/Pricing sections), tasks/admin-transform-audit.md (rewritten with fresh evidence), prd.json (US-110 passes:true)
+- **Grep evidence:**
+  - Skeleton utilities: `.adm-sk-circle-40 { width: 40px; height: 40px; border-radius: 50%; }` at line 4415; `.adm-sk-text { height: 14px; border-radius: 4px; width: var(--w, 100%); margin-bottom: 6px; }` at line 4419; `.adm-sk-input { height: 44px; border-radius: var(--radius-md); width: var(--w, 100%); margin-bottom: 12px; }` at line 4424
+  - Interactive states: `.adm-live-btn:active { transform: translateY(0); box-shadow: none; }` at line 4379; `.adm-retry-btn:active { opacity: 0.7; }` at line 5227
+  - Non-var inline styles in #admin-view: `sed -n '/id="admin-view"/,/^<\/div>$/p' app.html | grep -oP 'style="[^"]*"' | grep -v '\-\-w:' | wc -l` = 0
+  - Section animation: `@keyframes admSectionIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }` at line 4197; `.admin-section { animation: admSectionIn 180ms ease-out; }` at line 4198
+  - Safety net: `.admin-section[hidden] { display: none !important; }` at line 4199
+  - Reduced motion: `.admin-section,` at line 6115 inside prefers-reduced-motion block
+  - All 11 sections have admin-page-header (lines 1010/1022/1060/1096/1151/1174/1193/1208/1229/1279/1324)
+  - US-101..US-109 all passes:true in prd.json
+  - Audit file: tasks/admin-transform-audit.md exists with all rows meeting criteria
+  - npm run build:js succeeded (v=8fe54da8); CSS cache-buster at v=us110-polish-sweep; npm run typecheck passes
+- **Learnings for future iterations:**
+  - CSS custom property carriers (`style="--w:XXpx"`) are the correct pattern for skeleton width variance -- satisfies "0 non-var inline styles" while keeping visual variety
+  - `.adm-sk-text` / `.adm-sk-text-sm` provide stacked text skeleton bars with auto-spacing (margin-bottom:6px, :last-child removes it)
+  - `.adm-sk-row` + `.adm-sk-flex` replicate the common avatar-beside-text skeleton pattern without inline styles
+  - The section-switch animation, reduced-motion coverage, and [hidden] safety net were already implemented by a prior iteration -- US-110 just verified and documented
+  - The admin-user-drawer is OUTSIDE #admin-view (closes at line 1338, drawer starts at 1341) -- its inline styles do not count toward the admin-view audit
 ---
