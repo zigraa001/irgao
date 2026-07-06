@@ -559,8 +559,8 @@
         "npm run build:js if JS changed; bump ?v= cache-busters if app.html/css changed; npm run typecheck passes"
       ],
       "priority": 18,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in commit 1d300cd. scripts/test-company-portal.js: full E2E covering US-124-US-130 (portal login, forced reset, dashboard, offices, pilots, flights, pricing, profile requests, admin approvals, admin direct edit), cross-company isolation (B cannot see A resources), role isolation (customer/operator → /api/company → 403), WRONG_PORTAL 16-combo bounce. Wired into npm run test:company. Audit at tasks/company-portal-audit.md. All quality checks pass."
     }
   ]
 }

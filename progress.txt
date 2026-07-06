@@ -955,3 +955,29 @@ Date: 2026-07-06
 - Audit trail: reuses company_pricing_changelog table (prefixed "APPROVED profile change:" or "Admin direct edit:")
 - Badge auto-refresh: piggybacked on loadAdminPlatformStats + post-decision refresh
 ---
+
+## US-131: Company portal E2E gate: full-journey curl verification + regression suite [COMPLETE]
+Commit: 1d300cd
+Date: 2026-07-06
+
+### Test script: scripts/test-company-portal.js
+- Pattern matches scripts/test-all.js (require dotenv + db + auth, api/login/ensureUser helpers, ok() assertion, cleanup)
+- Full E2E journey: admin creates company → company user + forced password reset → company login → dashboard KPIs → add pilot → pilot forced-reset + login → flights → price rule set → profile change request → admin approves → live row updated → second approve 409s → reject with note
+- Cross-company isolation: Company B token vs every /api/company/* route parameterized with Company A resources (pilots, flights, profile, cancel request) → all 403/empty
+- Role isolation: customer + operator tokens → /api/company/* → 403; company token → /api/admin/* → 403
+- WRONG_PORTAL bounce: 4 roles × 4 portals = 16 combinations (12 wrong = 403 WRONG_PORTAL, 4 right = 200)
+- /api/me for company user: role='company', has companyId, not customerStats
+- WS /ws/operator: company role !== operator → would reject
+
+### npm scripts (package.json)
+- npm run test:company → node scripts/test-company-portal.js
+- npm run test:e2e → node scripts/test-all.js
+
+### Audit document: tasks/company-portal-audit.md
+- Evidence table: one row per US-124..US-130 with endpoints, E2E step, isolation test, pass status
+- All 7 stories pass
+
+### Quality checks
+- npm run typecheck → passes
+- No JS/CSS/HTML changes → no cache-buster bump needed
+---
