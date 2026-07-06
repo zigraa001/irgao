@@ -7959,44 +7959,55 @@ function showDroneAdminTab(tab) {
 
 // Admin: Services
 async function loadDroneAdminServices() {
-  const list = document.getElementById('drone-admin-services-list');
+  var list = document.getElementById('drone-admin-services-list');
+  list.innerHTML = droneAdminSkeleton(3);
   try {
-    const res = await apiFetch('/api/drones/admin/services', { headers: AUTH.headers() });
-    const data = await res.json();
+    var res = await apiFetch('/api/drones/admin/services', { headers: AUTH.headers() });
+    var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
     renderDroneAdminServices(data.services || []);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load services. Please try again.</div>';
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="adm-empty-title">Could not load services</div><div class="adm-empty-sub">Please try again.</div></div>';
   }
 }
 
 function renderDroneAdminServices(services) {
-  const list = document.getElementById('drone-admin-services-list');
-  if (!services.length) { list.innerHTML = '<div class="op-empty-sub">No drone services configured yet. Add one to get started.</div>'; return; }
-  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>₹/hr</th><th>Op ₹/hr</th><th>Op Req</th><th>Active</th><th></th></tr></thead><tbody>';
-  services.forEach(s => {
-    html += '<tr>' +
-      '<td>' + (s.imageEmoji || '🛸') + '</td>' +
-      '<td><strong>' + escapeHtml(s.name) + '</strong></td>' +
-      '<td>' + escapeHtml(s.category) + '</td>' +
-      '<td>₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (s.operatorRequired ? '✓' : '—') + '</td>' +
-      '<td>' + (s.active ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneService(' + s.id + ')">Edit</button></td>' +
-    '</tr>';
+  var list = document.getElementById('drone-admin-services-list');
+  if (!services.length) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="adm-empty-title">No drone services configured yet</div><div class="adm-empty-sub">Add one to get started.</div></div>';
+    return;
+  }
+  var html = '<div class="das-grid">';
+  services.forEach(function(s) {
+    var statusCls = s.active ? 'das-chip--green' : 'das-chip--gray';
+    var statusTxt = s.active ? 'Active' : 'Inactive';
+    html += '<div class="das-card" onclick="editDroneService(' + s.id + ')">' +
+      '<div class="das-card-head">' +
+        '<div class="das-card-name">' + escapeHtml(s.name) + '</div>' +
+        '<span class="das-chip ' + statusCls + '">' + statusTxt + '</span>' +
+      '</div>' +
+      '<span class="das-cat-chip">' + escapeHtml(s.category) + '</span>' +
+      '<div class="das-card-price">' +
+        '<span class="das-price-val">' + INR(s.pricePerHour) + '<span class="das-price-unit">/hr</span></span>' +
+      '</div>' +
+      '<div class="das-card-meta">' +
+        (s.operatorRequired ? '<span class="das-meta-tag">Operator required</span>' : '<span class="das-meta-tag das-meta-tag--muted">Operator optional</span>') +
+        (s.operatorPricePerHour ? '<span class="das-meta-tag das-meta-tag--muted">Op ' + INR(s.operatorPricePerHour) + '/hr</span>' : '') +
+      '</div>' +
+      '<button type="button" class="das-edit-btn" onclick="editDroneService(' + s.id + ')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>' +
+    '</div>';
   });
-  html += '</tbody></table></div>';
+  html += '</div>';
   list.innerHTML = html;
 }
 
 function showDroneServiceForm(service) {
-  const wrap = document.getElementById('drone-admin-service-form');
-  const isEdit = !!service;
-  const s = service || {};
+  var wrap = document.getElementById('drone-admin-service-form');
+  var isEdit = !!service;
+  var s = service || {};
   wrap.hidden = false;
   wrap.innerHTML =
-    '<div class="drone-admin-form">' +
+    '<div class="drone-admin-form das-form">' +
       '<div class="drone-form-title">' + (isEdit ? 'Edit Service' : 'Add New Service') + '</div>' +
       '<div class="drone-form-grid">' +
         '<input id="dsf-name" class="pd-input" placeholder="Name" value="' + escapeHtml(s.name || '') + '">' +
@@ -8006,12 +8017,12 @@ function showDroneServiceForm(service) {
         '<input id="dsf-emoji" class="pd-input" placeholder="Emoji" value="' + (s.imageEmoji || '🛸') + '">' +
         '<input id="dsf-minH" class="pd-input" type="number" placeholder="Min hrs" value="' + (s.minHours || 1) + '">' +
         '<input id="dsf-maxH" class="pd-input" type="number" placeholder="Max hrs" value="' + (s.maxHours || 8) + '">' +
-        '<label><input type="checkbox" id="dsf-opReq"' + (s.operatorRequired ? ' checked' : '') + '> Operator required</label>' +
+        '<label class="das-checkbox-label"><input type="checkbox" id="dsf-opReq"' + (s.operatorRequired ? ' checked' : '') + '> Operator required</label>' +
       '</div>' +
       '<input id="dsf-desc" class="pd-input drone-form-desc" placeholder="Description" value="' + escapeHtml(s.description || '') + '">' +
-      '<div class="drone-form-actions">' +
-        '<button type="button" class="op-btn" onclick="saveDroneService(' + (s.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
-        '<button type="button" class="op-btn-secondary" onclick="hideDroneServiceForm()">Cancel</button>' +
+      '<div class="das-form-actions">' +
+        '<button type="button" class="op-btn adm-drone-btn" onclick="saveDroneService(' + (s.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
+        '<button type="button" class="op-btn-secondary das-ghost-btn" onclick="hideDroneServiceForm()">Cancel</button>' +
       '</div>' +
     '</div>';
 }
@@ -8061,42 +8072,58 @@ async function saveDroneService(id) {
 
 // Admin: Operators
 async function loadDroneAdminOperators() {
-  const list = document.getElementById('drone-admin-operators-list');
+  var list = document.getElementById('drone-admin-operators-list');
+  list.innerHTML = droneAdminSkeleton(3);
   try {
-    const res = await apiFetch('/api/drones/admin/operators', { headers: AUTH.headers() });
-    const data = await res.json();
+    var res = await apiFetch('/api/drones/admin/operators', { headers: AUTH.headers() });
+    var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
     renderDroneAdminOperators(data.operators || []);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load operators. Please try again.</div>';
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="adm-empty-title">Could not load operators</div><div class="adm-empty-sub">Please try again.</div></div>';
   }
 }
 
 function renderDroneAdminOperators(operators) {
-  const list = document.getElementById('drone-admin-operators-list');
-  if (!operators.length) { list.innerHTML = '<div class="op-empty-sub">No drone operators registered yet. Add one to get started.</div>'; return; }
-  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Name</th><th>Specialization</th><th>Exp</th><th>Rating</th><th>Available</th><th></th></tr></thead><tbody>';
-  operators.forEach(op => {
-    html += '<tr>' +
-      '<td><strong>' + escapeHtml(op.name) + '</strong><br><span class="table-meta">' + escapeHtml(op.email || '—') + '</span></td>' +
-      '<td>' + escapeHtml(op.specialization || '—') + '</td>' +
-      '<td>' + op.experienceYears + ' yr</td>' +
-      '<td>⭐ ' + Number(op.rating).toFixed(1) + '</td>' +
-      '<td>' + (op.available ? '✅' : '❌') + '</td>' +
-      '<td><button type="button" class="drone-edit-btn" onclick="editDroneOperator(' + op.id + ')">Edit</button></td>' +
-    '</tr>';
+  var list = document.getElementById('drone-admin-operators-list');
+  if (!operators.length) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="adm-empty-title">No drone operators registered yet</div><div class="adm-empty-sub">Add one to get started.</div></div>';
+    return;
+  }
+  var html = '<div class="das-rows-card">';
+  operators.forEach(function(op) {
+    var initials = (op.name || '?').split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+    var stars = '';
+    var r = Number(op.rating) || 0;
+    for (var i = 1; i <= 5; i++) {
+      stars += '<svg viewBox="0 0 24 24" width="12" height="12" class="' + (i <= Math.round(r) ? 'star-active' : 'star-inactive') + '" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    }
+    html += '<div class="das-row">' +
+      '<div class="das-row-avatar">' + initials + '</div>' +
+      '<div class="das-row-identity">' +
+        '<div class="das-row-name">' + escapeHtml(op.name) + '</div>' +
+        '<div class="das-row-meta">' + escapeHtml(op.email || 'No email') + '</div>' +
+      '</div>' +
+      '<div class="das-row-tags">' +
+        (op.specialization ? '<span class="das-cat-chip">' + escapeHtml(op.specialization) + '</span>' : '') +
+        '<span class="das-meta-tag das-meta-tag--muted">' + op.experienceYears + ' yr exp</span>' +
+      '</div>' +
+      '<div class="das-row-rating">' + stars + ' <span class="das-rating-val">' + Number(op.rating).toFixed(1) + '</span></div>' +
+      '<span class="das-chip ' + (op.available ? 'das-chip--green' : 'das-chip--gray') + '">' + (op.available ? 'Available' : 'Unavailable') + '</span>' +
+      '<button type="button" class="das-edit-btn" onclick="editDroneOperator(' + op.id + ')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>' +
+    '</div>';
   });
-  html += '</tbody></table></div>';
+  html += '</div>';
   list.innerHTML = html;
 }
 
 function showDroneOperatorForm(op) {
-  const wrap = document.getElementById('drone-admin-operator-form');
-  const isEdit = !!op;
-  const o = op || {};
+  var wrap = document.getElementById('drone-admin-operator-form');
+  var isEdit = !!op;
+  var o = op || {};
   wrap.hidden = false;
   wrap.innerHTML =
-    '<div class="drone-admin-form">' +
+    '<div class="drone-admin-form das-form">' +
       '<div class="drone-form-title">' + (isEdit ? 'Edit Operator' : 'Add New Operator') + '</div>' +
       '<div class="drone-form-grid">' +
         '<input id="dof-name" class="pd-input" placeholder="Name" value="' + escapeHtml(o.name || '') + '">' +
@@ -8106,9 +8133,9 @@ function showDroneOperatorForm(op) {
         '<input id="dof-exp" class="pd-input" type="number" placeholder="Years exp" value="' + (o.experienceYears || 1) + '">' +
         '<input id="dof-rating" class="pd-input" type="number" step="0.1" placeholder="Rating" value="' + (o.rating || 4.5) + '">' +
       '</div>' +
-      '<div class="drone-form-actions">' +
-        '<button type="button" class="op-btn" onclick="saveDroneOperator(' + (o.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
-        '<button type="button" class="op-btn-secondary" onclick="hideDroneOperatorForm()">Cancel</button>' +
+      '<div class="das-form-actions">' +
+        '<button type="button" class="op-btn adm-drone-btn" onclick="saveDroneOperator(' + (o.id || 'null') + ')">' + (isEdit ? 'Save' : 'Create') + '</button>' +
+        '<button type="button" class="op-btn-secondary das-ghost-btn" onclick="hideDroneOperatorForm()">Cancel</button>' +
       '</div>' +
     '</div>';
 }
@@ -8152,60 +8179,81 @@ async function saveDroneOperator(id) {
 
 // Admin: Bookings
 async function loadDroneAdminBookings() {
-  const list = document.getElementById('drone-admin-bookings-list');
-  const statsEl = document.getElementById('drone-admin-bookings-stats');
+  var list = document.getElementById('drone-admin-bookings-list');
+  var statsEl = document.getElementById('drone-admin-bookings-stats');
+  list.innerHTML = droneAdminSkeleton(3);
   try {
-    const res = await apiFetch('/api/drones/admin/bookings', { headers: AUTH.headers() });
-    const data = await res.json();
+    var res = await apiFetch('/api/drones/admin/bookings', { headers: AUTH.headers() });
+    var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
     if (statsEl && data.stats) {
+      var s = data.stats;
       statsEl.innerHTML =
-        '<div class="drone-admin-stats">' +
-          '<div class="drone-stat-card"><div class="drone-stat-val">' + (data.stats.total || 0) + '</div><div class="drone-stat-label">Total</div></div>' +
-          '<div class="drone-stat-card"><div class="drone-stat-val">' + (data.stats.confirmed || 0) + '</div><div class="drone-stat-label">Confirmed</div></div>' +
-          '<div class="drone-stat-card"><div class="drone-stat-val">' + (data.stats.completed || 0) + '</div><div class="drone-stat-label">Completed</div></div>' +
-          '<div class="drone-stat-card"><div class="drone-stat-val">₹' + Number(data.stats.revenue || 0).toLocaleString('en-IN') + '</div><div class="drone-stat-label">Revenue</div></div>' +
+        '<div class="adm-grid" style="margin-bottom:16px">' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'blue', String(s.total || 0), 'Total').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', String(s.confirmed || 0), 'Confirmed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.aircraft, 'navy', String(s.completed || 0), 'Completed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(s.revenue || 0), 'Revenue').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
         '</div>';
     }
-    renderDroneAdminBookings(data.bookings || []);
+    var bookings = data.bookings || [];
+    var countEl = document.querySelector('.das-booking-count');
+    if (countEl) countEl.textContent = bookings.length + ' booking' + (bookings.length !== 1 ? 's' : '');
+    renderDroneAdminBookings(bookings);
   } catch (e) {
-    list.innerHTML = '<div class="op-empty-sub">Could not load bookings. Please try again.</div>';
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div class="adm-empty-title">Could not load bookings</div><div class="adm-empty-sub">Please try again.</div></div>';
   }
 }
 
 function renderDroneAdminBookings(bookings) {
-  const list = document.getElementById('drone-admin-bookings-list');
-  if (!bookings.length) { list.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Bookings will appear here once customers start booking.</div>'; return; }
-  let html = '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Customer</th><th>Service</th><th>Hours</th><th>Total</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>';
-  bookings.forEach(b => {
-    html += '<tr>' +
-      '<td>#' + b.id + '</td>' +
-      '<td>' + escapeHtml(b.customerName || '—') + '</td>' +
-      '<td>' + (b.imageEmoji || '🛸') + ' ' + escapeHtml(b.serviceName) + '</td>' +
-      '<td>' + b.hours + 'h</td>' +
-      '<td>₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</td>' +
-      '<td>' + (b.scheduledDate || '—') + '</td>' +
-      '<td><select class="drone-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
-        ['pending','confirmed','in_progress','completed','cancelled'].map(st =>
-          '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>'
-        ).join('') +
-      '</select></td>' +
-      '<td>' + (b.operatorName ? '👤 ' + escapeHtml(b.operatorName) : '') + '</td>' +
-    '</tr>';
+  var list = document.getElementById('drone-admin-bookings-list');
+  if (!bookings.length) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="adm-empty-title">No drone bookings yet</div><div class="adm-empty-sub">Bookings will appear here once customers start booking.</div></div>';
+    return;
+  }
+  var html = '<div class="das-rows-card">';
+  bookings.forEach(function(b) {
+    var custInitials = (b.customerName || '?').split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+    html += '<div class="das-row">' +
+      '<div class="das-row-avatar">' + custInitials + '</div>' +
+      '<div class="das-row-identity">' +
+        '<div class="das-row-name">' + escapeHtml(b.customerName || 'Unknown') + '</div>' +
+        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.serviceName) + ' · ' + b.hours + 'h</div>' +
+      '</div>' +
+      '<div class="das-row-tags">' +
+        '<span class="das-booking-price">' + INR(b.totalPrice) + '</span>' +
+        '<span class="das-meta-tag das-meta-tag--muted">' + (b.scheduledDate || 'No date') + '</span>' +
+      '</div>' +
+      '<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
+        ['pending','confirmed','in_progress','completed','cancelled'].map(function(st) {
+          return '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>';
+        }).join('') +
+      '</select>' +
+      (b.operatorName ? '<span class="das-meta-tag das-meta-tag--muted">' + escapeHtml(b.operatorName) + '</span>' : '') +
+    '</div>';
   });
-  html += '</tbody></table></div>';
+  html += '</div>';
   list.innerHTML = html;
 }
 
 async function updateDroneBookingStatus(id, status) {
   try {
-    const res = await apiFetch('/api/drones/admin/bookings/' + id + '/status', {
+    var res = await apiFetch('/api/drones/admin/bookings/' + id + '/status', {
       method: 'PATCH',
       headers: AUTH.headers(),
       body: JSON.stringify({ status }),
     });
-    const data = await res.json();
+    var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
-    showToast('Booking #' + id + ' → ' + status, 'success');
+    showToast('Booking #' + id + ' -> ' + status, 'success');
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+function droneAdminSkeleton(count) {
+  var html = '';
+  for (var i = 0; i < count; i++) {
+    var w = [60, 45, 70][i % 3];
+    html += '<div class="das-skeleton-row"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:' + w + '%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:10px;width:' + (w - 20) + '%;border-radius:4px"></div></div></div>';
+  }
+  return html;
 }

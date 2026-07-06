@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us108-compliance-logs">
+  <link rel="stylesheet" href="/css/app.css?v=us109-drone-admin">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1284,35 +1284,39 @@
         </div>
 
         <div class="drone-tab-bar">
-          <button type="button" class="dashboard-pill active" id="drone-admin-tab-services" onclick="showDroneAdminTab('services')">Services</button>
-          <button type="button" class="dashboard-pill" id="drone-admin-tab-operators" onclick="showDroneAdminTab('operators')">Operators</button>
-          <button type="button" class="dashboard-pill" id="drone-admin-tab-bookings" onclick="showDroneAdminTab('bookings')">Bookings</button>
+          <button type="button" class="dashboard-pill adm-seg-tab active" id="drone-admin-tab-services" onclick="showDroneAdminTab('services')">Services</button>
+          <button type="button" class="dashboard-pill adm-seg-tab" id="drone-admin-tab-operators" onclick="showDroneAdminTab('operators')">Operators</button>
+          <button type="button" class="dashboard-pill adm-seg-tab" id="drone-admin-tab-bookings" onclick="showDroneAdminTab('bookings')">Bookings</button>
         </div>
 
         <!-- Services sub-tab -->
         <div id="drone-admin-services">
           <div class="drone-sub-header">
             <span class="drone-sub-title">All Drone Services</span>
-            <button type="button" class="op-btn" onclick="showDroneServiceForm()">+ Add Service</button>
+            <button type="button" class="op-btn adm-drone-btn" onclick="showDroneServiceForm()">+ Add Service</button>
           </div>
           <div id="drone-admin-service-form" hidden></div>
-          <div id="drone-admin-services-list"><div class="pd-loading">Fetching drone services...</div></div>
+          <div id="drone-admin-services-list"></div>
         </div>
 
         <!-- Operators sub-tab -->
         <div id="drone-admin-operators" hidden>
           <div class="drone-sub-header">
             <span class="drone-sub-title">Drone Operators</span>
-            <button type="button" class="op-btn" onclick="showDroneOperatorForm()">+ Add Operator</button>
+            <button type="button" class="op-btn adm-drone-btn" onclick="showDroneOperatorForm()">+ Add Operator</button>
           </div>
           <div id="drone-admin-operator-form" hidden></div>
-          <div id="drone-admin-operators-list"><div class="pd-loading">Fetching drone operators...</div></div>
+          <div id="drone-admin-operators-list"></div>
         </div>
 
         <!-- Bookings sub-tab -->
         <div id="drone-admin-bookings" hidden>
+          <div class="drone-sub-header">
+            <span class="drone-sub-title">Drone Bookings</span>
+            <span class="das-booking-count"></span>
+          </div>
           <div id="drone-admin-bookings-stats"></div>
-          <div id="drone-admin-bookings-list" class="drone-bookings-list-wrap"><div class="pd-loading">Fetching drone bookings...</div></div>
+          <div id="drone-admin-bookings-list" class="drone-bookings-list-wrap"></div>
         </div>
       </section>
 
@@ -1418,6 +1422,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=d625608f"></script>
+<script src="/js/app.bundle.js?v=cd908f61"></script>
 </body>
 </html>
