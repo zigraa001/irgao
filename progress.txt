@@ -42,6 +42,11 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
 - WCAG AA contrast: never use var(--gray-400) for readable text labels — use var(--gray-500) minimum; gray-400 is OK only for placeholders/icons/decorative
 - Touch targets on mobile: set min-height: 40-44px on interactive elements at ≤768px via media query
 - Spacing rhythm: use 4px multiples (4, 8, 12, 16, 20, 24, 32, 40, 48) for padding/margin/gap
+- Segmented pill control: `.admin-user-tabs` pattern (inline-flex, gray-100 bg, radius-full, 3px padding; active child = white bg + shadow) -- reuse for admin segmented controls
+- Data table row: `.admin-user-card` grid pattern (40px avatar | 1fr identity | auto tags | auto actions | 20px chevron) inside a `.admin-users-list-card` container card with border-bottom dividers
+- Ghost action buttons: `.admin-btn-sm` are transparent by default, colored on hover; `.admin-user-actions` hidden (opacity:0) until row hover; `@media (hover: none)` makes them always visible on touch
+- Admin-scoped empty states: use `.adm-empty` / `.adm-empty-icon` / `.adm-empty-title` / `.adm-empty-sub` with SVG icons (scoped via `.admin-main .adm-empty`); do NOT use `.op-empty` for new admin empty states
+- `adminUsersSkeleton()` generates skeleton loading rows -- adapt pattern for other sections
 
 ---
 
@@ -459,4 +464,33 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The `#admin-summary-bar` is now a dateline strip rendered by `loadAdminPlatformStats()` -- its id survives; it shows the current date with a clock icon
   - The admin dashboard no longer uses `statsDashboardHtml()` at all -- that function is now ONLY used by the profile modal (renderProfileDashboard) and the admin user-detail drawer (loadAdminUserDetail)
   - Skeleton shimmer uses a CSS-only gradient animation (admShimmer keyframes) -- no JS needed; disabled under prefers-reduced-motion
+---
+
+## 2026-07-06 - US-103
+- What was implemented: Users section transformed into a modern data table with toolbar -- segmented pill tab control, aligned grid rows, compact ghost actions, SVG chevron pager, admin-scoped empty states with SVG icons, skeleton loading rows
+- Files changed: app.html (toolbar wrapper, skeleton initial state, CSS cache-bust), css/app.css (admin-users-toolbar, segmented .admin-user-tabs/.admin-tab, grid .admin-user-card, .admin-user-tags, compact .admin-btn-sm ghost buttons with hover reveal, .admin-pager-btn SVG buttons, .admin-pager-info/.admin-pager-page, .admin-users-list-card container, .adm-empty admin-scoped empty state, .adm-skeleton-row, responsive 360/480/768px), js/app/03-admin-profile.js (renderAdminUsers restructured card markup with tags column, SVG chevron, compact button labels, SVG pager with page indicator, adminUsersSkeleton function, adm-empty states with SVG icons), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - Row grid CSS: `.admin-user-card { display: grid; grid-template-columns: 40px 1fr auto auto 20px; ... }`
+  - Toolbar CSS: `.admin-users-toolbar { display: flex; align-items: center; gap: 12px; ... }`
+  - Segmented pill: `.admin-user-tabs { display: inline-flex; background: var(--gray-100); border-radius: var(--radius-full); padding: 3px; }`
+  - Active tab: `.admin-tab.active { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: var(--navy); }`
+  - Pager renderer: `admin-pager-btn` with SVG chevrons, `admin-pager-info` showing count, `admin-pager-page` showing page/total
+  - Compact ghost buttons: `.admin-btn-sm { min-height: 28px; border: 1px solid transparent; background: transparent; }`
+  - Actions hover reveal: `.admin-user-actions { opacity: 0; } .admin-user-card:hover .admin-user-actions { opacity: 1; }`
+  - Touch always visible: `@media (hover: none) { .admin-user-actions { opacity: 1; } }`
+  - All onclick handlers survived: adminResetPassword (3 hits), adminSendResetOtp (3 hits), adminBanUser (3 hits), adminDeleteUser (3 hits), openAdminUserDrawer (2 hits)
+  - Company filter hidden toggle: `<div id="admin-users-company-filter" class="admin-company-filter" hidden>` at line 1040
+  - Skeleton function: `adminUsersSkeleton()` called in `loadAdminUsersChunk` on initial load
+  - Admin-scoped empty: `.admin-main .adm-empty` with SVG icon tiles (no emoji), `.op-empty` untouched globally
+  - Shared classes untouched: .pd-stat, .op-empty, .dashboard-pill retain original global rules only
+  - .admin-tab and .admin-user-tabs confirmed admin-only (only used in switchAdminUserTab in 03-admin-profile.js)
+  - npm run build:js succeeded (v=295b4d13); npm run typecheck passes; CSS cache-buster bumped to v=us103-users-table
+- **Learnings for future iterations:**
+  - `.admin-user-tabs` is now a segmented pill control (gray-100 bg, radius-full, 3px padding) -- active tab uses white bg + subtle shadow for the "pill" effect; reuse this pattern for any admin segmented controls
+  - `.admin-user-card` is now a CSS Grid row (5 columns: avatar, identity, tags, actions, chevron) inside a card container `.admin-users-list-card` -- divider-only separation via border-bottom on rows
+  - Ghost action buttons (.admin-btn-sm) use transparent bg/border by default and only show color on hover; the entire actions group is hidden (opacity:0) until row hover, except on touch devices (@media hover:none)
+  - `adminUsersSkeleton()` generates 4 skeleton rows with varying widths for visual realism -- reuse pattern for other section loading states
+  - The `.adm-empty` pattern (admin-scoped via `.admin-main .adm-empty`) uses SVG icons instead of emoji -- different from the shared `.op-empty` which still uses emoji
+  - The pager now uses `.admin-pager-btn` (32px square, SVG chevrons) instead of `.admin-load-more` for prev/next; `.admin-load-more` is kept only for the "Load more" button
+  - At 768px, tags column hides and grid collapses to 4 columns; at 360px, further collapse to 4 smaller columns with compact buttons
 ---
