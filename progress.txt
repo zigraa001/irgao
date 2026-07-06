@@ -417,3 +417,21 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - The `.admin-section-card` class (max-width:640px, margin-bottom:20px) is reusable for any admin content container that needs width constraint (pricing, revenue, compliance cards)
   - `.drone-sub-title` overrides `.op-section-title` font-size from 12px to 14px -- useful for sub-section titles within admin sections
 ---
+
+## 2026-07-06 - US-101
+- What was implemented: Admin shell space foundation verification -- all acceptance criteria were already satisfied by prior stories (US-008, US-009, US-019, US-020). This pass confirmed correctness and wrote grep evidence.
+- Files changed: progress.txt (evidence), prd.json (passes:true)
+- **Implementation evidence (grep audit):**
+  - (a) .admin-shell rule: `max-width: 1680px; padding: 24px clamp(16px, 3vw, 40px) 60px;` -- fluid width with responsive padding
+  - @media (min-width:1600px) override: `.admin-shell { max-width: 1680px; }` -- matches the base rule
+  - (b) .adm-grid rule: `display:grid; grid-template-columns: repeat(12, 1fr); gap: 20px;` with .adm-span-3/-4/-6/-8/-12 helpers; responsive at <=1200px (span-3/4 -> span-6) and <=768px (all -> span-12)
+  - (c) Page headers per section (all have .admin-page-header): Dashboard (op-welcome), Active Users (adm-header-title + actions slot with Add member), Pilots Live Map, Add Team Member, Operator Companies, Pricing Configuration, Revenue Dashboard, Compliance Monitor, Platform Settings, Drone Management, Logs -- 11 sections, all with title + subtitle
+  - (d) Repaired line: `<div id="admin-users-company-filter" class="admin-company-filter" hidden>` at line 1022 -- closing '>' present
+  - (e) Shared classes not globally restyled by this foundation: .pd-stat, .pd-loading, .pd-breakdown, .profile-stats-grid, .op-section-title, .op-empty, .op-btn, .dashboard-pill, .op-status-badge -- all retain original global rules only; new admin styling uses adm-* classes
+  - admin-section-card straitjacket removed: `.admin-section-card { margin-bottom: 20px; }` (no max-width); `.admin-section-card--narrow { }` (empty rule, no constraint)
+  - #admin-summary-bar hidden: `.admin-summary-bar { display: none; }` -- kept element + id, hidden via CSS for US-102 to repurpose
+  - .admin-main: `min-width: 0; padding: 0 4px;` -- prevents grid blowout
+  - No JS changes needed; npm run typecheck passes
+- **Learnings for future iterations:**
+  - US-101 was a foundation story whose work was distributed across US-008 (admin drawer/header), US-009 (tables/forms), US-019 (visual audit), and US-020 (nav groups) -- when stories share scope, later stories may find the work already done
+---
