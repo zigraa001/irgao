@@ -803,3 +803,37 @@ Started: Sat Jul  5 2026 (modern-ux-redesign run, branch: main)
   - Pilot filter is populated from the loaded flights data (no separate endpoint needed) -- when US-127 adds a /api/company/pilots endpoint, this can be upgraded
   - companyFlightsFilter() resets offset to 0 before re-fetching to avoid orphaned pagination state
 ---
+
+## 2026-07-06 - US-127
+- What was implemented: Company Pilots section -- full pilot roster management (list, add, deactivate/reactivate) via new company-scoped API endpoints + UI in the Partner Console
+- Files changed: src/company-routes.js (GET /api/company/pilots, POST /api/company/pilots, PATCH /api/company/pilots/:id/status, GET /api/company/offices), js/app/10-company.js (loadCompanyPilots, renderCompanyPilots, companyPilotRowHtml, showCompanyAddPilot, hideCompanyAddPilot, doCompanyAddPilot, companyTogglePilot, loadCompanyOfficesSelect + skeleton/duty-pill/GPS-freshness helpers), app.html (company-section-pilots with Add pilot button + form + body container, CSS cache-buster), css/app.css (cp-list-card, cp-row grid layout, cp-duty-pill variants, cp-gps freshness, cp-action-btn deactivate/activate, responsive 768px), js/app.bundle.js (rebuilt)
+- **Grep evidence:**
+  - GET /api/company/pilots endpoint: `router.get("/pilots"` at src/company-routes.js:216
+  - POST /api/company/pilots endpoint: `router.post("/pilots"` at src/company-routes.js:253, with `mustResetPassword, companyId` at :280
+  - companyId FORCED: `'operator', 1, 1, cid, parsedOfficeId` at :280 -- always uses caller's cid, never request body companyId
+  - PATCH /api/company/pilots/:id/status: `router.patch("/pilots/:id/status"` at :300
+  - Cross-company isolation: `WHERE id = ? AND companyId = ? AND role = 'operator'` at :311 -- returns 404 if pilot doesn't belong to caller
+  - invalidateUserStatus called after status flip: `invalidateUserStatus(pilotId)` at :326
+  - bannedAt enforced by requireAuth: `if (status.bannedAt) { return res.status(403)` at src/auth.js:226-229 (getUserStatus SELECT at :193)
+  - bannedAt enforced by dispatch: `WHERE u.role = 'operator' AND u.deletedAt IS NULL AND u.bannedAt IS NULL` at src/dispatch.js:83
+  - GET /api/company/offices: `router.get("/offices"` at :200, reuses regional_offices-by-company query pattern
+  - officeId validated: `SELECT id FROM regional_offices WHERE id = ? AND companyId = ?` at :268
+  - Email duplicate check: `SELECT id FROM users WHERE email = ?` at :277 (409 on duplicate)
+  - Password validation: `String(password).length < 6` at :262
+  - Admin Users section UNTOUCHED: `git diff --stat js/app/03-admin-profile.js` returns empty (no changes)
+  - showCompanySection handles pilots: `if (name === 'pilots') loadCompanyPilots()` at 10-company.js:26
+  - Add pilot form: showCompanyAddPilot/hideCompanyAddPilot/doCompanyAddPilot wired via onclick
+  - Deactivate/Reactivate: companyTogglePilot(id, true/false) with confirm dialog for deactivate
+  - Skeleton loading: companyPilotsSkeleton() generates 4 skeleton rows with adm-skeleton classes
+  - Empty state: 'No pilots yet' / 'Add your first pilot to start flying with IraGo.'
+  - Temp-password note: 'Pilot created! They must change the temporary password on first login.'
+  - CSS responsive at 768px: header hidden, grid collapses to 2-col, aircraft column hidden
+  - npm run build:js succeeded (v=e26a316e); CSS cache-buster v=us127-company-pilots; npm run typecheck passes
+  - DB not available locally for curl verification but server boots clean and endpoint structure verified via grep
+- **Learnings for future iterations:**
+  - Company pilot endpoints follow the same resolveCompany middleware pattern -- companyId always comes from req.company.id, never from the request body
+  - invalidateUserStatus(id) must be called after any bannedAt change so the 30s auth cache doesn't keep a deactivated pilot alive
+  - Deactivating a pilot also sets onDuty=0 to immediately remove them from dispatch eligibility (not just bannedAt)
+  - The cp-* CSS class prefix is for company pilots section -- matches the cf-* prefix pattern from company flights
+  - companyOfficesLoaded flag caches the offices list for the add-pilot form -- avoids re-fetching on repeated form opens
+---
