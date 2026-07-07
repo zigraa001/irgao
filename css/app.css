@@ -3230,7 +3230,7 @@ textarea:focus-visible, a:focus-visible {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: var(--shadow-sm);
 }
 .admin-table {
@@ -4382,7 +4382,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .admin-nav-icon svg { width: 18px; height: 18px; display: block; }
 .admin-nav-item.active .admin-nav-icon svg { stroke: var(--blue); }
-.admin-main { min-width: 0; padding: 0 4px; }
+.admin-main { min-width: 0; padding: 0 4px; overflow: hidden; }
 @keyframes admSectionIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .admin-section { animation: admSectionIn 180ms ease-out; }
 .admin-section[hidden] { display: none !important; }
