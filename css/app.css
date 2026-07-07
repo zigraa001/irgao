@@ -4270,28 +4270,24 @@ body.admin-map-fs { overflow: hidden; }
 
 /* ===== Admin drawer-based panel ===== */
 .admin-shell {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  align-items: start;
-  max-width: 1680px;
-  margin: 0 auto;
-  padding: 24px clamp(16px, 3vw, 40px) 60px;
-  gap: 24px;
+  display: flex;
+  align-items: flex-start;
+  min-height: calc(100vh - 64px);
 }
 .admin-drawer {
-  position: sticky;
-  top: 78px;
-  align-self: start;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  bottom: 0;
   width: 240px;
   flex-shrink: 0;
   background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: 10px;
+  border-right: 1px solid var(--border-subtle);
+  padding: 16px 10px;
   display: flex;
   flex-direction: column;
-  min-height: 480px;
+  overflow-y: auto;
+  z-index: 100;
 }
 .admin-drawer-toggle {
   display: none;
@@ -4384,7 +4380,7 @@ body.admin-map-fs { overflow: hidden; }
 .admin-nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .admin-nav-icon svg { width: 18px; height: 18px; display: block; }
 .admin-nav-item.active .admin-nav-icon svg { stroke: var(--blue); }
-.admin-main { min-width: 0; padding: 0 4px; overflow: hidden; }
+.admin-main { min-width: 0; margin-left: 240px; padding: 24px clamp(16px, 3vw, 40px) 60px; overflow: hidden; flex: 1; max-width: 1440px; }
 @keyframes admSectionIn { from { opacity: 0; } to { opacity: 1; } }
 .admin-section { animation: admSectionIn 150ms ease-out; }
 .admin-section[hidden] { display: none !important; }
@@ -4730,14 +4726,18 @@ body.admin-map-fs { overflow: hidden; }
 .op-badge--blue { background: var(--blue-light); color: var(--blue-dark); border: 1px solid var(--blue-light); }
 
 @media (max-width: 768px) {
-  .admin-shell { grid-template-columns: 1fr; padding: 12px 16px 60px; gap: 16px; }
+  .admin-shell { flex-direction: column; }
   .admin-drawer {
     position: relative;
     top: auto;
+    left: auto;
+    bottom: auto;
     width: 100%;
     padding: 8px;
-    border-radius: var(--radius-lg);
-    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
+    overflow-y: visible;
   }
   .admin-drawer-toggle { display: block; }
   .admin-drawer-nav {
@@ -4747,13 +4747,13 @@ body.admin-map-fs { overflow: hidden; }
     margin-top: 8px;
   }
   .admin-drawer.open .admin-drawer-nav { display: flex; }
-  .admin-main { padding: 0; }
+  .admin-main { margin-left: 0; padding: 12px 16px 60px; }
   .admin-page-header { padding-bottom: 12px; }
   .admin-page-header .op-welcome { font-size: 20px; }
   .admin-user-drawer-panel { max-width: 100%; }
 }
 @media (max-width: 360px) {
-  .admin-shell { padding: 8px; gap: 8px; }
+  .admin-main { padding: 8px; }
   .admin-page-header .op-welcome { font-size: 18px; }
   .admin-summary-bar { gap: 8px; }
   .admin-form-card { padding: 12px; }
@@ -6298,13 +6298,12 @@ body.admin-map-fs { overflow: hidden; }
 
 /* ── 1024px: small desktop / large tablet ── */
 @media (max-width: 1024px) {
-  .admin-shell { max-width: 100%; padding: 20px; gap: 20px; }
-  .admin-shell > .admin-drawer { position: static; }
+  .admin-main { padding: 20px; }
 }
 
 /* ── 1600px+: wide screen comfort ── */
 @media (min-width: 1600px) {
-  .admin-shell { max-width: 1680px; }
+  .admin-main { max-width: 1440px; }
   .op-body { max-width: 960px; }
 }
 
