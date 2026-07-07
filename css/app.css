@@ -2,7 +2,7 @@
    RESET & BASE
    ═══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-font-smoothing: antialiased; }
+html { -webkit-font-smoothing: antialiased; scrollbar-gutter: stable; }
 body {
   font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: #F6F8FB;
@@ -4282,6 +4282,8 @@ body.admin-map-fs { overflow: hidden; }
   position: sticky;
   top: 78px;
   align-self: start;
+  width: 240px;
+  flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
@@ -4383,8 +4385,8 @@ body.admin-map-fs { overflow: hidden; }
 .admin-nav-icon svg { width: 18px; height: 18px; display: block; }
 .admin-nav-item.active .admin-nav-icon svg { stroke: var(--blue); }
 .admin-main { min-width: 0; padding: 0 4px; overflow: hidden; }
-@keyframes admSectionIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.admin-section { animation: admSectionIn 180ms ease-out; }
+@keyframes admSectionIn { from { opacity: 0; } to { opacity: 1; } }
+.admin-section { animation: admSectionIn 150ms ease-out; }
 .admin-section[hidden] { display: none !important; }
 .admin-platform-stats { min-height: 60px; }
 .admin-page-header {
@@ -4732,6 +4734,7 @@ body.admin-map-fs { overflow: hidden; }
   .admin-drawer {
     position: relative;
     top: auto;
+    width: 100%;
     padding: 8px;
     border-radius: var(--radius-lg);
     min-height: auto;
