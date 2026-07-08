@@ -82,6 +82,12 @@ function bookingDraftReady() {
 // ── Demo Cities (Indian locations) ──
 // Vertiport locations are positioned OUTSIDE airport no-fly zones (~3-4 km
 // radius). Passengers board at vertiports, not runways.
+
+// IIT Madras main campus (Chennai) — the default pickup used when the customer
+// hasn't selected a source yet, and the reference point for the default
+// "near IIT Madras" destination suggestions.
+const IITM_COORD = [12.9915, 80.2337];
+
 const demoLocations = {
   // Delhi NCR — clear of Safdarjung/IGI/Central Delhi no-fly zones
   'Noida Sec 62 Vertiport':       [28.6270, 77.3650],
@@ -104,6 +110,7 @@ const demoLocations = {
   'Navi Mumbai Apollo Hospital':  [19.0219, 73.0099],
 
   // Chennai — clear of Chennai airport (80.169, 12.994) and Tambaram AFB (80.124, 12.908) no-fly
+  'IIT Madras Campus':            [12.9915, 80.2337],
   'Pallavaram Vertiport, Chennai':[13.0500, 80.1500],
   'Tambaram Vertiport, Chennai':  [12.8800, 80.0600],
   'OMR Vertiport, Chennai':       [12.8996, 80.2209],
@@ -4583,6 +4590,12 @@ function initMap() {
   setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); }, 'pickup');
   setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); }, 'dest');
 
+  // Default the source to IIT Madras campus when nothing is selected yet, so
+  // the pickup field is pre-filled and the map opens centred on IITM. suppress
+  // skips the landing-point picker popup. This also short-circuits the GPS
+  // auto-pickup (guarded on !pickupCoord) so IITM stays the default.
+  if (!pickupCoord) setPickup(IITM_COORD, 'IIT Madras Campus', true);
+
   // Render initial popular routes
   renderPopularRoutes('taxi');
   bindMapZoneLoader(map, bookingZoneLayers, { showAltitude: false });
@@ -5231,7 +5244,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         html += '<div class="loc-suggest-item loc-suggest-map" role="option" id="' + optionId(idx) + '" data-idx="' + idx + '">' +
           mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>';
         if (q.length < 1) {
-          html += '<div class="loc-suggest-label">Popular vertiports</div>';
+          html += '<div class="loc-suggest-label">Near IIT Madras</div>';
         } else if (vertiports.length) {
           html += '<div class="loc-suggest-label">IraGo vertiports</div>';
         }
@@ -5342,7 +5355,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     var names = Object.keys(demoLocations);
     var scored = [];
     if (q.length < 1) {
-      scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
+      // No query yet: surface the vertiports closest to IIT Madras so opening
+      // the destination (or pickup) field shows locations near IITM by default.
+      scored = names.map(function (n) {
+        var c = demoLocations[n];
+        return { name: n, dist: haversineKmClient(IITM_COORD[0], IITM_COORD[1], c[0], c[1]) };
+      });
+      scored.sort(function (a, b) { return a.dist - b.dist; });
+      scored = scored.slice(0, 6).map(function (o) { return { name: o.name, score: 0 }; });
     } else {
       var keywords = q.toLowerCase().split(/\s+/);
       for (var i = 0; i < names.length; i++) {
@@ -6295,12 +6315,7 @@ async function searchRides() {
   var envelopeKm = calcDistance();
   var envelopeMin = Math.round(envelopeKm / EVTOL_CRUISE_KMH * 60);
   if (envelopeKm > EVTOL_MAX_RANGE_KM || envelopeMin > EVTOL_MAX_FLIGHT_MIN) {
-    showAuthError('booking-error',
-      'This route is about ' + Math.round(envelopeKm) + ' km (~' + envelopeMin +
-      ' min). IraGo eVTOLs fly up to ' + EVTOL_MAX_RANGE_KM + ' km and ' +
-      Math.round(EVTOL_MAX_FLIGHT_MIN / 60) + ' hours — please choose a closer destination.');
-    var di3 = document.getElementById('dest-input');
-    if (di3) di3.focus();
+    showOutOfRangeWarning(envelopeKm, envelopeMin);
     return;
   }
 
@@ -6490,6 +6505,40 @@ async function searchRides() {
   area.scrollIntoView({ behavior: 'smooth' });
   searchBtnText.textContent = searchBtnLabel;
   document.getElementById('search-btn').disabled = false;
+}
+
+// Out-of-range route: eVTOLs only fly within EVTOL_MAX_RANGE_KM. Surface a
+// clear, unmissable message (revealed rides panel + toast) and keep the
+// location inputs visible so the customer can pick a closer destination.
+function showOutOfRangeWarning(km, min) {
+  var maxHours = Math.round(EVTOL_MAX_FLIGHT_MIN / 60);
+  var list = document.getElementById('rides-list');
+  var area = document.getElementById('rides-area');
+  var title = document.getElementById('rides-title');
+  var routeSummary = document.getElementById('route-summary-card');
+  if (routeSummary) { routeSummary.hidden = true; routeSummary.innerHTML = ''; }
+  if (title) title.textContent = 'No flights for this route';
+  if (list) {
+    list.innerHTML =
+      '<div class="feasibility-warning">' +
+        '<div class="feas-head">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '<div>' +
+            '<div class="feas-title">Route out of range</div>' +
+            '<div class="feas-sub">IraGo eVTOL flights are available only within a ' + EVTOL_MAX_RANGE_KM +
+              ' km radius (about a ' + maxHours + '-hour flight). This route is about ' + Math.round(km) +
+              ' km (~' + min + ' min).</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="feas-foot">Pick a destination within ' + EVTOL_MAX_RANGE_KM +
+          ' km of your pickup and search again.</div>' +
+      '</div>';
+  }
+  document.getElementById('book-btn').style.display = 'none';
+  // Keep #panel-locations visible so the inputs stay editable.
+  if (area) { area.style.display = 'block'; area.scrollIntoView({ behavior: 'smooth' }); }
+  showToast('eVTOL flights are available within ' + EVTOL_MAX_RANGE_KM + ' km. This route is ~' +
+    Math.round(km) + ' km.', 'error');
 }
 
 // Render the "restricted area" alert with the 3 nearest safe spots, returned
@@ -7073,7 +7122,9 @@ function resetBooking() {
   clearAnimatedMarkersByPrefix('track-operator', map);
   var refineRow = document.getElementById('lp-refine-row');
   if (refineRow) { refineRow.innerHTML = ''; refineRow.hidden = true; }
-  map.setView([28.6139, 77.2090], 12);
+  // Re-default the source to IIT Madras campus (centres the map on IITM too)
+  // so a fresh booking starts from the same default as first load.
+  setPickup(IITM_COORD, 'IIT Madras Campus', true);
 }
 
 

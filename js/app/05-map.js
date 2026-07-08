@@ -45,6 +45,12 @@ function initMap() {
   setupAutocomplete('pickup-input', 'pickup-suggest', function (name, coord) { setPickup(coord, name); }, 'pickup');
   setupAutocomplete('dest-input', 'dest-suggest', function (name, coord) { setDest(coord, name); }, 'dest');
 
+  // Default the source to IIT Madras campus when nothing is selected yet, so
+  // the pickup field is pre-filled and the map opens centred on IITM. suppress
+  // skips the landing-point picker popup. This also short-circuits the GPS
+  // auto-pickup (guarded on !pickupCoord) so IITM stays the default.
+  if (!pickupCoord) setPickup(IITM_COORD, 'IIT Madras Campus', true);
+
   // Render initial popular routes
   renderPopularRoutes('taxi');
   bindMapZoneLoader(map, bookingZoneLayers, { showAltitude: false });
@@ -693,7 +699,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         html += '<div class="loc-suggest-item loc-suggest-map" role="option" id="' + optionId(idx) + '" data-idx="' + idx + '">' +
           mapSvg + '<span class="loc-suggest-name">Choose on map</span></div>';
         if (q.length < 1) {
-          html += '<div class="loc-suggest-label">Popular vertiports</div>';
+          html += '<div class="loc-suggest-label">Near IIT Madras</div>';
         } else if (vertiports.length) {
           html += '<div class="loc-suggest-label">IraGo vertiports</div>';
         }
@@ -804,7 +810,14 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     var names = Object.keys(demoLocations);
     var scored = [];
     if (q.length < 1) {
-      scored = names.slice(0, 6).map(function (n) { return { name: n, score: 0 }; });
+      // No query yet: surface the vertiports closest to IIT Madras so opening
+      // the destination (or pickup) field shows locations near IITM by default.
+      scored = names.map(function (n) {
+        var c = demoLocations[n];
+        return { name: n, dist: haversineKmClient(IITM_COORD[0], IITM_COORD[1], c[0], c[1]) };
+      });
+      scored.sort(function (a, b) { return a.dist - b.dist; });
+      scored = scored.slice(0, 6).map(function (o) { return { name: o.name, score: 0 }; });
     } else {
       var keywords = q.toLowerCase().split(/\s+/);
       for (var i = 0; i < names.length; i++) {

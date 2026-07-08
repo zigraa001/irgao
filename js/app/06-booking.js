@@ -273,12 +273,7 @@ async function searchRides() {
   var envelopeKm = calcDistance();
   var envelopeMin = Math.round(envelopeKm / EVTOL_CRUISE_KMH * 60);
   if (envelopeKm > EVTOL_MAX_RANGE_KM || envelopeMin > EVTOL_MAX_FLIGHT_MIN) {
-    showAuthError('booking-error',
-      'This route is about ' + Math.round(envelopeKm) + ' km (~' + envelopeMin +
-      ' min). IraGo eVTOLs fly up to ' + EVTOL_MAX_RANGE_KM + ' km and ' +
-      Math.round(EVTOL_MAX_FLIGHT_MIN / 60) + ' hours — please choose a closer destination.');
-    var di3 = document.getElementById('dest-input');
-    if (di3) di3.focus();
+    showOutOfRangeWarning(envelopeKm, envelopeMin);
     return;
   }
 
@@ -468,6 +463,40 @@ async function searchRides() {
   area.scrollIntoView({ behavior: 'smooth' });
   searchBtnText.textContent = searchBtnLabel;
   document.getElementById('search-btn').disabled = false;
+}
+
+// Out-of-range route: eVTOLs only fly within EVTOL_MAX_RANGE_KM. Surface a
+// clear, unmissable message (revealed rides panel + toast) and keep the
+// location inputs visible so the customer can pick a closer destination.
+function showOutOfRangeWarning(km, min) {
+  var maxHours = Math.round(EVTOL_MAX_FLIGHT_MIN / 60);
+  var list = document.getElementById('rides-list');
+  var area = document.getElementById('rides-area');
+  var title = document.getElementById('rides-title');
+  var routeSummary = document.getElementById('route-summary-card');
+  if (routeSummary) { routeSummary.hidden = true; routeSummary.innerHTML = ''; }
+  if (title) title.textContent = 'No flights for this route';
+  if (list) {
+    list.innerHTML =
+      '<div class="feasibility-warning">' +
+        '<div class="feas-head">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '<div>' +
+            '<div class="feas-title">Route out of range</div>' +
+            '<div class="feas-sub">IraGo eVTOL flights are available only within a ' + EVTOL_MAX_RANGE_KM +
+              ' km radius (about a ' + maxHours + '-hour flight). This route is about ' + Math.round(km) +
+              ' km (~' + min + ' min).</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="feas-foot">Pick a destination within ' + EVTOL_MAX_RANGE_KM +
+          ' km of your pickup and search again.</div>' +
+      '</div>';
+  }
+  document.getElementById('book-btn').style.display = 'none';
+  // Keep #panel-locations visible so the inputs stay editable.
+  if (area) { area.style.display = 'block'; area.scrollIntoView({ behavior: 'smooth' }); }
+  showToast('eVTOL flights are available within ' + EVTOL_MAX_RANGE_KM + ' km. This route is ~' +
+    Math.round(km) + ' km.', 'error');
 }
 
 // Render the "restricted area" alert with the 3 nearest safe spots, returned
@@ -1051,6 +1080,8 @@ function resetBooking() {
   clearAnimatedMarkersByPrefix('track-operator', map);
   var refineRow = document.getElementById('lp-refine-row');
   if (refineRow) { refineRow.innerHTML = ''; refineRow.hidden = true; }
-  map.setView([28.6139, 77.2090], 12);
+  // Re-default the source to IIT Madras campus (centres the map on IITM too)
+  // so a fresh booking starts from the same default as first load.
+  setPickup(IITM_COORD, 'IIT Madras Campus', true);
 }
 

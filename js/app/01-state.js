@@ -75,6 +75,12 @@ function bookingDraftReady() {
 // ── Demo Cities (Indian locations) ──
 // Vertiport locations are positioned OUTSIDE airport no-fly zones (~3-4 km
 // radius). Passengers board at vertiports, not runways.
+
+// IIT Madras main campus (Chennai) — the default pickup used when the customer
+// hasn't selected a source yet, and the reference point for the default
+// "near IIT Madras" destination suggestions.
+const IITM_COORD = [12.9915, 80.2337];
+
 const demoLocations = {
   // Delhi NCR — clear of Safdarjung/IGI/Central Delhi no-fly zones
   'Noida Sec 62 Vertiport':       [28.6270, 77.3650],
@@ -97,6 +103,7 @@ const demoLocations = {
   'Navi Mumbai Apollo Hospital':  [19.0219, 73.0099],
 
   // Chennai — clear of Chennai airport (80.169, 12.994) and Tambaram AFB (80.124, 12.908) no-fly
+  'IIT Madras Campus':            [12.9915, 80.2337],
   'Pallavaram Vertiport, Chennai':[13.0500, 80.1500],
   'Tambaram Vertiport, Chennai':  [12.8800, 80.0600],
   'OMR Vertiport, Chennai':       [12.8996, 80.2209],
