@@ -242,15 +242,23 @@ function calcDistance() {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Distance + estimated flight time for the currently selected route, and
-// whether it fits the eVTOL envelope (500 km / ~2 h). Returns null until both
-// endpoints are set. Single source of truth for the range check used by
-// searchRides() and by the landing-point scan guard.
+// Distance + estimated flight time for the currently selected route, plus
+// whether it is bookable: source != destination AND within the eVTOL envelope
+// (500 km / ~2 h). Returns null until both endpoints are set. Single source of
+// truth used by searchRides() and by the landing-point scan guard.
 function currentRouteEnvelope() {
   if (!pickupCoord || !destCoord) return null;
   var km = calcDistance();
   var min = Math.round(km / EVTOL_CRUISE_KMH * 60);
-  return { km: km, min: min, withinRange: km <= EVTOL_MAX_RANGE_KM && min <= EVTOL_MAX_FLIGHT_MIN };
+  var sameLocation = km < 0.1;
+  var withinRange = km <= EVTOL_MAX_RANGE_KM && min <= EVTOL_MAX_FLIGHT_MIN;
+  return {
+    km: km,
+    min: min,
+    sameLocation: sameLocation,
+    withinRange: withinRange,
+    bookable: !sameLocation && withinRange,
+  };
 }
 
 async function searchRides() {
@@ -278,18 +286,18 @@ async function searchRides() {
     return;
   }
 
+  // Validate the route before searching. Both endpoints are set here.
+  var envelope = currentRouteEnvelope();
   // Source and destination can't be the same place (matches the server's
-  // MIN_TRIP_KM guard). Both endpoints are set here, so calcDistance() is real.
-  if (calcDistance() < 0.1) {
+  // MIN_TRIP_KM guard).
+  if (envelope && envelope.sameLocation) {
+    hideLandingPicker();
     showToast('Source and destination cannot be the same. Please pick a different destination.', 'error');
     var di2 = document.getElementById('dest-input');
     if (di2) di2.focus();
     return;
   }
-
-  // eVTOL operating envelope: the selected source/destination must be within
-  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here.
-  var envelope = currentRouteEnvelope();
+  // eVTOL operating envelope: within range (500 km) and roughly a 2-hour flight.
   if (envelope && !envelope.withinRange) {
     showOutOfRangeWarning(envelope.km, envelope.min);
     return;

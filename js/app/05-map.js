@@ -1086,11 +1086,12 @@ async function showLandingPicker(lat, lon, target, locationName) {
   var panelLoc = document.getElementById('panel-locations');
   if (panelLoc && (panelLoc.hidden || panelLoc.style.display === 'none')) return;
 
-  // Don't scan landing points for a route outside the eVTOL range: the
-  // out-of-range message already covers it, and setDest/setPickup would
-  // otherwise re-open this "Scanning..." spinner after searchRides ran.
+  // Don't scan landing points for an unbookable route (out of eVTOL range, or
+  // source == destination): the search flow already surfaces the reason, and
+  // setDest/setPickup would otherwise re-open this "Scanning..." spinner after
+  // searchRides ran and returned.
   var env = (typeof currentRouteEnvelope === 'function') ? currentRouteEnvelope() : null;
-  if (env && !env.withinRange) { hideLandingPicker(); return; }
+  if (env && !env.bookable) { hideLandingPicker(); return; }
 
   pendingLandingPick = { target: target, origCoord: [lat, lon], origName: locationName };
 
