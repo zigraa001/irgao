@@ -5383,7 +5383,15 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
 
   function getLocalMatches(query) {
     var q = (query || '').trim();
-    var names = Object.keys(demoLocations);
+    // Exclude the location already chosen for the other endpoint, so the
+    // destination list never offers the selected source (and vice versa) —
+    // picking it would just fail the "source == destination" check.
+    var otherCoord = target === 'pickup' ? destCoord : pickupCoord;
+    var names = Object.keys(demoLocations).filter(function (n) {
+      if (!otherCoord) return true;
+      var c = demoLocations[n];
+      return Math.abs(c[0] - otherCoord[0]) > 1e-4 || Math.abs(c[1] - otherCoord[1]) > 1e-4;
+    });
     var scored = [];
     if (q.length < 1) {
       // No query yet: surface the vertiports closest to IIT Madras so opening
