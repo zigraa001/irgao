@@ -6331,6 +6331,15 @@ async function searchRides() {
     return;
   }
 
+  // Source and destination can't be the same place (matches the server's
+  // MIN_TRIP_KM guard). Both endpoints are set here, so calcDistance() is real.
+  if (calcDistance() < 0.1) {
+    showToast('Source and destination cannot be the same. Please pick a different destination.', 'error');
+    var di2 = document.getElementById('dest-input');
+    if (di2) di2.focus();
+    return;
+  }
+
   // eVTOL operating envelope: the selected source/destination must be within
   // range (500 km) and roughly a 2-hour flight. Both endpoints are set here.
   var envelope = currentRouteEnvelope();
