@@ -1,4 +1,4 @@
-const { SERVICE_PRICING, NEW_FLYER_DISCOUNT, URGENCY_SURCHARGE, WEATHER_SURCHARGE, loadPricingConfig, getSurchargeRates } = require("./pricing");
+const { SERVICE_PRICING, NEW_FLYER_DISCOUNT, MAX_FLIGHT_COST, URGENCY_SURCHARGE, WEATHER_SURCHARGE, loadPricingConfig, getSurchargeRates } = require("./pricing");
 
 function round2(n) {
   return Math.round(Number(n) * 100) / 100;
@@ -34,7 +34,8 @@ function fareBreakdown(service, distanceKm, discountInfo, creditsUsed, couponInf
 
   const gstRate = typeof rates.gst === "number" ? rates.gst : GST_RATE;
   const gst = round2(Math.max(0, afterCredits) * gstRate);
-  const total = Math.round((Math.max(0, afterCredits) + gst) / 100) * 100;
+  // Clamp the charged total to the max flight cost ceiling (see pricing.js).
+  const total = Math.min(MAX_FLIGHT_COST, Math.round((Math.max(0, afterCredits) + gst) / 100) * 100);
 
   const urgPct = Math.round(urgencyRate * 100);
   const urgencyLabel = opts.bookingType === "medical_emergency"

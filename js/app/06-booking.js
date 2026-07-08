@@ -202,6 +202,11 @@ function selectRoute(from, to) {
 // ── Ride Data ──
 const GST_RATE_CLIENT = 0.18;
 
+// Hard ceiling on the total flight cost shown to a customer (INR, GST
+// inclusive). Mirrors MAX_FLIGHT_COST in src/pricing.js — the server clamps
+// the charged fare to the same value, so displayed prices never exceed it.
+const MAX_FLIGHT_COST_CLIENT = 4380;
+
 // eVTOL operating envelope: aircraft serve routes up to 500 km and roughly a
 // 2-hour flight. Cruise ~250 km/h (500 km in 2 h) is used to estimate the
 // straight-line flight time from the route distance so the range and time
@@ -356,8 +361,8 @@ async function searchRides() {
 
   list.innerHTML = rides.map((r, i) => {
     const subtotal = r.base + r.perKm * dist;
-    const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
-    const price = hasDiscount ? Math.round(fullPrice * (1 - discountRate) / 100) * 100 : fullPrice;
+    const fullPrice = Math.min(MAX_FLIGHT_COST_CLIENT, Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100);
+    const price = hasDiscount ? Math.min(MAX_FLIGHT_COST_CLIENT, Math.round(fullPrice * (1 - discountRate) / 100) * 100) : fullPrice;
     const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
     const time = Math.round(r.baseTime * timeFactor);
     const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);

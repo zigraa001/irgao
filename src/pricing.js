@@ -54,6 +54,11 @@ function parseCoord(v, kind) {
 
 const GST_RATE = 0.18;
 
+// Hard ceiling on the total flight cost charged to a customer (INR, GST
+// inclusive). No single flight may cost more than this; the terminal fare
+// computations (estimateFare, fareBreakdown) clamp their result to it.
+const MAX_FLIGHT_COST = 4380;
+
 const URGENCY_SURCHARGE = {
   medical_emergency: 0.30,
   urgency_travel: 0.15,
@@ -142,7 +147,7 @@ function estimateFare(service, distanceKm, opts = {}) {
 
   const gstRate = typeof rates.gst === "number" ? rates.gst : GST_RATE;
   const withGst = subtotal * (1 + gstRate);
-  return Math.round(withGst / 100) * 100;
+  return Math.min(MAX_FLIGHT_COST, Math.round(withGst / 100) * 100);
 }
 
 async function estimateFareWithConfig(service, distanceKm, opts = {}) {
@@ -176,6 +181,7 @@ module.exports = {
   applyNewFlyerDiscount,
   NEW_FLYER_DISCOUNT,
   NEW_FLYER_MAX_FLIGHTS,
+  MAX_FLIGHT_COST,
   URGENCY_SURCHARGE,
   WEATHER_SURCHARGE,
   loadPricingConfig,
