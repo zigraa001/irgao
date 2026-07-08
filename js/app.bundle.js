@@ -5631,6 +5631,12 @@ async function showLandingPicker(lat, lon, target, locationName) {
   var panelLoc = document.getElementById('panel-locations');
   if (panelLoc && (panelLoc.hidden || panelLoc.style.display === 'none')) return;
 
+  // Don't scan landing points for a route outside the eVTOL range: the
+  // out-of-range message already covers it, and setDest/setPickup would
+  // otherwise re-open this "Scanning..." spinner after searchRides ran.
+  var env = (typeof currentRouteEnvelope === 'function') ? currentRouteEnvelope() : null;
+  if (env && !env.withinRange) { hideLandingPicker(); return; }
+
   pendingLandingPick = { target: target, origCoord: [lat, lon], origName: locationName };
 
   var picker = document.getElementById('landing-point-picker');
@@ -5729,6 +5735,11 @@ async function showLandingPicker(lat, lon, target, locationName) {
 
   loading.hidden = true;
 
+  // The pick may have been superseded while the Overpass request was in flight:
+  // hideLandingPicker() (called by searchRides / resetBooking) nulls
+  // pendingLandingPick, so bail rather than crash reading its origCoord.
+  if (!pendingLandingPick) return;
+
   if (!zones.length) {
     empty.hidden = false;
     return;
@@ -5736,7 +5747,7 @@ async function showLandingPicker(lat, lon, target, locationName) {
 
   _currentLandingZones = zones;
   clearLandingZones();
-  var bounds = [pendingLandingPick.origCoord];
+  var bounds = [[lat, lon]];
 
   zones.forEach(function (z, idx) {
     var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
@@ -6284,6 +6295,17 @@ function calcDistance() {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Distance + estimated flight time for the currently selected route, and
+// whether it fits the eVTOL envelope (500 km / ~2 h). Returns null until both
+// endpoints are set. Single source of truth for the range check used by
+// searchRides() and by the landing-point scan guard.
+function currentRouteEnvelope() {
+  if (!pickupCoord || !destCoord) return null;
+  var km = calcDistance();
+  var min = Math.round(km / EVTOL_CRUISE_KMH * 60);
+  return { km: km, min: min, withinRange: km <= EVTOL_MAX_RANGE_KM && min <= EVTOL_MAX_FLIGHT_MIN };
+}
+
 async function searchRides() {
   hideLandingPicker();
   if (!pickupCoord && destCoord) {
@@ -6310,12 +6332,10 @@ async function searchRides() {
   }
 
   // eVTOL operating envelope: the selected source/destination must be within
-  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here,
-  // so calcDistance() returns the real great-circle distance.
-  var envelopeKm = calcDistance();
-  var envelopeMin = Math.round(envelopeKm / EVTOL_CRUISE_KMH * 60);
-  if (envelopeKm > EVTOL_MAX_RANGE_KM || envelopeMin > EVTOL_MAX_FLIGHT_MIN) {
-    showOutOfRangeWarning(envelopeKm, envelopeMin);
+  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here.
+  var envelope = currentRouteEnvelope();
+  if (envelope && !envelope.withinRange) {
+    showOutOfRangeWarning(envelope.km, envelope.min);
     return;
   }
 

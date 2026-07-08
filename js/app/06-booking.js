@@ -242,6 +242,17 @@ function calcDistance() {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Distance + estimated flight time for the currently selected route, and
+// whether it fits the eVTOL envelope (500 km / ~2 h). Returns null until both
+// endpoints are set. Single source of truth for the range check used by
+// searchRides() and by the landing-point scan guard.
+function currentRouteEnvelope() {
+  if (!pickupCoord || !destCoord) return null;
+  var km = calcDistance();
+  var min = Math.round(km / EVTOL_CRUISE_KMH * 60);
+  return { km: km, min: min, withinRange: km <= EVTOL_MAX_RANGE_KM && min <= EVTOL_MAX_FLIGHT_MIN };
+}
+
 async function searchRides() {
   hideLandingPicker();
   if (!pickupCoord && destCoord) {
@@ -268,12 +279,10 @@ async function searchRides() {
   }
 
   // eVTOL operating envelope: the selected source/destination must be within
-  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here,
-  // so calcDistance() returns the real great-circle distance.
-  var envelopeKm = calcDistance();
-  var envelopeMin = Math.round(envelopeKm / EVTOL_CRUISE_KMH * 60);
-  if (envelopeKm > EVTOL_MAX_RANGE_KM || envelopeMin > EVTOL_MAX_FLIGHT_MIN) {
-    showOutOfRangeWarning(envelopeKm, envelopeMin);
+  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here.
+  var envelope = currentRouteEnvelope();
+  if (envelope && !envelope.withinRange) {
+    showOutOfRangeWarning(envelope.km, envelope.min);
     return;
   }
 

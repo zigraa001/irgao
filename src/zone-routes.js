@@ -53,7 +53,16 @@ router.get("/", requireAuth, async (req, res) => {
     });
   }
 
-  let zones = await queryZonesInBounds(bounds);
+  // Airspace overlays are non-critical: if the zones catalog (a separate
+  // database) is unreachable, degrade to an empty overlay instead of a 500
+  // that spams the client console. The error is logged by zonesQuery.
+  let zones;
+  try {
+    zones = await queryZonesInBounds(bounds);
+  } catch (err) {
+    return res.json({ zones: [], bounds, degraded: true });
+  }
+
   if (req.user.role === "customer") {
     zones = zones.map((z) => ({
       id: z.id,

@@ -1086,6 +1086,12 @@ async function showLandingPicker(lat, lon, target, locationName) {
   var panelLoc = document.getElementById('panel-locations');
   if (panelLoc && (panelLoc.hidden || panelLoc.style.display === 'none')) return;
 
+  // Don't scan landing points for a route outside the eVTOL range: the
+  // out-of-range message already covers it, and setDest/setPickup would
+  // otherwise re-open this "Scanning..." spinner after searchRides ran.
+  var env = (typeof currentRouteEnvelope === 'function') ? currentRouteEnvelope() : null;
+  if (env && !env.withinRange) { hideLandingPicker(); return; }
+
   pendingLandingPick = { target: target, origCoord: [lat, lon], origName: locationName };
 
   var picker = document.getElementById('landing-point-picker');
@@ -1184,6 +1190,11 @@ async function showLandingPicker(lat, lon, target, locationName) {
 
   loading.hidden = true;
 
+  // The pick may have been superseded while the Overpass request was in flight:
+  // hideLandingPicker() (called by searchRides / resetBooking) nulls
+  // pendingLandingPick, so bail rather than crash reading its origCoord.
+  if (!pendingLandingPick) return;
+
   if (!zones.length) {
     empty.hidden = false;
     return;
@@ -1191,7 +1202,7 @@ async function showLandingPicker(lat, lon, target, locationName) {
 
   _currentLandingZones = zones;
   clearLandingZones();
-  var bounds = [pendingLandingPick.origCoord];
+  var bounds = [[lat, lon]];
 
   zones.forEach(function (z, idx) {
     var catInfo = LANDING_ZONE_CATEGORIES[z.cat];
