@@ -201,6 +201,14 @@ function selectRoute(from, to) {
 
 // ── Ride Data ──
 const GST_RATE_CLIENT = 0.18;
+
+// eVTOL operating envelope: aircraft serve routes up to 500 km and roughly a
+// 2-hour flight. Cruise ~250 km/h (500 km in 2 h) is used to estimate the
+// straight-line flight time from the route distance so the range and time
+// limits stay consistent. Mirrored server-side in src/booking-routes.js.
+const EVTOL_MAX_RANGE_KM = 500;
+const EVTOL_MAX_FLIGHT_MIN = 120;
+const EVTOL_CRUISE_KMH = 250;
 const rideOptions = {
   taxi: [
     { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 200, baseTime: 18, co2: 2.1 },
@@ -251,6 +259,21 @@ async function searchRides() {
     showAuthError('booking-error', 'Set your pickup and destination to search flights');
     var pi2 = document.getElementById('pickup-input');
     if (pi2) pi2.focus();
+    return;
+  }
+
+  // eVTOL operating envelope: the selected source/destination must be within
+  // range (500 km) and roughly a 2-hour flight. Both endpoints are set here,
+  // so calcDistance() returns the real great-circle distance.
+  var envelopeKm = calcDistance();
+  var envelopeMin = Math.round(envelopeKm / EVTOL_CRUISE_KMH * 60);
+  if (envelopeKm > EVTOL_MAX_RANGE_KM || envelopeMin > EVTOL_MAX_FLIGHT_MIN) {
+    showAuthError('booking-error',
+      'This route is about ' + Math.round(envelopeKm) + ' km (~' + envelopeMin +
+      ' min). IraGo eVTOLs fly up to ' + EVTOL_MAX_RANGE_KM + ' km and ' +
+      Math.round(EVTOL_MAX_FLIGHT_MIN / 60) + ' hours — please choose a closer destination.');
+    var di3 = document.getElementById('dest-input');
+    if (di3) di3.focus();
     return;
   }
 

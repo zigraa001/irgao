@@ -154,6 +154,13 @@ async function buildPaymentQuote(booking, userId, opts) {
 // priced at just the base fare — reject it.
 const MIN_TRIP_KM = 0.1;
 
+// eVTOL operating envelope: aircraft serve routes up to 500 km and roughly a
+// 2-hour flight. Cruise ~250 km/h (500 km in 2 h) turns the great-circle
+// distance into an estimated flight time. Mirrors js/app/06-booking.js.
+const EVTOL_MAX_RANGE_KM = 500;
+const EVTOL_MAX_FLIGHT_MIN = 120;
+const EVTOL_CRUISE_KMH = 250;
+
 // POST /api/bookings — create a booking for the logged-in customer.
 // Body: { pickupName, pickupLat, pickupLng, destName, destLat, destLng,
 //         service }. distanceKm + fareEstimate are computed server-side.
@@ -192,6 +199,14 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
     return res
       .status(400)
       .json({ error: "Pickup and destination must be different locations" });
+  }
+  const estFlightMin = Math.round((distanceKm / EVTOL_CRUISE_KMH) * 60);
+  if (distanceKm > EVTOL_MAX_RANGE_KM || estFlightMin > EVTOL_MAX_FLIGHT_MIN) {
+    return res.status(400).json({
+      error: `Route is out of range: eVTOLs fly up to ${EVTOL_MAX_RANGE_KM} km and ${Math.round(
+        EVTOL_MAX_FLIGHT_MIN / 60,
+      )} hours (this route is ~${distanceKm} km).`,
+    });
   }
 
   // Route feasibility: reject bookings whose path crosses a no-fly zone or
