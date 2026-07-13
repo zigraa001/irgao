@@ -23,6 +23,7 @@ const { clearAuthCookie } = require("./src/auth");
 const { cleanupExpiredOtps } = require("./src/otp");
 const { attachWebSocketServer } = require("./src/dispatch-hub");
 const { recoverDispatch } = require("./src/dispatch");
+const { ensureAdmin } = require("./src/ensure-admin");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -118,6 +119,12 @@ async function connectDatabase() {
     const purged = await cleanupExpiredOtps();
     // Retire any demo pilots left stuck on-duty by a crash/restart mid-demo.
     await require("./src/demo-routes").reconcileDemoPilotsOnStartup();
+    // Hardcoded admin so Hostinger boots always have a working /login/admin.
+    try {
+      await ensureAdmin();
+    } catch (adminErr) {
+      console.error("[startup] admin ensure failed:", adminErr.message);
+    }
     dbConnected = true;
     console.log(
       `[startup] database connected and schema ensured (purged ${purged} stale OTP row(s)).`
