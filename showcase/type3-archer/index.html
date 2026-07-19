@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IraGo - Type 3 (Archer Aviation Style)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --white: #FFFFFF;
+      --off-white: #F8F9FA;
+      --light-100: #F1F3F5;
+      --light-200: #E9ECEF;
+      --light-300: #DEE2E6;
+      --gray-400: #ADB5BD;
+      --gray-500: #868E96;
+      --gray-600: #495057;
+      --gray-800: #212529;
+      --black: #0D0D0D;
+      --electric-blue: #0066FF;
+      --electric-light: #3385FF;
+      --electric-glow: rgba(0,102,255,0.08);
+      --electric-border: rgba(0,102,255,0.2);
+      --mint: #00D68F;
+      --mint-glow: rgba(0,214,143,0.1);
+      --coral: #FF6B35;
+      --font: 'Space Grotesk', -apple-system, sans-serif;
+      --radius: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--gray-800);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: calc(100% - 48px);
+      max-width: 1200px;
+      padding: 14px 24px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 100px;
+      border: 1px solid var(--light-200);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--black);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span {
+      color: var(--electric-blue);
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--gray-500);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--black); }
+    .nav-cta {
+      background: var(--electric-blue);
+      color: var(--white);
+      padding: 10px 24px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,102,255,0.25);
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg-shape {
+      position: absolute;
+      top: -30%;
+      right: -20%;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--electric-glow) 0%, transparent 70%);
+    }
+    .hero-bg-shape-2 {
+      position: absolute;
+      bottom: -20%;
+      left: -10%;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--mint-glow) 0%, transparent 70%);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      position: relative;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--electric-glow);
+      border: 1px solid var(--electric-border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--electric-blue);
+      margin-bottom: 28px;
+    }
+    .hero-chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--mint);
+    }
+    .hero h1 {
+      font-size: clamp(38px, 5vw, 60px);
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1.08;
+      color: var(--black);
+      margin-bottom: 24px;
+    }
+    .hero h1 .highlight {
+      position: relative;
+      display: inline-block;
+    }
+    .hero h1 .highlight::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: var(--electric-glow);
+      border-radius: 4px;
+      z-index: -1;
+    }
+    .hero-sub {
+      font-size: 17px;
+      color: var(--gray-600);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      max-width: 440px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-electric {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: var(--electric-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: var(--font);
+    }
+    .btn-electric:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,102,255,0.25);
+    }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--gray-800);
+      border: 1.5px solid var(--light-300);
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: border-color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--electric-blue); color: var(--electric-blue); }
+    .hero-visual {
+      position: relative;
+      z-index: 2;
+    }
+    .hero-card-stack {
+      position: relative;
+    }
+    .hero-main-card {
+      background: var(--white);
+      border: 1px solid var(--light-200);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+    }
+    .hmc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .hmc-route {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+    .hmc-badge {
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: var(--mint-glow);
+      color: var(--mint);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .hmc-cities {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .hmc-city {
+      flex: 1;
+    }
+    .hmc-city-code {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--black);
+      letter-spacing: -1px;
+    }
+    .hmc-city-name {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+    .hmc-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .hmc-time {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--electric-blue);
+      background: var(--electric-glow);
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .hmc-line {
+      width: 60px;
+      height: 1px;
+      background: var(--light-300);
+      position: relative;
+    }
+    .hmc-line::after {
+      content: '→';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 0 4px;
+      font-size: 14px;
+      color: var(--electric-blue);
+    }
+    .hmc-details {
+      display: flex;
+      gap: 16px;
+      padding-top: 20px;
+      border-top: 1px solid var(--light-200);
+    }
+    .hmc-detail {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      background: var(--off-white);
+      border-radius: var(--radius);
+    }
+    .hmc-detail-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--black);
+    }
+    .hmc-detail-label {
+      font-size: 11px;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+    .hero-float-card {
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      background: var(--white);
+      border: 1px solid var(--light-200);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .float-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--mint-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .float-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+    .float-sub {
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+
+    /* PARTNERS */
+    .partners {
+      padding: 60px 0;
+      border-top: 1px solid var(--light-200);
+      border-bottom: 1px solid var(--light-200);
+    }
+    .partners-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .partner-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gray-400);
+      font-weight: 500;
+    }
+    .partner-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-400);
+      opacity: 0.5;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 120px 0;
+    }
+    .features-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 56px;
+    }
+    .features-header h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--black);
+    }
+    .features-header p {
+      font-size: 15px;
+      color: var(--gray-500);
+      max-width: 360px;
+      text-align: right;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--off-white);
+      border: 1px solid var(--light-200);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--electric-border);
+    }
+    .feature-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--electric-blue);
+      background: var(--electric-glow);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--black);
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+
+    /* ROUTES */
+    .routes {
+      padding: 120px 0;
+      background: var(--black);
+      color: var(--white);
+    }
+    .routes-header {
+      margin-bottom: 56px;
+    }
+    .routes-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--electric-blue);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .routes-header h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+    .routes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .route-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .route-card:hover {
+      border-color: rgba(0,102,255,0.3);
+      background: rgba(255,255,255,0.06);
+    }
+    .route-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .route-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--electric-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .route-pair-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .route-distance {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+    .route-time-box {
+      text-align: right;
+    }
+    .route-time-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--electric-light);
+    }
+    .route-time-vs {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+    .route-time-vs s {
+      color: var(--gray-500);
+    }
+
+    /* BOOKING */
+    .booking {
+      padding: 120px 0;
+    }
+    .booking-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .booking-text h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--black);
+      margin-bottom: 16px;
+    }
+    .booking-text p {
+      font-size: 16px;
+      color: var(--gray-600);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .booking-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .booking-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--electric-glow);
+      color: var(--electric-blue);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text {
+      font-size: 14px;
+      color: var(--gray-600);
+    }
+    .booking-form {
+      background: var(--off-white);
+      border: 1px solid var(--light-200);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+    }
+    .bf-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--black);
+    }
+    .bf-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .bf-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .bf-field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--gray-500);
+      font-weight: 600;
+    }
+    .bf-field select,
+    .bf-field input {
+      background: var(--white);
+      border: 1.5px solid var(--light-200);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      color: var(--gray-800);
+      font-size: 14px;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .bf-field select:focus,
+    .bf-field input:focus {
+      border-color: var(--electric-blue);
+    }
+    .bf-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .bf-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--electric-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: var(--font);
+    }
+    .bf-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,102,255,0.25);
+    }
+
+    /* CTA */
+    .cta {
+      padding: 120px 0;
+      background: linear-gradient(135deg, var(--black), #1a1a2e);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,102,255,0.1) 0%, transparent 60%);
+    }
+    .cta h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--white);
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .cta p {
+      font-size: 16px;
+      color: var(--gray-400);
+      margin-bottom: 36px;
+      position: relative;
+    }
+    .cta .btn-electric {
+      position: relative;
+    }
+
+    /* FOOTER */
+    .footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--light-200);
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--black);
+    }
+    .footer-brand span { color: var(--electric-blue); }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--gray-500);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .footer-links a:hover { color: var(--black); }
+    .footer-copy {
+      text-align: center;
+      padding-top: 24px;
+      margin-top: 24px;
+      border-top: 1px solid var(--light-200);
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+
+    @media (max-width: 768px) {
+      .nav { top: 8px; width: calc(100% - 24px); }
+      .nav-links { display: none; }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero-visual { order: -1; }
+      .features-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .features-header p { text-align: left; }
+      .features-grid { grid-template-columns: 1fr; }
+      .routes-grid { grid-template-columns: 1fr; }
+      .booking-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">Ira<span>Go</span></a>
+      <ul class="nav-links">
+        <li><a href="#features">Technology</a></li>
+        <li><a href="#routes">Routes</a></li>
+        <li><a href="#booking">Book</a></li>
+        <li><a href="#">Safety</a></li>
+      </ul>
+      <a href="#booking" class="nav-cta">Book Flight</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg-shape"></div>
+    <div class="hero-bg-shape-2"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-chip">
+            <span class="hero-chip-dot"></span>
+            Now Live in India
+          </div>
+          <h1>Urban air<br/>mobility,<br/><span class="highlight">redefined.</span></h1>
+          <p class="hero-sub">IraGo is building India's next-generation air taxi network. Book a flight, skip the traffic, arrive in minutes.</p>
+          <div class="hero-actions">
+            <a href="#booking" class="btn-electric">
+              Book a Flight
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#routes" class="btn-outline">Explore Routes</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-card-stack">
+            <div class="hero-main-card">
+              <div class="hmc-header">
+                <span class="hmc-route">Next Available</span>
+                <span class="hmc-badge">LIVE</span>
+              </div>
+              <div class="hmc-cities">
+                <div class="hmc-city">
+                  <div class="hmc-city-code">MAA</div>
+                  <div class="hmc-city-name">Chennai CBD</div>
+                </div>
+                <div class="hmc-divider">
+                  <div class="hmc-time">8 min</div>
+                  <div class="hmc-line"></div>
+                </div>
+                <div class="hmc-city" style="text-align:right">
+                  <div class="hmc-city-code">OMR</div>
+                  <div class="hmc-city-name">IT Corridor</div>
+                </div>
+              </div>
+              <div class="hmc-details">
+                <div class="hmc-detail">
+                  <div class="hmc-detail-val">25 km</div>
+                  <div class="hmc-detail-label">Distance</div>
+                </div>
+                <div class="hmc-detail">
+                  <div class="hmc-detail-val">4 seats</div>
+                  <div class="hmc-detail-label">Available</div>
+                </div>
+                <div class="hmc-detail">
+                  <div class="hmc-detail-val">eVTOL</div>
+                  <div class="hmc-detail-label">Aircraft</div>
+                </div>
+              </div>
+            </div>
+            <div class="hero-float-card">
+              <div class="float-icon">✓</div>
+              <div>
+                <div class="float-text">DGCA Approved</div>
+                <div class="float-sub">All flights certified</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARTNERS -->
+  <section class="partners">
+    <div class="container">
+      <div class="partners-inner">
+        <span class="partner-label">Trusted by</span>
+        <span class="partner-logo">DGCA</span>
+        <span class="partner-logo">AAI</span>
+        <span class="partner-logo">BOSCH</span>
+        <span class="partner-logo">MiNT</span>
+        <span class="partner-logo">TATA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-header">
+        <h2>Why India needs<br/>air mobility now.</h2>
+        <p>Indian cities lose millions of productive hours daily to traffic. IraGo turns hours into minutes.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-num">01</div>
+          <h3>AI Route Engine</h3>
+          <p>Real-time optimization across weather, airspace, and demand patterns for every flight.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">02</div>
+          <h3>Vertiport Network</h3>
+          <p>Strategic landing infrastructure across Chennai, Bengaluru, and Mumbai metro regions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">03</div>
+          <h3>Multi-Modal Fleet</h3>
+          <p>eVTOLs, helicopters, and air ambulances matched to mission type automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">04</div>
+          <h3>60-Second Booking</h3>
+          <p>Select route, confirm, arrive at vertiport. No complexity, no waiting.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">05</div>
+          <h3>Golden Hour Medical</h3>
+          <p>Air ambulance dispatch in critical minutes. Saving lives when roads can't.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">06</div>
+          <h3>Live Tracking</h3>
+          <p>Real-time flight tracking from booking confirmation to touchdown.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROUTES -->
+  <section class="routes" id="routes">
+    <div class="container">
+      <div class="routes-header">
+        <div class="routes-label">Active Routes</div>
+        <h2>Minutes in the air,<br/>not hours on the road.</h2>
+      </div>
+      <div class="routes-grid">
+        <div class="route-card">
+          <div class="route-info">
+            <div class="route-icon">✈</div>
+            <div>
+              <div class="route-pair-name">Chennai CBD → OMR</div>
+              <div class="route-distance">25 km</div>
+            </div>
+          </div>
+          <div class="route-time-box">
+            <div class="route-time-val">8 min</div>
+            <div class="route-time-vs">vs <s>1h 10m</s></div>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-info">
+            <div class="route-icon">✈</div>
+            <div>
+              <div class="route-pair-name">Chennai → Mahabalipuram</div>
+              <div class="route-distance">55 km</div>
+            </div>
+          </div>
+          <div class="route-time-box">
+            <div class="route-time-val">15 min</div>
+            <div class="route-time-vs">vs <s>1h 50m</s></div>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-info">
+            <div class="route-icon">✈</div>
+            <div>
+              <div class="route-pair-name">BLR Airport → E-City</div>
+              <div class="route-distance">52 km</div>
+            </div>
+          </div>
+          <div class="route-time-box">
+            <div class="route-time-val">14 min</div>
+            <div class="route-time-vs">vs <s>2h 15m</s></div>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-info">
+            <div class="route-icon">✈</div>
+            <div>
+              <div class="route-pair-name">Mumbai → Pune</div>
+              <div class="route-distance">150 km</div>
+            </div>
+          </div>
+          <div class="route-time-box">
+            <div class="route-time-val">25 min</div>
+            <div class="route-time-vs">vs <s>3h 30m</s></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING -->
+  <section class="booking" id="booking">
+    <div class="container">
+      <div class="booking-grid">
+        <div class="booking-text">
+          <h2>Book your flight in 3 simple steps.</h2>
+          <p>No apps to download. No complex forms. Just choose where you're going and when.</p>
+          <div class="booking-steps">
+            <div class="booking-step">
+              <div class="step-num">1</div>
+              <div class="step-text">Select your departure and destination vertiport</div>
+            </div>
+            <div class="booking-step">
+              <div class="step-num">2</div>
+              <div class="step-text">Choose your date, time, and number of passengers</div>
+            </div>
+            <div class="booking-step">
+              <div class="step-num">3</div>
+              <div class="step-text">Confirm and arrive at your vertiport 10 minutes before departure</div>
+            </div>
+          </div>
+        </div>
+        <div class="booking-form">
+          <div class="bf-title">Quick Book</div>
+          <div class="bf-fields">
+            <div class="bf-field">
+              <label>From</label>
+              <select>
+                <option>Chennai CBD</option>
+                <option>Chennai Airport</option>
+                <option>OMR IT Corridor</option>
+                <option>Bengaluru Airport</option>
+                <option>Electronic City</option>
+              </select>
+            </div>
+            <div class="bf-field">
+              <label>To</label>
+              <select>
+                <option>OMR IT Corridor</option>
+                <option>Chennai CBD</option>
+                <option>Mahabalipuram</option>
+                <option>Electronic City</option>
+                <option>Pune</option>
+              </select>
+            </div>
+            <div class="bf-row">
+              <div class="bf-field">
+                <label>Date</label>
+                <input type="date" />
+              </div>
+              <div class="bf-field">
+                <label>Passengers</label>
+                <select>
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <button class="bf-submit">Search Flights →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-glow"></div>
+    <div class="container">
+      <h2>Skip the traffic.<br/>Take to the sky.</h2>
+      <p>India's air mobility future is here. Be part of it.</p>
+      <a href="#booking" class="btn-electric">
+        Book Your First Flight
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">Ira<span>Go</span></div>
+        <ul class="footer-links">
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Safety</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-copy">© 2026 IraGo Air Mobility Pvt. Ltd. All rights reserved.</div>
+    </div>
+  </footer>
+
+</body>
+</html>

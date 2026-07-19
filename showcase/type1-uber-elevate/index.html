@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IraGo - Type 1 (Uber Elevate Style)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --black: #000000;
+      --dark-900: #0a0a0a;
+      --dark-800: #111111;
+      --dark-700: #1a1a1a;
+      --dark-600: #222222;
+      --dark-500: #333333;
+      --uber-green: #06C167;
+      --uber-green-dark: #05a558;
+      --uber-blue: #276EF1;
+      --uber-purple: #7B61FF;
+      --gradient-primary: linear-gradient(135deg, #276EF1, #7B61FF);
+      --gradient-hero: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%);
+      --gradient-card: linear-gradient(145deg, rgba(39,110,241,0.08), rgba(123,97,255,0.05));
+      --text-white: #FFFFFF;
+      --text-gray: #9CA3AF;
+      --text-muted: #6B7280;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--black);
+      color: var(--text-white);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-white);
+      text-decoration: none;
+    }
+    .nav-logo span {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-gray);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-white); }
+    .nav-cta {
+      background: var(--text-white);
+      color: var(--black);
+      padding: 10px 24px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 24px rgba(255,255,255,0.15);
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding-top: 80px;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(39,110,241,0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 30% 70%, rgba(123,97,255,0.1) 0%, transparent 50%),
+                  var(--black);
+    }
+    .hero-grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 80px 80px;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 700px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      background: rgba(39,110,241,0.12);
+      border: 1px solid rgba(39,110,241,0.3);
+      font-size: 13px;
+      font-weight: 500;
+      color: #7BA8F7;
+      margin-bottom: 32px;
+    }
+    .hero-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--uber-green);
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(42px, 6vw, 72px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    .hero h1 .gradient-text {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-gray);
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 520px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px;
+      background: var(--gradient-primary);
+      color: var(--text-white);
+      border: none;
+      border-radius: 100px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(39,110,241,0.3);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px;
+      background: transparent;
+      color: var(--text-white);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      padding: 80px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* BOOKING SECTION */
+    .booking-section {
+      padding: 100px 0;
+    }
+    .booking-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .booking-header h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .booking-header p {
+      color: var(--text-gray);
+      font-size: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .booking-card {
+      background: var(--dark-800);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .booking-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--dark-700);
+      border-radius: 100px;
+      padding: 4px;
+      margin-bottom: 32px;
+      width: fit-content;
+    }
+    .booking-tab {
+      padding: 10px 20px;
+      border-radius: 100px;
+      border: none;
+      background: transparent;
+      color: var(--text-gray);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+    .booking-tab.active {
+      background: var(--gradient-primary);
+      color: var(--text-white);
+    }
+    .booking-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .bk-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .bk-field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .bk-field select,
+    .bk-field input {
+      background: var(--dark-700);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      color: var(--text-white);
+      font-size: 15px;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .bk-field select:focus,
+    .bk-field input:focus {
+      border-color: var(--uber-blue);
+    }
+    .booking-submit {
+      width: 100%;
+      padding: 18px;
+      background: var(--gradient-primary);
+      color: var(--text-white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-family: var(--font);
+    }
+    .booking-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(39,110,241,0.3);
+    }
+
+    /* ROUTES */
+    .routes-section {
+      padding: 100px 0;
+      background: var(--dark-900);
+    }
+    .section-header {
+      margin-bottom: 56px;
+    }
+    .section-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--uber-blue);
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+    .routes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .route-card {
+      background: var(--dark-800);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .route-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(39,110,241,0.3);
+    }
+    .route-pair {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .route-city {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .route-arrow {
+      color: var(--uber-blue);
+      font-size: 18px;
+    }
+    .route-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .route-time {
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .route-time small {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-left: 4px;
+      -webkit-text-fill-color: var(--text-muted);
+    }
+    .route-vs {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .route-vs s {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+    /* FEATURES */
+    .features-section {
+      padding: 100px 0;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 56px;
+    }
+    .feature-card {
+      background: var(--gradient-card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(39,110,241,0.3);
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-gray);
+      line-height: 1.6;
+    }
+
+    /* CTA */
+    .cta-section {
+      padding: 120px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(39,110,241,0.12) 0%, transparent 60%);
+    }
+    .cta-section h2 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .cta-section p {
+      font-size: 18px;
+      color: var(--text-gray);
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    /* FOOTER */
+    .footer {
+      padding: 60px 0 30px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-white); }
+    .footer-copy {
+      text-align: center;
+      padding-top: 30px;
+      margin-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .routes-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .booking-fields { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">Ira<span>Go</span></a>
+      <ul class="nav-links">
+        <li><a href="#routes">Routes</a></li>
+        <li><a href="#features">Technology</a></li>
+        <li><a href="#booking">Book</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+      <a href="#booking" class="nav-cta">Book a Flight</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid-lines"></div>
+    <div class="container hero-content">
+      <div class="hero-badge">Air Mobility Platform — Live in India</div>
+      <h1>The sky is your<br/><span class="gradient-text">fastest route.</span></h1>
+      <p class="hero-sub">IraGo is India's AI-powered urban air mobility platform. Skip the traffic. Book an air taxi in under 60 seconds. Arrive in minutes, not hours.</p>
+      <div class="hero-actions">
+        <a href="#booking" class="btn-primary">
+          Book Now
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#routes" class="btn-secondary">View Routes</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats-bar">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-value">8</div>
+          <div class="stat-label">Min Avg Flight Time</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">6</div>
+          <div class="stat-label">Active Vertiports</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">90%</div>
+          <div class="stat-label">Time Saved vs Road</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">24/7</div>
+          <div class="stat-label">Emergency Service</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING -->
+  <section class="booking-section" id="booking">
+    <div class="container">
+      <div class="booking-header">
+        <h2>Where are you going?</h2>
+        <p>Select your route and fly in minutes. Real-time availability powered by AI.</p>
+      </div>
+      <div class="booking-card">
+        <div class="booking-tabs">
+          <button class="booking-tab active">Air Taxi</button>
+          <button class="booking-tab">Helicopter</button>
+          <button class="booking-tab">Air Ambulance</button>
+        </div>
+        <div class="booking-fields">
+          <div class="bk-field">
+            <label>From</label>
+            <select>
+              <option>Chennai CBD</option>
+              <option>Chennai Airport</option>
+              <option>OMR IT Corridor</option>
+              <option>Bengaluru Airport</option>
+              <option>Electronic City</option>
+              <option>Mumbai</option>
+            </select>
+          </div>
+          <div class="bk-field">
+            <label>To</label>
+            <select>
+              <option>OMR IT Corridor</option>
+              <option>Chennai CBD</option>
+              <option>Chennai Airport</option>
+              <option>Mahabalipuram</option>
+              <option>Electronic City</option>
+              <option>Pune</option>
+            </select>
+          </div>
+          <div class="bk-field">
+            <label>Date</label>
+            <input type="date" />
+          </div>
+          <div class="bk-field">
+            <label>Passengers</label>
+            <select>
+              <option>1 Passenger</option>
+              <option>2 Passengers</option>
+              <option>3 Passengers</option>
+              <option>4 Passengers</option>
+            </select>
+          </div>
+        </div>
+        <button class="booking-submit">Search Available Flights →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROUTES -->
+  <section class="routes-section" id="routes">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Popular Routes</div>
+        <h2>Skip hours of traffic.<br/>Fly in minutes.</h2>
+      </div>
+      <div class="routes-grid">
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">Chennai CBD</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">OMR IT Corridor</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">8 min</span>
+            <span class="route-vs">vs <s>1h 10m</s> by road</span>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">Chennai Airport</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">Mahabalipuram</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">15 min</span>
+            <span class="route-vs">vs <s>1h 50m</s> by road</span>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">Bengaluru Airport</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">Electronic City</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">14 min</span>
+            <span class="route-vs">vs <s>2h 15m</s> by road</span>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">Mumbai</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">Pune</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">25 min</span>
+            <span class="route-vs">vs <s>3h 30m</s> by road</span>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">OMR Corridor</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">Chennai Airport</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">10 min</span>
+            <span class="route-vs">vs <s>1h 20m</s> by road</span>
+          </div>
+        </div>
+        <div class="route-card">
+          <div class="route-pair">
+            <span class="route-city">Whitefield</span>
+            <span class="route-arrow">→</span>
+            <span class="route-city">BLR Airport</span>
+          </div>
+          <div class="route-meta">
+            <span class="route-time">12 min</span>
+            <span class="route-vs">vs <s>2h</s> by road</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Technology</div>
+        <h2>Built for the future<br/>of Indian mobility.</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>AI Route Optimization</h3>
+          <p>Real-time weather, airspace, and demand prediction to find the fastest, safest path for every flight.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>DGCA Compliant</h3>
+          <p>Every flight operated by licensed partners with full regulatory approval. Safety is non-negotiable.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚁</div>
+          <h3>Multi-Aircraft Fleet</h3>
+          <p>eVTOLs, helicopters, and air ambulances — right vehicle for every mission, from commute to emergency.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3>Live Flight Tracking</h3>
+          <p>Track your aircraft in real-time from booking to landing. Full transparency, always.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏥</div>
+          <h3>Golden Hour Response</h3>
+          <p>Air ambulance dispatched in minutes. Critical medical transport when every second counts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>Vertiport Network</h3>
+          <p>Strategic landing zones across Chennai, Bengaluru, and Mumbai — growing every quarter.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-bg"></div>
+    <div class="container">
+      <h2>Ready to fly?</h2>
+      <p>Join thousands who've chosen the sky over the road.</p>
+      <a href="#booking" class="btn-primary" style="position: relative;">
+        Book Your First Flight
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">IraGo</div>
+        <ul class="footer-links">
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Safety</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-copy">© 2026 IraGo Air Mobility Pvt. Ltd. All rights reserved.</div>
+    </div>
+  </footer>
+
+</body>
+</html>
