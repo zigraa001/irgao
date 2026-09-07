@@ -395,45 +395,6 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 3.2rem;
     }
-    .campus {
-      padding: 8rem 4rem 12rem;
-      background: var(--ink);
-      color: var(--cream);
-    }
-    .campus-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6.4rem;
-      align-items: center;
-    }
-    .campus h2 {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 5vw, 4.8rem);
-      font-weight: 600;
-      line-height: 1.05;
-      letter-spacing: -0.144rem;
-      margin-bottom: 2.4rem;
-    }
-    .campus p {
-      font-size: 1.6rem;
-      line-height: 1.45;
-      color: var(--grey);
-      margin-bottom: 1.6rem;
-    }
-    .campus a {
-      display: inline-flex;
-      margin-top: 1.2rem;
-      color: var(--cream);
-      border: 1px solid var(--cream);
-      border-radius: 12rem;
-      padding: 1.4rem 2.8rem;
-      text-decoration: none;
-      font-size: 1.4rem;
-      font-weight: 500;
-    }
-    .campus a:hover { background: var(--cream); color: var(--ink); }
     .feature-item {
       padding-top: 2.4rem;
       border-top: 1px solid var(--ink-10);
@@ -538,8 +499,7 @@
       .nav-links { display: none; }
       .hero { padding: 0 1.6rem 4rem; border-radius: 0 0 6.4rem 6.4rem; }
       .hero-slides { display: none; }
-      .section, .routes, .features, .campus { padding: 8rem 1.6rem; }
-      .campus-inner { grid-template-columns: 1fr; gap: 2.4rem; }
+      .section, .routes, .features { padding: 8rem 1.6rem; }
       .section h2 { grid-column: 1 / -1; margin-bottom: 2.4rem; }
       .section-body { grid-column: 1 / -1; }
       .routes-grid { grid-template-columns: 1fr; }
@@ -557,7 +517,6 @@
     <ul class="nav-links">
       <li><a href="#mission">Mission</a></li>
       <li><a href="#routes">Routes</a></li>
-      <li><a href="#campus">Drone Delivery</a></li>
       <li><a href="#features">Technology</a></li>
       <li><a href="#booking">Book</a></li>
     </ul>
@@ -571,20 +530,20 @@
       <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
-      <h1>Move faster.<br>Reach farther.<br>Save time.</h1>
-      <p class="hero-sub">IraGo is building India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity.</p>
+      <h1>Skip traffic.<br>Time to fly.</h1>
+      <p class="hero-sub">India's AI-powered air mobility platform. Book a flight, arrive in minutes.</p>
     </div>
     <div class="hero-slides">
       <div class="hero-progress"><div class="hero-progress-fill"></div></div>
-      <div class="hero-slide-text">Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</div>
+      <div class="hero-slide-text">Connecting India's busiest corridors with clean, quiet aerial transit. Chennai to OMR in 8 minutes. Bengaluru Airport to Electronic City in 14.</div>
     </div>
   </section>
 
   <!-- MISSION -->
   <section class="section" id="mission">
     <div class="section-grid">
-      <h2>Introducing IraGo</h2>
-      <p class="section-body">An AI-powered air mobility platform designed to connect people and places through eVTOL-enabled journeys. IraGo is developing the digital and operational backbone for next-generation aerial mobility in India — route optimization, scheduling intelligence, and fleet visibility in real time.</p>
+      <h2>Reimagining how India moves.</h2>
+      <p class="section-body">IraGo brings fast, safe aerial transportation to Indian cities — from daily commutes that take hours by road, to medical emergencies where every second counts. We're making the sky accessible, reliable, and sustainable.</p>
     </div>
   </section>
 
@@ -626,22 +585,6 @@
           <div><div class="route-stat-big">14 min</div><div class="route-stat-sm">Flight time</div></div>
           <div style="text-align:right"><div class="route-stat-big">52 km</div><div class="route-stat-sm">Distance</div></div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CAMPUS DRONE DELIVERY -->
-  <section class="campus" id="campus">
-    <div class="campus-inner">
-      <div>
-        <h2>Campus Drone Delivery</h2>
-        <p>IraGo is building toward a future where mobility is faster, cleaner, and more connected — including last-metre campus logistics at IIT Madras.</p>
-        <p>Documents, meals, and lightweight cargo between hostels, departments, and gates. Designed for high-value, time-critical movement on campus.</p>
-        <a href="../../app.html?mode=drones">Book campus delivery</a>
-      </div>
-      <div>
-        <p>Pickup and drop across IIT Madras Main Gate, Taramani Gate, Gajendra Circle, Central Library, Himalaya Mess, CRC, SAC, Hostel Zone, and NAC-2 / MInT.</p>
-        <p>Flights and campus hops operated with licensed partners. Saving time. Expanding access. Redefining mobility.</p>
       </div>
     </div>
   </section>
@@ -691,37 +634,37 @@
   <!-- FEATURES -->
   <section class="features" id="features">
     <div class="features-inner">
-      <h2>Built on intelligent aviation infrastructure.</h2>
+      <h2>Built for speed, safety, and scale.</h2>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
-          <h3>AI-Powered Infrastructure</h3>
-          <p>Hub-and-spoke network architecture, AI-enabled routing strategies, and intelligent scheduling to optimize fleet operations.</p>
+          <h3>AI route engine</h3>
+          <p>Real-time optimization across weather, airspace, and demand for every flight.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
-          <h3>Real-Time Fleet Coordination</h3>
-          <p>Mobility leaders and fleet operators can monitor responses, coordinate in real-time, and achieve seamless operations.</p>
+          <h3>DGCA certified</h3>
+          <p>Every operation fully compliant with licensed pilot partners and redundant safety systems.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">03</div>
-          <h3>Scalable eVTOL Network</h3>
-          <p>Reducing downtime and optimizing fleet utilization for cost-efficient flight operations, deployed at scale across cities and regions.</p>
+          <h3>Multi-modal fleet</h3>
+          <p>eVTOLs, helicopters, and air ambulances matched to mission type automatically.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">04</div>
-          <h3>Emergency Travel</h3>
-          <p>Rapid access for time-critical movement. Air ambulance dispatch in under 4 minutes.</p>
+          <h3>Golden Hour</h3>
+          <p>Air ambulance dispatch in critical minutes. Saving lives when roads can't.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">05</div>
-          <h3>Campus Drone Delivery</h3>
-          <p>Documents, meals, and lightweight cargo across IIT Madras — hostels, departments, and gates.</p>
+          <h3>60-second booking</h3>
+          <p>Choose your route, confirm, arrive at your vertiport. No complexity.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">06</div>
-          <h3>Urgent Business Travel</h3>
-          <p>Faster city-to-city and airport-linked mobility for time-sensitive journeys.</p>
+          <h3>Growing network</h3>
+          <p>Strategic vertiports across Chennai, Bengaluru, Mumbai — expanding quarterly.</p>
         </div>
       </div>
     </div>
@@ -732,16 +675,16 @@
     <div class="footer-inner">
       <div>
         <div class="footer-brand">IraGo</div>
-        <p class="footer-tagline">IraGo is building India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity.</p>
+        <p class="footer-tagline">India's air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity.</p>
         <div class="footer-newsletter">
           <input type="email" placeholder="Your email" />
         </div>
       </div>
       <div class="footer-col">
         <h4>Discover</h4>
-        <a href="#campus">Drone Delivery</a>
-        <a href="#routes">Routes</a>
-        <a href="#features">Technology</a>
+        <a href="#">Routes</a>
+        <a href="#">Technology</a>
+        <a href="#">Safety</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
@@ -756,7 +699,7 @@
         <a href="#">Contact</a>
       </div>
     </div>
-    <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved.</div>
+    <div class="footer-bottom">&copy; 2026 IraGo Air Mobility Pvt. Ltd.</div>
   </footer>
 
 </body>
