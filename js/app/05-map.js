@@ -406,20 +406,17 @@ async function initAdminLiveFlights() {
 }
 
 function applyAdminLiveKindUI() {
-  document.querySelectorAll('#admin-live-kind-tabs .admin-tab').forEach(function (btn) {
-    btn.classList.toggle('active', btn.getAttribute('data-live-kind') === adminLiveKind);
-  });
   var title = document.getElementById('admin-live-title');
   var sub = document.getElementById('admin-live-sub');
   var listH = document.getElementById('admin-live-list-heading');
   var fleetH = document.getElementById('admin-live-fleet-heading');
   if (adminLiveKind === 'drone') {
-    if (title) title.textContent = 'Campus Drone Live';
+    if (title) title.textContent = 'Drone Live Map';
     if (sub) sub.textContent = 'IIT Madras deliveries — drone, customer, pickup and drop.';
     if (listH) listH.textContent = 'Live campus drops';
     if (fleetH) fleetH.textContent = 'Customers in transit';
   } else {
-    if (title) title.textContent = 'Pilots Live Map';
+    if (title) title.textContent = 'Air Taxi Live Map';
     if (sub) sub.textContent = 'All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.';
     if (listH) listH.textContent = 'In transit & dispatching';
     if (fleetH) fleetH.textContent = 'All pilots (GPS)';

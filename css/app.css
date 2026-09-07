@@ -4558,6 +4558,11 @@ body.admin-map-fs { overflow: hidden; }
   letter-spacing: 0.5px;
   font-weight: 600;
 }
+.adm-live-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .adm-live-btn {
   display: inline-flex;
   align-items: center;
