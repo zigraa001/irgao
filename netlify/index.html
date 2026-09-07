@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IraGo — Landing templates</title>
+  <link rel="icon" type="image/png" href="assets/images/irago-icon.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0B1F3A;
+      color: #F4F7FA;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px;
+    }
+    img.logo { height: 40px; margin-bottom: 16px; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    p { color: #AFC4DE; margin-bottom: 40px; text-align: center; max-width: 520px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 880px;
+    }
+    a.card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #1E2A3C;
+      background: #12263F;
+      transition: transform 0.15s ease, border-color 0.15s;
+    }
+    a.card:hover { transform: translateY(-3px); border-color: #4A7FB5; }
+    .swatch { height: 120px; }
+    .t1 { background: linear-gradient(135deg, #fff 0%, #276EF1 100%); }
+    .t2 { background: linear-gradient(135deg, #f5f4df 0%, #007ae5 55%, #eb6110 100%); }
+    .t3 { background: linear-gradient(135deg, #3C2C34 0%, #FB5D19 70%, #FAB1D7 100%); }
+    .body { padding: 18px 20px 22px; }
+    .body h2 { font-size: 18px; margin-bottom: 6px; }
+    .body span { font-size: 13px; color: #AFC4DE; }
+  </style>
+</head>
+<body>
+  <img class="logo" src="assets/images/irago-logo.png" alt="IraGo" />
+  <h1>Landing templates</h1>
+  <p>Three look-and-feel drafts. Open one to preview; this folder is ready to publish on Netlify.</p>
+  <div class="grid">
+    <a class="card" href="type1-uber-elevate/">
+      <div class="swatch t1"></div>
+      <div class="body">
+        <h2>Type 1 — Uber Elevate</h2>
+        <span>White canvas, Inter, rideshare booking hero</span>
+      </div>
+    </a>
+    <a class="card" href="type2-joby/">
+      <div class="swatch t2"></div>
+      <div class="body">
+        <h2>Type 2 — Joby</h2>
+        <span>Cream, DM Sans, cinematic full-bleed hero</span>
+      </div>
+    </a>
+    <a class="card" href="type3-archer/">
+      <div class="swatch t3"></div>
+      <div class="body">
+        <h2>Type 3 — Archer</h2>
+        <span>Dark, Archivo, orange / pink commercial look</span>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

@@ -20,7 +20,7 @@ function calcDronePrice(service, hours, withOperator) {
 // GET /api/drones/services — list all active drone services.
 router.get("/services", async (req, res) => {
   const rows = await query(
-    "SELECT * FROM drone_services WHERE active = 1 ORDER BY category, name"
+    "SELECT * FROM drone_services WHERE active = 1 ORDER BY (category = 'campus') DESC, category, name"
   );
   res.json({ services: rows });
 });

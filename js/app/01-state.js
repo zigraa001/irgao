@@ -46,7 +46,8 @@ let bookingDraft = {
 };
 
 // Service code -> human label (used for display + persistence).
-const SERVICE_LABELS = { taxi: 'Air Taxi', golden: 'Golden Hour', shuttle: 'Air Shuttle' };
+// Service code -> human label (used for display + persistence).
+const SERVICE_LABELS = { taxi: 'Air Taxi', golden: 'Golden Hour', shuttle: 'Air Shuttle', drones: 'Drone Delivery' };
 
 // Re-read the current selections into bookingDraft. Idempotent; safe to call
 // after any change to pickup/destination/service. Returns the draft.

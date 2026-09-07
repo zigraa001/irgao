@@ -91,4 +91,95 @@ router.get(
   }
 );
 
+const IN_FLIGHT_STATUSES = [
+  "dispatching",
+  "assigned",
+  "accepted",
+  "enroute",
+  "at_pickup",
+  "picked_up",
+  "flying",
+];
+
+// GET /api/admin/bookings — full booking history for the admin dashboard.
+// ?filter=all|inflight|done|cancelled  ?limit=50  ?offset=0
+router.get("/bookings", requireAuth, requireRole("admin"), async (req, res) => {
+  const filter = String(req.query.filter || "all").toLowerCase();
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const offset = Math.min(Math.max(parseInt(req.query.offset, 10) || 0, 0), 10000);
+
+  let where = "1=1";
+  const params = [];
+  if (filter === "inflight") {
+    where = `b.status IN (${IN_FLIGHT_STATUSES.map(() => "?").join(",")})`;
+    params.push(...IN_FLIGHT_STATUSES);
+  } else if (filter === "done") {
+    where = "b.status = ?";
+    params.push("completed");
+  } else if (filter === "cancelled") {
+    where = "b.status = ?";
+    params.push("cancelled");
+  }
+
+  const inflightPlaceholders = IN_FLIGHT_STATUSES.map(() => "?").join(",");
+  const [rows, stats, filteredCount] = await Promise.all([
+    query(
+      `SELECT b.id, b.status, b.service, b.pickupName, b.destName, b.distanceKm,
+              b.fareEstimate, b.paymentStatus, b.createdAt, b.updatedAt,
+              c.name AS customerName, c.email AS customerEmail,
+              o.name AS operatorName, a.name AS aircraftName
+       FROM bookings b
+       JOIN users c ON c.id = b.customerId
+       LEFT JOIN users o ON o.id = b.operatorId
+       LEFT JOIN aircraft a ON a.id = b.aircraftId
+       WHERE ${where}
+       ORDER BY b.createdAt DESC
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    ),
+    query(
+      `SELECT
+          COUNT(*) AS total,
+          SUM(CASE WHEN status IN (${inflightPlaceholders}) THEN 1 ELSE 0 END) AS inflight,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS done,
+          SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+       FROM bookings`,
+      IN_FLIGHT_STATUSES
+    ),
+    query(
+      `SELECT COUNT(*) AS n FROM bookings b WHERE ${where}`,
+      params
+    ),
+  ]);
+
+  const s = stats[0] || {};
+  res.json({
+    bookings: rows.map((r) => ({
+      id: r.id,
+      status: r.status,
+      service: r.service,
+      pickupName: r.pickupName,
+      destName: r.destName,
+      distanceKm: r.distanceKm,
+      fareEstimate: r.fareEstimate,
+      paymentStatus: r.paymentStatus,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      customer: { name: r.customerName, email: r.customerEmail },
+      operatorName: r.operatorName || null,
+      aircraftName: r.aircraftName || null,
+    })),
+    total: Number(filteredCount[0]?.n) || 0,
+    stats: {
+      total: Number(s.total) || 0,
+      inflight: Number(s.inflight) || 0,
+      done: Number(s.done) || 0,
+      cancelled: Number(s.cancelled) || 0,
+    },
+    limit,
+    offset,
+    filter,
+  });
+});
+
 module.exports = router;

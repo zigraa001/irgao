@@ -1156,6 +1156,7 @@ function routeForRole(user) {
       // reappears after a page refresh. Only active rides are restored — completed,
       // cancelled, and unpaid bookings are ignored.
       setTimeout(restoreActiveBooking, 600);
+      if (typeof applyLandingModeFromQuery === 'function') applyLandingModeFromQuery();
       // Auto-request GPS for pickup after map renders (non-blocking, silent on denial)
       setTimeout(function () {
         if (!pickupCoord && navigator.geolocation) {

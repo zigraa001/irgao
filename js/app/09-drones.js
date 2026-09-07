@@ -10,6 +10,30 @@ let droneAdminServicesLoaded = false;
 let droneAdminOperatorsLoaded = false;
 let droneAdminBookingsLoaded = false;
 
+const CAMPUS_DROPS = [
+  'IIT Madras Main Gate',
+  'Taramani Gate',
+  'Gajendra Circle',
+  'Central Library',
+  'Himalaya Mess',
+  'CRC / Academic Complex',
+  'SAC',
+  'Hostel Zone',
+  'NAC-2 / MInT',
+  'Department of Aerospace',
+];
+
+function isCampusDelivery(s) {
+  return !!(s && (s.category === 'campus' || /campus drone delivery/i.test(s.name || '')));
+}
+
+function campusDropOptions(selected) {
+  return CAMPUS_DROPS.map(function (name) {
+    const sel = name === selected ? ' selected' : '';
+    return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+  }).join('');
+}
+
 // ── Customer: Load & render drone catalog ──
 
 async function loadDroneServices() {
@@ -34,7 +58,8 @@ function renderDroneCategoryFilter(cats) {
   if (!wrap) return;
   let html = '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === 'all' ? ' active' : '') + '" data-cat="all" onclick="filterDroneCategory(\'all\')">All</button>';
   cats.forEach(c => {
-    html += '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === c ? ' active' : '') + '" data-cat="' + c + '" onclick="filterDroneCategory(\'' + c.replace(/'/g, "\\'") + '\')">' + c + '</button>';
+    const label = c === 'campus' ? 'Campus' : c;
+    html += '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === c ? ' active' : '') + '" data-cat="' + c + '" onclick="filterDroneCategory(\'' + c.replace(/'/g, "\\'") + '\')">' + escapeHtml(label) + '</button>';
   });
   wrap.innerHTML = html;
 }
@@ -50,21 +75,24 @@ function filterDroneCategory(cat) {
 function renderDroneServices() {
   const list = document.getElementById('drone-services-list');
   if (!list) return;
-  const filtered = droneCurrentCategory === 'all' ? droneServices : droneServices.filter(s => s.category === droneCurrentCategory);
+  const filtered = droneCurrentCategory === 'all' ? droneServices.slice() : droneServices.filter(s => s.category === droneCurrentCategory);
+  filtered.sort(function (a, b) { return Number(isCampusDelivery(b)) - Number(isCampusDelivery(a)); });
   if (!filtered.length) {
     list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet. Check back soon.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
   filtered.forEach(s => {
+    const campus = isCampusDelivery(s);
     const opBadge = s.operatorRequired ? '<span class="drone-op-badge">Operator included</span>' : '<span class="drone-op-badge drone-op-optional">Operator optional</span>';
-    html += '<div class="drone-card" onclick="selectDroneService(' + s.id + ')">' +
+    const unit = campus ? '/delivery' : '/hr';
+    html += '<div class="drone-card' + (campus ? ' drone-card-campus' : '') + '" onclick="selectDroneService(' + s.id + ')">' +
       '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
-        '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '/hr</div>' +
-        opBadge +
+        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + unit + '</div>' +
+        (campus ? '<span class="drone-op-badge">Campus delivery</span>' : opBadge) +
       '</div>' +
     '</div>';
   });
@@ -107,17 +135,35 @@ function renderDroneBookingCard(s) {
     specsHtml += '</div>';
   }
 
+  const campus = isCampusDelivery(s);
+  const unit = campus ? '/delivery' : '/hr';
+  const locationFields = campus
+    ? '<div class="drone-form-row">' +
+        '<label>From</label>' +
+        '<select id="drone-campus-from" class="pd-input">' + campusDropOptions('Himalaya Mess') + '</select>' +
+      '</div>' +
+      '<div class="drone-form-row">' +
+        '<label>To</label>' +
+        '<select id="drone-campus-to" class="pd-input">' + campusDropOptions('Central Library') + '</select>' +
+      '</div>' +
+      '<input type="hidden" id="drone-location" value="">'
+    : '<div class="drone-form-row">' +
+        '<label>Location</label>' +
+        '<input type="text" id="drone-location" placeholder="e.g. Farm plot, Sector 62, Noida" class="pd-input">' +
+      '</div>';
+
   card.innerHTML =
     '<div class="drone-detail-head">' +
       '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
       '</div>' +
     '</div>' +
     (s.description ? '<p class="drone-desc">' + escapeHtml(s.description) + '</p>' : '') +
     specsHtml +
     '<div class="drone-form">' +
+      (campus ? '' : (
       '<div class="drone-form-row">' +
         '<label>Hours</label>' +
         '<div class="drone-hour-picker">' +
@@ -126,17 +172,15 @@ function renderDroneBookingCard(s) {
           '<button type="button" class="drone-hour-btn" onclick="adjustDroneHours(1)">+</button>' +
           '<span class="drone-hour-range">' + minH + '–' + maxH + ' hrs</span>' +
         '</div>' +
-      '</div>' +
+      '</div>')) +
+      (campus ? '<input type="hidden" id="drone-hours" value="' + minH + '">' : '') +
       '<div class="drone-form-row">' +
         '<label>' +
           '<input type="checkbox" id="drone-with-operator"' + (opReq ? ' checked disabled' : '') + ' onchange="updateDroneQuote()"> ' +
-          (opReq ? 'Operator included (required)' : 'Add drone operator (+₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '/hr)') +
+          (opReq ? 'Operator included (required)' : 'Add drone operator (+₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + unit + ')') +
         '</label>' +
       '</div>' +
-      '<div class="drone-form-row">' +
-        '<label>Location</label>' +
-        '<input type="text" id="drone-location" placeholder="e.g. Farm plot, Sector 62, Noida" class="pd-input">' +
-      '</div>' +
+      locationFields +
       '<div class="drone-form-row">' +
         '<label>Date</label>' +
         '<input type="date" id="drone-date" class="pd-input">' +
@@ -147,7 +191,7 @@ function renderDroneBookingCard(s) {
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>Notes (optional)</label>' +
-        '<input type="text" id="drone-notes" placeholder="Any special instructions" class="pd-input">' +
+        '<input type="text" id="drone-notes" placeholder="' + (campus ? 'Parcel contents, hostel room, pickup contact' : 'Any special instructions') + '" class="pd-input">' +
       '</div>' +
       '<div id="drone-quote-summary" class="drone-quote"></div>' +
       '<button type="button" class="op-btn drone-book-btn" id="drone-book-btn" onclick="bookDrone()">Book Now</button>' +
@@ -185,7 +229,7 @@ async function updateDroneQuote() {
     const data = await res.json();
     if (!res.ok) { summary.textContent = 'Could not get quote'; return; }
 
-    let html = '<div class="drone-quote-line"><span>Service (' + data.hours + ' hrs × ₹' + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
+    let html = '<div class="drone-quote-line"><span>Service' + (isCampusDelivery(s) ? ' (campus delivery × ₹' : ' (' + data.hours + ' hrs × ₹') + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
     if (data.withOperator || data.operatorRequired) {
       html += '<div class="drone-quote-line"><span>Operator (' + data.hours + ' hrs × ₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.operatorPrice).toLocaleString('en-IN') + '</span></div>';
     }
@@ -204,7 +248,17 @@ async function bookDrone() {
   const btn = document.getElementById('drone-book-btn');
   errEl.textContent = '';
 
-  const location = document.getElementById('drone-location').value.trim();
+  const fromEl = document.getElementById('drone-campus-from');
+  const toEl = document.getElementById('drone-campus-to');
+  let location = (document.getElementById('drone-location') || {}).value;
+  location = (location || '').trim();
+  if (fromEl && toEl) {
+    if (fromEl.value === toEl.value) {
+      errEl.textContent = 'Pick a different drop point from pickup.';
+      return;
+    }
+    location = fromEl.value + ' → ' + toEl.value + ', IIT Madras Campus';
+  }
   const scheduledDate = document.getElementById('drone-date').value;
   const scheduledTime = document.getElementById('drone-time').value;
   if (!location) { errEl.textContent = 'Please enter a location.'; return; }
@@ -260,7 +314,7 @@ function renderDroneMyBookings() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse the services above to book your first drone.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Campus drone delivery at IIT Madras is live — pick a drop above.</div>';
     return;
   }
   let html = '';

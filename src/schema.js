@@ -557,6 +557,10 @@ async function initSchema() {
       desc: "Small package delivery within 10 km radius. Ideal for medical supplies, documents, and lightweight cargo (up to 5 kg).",
       specs: "Custom quad · 5kg payload · 10km range · Auto-land · GPS tracking",
       price: 600, opRequired: 0, opPrice: 0, min: 1, max: 4 },
+    { name: "Campus Drone Delivery", category: "campus", emoji: "🏫",
+      desc: "Campus drone delivery at IIT Madras. Documents, meals, and lightweight cargo between hostels, departments, and gates — minutes, not a campus walk.",
+      specs: "IIT Madras campus · 2kg payload · hostels to departments · GPS tracking · Auto-land",
+      price: 99, opRequired: 0, opPrice: 200, min: 1, max: 1 },
     { name: "Solar Panel Inspection Drone", category: "inspection", emoji: "☀️",
       desc: "Thermal imaging inspection for solar farms and rooftop installations. Detects hotspots, cracks, and underperforming panels.",
       specs: "DJI Mavic 3T · FLIR thermal · AI defect detection · 45 min flight · Report gen",
@@ -582,6 +586,7 @@ async function initSchema() {
     { name: "Sneha Reddy", spec: "Surveillance & Security", exp: 4, rating: 4.6, email: "sneha.drone@irago.in", phone: "9876543213" },
     { name: "Vikram Singh", spec: "Agriculture & Seed Sowing", exp: 6, rating: 4.8, email: "vikram.drone@irago.in", phone: "9876543214" },
     { name: "Kavita Nair", spec: "Solar Inspection", exp: 3, rating: 4.5, email: "kavita.drone@irago.in", phone: "9876543215" },
+    { name: "Arjun Iyer", spec: "Campus Delivery · IIT Madras", exp: 2, rating: 4.9, email: "arjun.campus@irago.in", phone: "9876543216" },
   ];
   for (const op of droneOps) {
     const [exists] = await query("SELECT id FROM drone_operators WHERE name = ? LIMIT 1", [op.name]);

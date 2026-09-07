@@ -1,0 +1,517 @@
+/* ═══════════════════════════════════════════════
+   IRAGO HOME v2 — "Reputed brand" components
+   Loaded after the aero3 files, homepage only.
+   Patterns: IndiGo booking box, JetSetGo route/step
+   cards, Uber palette discipline. No new colors —
+   uses the existing navy/accent tokens.
+═══════════════════════════════════════════════ */
+
+/* Homepage-scoped refinements: soft radius family + modern grotesque */
+.home-v2 {
+  --font-display: 'Plus Jakarta Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body:    'Plus Jakarta Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-pill: 999px;
+  font-family: var(--font-body);
+}
+.home-v2 .btn,
+.home-v2 .btn-nav-cta { border-radius: 8px; }
+.home-v2 .hero-badge { border-radius: var(--radius-pill); }
+
+/* Numbers read as operations, not marketing */
+.home-v2 .tabular { font-variant-numeric: tabular-nums; }
+
+/* ─── BOOKING WIDGET (IndiGo convention: widget IS the hero CTA) ─── */
+.booking-wrap {
+  position: relative;
+  z-index: 5;
+  margin-top: -84px;
+  margin-bottom: var(--space-16);
+}
+.booking-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 30px rgba(11, 30, 91, 0.15);
+  overflow: hidden;
+}
+.booking-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--card-border);
+  background: var(--bg-subtle);
+}
+.booking-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 16px 26px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.booking-tab:hover { color: var(--navy); }
+.booking-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--card-bg);
+}
+.booking-fields {
+  display: grid;
+  grid-template-columns: 1.3fr auto 1.3fr 1fr 0.9fr auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 18px 20px;
+}
+.bk-field {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 18px;
+  border-right: 1px solid var(--card-border);
+  min-width: 0;
+}
+.bk-field:last-of-type { border-right: none; }
+.bk-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.bk-input {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--navy);
+  width: 100%;
+  padding: 2px 0;
+  cursor: pointer;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.bk-input:focus { color: var(--accent); }
+.bk-sub {
+  font-size: var(--text-xs);
+  color: var(--text-hint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bk-swap {
+  align-self: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--transition-base), transform var(--transition-base);
+  margin: 0 -6px;
+  z-index: 1;
+}
+.bk-swap:hover { border-color: var(--accent); transform: rotate(180deg); }
+.bk-search {
+  align-self: center;
+  margin-left: 14px;
+  padding: 16px 30px;
+  font-size: 15px;
+}
+.booking-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  border-top: 1px solid var(--card-border);
+  background: var(--bg-subtle);
+}
+.fare-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.fare-chip {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-glow-strong);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+}
+.fare-chip.red {
+  color: var(--emergency);
+  background: var(--emergency-glow);
+  border-color: rgba(200, 16, 46, 0.2);
+}
+.booking-note {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.booking-note svg { flex-shrink: 0; }
+
+/* ─── ROUTE CARDS (airline route-card grammar) ─── */
+.routes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+.route-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-8);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+.route-card:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: var(--shadow-lg);
+}
+.route-cities {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+.route-city {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+.route-path {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  min-width: 40px;
+}
+.route-path::before,
+.route-path::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+}
+.route-path svg { margin: 0 6px; flex-shrink: 0; }
+.route-codes {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-hint);
+  margin-bottom: var(--space-5);
+}
+.route-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-top: 1px solid var(--card-border);
+  padding-top: var(--space-4);
+  flex-wrap: wrap;
+}
+.route-time {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.route-time small {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+.route-road {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.route-road s { text-decoration-color: rgba(200, 16, 46, 0.55); }
+.route-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.route-link:hover { color: var(--accent-dark); }
+
+/* ─── 3-STEP "BOOK WITH EASE" (JetSetGo pattern) ─── */
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  counter-reset: step;
+}
+.step-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  position: relative;
+}
+.step-num {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border-radius: var(--radius-pill);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+  font-variant-numeric: tabular-nums;
+}
+.step-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: var(--space-2);
+}
+.step-card p {
+  font-size: var(--text-sm);
+  color: var(--text-body);
+  line-height: 1.7;
+}
+
+/* ─── NAVY STATS BAND (IndiGo/JetSetGo numbers band) ─── */
+.stats-navy {
+  background: var(--bg-dark);
+  padding: clamp(56px, 7vw, 96px) 0;
+}
+.stats-navy .stats-inner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-8);
+  text-align: center;
+}
+.stats-navy .stat-big {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: var(--space-3);
+  font-variant-numeric: tabular-nums;
+}
+.stats-navy .stat-big .u { color: var(--accent-light); }
+.stats-navy .stat-desc {
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* ─── FOOTER ADDITIONS ─── */
+.footer-contact-line {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.footer-contact-line a { color: inherit; text-decoration: none; }
+.footer-contact-line a:hover { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   DARK MODE — token flip + hard-coded overrides
+   Activated by html.dark (toggle or OS preference)
+═══════════════════════════════════════════════ */
+html.dark .home-v2 {
+  /* Backgrounds */
+  --bg-main:       #0A0E15;
+  --bg-subtle:     #0E1420;
+  --bg-muted:      #121A28;
+  --bg-white:      #0E1420;
+  --bg-dark:       #12233F;
+  --bg-dark-deep:  #070C14;
+
+  /* Navy becomes the light ink (headings/inline colors flip with it) */
+  --navy:          #E6EDF5;
+  --navy-light:    #C9D6E6;
+  --navy-muted:    #8FA0B5;
+
+  /* Accent brightens for contrast on dark */
+  --accent:        #3D8DE0;
+  --accent-dark:   #2F7CD3;
+  --accent-light:  #6FB1F0;
+  --accent-glow:   rgba(61, 141, 224, 0.14);
+  --accent-glow-strong: rgba(61, 141, 224, 0.28);
+
+  --sky:           #6E9CC9;
+  --sky-light:     #8FB4DB;
+  --sky-glow:      rgba(110, 156, 201, 0.12);
+
+  --emergency:     #F26A80;
+  --emergency-glow: rgba(242, 106, 128, 0.12);
+
+  /* Text */
+  --text-primary:  #EDF2F8;
+  --text-body:     #B9C6D6;
+  --text-muted:    #8494A9;
+  --text-hint:     #5F7085;
+
+  /* Cards */
+  --card-bg:            #101724;
+  --card-bg-hover:      #141D2E;
+  --card-border:        #1E2A3C;
+  --card-border-hover:  #33465F;
+
+  --shadow-sm:         0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-lg:         0 4px 20px rgba(0, 0, 0, 0.5);
+
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+/* Scrolled navbar + mobile drawer (hard-coded white in components.css) */
+html.dark .home-v2 .navbar.scrolled {
+  background: rgba(10, 14, 21, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: #1E2A3C;
+}
+html.dark .home-v2 .navbar.scrolled .nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+html.dark .home-v2 .navbar.scrolled .navbar-toggle span { background: var(--text-primary); }
+html.dark .home-v2 .navbar-drawer {
+  background: #0E1420;
+  border-top-color: #1E2A3C;
+  border-bottom-color: #1E2A3C;
+}
+
+/* Hairlines */
+html.dark .home-v2 .section-divider { background: #1E2A3C; }
+
+/* Ghost buttons (navy border flips unreadable otherwise) */
+html.dark .home-v2 .btn-ghost {
+  color: var(--text-primary);
+  border-color: #3A4C64;
+}
+html.dark .home-v2 .btn-ghost:hover {
+  background: var(--text-primary);
+  color: #0B1F3A;
+  border-color: var(--text-primary);
+}
+
+/* Scroll-to-top (navy bg + white text both flip) */
+html.dark .home-v2 .scroll-to-top {
+  background: var(--card-bg);
+  border-color: var(--card-border-hover);
+  color: var(--accent-light);
+}
+
+/* Badges with hard-coded navy */
+html.dark .home-v2 .badge-navy {
+  color: var(--navy-light);
+  border-color: rgba(201, 214, 230, 0.25);
+  background: rgba(201, 214, 230, 0.08);
+}
+
+/* Icon boxes with hard-coded navy tint */
+html.dark .home-v2 .problem-icon-box.navy { background: rgba(201, 214, 230, 0.1); }
+html.dark .home-v2 .icon-circle.navy { background: rgba(201, 214, 230, 0.1); }
+
+/* Inline SVG strokes hard-coded in the HTML */
+html.dark .home-v2 svg[stroke="#0B1F3A"] { stroke: #AFC4DE; }
+html.dark .home-v2 svg[stroke="#0057B8"] { stroke: var(--accent-light); }
+html.dark .home-v2 svg[stroke="#4A7FB5"] { stroke: #8FB4DB; }
+
+/* Partner logo tiles stay light so dark logos remain legible */
+html.dark .home-v2 #credibility .feature-card {
+  background: #F7F9FB;
+  border-color: #E2E6EC;
+}
+html.dark .home-v2 #credibility .feature-card div[style*="--navy"] { color: #0B1F3A !important; }
+html.dark .home-v2 #credibility .feature-card div[style*="text-muted"] { color: #67748A !important; }
+
+/* Booking widget footers/subtle strips inherit via vars; deepen shadow */
+html.dark .home-v2 .booking-card { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55); }
+
+/* Date-picker indicator is near-invisible on dark in Chromium */
+html.dark .home-v2 .bk-input::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
+/* ─── THEME TOGGLE BUTTON ─── */
+.theme-toggle {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+  flex-shrink: 0;
+}
+.theme-toggle:hover { border-color: #fff; }
+.navbar.scrolled .theme-toggle {
+  color: var(--navy);
+  border-color: var(--card-border);
+}
+.navbar.scrolled .theme-toggle:hover { border-color: var(--navy-muted); }
+html.dark .home-v2 .navbar.scrolled .theme-toggle { color: var(--text-primary); border-color: #3A4C64; }
+.theme-toggle .icon-moon { display: block; }
+.theme-toggle .icon-sun { display: none; }
+html.dark .theme-toggle .icon-moon { display: none; }
+html.dark .theme-toggle .icon-sun { display: block; }
+.drawer-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+.drawer-theme-row .theme-toggle { color: var(--navy); border-color: var(--card-border); }
+html.dark .home-v2 .drawer-theme-row .theme-toggle { color: var(--text-primary); border-color: #3A4C64; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1080px) {
+  .booking-fields { grid-template-columns: 1fr auto 1fr; }
+  .bk-field { border-right: none; border-bottom: 1px solid var(--card-border); padding: 12px 6px; }
+  .bk-field.no-line { border-bottom: none; }
+  .bk-search { width: 100%; margin: 10px 0 0; grid-column: 1 / -1; justify-content: center; }
+  .bk-swap { margin: 0 4px; }
+  .booking-wrap { margin-top: -56px; }
+}
+@media (max-width: 768px) {
+  .routes-grid { grid-template-columns: 1fr; }
+  .steps-row { grid-template-columns: 1fr; }
+  .stats-navy .stats-inner { grid-template-columns: 1fr; gap: var(--space-10); }
+  .booking-tabs { overflow-x: auto; }
+  .booking-tab { padding: 14px 18px; white-space: nowrap; }
+}

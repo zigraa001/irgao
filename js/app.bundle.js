@@ -53,7 +53,8 @@ let bookingDraft = {
 };
 
 // Service code -> human label (used for display + persistence).
-const SERVICE_LABELS = { taxi: 'Air Taxi', golden: 'Golden Hour', shuttle: 'Air Shuttle' };
+// Service code -> human label (used for display + persistence).
+const SERVICE_LABELS = { taxi: 'Air Taxi', golden: 'Golden Hour', shuttle: 'Air Shuttle', drones: 'Drone Delivery' };
 
 // Re-read the current selections into bookingDraft. Idempotent; safe to call
 // after any change to pickup/destination/service. Returns the draft.
@@ -1370,6 +1371,7 @@ function routeForRole(user) {
       // reappears after a page refresh. Only active rides are restored — completed,
       // cancelled, and unpaid bookings are ignored.
       setTimeout(restoreActiveBooking, 600);
+      if (typeof applyLandingModeFromQuery === 'function') applyLandingModeFromQuery();
       // Auto-request GPS for pickup after map renders (non-blocking, silent on denial)
       setTimeout(function () {
         if (!pickupCoord && navigator.geolocation) {
@@ -1442,6 +1444,9 @@ let adminUserCompanyFilter = '';
 let adminLiveInited = false;
 let adminCurrentSection = 'dashboard';
 let adminUserDrawerUser = null;
+let adminBookingsFilter = 'all';
+let adminBookingsOffset = 0;
+const ADMIN_BOOKINGS_PAGE = 50;
 
 // Flight zones for map overlays
 let adminZoneMap = null;
@@ -1970,6 +1975,9 @@ function showAdminSection(name) {
   if (name === 'approvals') {
     loadAdminApprovals();
   }
+  if (name === 'bookings') {
+    loadAdminBookings();
+  }
 }
 
 function settingsStatusChip(on, activeText, inactiveText) {
@@ -2263,8 +2271,8 @@ function adminDashboardHtml(stats) {
   var primaryRow =
     '<div class="adm-grid adm-grid--spaced">' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (t.totalUsers || 0).toLocaleString('en-IN'), 'Total users') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'navy', (t.totalBookings || 0).toLocaleString('en-IN'), 'Total bookings') + '</div>' +
-      '<div class="adm-span-3">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live flights', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
+      '<div class="adm-span-3 adm-kpi-link" onclick="openAdminBookings(\'all\')">' + admKpi(ADM_ICONS.bookings, 'navy', (t.totalBookings || 0).toLocaleString('en-IN'), 'Total bookings') + '</div>' +
+      '<div class="adm-span-3 adm-kpi-link" onclick="showAdminSection(\'live\')">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live flights', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(t.revenueINR), 'Revenue') + '</div>' +
     '</div>';
 
@@ -2273,8 +2281,8 @@ function adminDashboardHtml(stats) {
   }
   var secondaryRow =
     '<div class="adm-grid-5 adm-grid--spaced">' +
-      compactKpi(ADM_ICONS.check, 'green', (t.completed || 0).toLocaleString('en-IN'), 'Completed', '<div class="adm-kpi-chip adm-kpi-chip--green">Done</div>') +
-      compactKpi(ADM_ICONS.cancel, 'red', (t.cancelled || 0).toLocaleString('en-IN'), 'Cancelled') +
+      '<div class="adm-kpi-link" onclick="openAdminBookings(\'done\')">' + compactKpi(ADM_ICONS.check, 'green', (t.completed || 0).toLocaleString('en-IN'), 'Completed', '<div class="adm-kpi-chip adm-kpi-chip--green">Done</div>') + '</div>' +
+      '<div class="adm-kpi-link" onclick="openAdminBookings(\'cancelled\')">' + compactKpi(ADM_ICONS.cancel, 'red', (t.cancelled || 0).toLocaleString('en-IN'), 'Cancelled') + '</div>' +
       compactKpi(ADM_ICONS.leaf, 'green', CO2(t.carbonSavedKg), 'CO2 saved') +
       compactKpi(ADM_ICONS.ruler, 'blue', KM(t.distanceKm), 'Distance flown') +
       compactKpi(ADM_ICONS.aircraft, 'navy', (t.availableAircraft || 0).toLocaleString('en-IN'), 'Aircraft available') +
@@ -3585,6 +3593,113 @@ async function rejectRequest(reqId) {
     if (btn) { btn.disabled = false; btn.textContent = 'Confirm rejection'; }
   }
 }
+
+function openAdminBookings(filter) {
+  adminBookingsFilter = filter || 'all';
+  adminBookingsOffset = 0;
+  showAdminSection('bookings');
+}
+
+function switchAdminBookingsFilter(filter) {
+  adminBookingsFilter = filter || 'all';
+  adminBookingsOffset = 0;
+  document.querySelectorAll('#admin-bookings-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-bk-filter') === adminBookingsFilter);
+  });
+  loadAdminBookings();
+}
+
+function adminBookingsPrevPage() {
+  if (adminBookingsOffset <= 0) return;
+  adminBookingsOffset = Math.max(0, adminBookingsOffset - ADMIN_BOOKINGS_PAGE);
+  loadAdminBookings();
+}
+
+function adminBookingsNextPage(total) {
+  if (adminBookingsOffset + ADMIN_BOOKINGS_PAGE >= total) return;
+  adminBookingsOffset += ADMIN_BOOKINGS_PAGE;
+  loadAdminBookings();
+}
+
+function formatAdminBookingWhen(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadAdminBookings() {
+  var list = document.getElementById('admin-bookings-list');
+  var kpis = document.getElementById('admin-bookings-kpis');
+  var meta = document.getElementById('admin-bookings-meta');
+  var pager = document.getElementById('admin-bookings-pager');
+  if (!list) return;
+  document.querySelectorAll('#admin-bookings-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-bk-filter') === adminBookingsFilter);
+  });
+  list.innerHTML = '<div class="adm-skeleton-row"><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:50%"></div></div></div>';
+  try {
+    var res = await apiFetch('/api/admin/bookings?filter=' + encodeURIComponent(adminBookingsFilter) + '&limit=' + ADMIN_BOOKINGS_PAGE + '&offset=' + adminBookingsOffset);
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    var s = data.stats || {};
+    if (kpis) {
+      kpis.innerHTML =
+        '<div class="adm-grid" style="margin-bottom:16px">' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'all\')">' + admKpi(ADM_ICONS.bookings, 'navy', String(s.total || 0), 'All bookings').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'inflight\')">' + admKpi(ADM_ICONS.plane, 'amber', String(s.inflight || 0), 'In flight', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'done\')">' + admKpi(ADM_ICONS.check, 'green', String(s.done || 0), 'Done').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'cancelled\')">' + admKpi(ADM_ICONS.cancel, 'red', String(s.cancelled || 0), 'Cancelled').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+        '</div>';
+    }
+    renderAdminBookingsList(data.bookings || []);
+    var total = data.total || 0;
+    var from = total ? adminBookingsOffset + 1 : 0;
+    var to = Math.min(adminBookingsOffset + ADMIN_BOOKINGS_PAGE, total);
+    if (meta) meta.textContent = total ? ('Showing ' + from + '–' + to + ' of ' + total) : 'No bookings';
+    if (pager) {
+      pager.innerHTML = total > ADMIN_BOOKINGS_PAGE
+        ? '<button type="button" class="admin-btn-sm" ' + (adminBookingsOffset <= 0 ? 'disabled' : '') + ' onclick="adminBookingsPrevPage()">Previous</button>' +
+          '<button type="button" class="admin-btn-sm" ' + (adminBookingsOffset + ADMIN_BOOKINGS_PAGE >= total ? 'disabled' : '') + ' onclick="adminBookingsNextPage(' + total + ')">Next</button>'
+        : '';
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load bookings</div><div class="adm-empty-sub">Please try again.</div></div>';
+    if (pager) pager.innerHTML = '';
+  }
+}
+
+function renderAdminBookingsList(bookings) {
+  var list = document.getElementById('admin-bookings-list');
+  if (!list) return;
+  if (!bookings.length) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No bookings in this view</div><div class="adm-empty-sub">In flight, done, and cancelled trips will show up here.</div></div>';
+    return;
+  }
+  var rows = bookings.map(function (b) {
+    var service = (typeof SERVICE_LABELS !== 'undefined' && SERVICE_LABELS[b.service]) ? SERVICE_LABELS[b.service] : (b.service || '—');
+    var fare = b.fareEstimate != null ? INR(b.fareEstimate) : '—';
+    var pay = b.paymentStatus ? escapeHtml(b.paymentStatus) : '—';
+    return '<tr>' +
+      '<td><strong>#' + b.id + '</strong></td>' +
+      '<td><div>' + escapeHtml((b.customer && b.customer.name) || 'Unknown') + '</div><div class="admin-users-meta">' + escapeHtml((b.customer && b.customer.email) || '') + '</div></td>' +
+      '<td>' + escapeHtml(b.pickupName || '—') + ' → ' + escapeHtml(b.destName || '—') + '</td>' +
+      '<td>' + escapeHtml(service) + '</td>' +
+      '<td>' + statusBadgeHtml(b.status) + '</td>' +
+      '<td>' + fare + '<div class="admin-users-meta">' + pay + '</div></td>' +
+      '<td>' + escapeHtml(b.operatorName || '—') + '</td>' +
+      '<td>' + formatAdminBookingWhen(b.createdAt) + '</td>' +
+    '</tr>';
+  }).join('');
+  list.innerHTML =
+    '<table class="admin-table">' +
+      '<thead><tr>' +
+        '<th>ID</th><th>Passenger</th><th>Route</th><th>Service</th><th>Status</th><th>Fare</th><th>Pilot</th><th>Booked</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>';
+}
+
 
 
 
@@ -6173,6 +6288,25 @@ function switchService(service) {
   renderPopularRoutes(service);
 }
 
+function applyLandingModeFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = (params.get('mode') || '').toLowerCase();
+  const map = {
+    'air-taxi': 'taxi',
+    taxi: 'taxi',
+    helicopter: 'taxi',
+    'air-ambulance': 'golden',
+    golden: 'golden',
+    'air-shuttle': 'shuttle',
+    shuttle: 'shuttle',
+    drones: 'drones',
+    drone: 'drones',
+    'drone-delivery': 'drones',
+  };
+  const service = map[raw];
+  if (service) switchService(service);
+}
+
 // ── Popular Routes per Service ──
 const popularRoutes = {
   taxi: [
@@ -8394,6 +8528,30 @@ let droneAdminServicesLoaded = false;
 let droneAdminOperatorsLoaded = false;
 let droneAdminBookingsLoaded = false;
 
+const CAMPUS_DROPS = [
+  'IIT Madras Main Gate',
+  'Taramani Gate',
+  'Gajendra Circle',
+  'Central Library',
+  'Himalaya Mess',
+  'CRC / Academic Complex',
+  'SAC',
+  'Hostel Zone',
+  'NAC-2 / MInT',
+  'Department of Aerospace',
+];
+
+function isCampusDelivery(s) {
+  return !!(s && (s.category === 'campus' || /campus drone delivery/i.test(s.name || '')));
+}
+
+function campusDropOptions(selected) {
+  return CAMPUS_DROPS.map(function (name) {
+    const sel = name === selected ? ' selected' : '';
+    return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+  }).join('');
+}
+
 // ── Customer: Load & render drone catalog ──
 
 async function loadDroneServices() {
@@ -8418,7 +8576,8 @@ function renderDroneCategoryFilter(cats) {
   if (!wrap) return;
   let html = '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === 'all' ? ' active' : '') + '" data-cat="all" onclick="filterDroneCategory(\'all\')">All</button>';
   cats.forEach(c => {
-    html += '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === c ? ' active' : '') + '" data-cat="' + c + '" onclick="filterDroneCategory(\'' + c.replace(/'/g, "\\'") + '\')">' + c + '</button>';
+    const label = c === 'campus' ? 'Campus' : c;
+    html += '<button type="button" class="dashboard-pill drone-cat-btn' + (droneCurrentCategory === c ? ' active' : '') + '" data-cat="' + c + '" onclick="filterDroneCategory(\'' + c.replace(/'/g, "\\'") + '\')">' + escapeHtml(label) + '</button>';
   });
   wrap.innerHTML = html;
 }
@@ -8434,21 +8593,24 @@ function filterDroneCategory(cat) {
 function renderDroneServices() {
   const list = document.getElementById('drone-services-list');
   if (!list) return;
-  const filtered = droneCurrentCategory === 'all' ? droneServices : droneServices.filter(s => s.category === droneCurrentCategory);
+  const filtered = droneCurrentCategory === 'all' ? droneServices.slice() : droneServices.filter(s => s.category === droneCurrentCategory);
+  filtered.sort(function (a, b) { return Number(isCampusDelivery(b)) - Number(isCampusDelivery(a)); });
   if (!filtered.length) {
     list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet. Check back soon.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
   filtered.forEach(s => {
+    const campus = isCampusDelivery(s);
     const opBadge = s.operatorRequired ? '<span class="drone-op-badge">Operator included</span>' : '<span class="drone-op-badge drone-op-optional">Operator optional</span>';
-    html += '<div class="drone-card" onclick="selectDroneService(' + s.id + ')">' +
+    const unit = campus ? '/delivery' : '/hr';
+    html += '<div class="drone-card' + (campus ? ' drone-card-campus' : '') + '" onclick="selectDroneService(' + s.id + ')">' +
       '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
-        '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + '/hr</div>' +
-        opBadge +
+        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + unit + '</div>' +
+        (campus ? '<span class="drone-op-badge">Campus delivery</span>' : opBadge) +
       '</div>' +
     '</div>';
   });
@@ -8491,17 +8653,35 @@ function renderDroneBookingCard(s) {
     specsHtml += '</div>';
   }
 
+  const campus = isCampusDelivery(s);
+  const unit = campus ? '/delivery' : '/hr';
+  const locationFields = campus
+    ? '<div class="drone-form-row">' +
+        '<label>From</label>' +
+        '<select id="drone-campus-from" class="pd-input">' + campusDropOptions('Himalaya Mess') + '</select>' +
+      '</div>' +
+      '<div class="drone-form-row">' +
+        '<label>To</label>' +
+        '<select id="drone-campus-to" class="pd-input">' + campusDropOptions('Central Library') + '</select>' +
+      '</div>' +
+      '<input type="hidden" id="drone-location" value="">'
+    : '<div class="drone-form-row">' +
+        '<label>Location</label>' +
+        '<input type="text" id="drone-location" placeholder="e.g. Farm plot, Sector 62, Noida" class="pd-input">' +
+      '</div>';
+
   card.innerHTML =
     '<div class="drone-detail-head">' +
       '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + escapeHtml(s.category) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
       '</div>' +
     '</div>' +
     (s.description ? '<p class="drone-desc">' + escapeHtml(s.description) + '</p>' : '') +
     specsHtml +
     '<div class="drone-form">' +
+      (campus ? '' : (
       '<div class="drone-form-row">' +
         '<label>Hours</label>' +
         '<div class="drone-hour-picker">' +
@@ -8510,17 +8690,15 @@ function renderDroneBookingCard(s) {
           '<button type="button" class="drone-hour-btn" onclick="adjustDroneHours(1)">+</button>' +
           '<span class="drone-hour-range">' + minH + '–' + maxH + ' hrs</span>' +
         '</div>' +
-      '</div>' +
+      '</div>')) +
+      (campus ? '<input type="hidden" id="drone-hours" value="' + minH + '">' : '') +
       '<div class="drone-form-row">' +
         '<label>' +
           '<input type="checkbox" id="drone-with-operator"' + (opReq ? ' checked disabled' : '') + ' onchange="updateDroneQuote()"> ' +
-          (opReq ? 'Operator included (required)' : 'Add drone operator (+₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + '/hr)') +
+          (opReq ? 'Operator included (required)' : 'Add drone operator (+₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + unit + ')') +
         '</label>' +
       '</div>' +
-      '<div class="drone-form-row">' +
-        '<label>Location</label>' +
-        '<input type="text" id="drone-location" placeholder="e.g. Farm plot, Sector 62, Noida" class="pd-input">' +
-      '</div>' +
+      locationFields +
       '<div class="drone-form-row">' +
         '<label>Date</label>' +
         '<input type="date" id="drone-date" class="pd-input">' +
@@ -8531,7 +8709,7 @@ function renderDroneBookingCard(s) {
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>Notes (optional)</label>' +
-        '<input type="text" id="drone-notes" placeholder="Any special instructions" class="pd-input">' +
+        '<input type="text" id="drone-notes" placeholder="' + (campus ? 'Parcel contents, hostel room, pickup contact' : 'Any special instructions') + '" class="pd-input">' +
       '</div>' +
       '<div id="drone-quote-summary" class="drone-quote"></div>' +
       '<button type="button" class="op-btn drone-book-btn" id="drone-book-btn" onclick="bookDrone()">Book Now</button>' +
@@ -8569,7 +8747,7 @@ async function updateDroneQuote() {
     const data = await res.json();
     if (!res.ok) { summary.textContent = 'Could not get quote'; return; }
 
-    let html = '<div class="drone-quote-line"><span>Service (' + data.hours + ' hrs × ₹' + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
+    let html = '<div class="drone-quote-line"><span>Service' + (isCampusDelivery(s) ? ' (campus delivery × ₹' : ' (' + data.hours + ' hrs × ₹') + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
     if (data.withOperator || data.operatorRequired) {
       html += '<div class="drone-quote-line"><span>Operator (' + data.hours + ' hrs × ₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.operatorPrice).toLocaleString('en-IN') + '</span></div>';
     }
@@ -8588,7 +8766,17 @@ async function bookDrone() {
   const btn = document.getElementById('drone-book-btn');
   errEl.textContent = '';
 
-  const location = document.getElementById('drone-location').value.trim();
+  const fromEl = document.getElementById('drone-campus-from');
+  const toEl = document.getElementById('drone-campus-to');
+  let location = (document.getElementById('drone-location') || {}).value;
+  location = (location || '').trim();
+  if (fromEl && toEl) {
+    if (fromEl.value === toEl.value) {
+      errEl.textContent = 'Pick a different drop point from pickup.';
+      return;
+    }
+    location = fromEl.value + ' → ' + toEl.value + ', IIT Madras Campus';
+  }
   const scheduledDate = document.getElementById('drone-date').value;
   const scheduledTime = document.getElementById('drone-time').value;
   if (!location) { errEl.textContent = 'Please enter a location.'; return; }
@@ -8644,7 +8832,7 @@ function renderDroneMyBookings() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Browse the services above to book your first drone.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Campus drone delivery at IIT Madras is live — pick a drop above.</div>';
     return;
   }
   let html = '';

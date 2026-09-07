@@ -3261,6 +3261,9 @@ textarea:focus-visible, a:focus-visible {
 .admin-table tbody tr:hover { background: var(--gray-50); }
 .admin-table td strong { color: var(--gray-900); }
 
+.adm-kpi-link { cursor: pointer; }
+.adm-kpi-link:hover .adm-kpi { box-shadow: var(--shadow-md); }
+
 /* ── pd-input (used in drone/admin forms) ── */
 .pd-input {
   width: 100%;
@@ -5631,11 +5634,11 @@ body.admin-map-fs { overflow: hidden; }
   cursor: pointer;
   transition: all var(--transition);
 }
-.drone-card:hover {
+.drone-card-campus {
   border-color: var(--blue);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  background: var(--blue-50, #EFF6FF);
 }
+#drone-campus-banner { margin-bottom: 12px; }
 .drone-card-emoji {
   font-size: 28px;
   margin-bottom: 6px;

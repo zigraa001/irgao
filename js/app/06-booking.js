@@ -80,6 +80,25 @@ function switchService(service) {
   renderPopularRoutes(service);
 }
 
+function applyLandingModeFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = (params.get('mode') || '').toLowerCase();
+  const map = {
+    'air-taxi': 'taxi',
+    taxi: 'taxi',
+    helicopter: 'taxi',
+    'air-ambulance': 'golden',
+    golden: 'golden',
+    'air-shuttle': 'shuttle',
+    shuttle: 'shuttle',
+    drones: 'drones',
+    drone: 'drones',
+    'drone-delivery': 'drones',
+  };
+  const service = map[raw];
+  if (service) switchService(service);
+}
+
 // ── Popular Routes per Service ──
 const popularRoutes = {
   taxi: [
