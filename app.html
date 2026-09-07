@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=3dee435f">
+  <link rel="stylesheet" href="/css/app.css?v=b0469238">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1197,8 +1197,12 @@
       <section class="admin-section" id="admin-section-live" hidden>
         <div class="admin-page-header">
           <div>
-            <div class="adm-header-title">Pilots Live Map</div>
-            <div class="adm-header-sub">All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.</div>
+            <div class="adm-header-title" id="admin-live-title">Live Map</div>
+            <div class="adm-header-sub" id="admin-live-sub">Air taxi pilots and campus drone drops, live.</div>
+          </div>
+          <div class="admin-user-tabs" id="admin-live-kind-tabs">
+            <button type="button" class="admin-tab active" data-live-kind="taxi" onclick="switchAdminLiveKind('taxi')">Air Taxi</button>
+            <button type="button" class="admin-tab" data-live-kind="drone" onclick="switchAdminLiveKind('drone')">Drone Delivery</button>
           </div>
         </div>
         <div id="admin-live-map-wrap" class="admin-live-map-wrap">
@@ -1211,7 +1215,7 @@
         </div>
         <div class="admin-live-layout">
           <div class="admin-live-panel">
-            <h4>In transit &amp; dispatching <span id="admin-live-flight-count" class="admin-live-panel-count">0</span></h4>
+            <h4><span id="admin-live-list-heading">In transit &amp; dispatching</span> <span id="admin-live-flight-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-live-list" class="admin-live-list">
               <div class="admin-live-skeleton"><div class="adm-skeleton adm-sk-text" style="--w:60%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:80%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:50%"></div></div>
               <div class="admin-live-skeleton"><div class="adm-skeleton adm-sk-text" style="--w:55%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:70%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:45%"></div></div>
@@ -1219,7 +1223,7 @@
             </div>
           </div>
           <div class="admin-live-panel">
-            <h4>All pilots (GPS) <span id="admin-live-fleet-count" class="admin-live-panel-count">0</span></h4>
+            <h4><span id="admin-live-fleet-heading">All pilots (GPS)</span> <span id="admin-live-fleet-count" class="admin-live-panel-count">0</span></h4>
             <div id="admin-fleet-list" class="admin-live-list">
               <div class="admin-live-skeleton"><div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-32"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:50%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:70%"></div></div></div></div>
               <div class="admin-live-skeleton"><div class="adm-sk-row"><div class="adm-skeleton adm-sk-circle-32"></div><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:45%"></div><div class="adm-skeleton adm-sk-text-sm" style="--w:60%"></div></div></div></div>
@@ -1233,12 +1237,16 @@
       <section class="admin-section" id="admin-section-bookings" hidden>
         <div class="admin-page-header">
           <div>
-            <div class="adm-header-title">Bookings</div>
-            <div class="adm-header-sub">Previous trips, in-flight rides, and completed (done) bookings.</div>
+            <div class="adm-header-title" id="admin-bookings-title">Bookings</div>
+            <div class="adm-header-sub" id="admin-bookings-sub">Air taxi trips and campus drone deliveries.</div>
+          </div>
+          <div class="admin-user-tabs" id="admin-bookings-kind-tabs">
+            <button type="button" class="admin-tab active" data-bk-kind="taxi" onclick="switchAdminBookingsKind('taxi')">Air Taxi</button>
+            <button type="button" class="admin-tab" data-bk-kind="drone" onclick="switchAdminBookingsKind('drone')">Drone Delivery</button>
           </div>
         </div>
         <div id="admin-bookings-kpis"></div>
-        <div class="admin-users-toolbar">
+        <div class="admin-users-toolbar" id="admin-bookings-taxi-toolbar">
           <div class="admin-user-tabs" id="admin-bookings-tabs">
             <button type="button" class="admin-tab active" data-bk-filter="all" onclick="switchAdminBookingsFilter('all')">All</button>
             <button type="button" class="admin-tab" data-bk-filter="inflight" onclick="switchAdminBookingsFilter('inflight')">In flight</button>
@@ -1493,6 +1501,7 @@
         <div id="drone-admin-bookings" hidden>
           <div class="drone-sub-header">
             <span class="drone-sub-title">Drone Bookings</span>
+            <button type="button" class="admin-btn-sm" onclick="openAdminDroneBookings()">Open in Bookings</button>
             <span class="das-booking-count"></span>
           </div>
           <div id="drone-admin-bookings-stats"></div>
@@ -1756,6 +1765,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=3dee435f"></script>
+<script src="/js/app.bundle.js?v=b0469238"></script>
 </body>
 </html>

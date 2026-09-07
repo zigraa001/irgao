@@ -210,7 +210,7 @@ async function companyStats(userId) {
 }
 
 async function adminStats() {
-  const [usersByRole, bookingAgg, fleetAgg, liveAgg] = await Promise.all([
+  const [usersByRole, bookingAgg, fleetAgg, liveAgg, droneAgg] = await Promise.all([
     query(
       `SELECT role, COUNT(*) AS n FROM users WHERE ${USER_NOT_DELETED} GROUP BY role`
     ),
@@ -227,22 +227,35 @@ async function adminStats() {
     queryOne(
       `SELECT COUNT(*) AS n FROM bookings WHERE status NOT IN ('completed','cancelled','rejected')`
     ),
+    queryOne(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status IN ('delivered','completed') THEN 1 ELSE 0 END) AS completed,
+              SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+              SUM(CASE WHEN status NOT IN ('delivered','completed','cancelled') THEN 1 ELSE 0 END) AS live,
+              COALESCE(SUM(CASE WHEN status != 'cancelled' THEN totalPrice ELSE 0 END), 0) AS revenue
+         FROM drone_bookings`
+    ),
   ]);
 
   const users = {};
   for (const r of usersByRole) users[r.role || "unknown"] = r.n;
 
   const agg = bookingAgg[0] || {};
+  const drone = droneAgg || {};
   const totals = {
     users,
     totalUsers: sumRows(usersByRole, "n"),
-    totalBookings: num(agg.total),
-    completed: num(agg.completed),
-    cancelled: num(agg.cancelled),
-    live: num(liveAgg ? liveAgg.n : 0),
+    totalBookings: num(agg.total) + num(drone.total),
+    taxiBookings: num(agg.total),
+    droneBookings: num(drone.total),
+    completed: num(agg.completed) + num(drone.completed),
+    cancelled: num(agg.cancelled) + num(drone.cancelled),
+    live: num(liveAgg ? liveAgg.n : 0) + num(drone.live),
+    taxiLive: num(liveAgg ? liveAgg.n : 0),
+    droneLive: num(drone.live),
     availableAircraft: num(fleetAgg ? fleetAgg.n : 0),
     distanceKm: Math.round(num(agg.distanceKm) * 10) / 10,
-    revenueINR: Math.round(num(agg.revenue)),
+    revenueINR: Math.round(num(agg.revenue) + num(drone.revenue)),
     carbonSavedKg: Math.round(num(agg.carbonSavedKg) * 10) / 10,
   };
 

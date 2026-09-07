@@ -387,12 +387,237 @@ async function initAdminLiveFlights() {
     }).addTo(adminLiveMap);
     attachAdminMapZoomProfiles();
   }
-  await refreshAdminLiveFlights();
+  applyAdminLiveKindUI();
   if (adminLivePollInterval) clearInterval(adminLivePollInterval);
-  adminLivePollInterval = setInterval(refreshAdminLiveFlights, 5000);
+  if (adminLiveKind === 'drone') {
+    clearAdminTaxiLiveMarkers();
+    await refreshAdminDroneLive();
+    adminLivePollInterval = setInterval(refreshAdminDroneLive, 2500);
+  } else {
+    const leavingDrone = !!(adminDroneLiveLayer || adminDroneLiveFitted);
+    stopAdminDroneLive();
+    if (leavingDrone && adminLiveMap) adminLiveMap.setView([22.5, 79.0], 5);
+    await refreshAdminLiveFlights();
+    adminLivePollInterval = setInterval(refreshAdminLiveFlights, 5000);
+  }
   setTimeout(function () {
     if (adminLiveMap) adminLiveMap.invalidateSize();
   }, 200);
+}
+
+function applyAdminLiveKindUI() {
+  document.querySelectorAll('#admin-live-kind-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-live-kind') === adminLiveKind);
+  });
+  var title = document.getElementById('admin-live-title');
+  var sub = document.getElementById('admin-live-sub');
+  var listH = document.getElementById('admin-live-list-heading');
+  var fleetH = document.getElementById('admin-live-fleet-heading');
+  if (adminLiveKind === 'drone') {
+    if (title) title.textContent = 'Campus Drone Live';
+    if (sub) sub.textContent = 'IIT Madras deliveries — drone, customer, pickup and drop.';
+    if (listH) listH.textContent = 'Live campus drops';
+    if (fleetH) fleetH.textContent = 'Customers in transit';
+  } else {
+    if (title) title.textContent = 'Pilots Live Map';
+    if (sub) sub.textContent = 'All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.';
+    if (listH) listH.textContent = 'In transit & dispatching';
+    if (fleetH) fleetH.textContent = 'All pilots (GPS)';
+  }
+}
+
+function clearAdminTaxiLiveMarkers() {
+  if (typeof animatedMarkers === 'undefined') return;
+  var keys = [];
+  animatedMarkers.forEach(function (_entry, key) {
+    if (String(key).indexOf('admin-pilot-') === 0) keys.push(key);
+  });
+  keys.forEach(function (key) { removeAnimatedMapMarker(key); });
+}
+
+let adminDroneLiveLayer = null;
+let adminDroneLiveFitted = false;
+let adminDronePositions = {};
+
+function stopAdminDroneLive() {
+  adminDroneLiveFitted = false;
+  adminDronePositions = {};
+  if (adminDroneLiveLayer && adminLiveMap) {
+    adminLiveMap.removeLayer(adminDroneLiveLayer);
+    adminDroneLiveLayer = null;
+  }
+}
+
+function campusUserIcon() {
+  return L.divIcon({
+    className: 'campus-user-marker',
+    html: '<div class="campus-user-icon">👤</div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
+}
+
+async function refreshAdminDroneLive() {
+  if (adminLiveKind !== 'drone') return;
+  const listEl = document.getElementById('admin-live-list');
+  const fleetEl = document.getElementById('admin-fleet-list');
+  const metaEl = document.getElementById('admin-live-meta');
+  const flightCountEl = document.getElementById('admin-live-flight-count');
+  const fleetCountEl = document.getElementById('admin-live-fleet-count');
+  if (!listEl) return;
+  try {
+    const res = await apiFetch('/api/drones/admin/live');
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error('load failed');
+    const deliveries = Array.isArray(data.deliveries) ? data.deliveries : [];
+    const customers = [];
+    const seenCust = {};
+    deliveries.forEach(function (d) {
+      const b = d.booking || {};
+      const key = String(b.customerEmail || b.customerId || b.customerName || '');
+      if (!key || seenCust[key]) return;
+      seenCust[key] = true;
+      customers.push({
+        name: b.customerName || 'Passenger',
+        email: b.customerEmail || '',
+        route: (b.pickupName || 'Pickup') + ' → ' + (b.dropName || 'Drop'),
+        status: b.status,
+        callsign: b.droneCallsign || '',
+      });
+    });
+    if (metaEl) {
+      metaEl.innerHTML =
+        adminLiveChip('admin-live-chip-dot--green', deliveries.length, deliveries.length === 1 ? 'drop' : 'drops') +
+        adminLiveChip('admin-live-chip-dot--blue', customers.length, customers.length === 1 ? 'customer' : 'customers');
+    }
+    if (flightCountEl) flightCountEl.textContent = deliveries.length;
+    if (fleetCountEl) fleetCountEl.textContent = customers.length;
+    if (!deliveries.length) {
+      listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No live campus drops</div><div class="adm-empty-sub">Paid drone deliveries will appear here as they dispatch.</div></div>';
+    } else {
+      listEl.innerHTML = deliveries.map(function (d) {
+        const b = d.booking || {};
+        const eta = d.etaRemainingMin != null ? (d.etaRemainingMin + ' min') : '—';
+        return (
+          '<div class="admin-flight-card" onclick="focusAdminLiveDrone(' + b.id + ')" style="cursor:pointer">' +
+            '<div class="admin-flight-top">' +
+              '<span class="admin-live-chip-dot admin-live-chip-dot--blue" style="margin-top:2px"></span>' +
+              '<span class="admin-flight-route">' + escapeHtml(b.pickupName || 'Pickup') + ' → ' + escapeHtml(b.dropName || 'Drop') + '</span>' +
+            '</div>' +
+            '<div class="admin-flight-status">' + statusBadgeHtml(b.status) + '</div>' +
+            '<div class="admin-flight-meta">' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>DRN-' + String(b.id).padStart(5, '0') + '</span>' +
+                '<span>·</span>' +
+                '<span>' + escapeHtml(b.customerName || 'Passenger') + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>' + escapeHtml(b.droneCallsign || 'Assigning…') + '</span>' +
+                '<span class="admin-flight-time">ETA ' + eta + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>' + escapeHtml(b.parcelType || b.serviceName || 'Parcel') +
+                (b.batteryPct != null ? ' · ' + b.batteryPct + '% battery' : '') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    if (fleetEl) {
+      if (!customers.length) {
+        fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No customers in transit</div><div class="adm-empty-sub">Live drops will list the passenger waiting at drop.</div></div>';
+      } else {
+        fleetEl.innerHTML = customers.map(function (c) {
+          return (
+            '<div class="admin-fleet-row">' +
+              '<div class="admin-fleet-avatar">' + pilotInitials(c.name) + '</div>' +
+              '<div>' +
+                '<div class="admin-fleet-name">' + escapeHtml(c.name) + '</div>' +
+                '<div class="admin-fleet-gps">' + escapeHtml(c.email || c.route) + '</div>' +
+              '</div>' +
+              '<div class="admin-fleet-status">' + statusBadgeHtml(c.status) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+    }
+    paintAdminDroneLive(deliveries, data.campusPoints);
+  } catch (e) {
+    listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load drone live map</div><div class="adm-empty-sub">Check your connection and try again.</div></div>';
+    if (fleetEl) fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load customers</div></div>';
+  }
+}
+
+function paintAdminDroneLive(deliveries, campusPoints) {
+  if (!adminLiveMap) return;
+  if (!adminDroneLiveLayer) adminDroneLiveLayer = L.layerGroup().addTo(adminLiveMap);
+  adminDroneLiveLayer.clearLayers();
+  adminDronePositions = {};
+  var points = [];
+  var pins = campusPoints || (typeof CAMPUS_POINTS !== 'undefined' ? CAMPUS_POINTS : {});
+  Object.keys(pins).forEach(function (name) {
+    var c = pins[name];
+    if (!c || c.length < 2) return;
+    L.circleMarker(c, { radius: 4, color: '#0f766e', weight: 1, fillColor: '#fff', fillOpacity: 1 })
+      .bindTooltip(name, { permanent: false })
+      .addTo(adminDroneLiveLayer);
+  });
+  deliveries.forEach(function (d) {
+    var b = d.booking || {};
+    var from = (b.pickupLat != null) ? [Number(b.pickupLat), Number(b.pickupLng)] : (pins[b.pickupName] || null);
+    var to = (b.dropLat != null) ? [Number(b.dropLat), Number(b.dropLng)] : (pins[b.dropName] || null);
+    if (from) {
+      L.circleMarker(from, { radius: 7, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 1, weight: 2 })
+        .bindTooltip('Pickup: ' + (b.pickupName || ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      points.push(from);
+    }
+    if (to) {
+      L.circleMarker(to, { radius: 7, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1, weight: 2 })
+        .bindTooltip('Drop: ' + (b.dropName || ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      L.marker(to, { icon: campusUserIcon(), zIndexOffset: 600 })
+        .bindTooltip(escapeHtml(b.customerName || 'Passenger') + (b.customerEmail ? '<br>' + escapeHtml(b.customerEmail) : ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      points.push(to);
+    }
+    if (from && to) {
+      L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(adminDroneLiveLayer);
+    }
+    var pos = d.drone || (typeof clientDronePos === 'function' ? clientDronePos(b) : null);
+    if (pos && pos.lat != null) {
+      adminDronePositions[b.id] = [pos.lat, pos.lng];
+      points.push([pos.lat, pos.lng]);
+      var heading = pos.heading != null ? pos.heading : 0;
+      L.marker([pos.lat, pos.lng], {
+        icon: typeof campusDroneIcon === 'function' ? campusDroneIcon(heading) : campusUserIcon(),
+        zIndexOffset: 800,
+      }).bindTooltip(
+        escapeHtml(b.droneCallsign || 'Drone') + ' · ' + escapeHtml(b.customerName || 'Passenger') +
+        '<br>' + escapeHtml(b.pickupName || '') + ' → ' + escapeHtml(b.dropName || ''),
+        { permanent: false }
+      ).addTo(adminDroneLiveLayer);
+    }
+  });
+  if (!adminDroneLiveFitted) {
+    programmaticMapMove = true;
+    if (points.length) {
+      adminLiveMap.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 16 });
+    } else if (typeof IITM_COORD !== 'undefined') {
+      adminLiveMap.setView(IITM_COORD, 16);
+    }
+    adminDroneLiveFitted = true;
+    setTimeout(function () { programmaticMapMove = false; }, 50);
+  }
+}
+
+function focusAdminLiveDrone(id) {
+  var pos = adminDronePositions[id];
+  if (!pos || !adminLiveMap) return;
+  programmaticMapMove = true;
+  adminLiveMap.setView(pos, 17, { animate: true });
+  setTimeout(function () { programmaticMapMove = false; }, 50);
 }
 
 function toggleAdminMapFullscreen() {
@@ -455,6 +680,7 @@ function pilotInitials(name) {
 }
 
 async function refreshAdminLiveFlights() {
+  if (adminLiveKind === 'drone') return;
   const listEl = document.getElementById('admin-live-list');
   const fleetEl = document.getElementById('admin-fleet-list');
   const metaEl = document.getElementById('admin-live-meta');

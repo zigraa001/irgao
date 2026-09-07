@@ -609,24 +609,47 @@ router.patch("/admin/services/:id", requireAuth, requireRole("admin"), async (re
 
 // GET /api/drones/admin/bookings — all drone bookings.
 router.get("/admin/bookings", requireAuth, requireRole("admin"), async (req, res) => {
+  const filter = String(req.query.filter || "all");
+  let where = "";
+  if (filter === "live" || filter === "inflight") {
+    where = `WHERE db.status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress')`;
+  } else if (filter === "done") {
+    where = `WHERE db.status IN ('delivered','completed')`;
+  } else if (filter === "cancelled") {
+    where = `WHERE db.status = 'cancelled'`;
+  }
   const rows = await query(
-    `SELECT db.*, ds.name AS serviceName, ds.category, ds.imageEmoji,
-            do2.name AS operatorName, u.name AS customerName, u.email AS customerEmail
-     FROM drone_bookings db
-     JOIN drone_services ds ON ds.id = db.serviceId
-     LEFT JOIN drone_operators do2 ON do2.id = db.operatorId
-     JOIN users u ON u.id = db.customerId
-     ORDER BY db.createdAt DESC LIMIT 100`
+    `${BOOKING_SELECT}
+     ${where}
+     ORDER BY db.createdAt DESC
+     LIMIT 100`
   );
   const stats = await queryOne(
     `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress') THEN 1 ELSE 0 END) AS live,
             SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed,
-            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+            SUM(CASE WHEN status IN ('delivered','completed') THEN 1 ELSE 0 END) AS completed,
             SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
             COALESCE(SUM(CASE WHEN status != 'cancelled' THEN totalPrice ELSE 0 END), 0) AS revenue
      FROM drone_bookings`
   );
-  res.json({ bookings: rows, stats });
+  res.json({ bookings: rows, stats, total: rows.length });
+});
+
+// GET /api/drones/admin/live — active campus drops for the admin live map.
+router.get("/admin/live", requireAuth, requireRole("admin"), async (_req, res) => {
+  const rows = await query(
+    `${BOOKING_SELECT}
+     WHERE db.paymentStatus = 'paid'
+       AND db.status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress')
+     ORDER BY db.createdAt DESC
+     LIMIT 50`
+  );
+  rows.forEach((row) => maybeStartCampusDemo(row));
+  res.json({
+    deliveries: rows.map((row) => trackPayload(row)),
+    campusPoints: CAMPUS_POINTS,
+  });
 });
 
 // GET /api/drones/admin/operators — all drone operators.

@@ -710,8 +710,8 @@ async function loadDroneAdminBookings() {
       statsEl.innerHTML =
         '<div class="adm-grid" style="margin-bottom:16px">' +
           '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'blue', String(s.total || 0), 'Total').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
-          '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', String(s.confirmed || 0), 'Confirmed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
-          '<div class="adm-span-3">' + admKpi(ADM_ICONS.aircraft, 'navy', String(s.completed || 0), 'Completed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.plane, 'amber', String(s.live || 0), 'Live').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', String(s.completed || 0), 'Delivered').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
           '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(s.revenue || 0), 'Revenue').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
         '</div>';
     }
@@ -733,15 +733,17 @@ function renderDroneAdminBookings(bookings) {
   var html = '<div class="das-rows-card">';
   bookings.forEach(function(b) {
     var custInitials = (b.customerName || '?').split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+    var route = (b.pickupName && b.dropName) ? (escapeHtml(b.pickupName) + ' → ' + escapeHtml(b.dropName)) : escapeHtml(b.location || '');
     html += '<div class="das-row">' +
       '<div class="das-row-avatar">' + custInitials + '</div>' +
       '<div class="das-row-identity">' +
         '<div class="das-row-name">' + escapeHtml(b.customerName || 'Unknown') + '</div>' +
-        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.serviceName) + ' · ' + b.hours + 'h</div>' +
+        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.customerEmail || '') + '</div>' +
       '</div>' +
       '<div class="das-row-tags">' +
         '<span class="das-booking-price">' + INR(b.totalPrice) + '</span>' +
-        '<span class="das-meta-tag das-meta-tag--muted">' + (b.scheduledDate || 'No date') + '</span>' +
+        (route ? '<span class="das-meta-tag das-meta-tag--muted">' + route + '</span>' : '') +
+        '<span class="das-meta-tag das-meta-tag--muted">' + escapeHtml(b.parcelType || b.serviceName || '') + '</span>' +
       '</div>' +
       '<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
         ['pending','confirmed','dispatched','picked_up','flying','arriving','delivered','in_progress','completed','cancelled'].map(function(st) {

@@ -1473,6 +1473,8 @@ let adminCurrentSection = 'dashboard';
 let adminUserDrawerUser = null;
 let adminBookingsFilter = 'all';
 let adminBookingsOffset = 0;
+let adminBookingsKind = 'taxi';
+let adminLiveKind = 'taxi';
 const ADMIN_BOOKINGS_PAGE = 50;
 
 // Flight zones for map overlays
@@ -1963,6 +1965,7 @@ function showAdminSection(name) {
     clearInterval(adminLivePollInterval);
     adminLivePollInterval = null;
   }
+  if (name !== 'live') stopAdminDroneLive();
 
   if (name === 'users' && !adminUsersLoaded) {
     adminUsersLoaded = true;
@@ -2302,7 +2305,7 @@ function adminDashboardHtml(stats) {
     '<div class="adm-grid adm-grid--spaced">' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.users, 'blue', (t.totalUsers || 0).toLocaleString('en-IN'), 'Total users') + '</div>' +
       '<div class="adm-span-3 adm-kpi-link" onclick="openAdminBookings(\'all\')">' + admKpi(ADM_ICONS.bookings, 'navy', (t.totalBookings || 0).toLocaleString('en-IN'), 'Total bookings') + '</div>' +
-      '<div class="adm-span-3 adm-kpi-link" onclick="showAdminSection(\'live\')">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live flights', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
+      '<div class="adm-span-3 adm-kpi-link" onclick="showAdminSection(\'live\')">' + admKpi(ADM_ICONS.plane, 'amber', (t.live || 0).toLocaleString('en-IN'), 'Live trips', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>') + '</div>' +
       '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(t.revenueINR), 'Revenue') + '</div>' +
     '</div>';
 
@@ -2345,7 +2348,11 @@ function adminDashboardHtml(stats) {
       '<div class="adm-comp-card-header"><span class="adm-comp-card-title">Live operations</span></div>' +
       '<div class="adm-live-hero">' +
         '<div class="adm-live-hero-value">' + (t.live || 0) + '</div>' +
-        '<div class="adm-live-hero-label">flights in progress</div>' +
+        '<div class="adm-live-hero-label">' +
+          ((t.taxiLive || 0) || (t.droneLive || 0)
+            ? (t.taxiLive || 0) + ' air taxi · ' + (t.droneLive || 0) + ' drone'
+            : 'trips in progress') +
+        '</div>' +
         '<button type="button" class="adm-live-btn" onclick="showAdminSection(\'live\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>' +
           'Open Live Map' +
@@ -3632,6 +3639,47 @@ function openAdminBookings(filter) {
   showAdminSection('bookings');
 }
 
+function openAdminDroneBookings() {
+  adminBookingsKind = 'drone';
+  adminBookingsFilter = 'all';
+  adminBookingsOffset = 0;
+  showAdminSection('bookings');
+}
+
+function switchAdminBookingsKind(kind) {
+  adminBookingsKind = kind === 'drone' ? 'drone' : 'taxi';
+  adminBookingsFilter = 'all';
+  adminBookingsOffset = 0;
+  syncAdminBookingsKindUI();
+  loadAdminBookings();
+}
+
+function syncAdminBookingsKindUI() {
+  document.querySelectorAll('#admin-bookings-kind-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-bk-kind') === adminBookingsKind);
+  });
+  var title = document.getElementById('admin-bookings-title');
+  var sub = document.getElementById('admin-bookings-sub');
+  var inflightBtn = document.querySelector('#admin-bookings-tabs [data-bk-filter="inflight"]');
+  if (adminBookingsKind === 'drone') {
+    if (title) title.textContent = 'Drone Bookings';
+    if (sub) sub.textContent = 'Campus deliveries — pickup, drop, customer, and payment.';
+    if (inflightBtn) inflightBtn.textContent = 'Live';
+  } else {
+    if (title) title.textContent = 'Bookings';
+    if (sub) sub.textContent = 'Air taxi trips — previous, in-flight, and completed.';
+    if (inflightBtn) inflightBtn.textContent = 'In flight';
+  }
+}
+
+function switchAdminLiveKind(kind) {
+  adminLiveKind = kind === 'drone' ? 'drone' : 'taxi';
+  document.querySelectorAll('#admin-live-kind-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-live-kind') === adminLiveKind);
+  });
+  if (adminCurrentSection === 'live') initAdminLiveFlights();
+}
+
 function switchAdminBookingsFilter(filter) {
   adminBookingsFilter = filter || 'all';
   adminBookingsOffset = 0;
@@ -3666,10 +3714,15 @@ async function loadAdminBookings() {
   var meta = document.getElementById('admin-bookings-meta');
   var pager = document.getElementById('admin-bookings-pager');
   if (!list) return;
+  syncAdminBookingsKindUI();
   document.querySelectorAll('#admin-bookings-tabs .admin-tab').forEach(function (btn) {
     btn.classList.toggle('active', btn.getAttribute('data-bk-filter') === adminBookingsFilter);
   });
   list.innerHTML = '<div class="adm-skeleton-row"><div class="adm-sk-flex"><div class="adm-skeleton adm-sk-text" style="--w:50%"></div></div></div>';
+  if (adminBookingsKind === 'drone') {
+    await loadAdminDroneBookingsList();
+    return;
+  }
   try {
     var res = await apiFetch('/api/admin/bookings?filter=' + encodeURIComponent(adminBookingsFilter) + '&limit=' + ADMIN_BOOKINGS_PAGE + '&offset=' + adminBookingsOffset);
     var data = await res.json();
@@ -3699,6 +3752,71 @@ async function loadAdminBookings() {
     list.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load bookings</div><div class="adm-empty-sub">Please try again.</div></div>';
     if (pager) pager.innerHTML = '';
   }
+}
+
+async function loadAdminDroneBookingsList() {
+  var list = document.getElementById('admin-bookings-list');
+  var kpis = document.getElementById('admin-bookings-kpis');
+  var meta = document.getElementById('admin-bookings-meta');
+  var pager = document.getElementById('admin-bookings-pager');
+  if (!list) return;
+  var filter = adminBookingsFilter === 'inflight' ? 'live' : adminBookingsFilter;
+  try {
+    var res = await apiFetch('/api/drones/admin/bookings?filter=' + encodeURIComponent(filter));
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    var s = data.stats || {};
+    if (kpis) {
+      kpis.innerHTML =
+        '<div class="adm-grid" style="margin-bottom:16px">' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'all\')">' + admKpi(ADM_ICONS.bookings, 'navy', String(s.total || 0), 'All bookings').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'inflight\')">' + admKpi(ADM_ICONS.plane, 'amber', String(s.live || 0), 'Live', '<div class="adm-kpi-chip adm-kpi-chip--amber">Live</div>').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'done\')">' + admKpi(ADM_ICONS.check, 'green', String(s.completed || 0), 'Delivered').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3 adm-kpi-link" onclick="switchAdminBookingsFilter(\'cancelled\')">' + admKpi(ADM_ICONS.cancel, 'red', String(s.cancelled || 0), 'Cancelled').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+        '</div>';
+    }
+    renderAdminDroneBookingsTable(data.bookings || []);
+    var shown = (data.bookings || []).length;
+    if (meta) meta.textContent = shown ? (shown + ' booking' + (shown === 1 ? '' : 's')) : 'No drone bookings';
+    if (pager) pager.innerHTML = '';
+  } catch (e) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load drone bookings</div><div class="adm-empty-sub">Please try again.</div></div>';
+    if (pager) pager.innerHTML = '';
+  }
+}
+
+function renderAdminDroneBookingsTable(bookings) {
+  var list = document.getElementById('admin-bookings-list');
+  if (!list) return;
+  if (!bookings.length) {
+    list.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No drone bookings in this view</div><div class="adm-empty-sub">Campus deliveries will show up here after a passenger books or an operator sends a drop.</div></div>';
+    return;
+  }
+  var rows = bookings.map(function (b) {
+    var fare = b.totalPrice != null ? INR(b.totalPrice) : '—';
+    var pay = b.paymentStatus ? escapeHtml(b.paymentStatus) : '—';
+    var live = b.paymentStatus === 'paid' && ['confirmed','dispatched','picked_up','flying','arriving','in_progress'].indexOf(b.status) !== -1;
+    var route = escapeHtml(b.pickupName || '—') + ' → ' + escapeHtml(b.dropName || '—');
+    return '<tr>' +
+      '<td><strong>#' + b.id + '</strong></td>' +
+      '<td><div>' + escapeHtml(b.customerName || 'Unknown') + '</div><div class="admin-users-meta">' + escapeHtml(b.customerEmail || '') + '</div></td>' +
+      '<td>' + route + '</td>' +
+      '<td>' + escapeHtml(b.parcelType || b.serviceName || '—') + '</td>' +
+      '<td>' + statusBadgeHtml(b.status) + '</td>' +
+      '<td>' + fare + '<div class="admin-users-meta">' + pay + '</div></td>' +
+      '<td>' + escapeHtml(b.droneCallsign || b.operatorName || '—') + '</td>' +
+      '<td>' + formatAdminBookingWhen(b.createdAt) +
+        (live ? '<div class="admin-users-meta"><button type="button" class="admin-btn-sm" onclick="switchAdminLiveKind(\'drone\');showAdminSection(\'live\')">Live map</button></div>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('');
+  list.innerHTML =
+    '<table class="admin-table">' +
+      '<thead><tr>' +
+        '<th>ID</th><th>Customer</th><th>Route</th><th>Parcel</th><th>Status</th><th>Fare</th><th>Drone</th><th>Booked</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>';
 }
 
 function renderAdminBookingsList(bookings) {
@@ -3759,8 +3877,14 @@ const STATUS_BADGE = {
   picked_up: { label: 'Picked up', cls: 'op-badge--amber' },
   flying:    { label: 'Flying',    cls: 'op-badge--amber' },
   arrived:   { label: 'Arrived',   cls: 'op-badge--green' },
+  arriving:  { label: 'Arriving',  cls: 'op-badge--amber' },
   completed: { label: 'Completed', cls: 'op-badge--gray' },
   cancelled: { label: 'Cancelled', cls: 'op-badge--red' },
+  pending:   { label: 'Placed',    cls: 'op-badge--gray' },
+  confirmed: { label: 'Confirmed', cls: 'op-badge--green' },
+  dispatched:{ label: 'Assigned',  cls: 'op-badge--blue' },
+  delivered: { label: 'Delivered', cls: 'op-badge--green' },
+  in_progress: { label: 'In progress', cls: 'op-badge--amber' },
 };
 
 function statusBadgeHtml(status) {
@@ -5110,12 +5234,237 @@ async function initAdminLiveFlights() {
     }).addTo(adminLiveMap);
     attachAdminMapZoomProfiles();
   }
-  await refreshAdminLiveFlights();
+  applyAdminLiveKindUI();
   if (adminLivePollInterval) clearInterval(adminLivePollInterval);
-  adminLivePollInterval = setInterval(refreshAdminLiveFlights, 5000);
+  if (adminLiveKind === 'drone') {
+    clearAdminTaxiLiveMarkers();
+    await refreshAdminDroneLive();
+    adminLivePollInterval = setInterval(refreshAdminDroneLive, 2500);
+  } else {
+    const leavingDrone = !!(adminDroneLiveLayer || adminDroneLiveFitted);
+    stopAdminDroneLive();
+    if (leavingDrone && adminLiveMap) adminLiveMap.setView([22.5, 79.0], 5);
+    await refreshAdminLiveFlights();
+    adminLivePollInterval = setInterval(refreshAdminLiveFlights, 5000);
+  }
   setTimeout(function () {
     if (adminLiveMap) adminLiveMap.invalidateSize();
   }, 200);
+}
+
+function applyAdminLiveKindUI() {
+  document.querySelectorAll('#admin-live-kind-tabs .admin-tab').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-live-kind') === adminLiveKind);
+  });
+  var title = document.getElementById('admin-live-title');
+  var sub = document.getElementById('admin-live-sub');
+  var listH = document.getElementById('admin-live-list-heading');
+  var fleetH = document.getElementById('admin-live-fleet-heading');
+  if (adminLiveKind === 'drone') {
+    if (title) title.textContent = 'Campus Drone Live';
+    if (sub) sub.textContent = 'IIT Madras deliveries — drone, customer, pickup and drop.';
+    if (listH) listH.textContent = 'Live campus drops';
+    if (fleetH) fleetH.textContent = 'Customers in transit';
+  } else {
+    if (title) title.textContent = 'Pilots Live Map';
+    if (sub) sub.textContent = 'All pilots on the map (smooth GPS). Lists below refresh every 5 seconds.';
+    if (listH) listH.textContent = 'In transit & dispatching';
+    if (fleetH) fleetH.textContent = 'All pilots (GPS)';
+  }
+}
+
+function clearAdminTaxiLiveMarkers() {
+  if (typeof animatedMarkers === 'undefined') return;
+  var keys = [];
+  animatedMarkers.forEach(function (_entry, key) {
+    if (String(key).indexOf('admin-pilot-') === 0) keys.push(key);
+  });
+  keys.forEach(function (key) { removeAnimatedMapMarker(key); });
+}
+
+let adminDroneLiveLayer = null;
+let adminDroneLiveFitted = false;
+let adminDronePositions = {};
+
+function stopAdminDroneLive() {
+  adminDroneLiveFitted = false;
+  adminDronePositions = {};
+  if (adminDroneLiveLayer && adminLiveMap) {
+    adminLiveMap.removeLayer(adminDroneLiveLayer);
+    adminDroneLiveLayer = null;
+  }
+}
+
+function campusUserIcon() {
+  return L.divIcon({
+    className: 'campus-user-marker',
+    html: '<div class="campus-user-icon">👤</div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
+}
+
+async function refreshAdminDroneLive() {
+  if (adminLiveKind !== 'drone') return;
+  const listEl = document.getElementById('admin-live-list');
+  const fleetEl = document.getElementById('admin-fleet-list');
+  const metaEl = document.getElementById('admin-live-meta');
+  const flightCountEl = document.getElementById('admin-live-flight-count');
+  const fleetCountEl = document.getElementById('admin-live-fleet-count');
+  if (!listEl) return;
+  try {
+    const res = await apiFetch('/api/drones/admin/live');
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error('load failed');
+    const deliveries = Array.isArray(data.deliveries) ? data.deliveries : [];
+    const customers = [];
+    const seenCust = {};
+    deliveries.forEach(function (d) {
+      const b = d.booking || {};
+      const key = String(b.customerEmail || b.customerId || b.customerName || '');
+      if (!key || seenCust[key]) return;
+      seenCust[key] = true;
+      customers.push({
+        name: b.customerName || 'Passenger',
+        email: b.customerEmail || '',
+        route: (b.pickupName || 'Pickup') + ' → ' + (b.dropName || 'Drop'),
+        status: b.status,
+        callsign: b.droneCallsign || '',
+      });
+    });
+    if (metaEl) {
+      metaEl.innerHTML =
+        adminLiveChip('admin-live-chip-dot--green', deliveries.length, deliveries.length === 1 ? 'drop' : 'drops') +
+        adminLiveChip('admin-live-chip-dot--blue', customers.length, customers.length === 1 ? 'customer' : 'customers');
+    }
+    if (flightCountEl) flightCountEl.textContent = deliveries.length;
+    if (fleetCountEl) fleetCountEl.textContent = customers.length;
+    if (!deliveries.length) {
+      listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No live campus drops</div><div class="adm-empty-sub">Paid drone deliveries will appear here as they dispatch.</div></div>';
+    } else {
+      listEl.innerHTML = deliveries.map(function (d) {
+        const b = d.booking || {};
+        const eta = d.etaRemainingMin != null ? (d.etaRemainingMin + ' min') : '—';
+        return (
+          '<div class="admin-flight-card" onclick="focusAdminLiveDrone(' + b.id + ')" style="cursor:pointer">' +
+            '<div class="admin-flight-top">' +
+              '<span class="admin-live-chip-dot admin-live-chip-dot--blue" style="margin-top:2px"></span>' +
+              '<span class="admin-flight-route">' + escapeHtml(b.pickupName || 'Pickup') + ' → ' + escapeHtml(b.dropName || 'Drop') + '</span>' +
+            '</div>' +
+            '<div class="admin-flight-status">' + statusBadgeHtml(b.status) + '</div>' +
+            '<div class="admin-flight-meta">' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>DRN-' + String(b.id).padStart(5, '0') + '</span>' +
+                '<span>·</span>' +
+                '<span>' + escapeHtml(b.customerName || 'Passenger') + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>' + escapeHtml(b.droneCallsign || 'Assigning…') + '</span>' +
+                '<span class="admin-flight-time">ETA ' + eta + '</span>' +
+              '</div>' +
+              '<div class="admin-flight-meta-row">' +
+                '<span>' + escapeHtml(b.parcelType || b.serviceName || 'Parcel') +
+                (b.batteryPct != null ? ' · ' + b.batteryPct + '% battery' : '') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    if (fleetEl) {
+      if (!customers.length) {
+        fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">No customers in transit</div><div class="adm-empty-sub">Live drops will list the passenger waiting at drop.</div></div>';
+      } else {
+        fleetEl.innerHTML = customers.map(function (c) {
+          return (
+            '<div class="admin-fleet-row">' +
+              '<div class="admin-fleet-avatar">' + pilotInitials(c.name) + '</div>' +
+              '<div>' +
+                '<div class="admin-fleet-name">' + escapeHtml(c.name) + '</div>' +
+                '<div class="admin-fleet-gps">' + escapeHtml(c.email || c.route) + '</div>' +
+              '</div>' +
+              '<div class="admin-fleet-status">' + statusBadgeHtml(c.status) + '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+    }
+    paintAdminDroneLive(deliveries, data.campusPoints);
+  } catch (e) {
+    listEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load drone live map</div><div class="adm-empty-sub">Check your connection and try again.</div></div>';
+    if (fleetEl) fleetEl.innerHTML = '<div class="adm-empty"><div class="adm-empty-title">Could not load customers</div></div>';
+  }
+}
+
+function paintAdminDroneLive(deliveries, campusPoints) {
+  if (!adminLiveMap) return;
+  if (!adminDroneLiveLayer) adminDroneLiveLayer = L.layerGroup().addTo(adminLiveMap);
+  adminDroneLiveLayer.clearLayers();
+  adminDronePositions = {};
+  var points = [];
+  var pins = campusPoints || (typeof CAMPUS_POINTS !== 'undefined' ? CAMPUS_POINTS : {});
+  Object.keys(pins).forEach(function (name) {
+    var c = pins[name];
+    if (!c || c.length < 2) return;
+    L.circleMarker(c, { radius: 4, color: '#0f766e', weight: 1, fillColor: '#fff', fillOpacity: 1 })
+      .bindTooltip(name, { permanent: false })
+      .addTo(adminDroneLiveLayer);
+  });
+  deliveries.forEach(function (d) {
+    var b = d.booking || {};
+    var from = (b.pickupLat != null) ? [Number(b.pickupLat), Number(b.pickupLng)] : (pins[b.pickupName] || null);
+    var to = (b.dropLat != null) ? [Number(b.dropLat), Number(b.dropLng)] : (pins[b.dropName] || null);
+    if (from) {
+      L.circleMarker(from, { radius: 7, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 1, weight: 2 })
+        .bindTooltip('Pickup: ' + (b.pickupName || ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      points.push(from);
+    }
+    if (to) {
+      L.circleMarker(to, { radius: 7, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1, weight: 2 })
+        .bindTooltip('Drop: ' + (b.dropName || ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      L.marker(to, { icon: campusUserIcon(), zIndexOffset: 600 })
+        .bindTooltip(escapeHtml(b.customerName || 'Passenger') + (b.customerEmail ? '<br>' + escapeHtml(b.customerEmail) : ''), { permanent: false })
+        .addTo(adminDroneLiveLayer);
+      points.push(to);
+    }
+    if (from && to) {
+      L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(adminDroneLiveLayer);
+    }
+    var pos = d.drone || (typeof clientDronePos === 'function' ? clientDronePos(b) : null);
+    if (pos && pos.lat != null) {
+      adminDronePositions[b.id] = [pos.lat, pos.lng];
+      points.push([pos.lat, pos.lng]);
+      var heading = pos.heading != null ? pos.heading : 0;
+      L.marker([pos.lat, pos.lng], {
+        icon: typeof campusDroneIcon === 'function' ? campusDroneIcon(heading) : campusUserIcon(),
+        zIndexOffset: 800,
+      }).bindTooltip(
+        escapeHtml(b.droneCallsign || 'Drone') + ' · ' + escapeHtml(b.customerName || 'Passenger') +
+        '<br>' + escapeHtml(b.pickupName || '') + ' → ' + escapeHtml(b.dropName || ''),
+        { permanent: false }
+      ).addTo(adminDroneLiveLayer);
+    }
+  });
+  if (!adminDroneLiveFitted) {
+    programmaticMapMove = true;
+    if (points.length) {
+      adminLiveMap.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 16 });
+    } else if (typeof IITM_COORD !== 'undefined') {
+      adminLiveMap.setView(IITM_COORD, 16);
+    }
+    adminDroneLiveFitted = true;
+    setTimeout(function () { programmaticMapMove = false; }, 50);
+  }
+}
+
+function focusAdminLiveDrone(id) {
+  var pos = adminDronePositions[id];
+  if (!pos || !adminLiveMap) return;
+  programmaticMapMove = true;
+  adminLiveMap.setView(pos, 17, { animate: true });
+  setTimeout(function () { programmaticMapMove = false; }, 50);
 }
 
 function toggleAdminMapFullscreen() {
@@ -5178,6 +5527,7 @@ function pilotInitials(name) {
 }
 
 async function refreshAdminLiveFlights() {
+  if (adminLiveKind === 'drone') return;
   const listEl = document.getElementById('admin-live-list');
   const fleetEl = document.getElementById('admin-fleet-list');
   const metaEl = document.getElementById('admin-live-meta');
@@ -9313,8 +9663,8 @@ async function loadDroneAdminBookings() {
       statsEl.innerHTML =
         '<div class="adm-grid" style="margin-bottom:16px">' +
           '<div class="adm-span-3">' + admKpi(ADM_ICONS.bookings, 'blue', String(s.total || 0), 'Total').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
-          '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', String(s.confirmed || 0), 'Confirmed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
-          '<div class="adm-span-3">' + admKpi(ADM_ICONS.aircraft, 'navy', String(s.completed || 0), 'Completed').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.plane, 'amber', String(s.live || 0), 'Live').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
+          '<div class="adm-span-3">' + admKpi(ADM_ICONS.check, 'green', String(s.completed || 0), 'Delivered').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
           '<div class="adm-span-3">' + admKpi(ADM_ICONS.revenue, 'green', INR(s.revenue || 0), 'Revenue').replace('adm-kpi"', 'adm-kpi adm-kpi--compact"') + '</div>' +
         '</div>';
     }
@@ -9336,15 +9686,17 @@ function renderDroneAdminBookings(bookings) {
   var html = '<div class="das-rows-card">';
   bookings.forEach(function(b) {
     var custInitials = (b.customerName || '?').split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
+    var route = (b.pickupName && b.dropName) ? (escapeHtml(b.pickupName) + ' → ' + escapeHtml(b.dropName)) : escapeHtml(b.location || '');
     html += '<div class="das-row">' +
       '<div class="das-row-avatar">' + custInitials + '</div>' +
       '<div class="das-row-identity">' +
         '<div class="das-row-name">' + escapeHtml(b.customerName || 'Unknown') + '</div>' +
-        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.serviceName) + ' · ' + b.hours + 'h</div>' +
+        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.customerEmail || '') + '</div>' +
       '</div>' +
       '<div class="das-row-tags">' +
         '<span class="das-booking-price">' + INR(b.totalPrice) + '</span>' +
-        '<span class="das-meta-tag das-meta-tag--muted">' + (b.scheduledDate || 'No date') + '</span>' +
+        (route ? '<span class="das-meta-tag das-meta-tag--muted">' + route + '</span>' : '') +
+        '<span class="das-meta-tag das-meta-tag--muted">' + escapeHtml(b.parcelType || b.serviceName || '') + '</span>' +
       '</div>' +
       '<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
         ['pending','confirmed','dispatched','picked_up','flying','arriving','delivered','in_progress','completed','cancelled'].map(function(st) {

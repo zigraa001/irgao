@@ -20,8 +20,14 @@ const STATUS_BADGE = {
   picked_up: { label: 'Picked up', cls: 'op-badge--amber' },
   flying:    { label: 'Flying',    cls: 'op-badge--amber' },
   arrived:   { label: 'Arrived',   cls: 'op-badge--green' },
+  arriving:  { label: 'Arriving',  cls: 'op-badge--amber' },
   completed: { label: 'Completed', cls: 'op-badge--gray' },
   cancelled: { label: 'Cancelled', cls: 'op-badge--red' },
+  pending:   { label: 'Placed',    cls: 'op-badge--gray' },
+  confirmed: { label: 'Confirmed', cls: 'op-badge--green' },
+  dispatched:{ label: 'Assigned',  cls: 'op-badge--blue' },
+  delivered: { label: 'Delivered', cls: 'op-badge--green' },
+  in_progress: { label: 'In progress', cls: 'op-badge--amber' },
 };
 
 function statusBadgeHtml(status) {
