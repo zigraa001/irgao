@@ -55,11 +55,11 @@ let html = fs.readFileSync(appHtmlPath, "utf8");
 const before = html;
 // Replace any existing ?v=… (or none) on the two asset links.
 html = html.replace(
-  /href="\/css\/app\.css(?:\?v=[a-f0-9]+)?"/,
+  /href="\/css\/app\.css(?:\?v=[^"]*)?"/,
   `href="/css/app.css?v=${version}"`
 );
 html = html.replace(
-  /src="\/js\/app\.bundle\.js(?:\?v=[a-f0-9]+)?"/,
+  /src="\/js\/app\.bundle\.js(?:\?v=[^"]*)?"/,
   `src="/js/app.bundle.js?v=${version}"`
 );
 if (html !== before) fs.writeFileSync(appHtmlPath, html);

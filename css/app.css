@@ -2880,6 +2880,12 @@ textarea:focus-visible, a:focus-visible {
   overflow: hidden;
   background: var(--gray-50);
 }
+#drone-operator-view {
+  height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--gray-50);
+}
 .op-map-badge {
   position: absolute;
   top: 12px;
@@ -5712,6 +5718,15 @@ body.admin-map-fs { overflow: hidden; }
 }
 .drone-form-row {
   margin-bottom: 12px;
+}
+#dop-send-form {
+  margin-top: 8px;
+}
+#dop-send-form .drone-form-row {
+  margin-bottom: 8px;
+}
+#dop-send-form .drone-form-grid {
+  margin-bottom: 4px;
 }
 .drone-form-row label {
   display: block;

@@ -10516,7 +10516,7 @@ function initDroneOperatorConsole() {
   loadDopJobs();
   if (dopPoll) clearInterval(dopPoll);
   dopPoll = setInterval(loadDopJobs, 4000);
-  setTimeout(function () { if (dopMap) dopMap.invalidateSize(); }, 300);
+  setTimeout(function () { if (dopMap) dopMap.invalidateSize(); }, 400);
 }
 
 function fillDopSendPoints() {

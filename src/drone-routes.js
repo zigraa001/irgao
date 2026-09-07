@@ -390,6 +390,7 @@ router.get("/operator/jobs", requireAuth, requireRole("drone_operator"), async (
      LIMIT 80`,
     ACTIVE_JOB_STATUSES
   );
+  rows.forEach((row) => maybeStartCampusDemo(row));
   res.json({ jobs: rows.map((row) => trackPayload(row)) });
 });
 

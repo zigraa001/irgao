@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=us116-dispatch-trips">
+  <link rel="stylesheet" href="/css/app.css?v=3dee435f">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -1004,34 +1004,36 @@
             <label>Recipient email</label>
             <input id="dop-send-email" class="pd-input" type="email" placeholder="passenger@irago.in" autocomplete="email">
           </div>
-          <div class="drone-form-row">
-            <label>Pickup</label>
-            <select id="dop-send-from" class="pd-input"></select>
-          </div>
-          <div class="drone-form-row">
-            <label>Destination</label>
-            <select id="dop-send-to" class="pd-input"></select>
-          </div>
-          <div class="drone-form-row">
-            <label>Parcel</label>
-            <select id="dop-send-parcel" class="pd-input">
-              <option value="food" selected>Food / mess</option>
-              <option value="documents">Documents</option>
-              <option value="pharmacy">Pharmacy</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="drone-form-row">
-            <label>Drone ID / callsign</label>
-            <input id="dop-send-callsign" class="pd-input" value="IITM-D1">
-          </div>
-          <div class="drone-form-row">
-            <label>Battery %</label>
-            <input id="dop-send-battery" class="pd-input" type="number" min="1" max="100" value="92">
-          </div>
-          <div class="drone-form-row">
-            <label>ETA (minutes)</label>
-            <input id="dop-send-eta" class="pd-input" type="number" min="1" max="60" value="8">
+          <div class="drone-form-grid">
+            <div class="drone-form-row">
+              <label>Pickup</label>
+              <select id="dop-send-from" class="pd-input"></select>
+            </div>
+            <div class="drone-form-row">
+              <label>Destination</label>
+              <select id="dop-send-to" class="pd-input"></select>
+            </div>
+            <div class="drone-form-row">
+              <label>Parcel</label>
+              <select id="dop-send-parcel" class="pd-input">
+                <option value="food" selected>Food / mess</option>
+                <option value="documents">Documents</option>
+                <option value="pharmacy">Pharmacy</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="drone-form-row">
+              <label>Drone ID</label>
+              <input id="dop-send-callsign" class="pd-input" value="IITM-D1">
+            </div>
+            <div class="drone-form-row">
+              <label>Battery %</label>
+              <input id="dop-send-battery" class="pd-input" type="number" min="1" max="100" value="92">
+            </div>
+            <div class="drone-form-row">
+              <label>ETA (min)</label>
+              <input id="dop-send-eta" class="pd-input" type="number" min="1" max="60" value="8">
+            </div>
           </div>
           <div class="drone-form-row">
             <label>Notes (optional)</label>
@@ -1754,6 +1756,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=94c3399d"></script>
+<script src="/js/app.bundle.js?v=3dee435f"></script>
 </body>
 </html>
