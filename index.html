@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IraGo</title>
+  <meta name="description" content="IraGo - India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity." />
   <link rel="icon" type="image/png" href="assets/images/irago-icon.png">
+  <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
+  <title>IraGo - AI-Powered Air Mobility for Bharat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
@@ -510,24 +512,29 @@
       .footer-inner { grid-template-columns: 1fr 1fr; }
     }
   </style>
-
 </head>
 <body>
 
   <nav class="nav">
     <a href="/" class="nav-logo">IraGo</a>
     <ul class="nav-links">
-      <li><a href="#mission">Mission</a></li>
-      <li><a href="#routes">Routes</a></li>
-      <li><a href="#features">Technology</a></li>
-      <li><a href="#booking">Book</a></li>
+      <li><a href="/">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#technology">Technology</a></li>
+      <li><a href="#use-cases">Use Cases</a></li>
+      <li><a href="vision.html">Vision</a></li>
+      <li><a href="team.html">Team</a></li>
+      <li><a href="app.html">Platform</a></li>
+      <li><a href="contact.html">Contact</a></li>
     </ul>
-    <a href="#booking" class="nav-cta">Reserve</a>
+    <a href="contact.html" class="nav-cta">Request a Demo</a>
   </nav>
 
-  <section class="hero">
+  <section class="hero" id="home">
     <div class="hero-media">
-      <img src="assets/images/hero-poster.jpg" alt="Aerial view" onerror="this.parentNode.style.background='var(--dark-blue)'">
+      <video autoplay muted loop playsinline preload="auto" poster="assets/images/hero-poster.jpg" aria-hidden="true" style="width:100%;height:100%;object-fit:cover;object-position:center">
+        <source src="assets/videos/hero-bg.mp4" type="video/mp4" />
+      </video>
       <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
@@ -536,102 +543,207 @@
     </div>
     <div class="hero-slides">
       <div class="hero-progress"><div class="hero-progress-fill"></div></div>
-      <div class="hero-slide-text">Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</div>
-    </div>
-  </section>
-
-  <section class="section" id="mission">
-    <div class="section-grid">
-      <h2>Introducing IraGo</h2>
-      <p class="section-body">An AI-powered air mobility platform designed to connect people and places through eVTOL-enabled journeys. IraGo is developing the digital and operational backbone for next-generation aerial mobility in India — route optimization, scheduling intelligence, and fleet visibility in real time.</p>
-    </div>
-  </section>
-
-  <section class="routes" id="routes">
-    <div class="routes-header">
-      <h2>Where we fly</h2>
-    </div>
-    <div class="routes-grid">
-      <div class="route-card">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Chennai CBD</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">OMR IT Corridor</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">8 min</div><div class="route-stat-sm">Flight time</div></div>
-          <div style="text-align:right"><div class="route-stat-big">25 km</div><div class="route-stat-sm">Distance</div></div>
-        </div>
-      </div>
-      <div class="route-card">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Chennai Airport</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Mahabalipuram</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">15 min</div><div class="route-stat-sm">Flight time</div></div>
-          <div style="text-align:right"><div class="route-stat-big">55 km</div><div class="route-stat-sm">Distance</div></div>
-        </div>
-      </div>
-      <div class="route-card">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">BLR Airport</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Electronic City</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">14 min</div><div class="route-stat-sm">Flight time</div></div>
-          <div style="text-align:right"><div class="route-stat-big">52 km</div><div class="route-stat-sm">Distance</div></div>
-        </div>
-      </div>
+      <div class="hero-slide-text">India's Air Mobility Platform. Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</div>
     </div>
   </section>
 
   <section class="booking-section" id="booking">
     <div class="booking-inner">
       <h2>Book your flight</h2>
-      <form class="booking-form" action="app.html" method="get">
+      <form class="booking-form" action="app.html" method="get" id="bookingForm">
         <div class="bk-field">
-          <label>From</label>
-          <select name="from">
-            <option>Chennai CBD</option>
-            <option>Chennai Airport</option>
-            <option>OMR IT Corridor</option>
-            <option>Bengaluru Airport</option>
-            <option>Electronic City</option>
+          <label>Service</label>
+          <select name="mode" id="modeSel">
+            <option value="air-taxi">Air Taxi</option>
+            <option value="helicopter">Helicopter</option>
+            <option value="air-ambulance">Air Ambulance</option>
+            <option value="drones">Drone Delivery</option>
           </select>
         </div>
         <div class="bk-field">
-          <label>To</label>
-          <select name="to">
-            <option>OMR IT Corridor</option>
-            <option>Chennai CBD</option>
-            <option>Mahabalipuram</option>
-            <option>Electronic City</option>
+          <label id="fromLab">From</label>
+          <select name="from" id="fromSel">
+            <option value="MAA-CBD">Chennai CBD</option>
+            <option value="MAA-APT">Chennai Airport</option>
+            <option value="MAA-OMR">OMR IT Corridor</option>
+            <option value="TN-MBP">Mahabalipuram</option>
+            <option value="BLR-APT">Bengaluru Airport</option>
+            <option value="BLR-ECT">Electronic City</option>
+            <option value="BOM-CTY">Mumbai</option>
+            <option value="PNQ-CTY">Pune</option>
           </select>
         </div>
         <div class="bk-field">
-          <label>Date</label>
+          <label id="toLab">To</label>
+          <select name="to" id="toSel">
+            <option value="MAA-CBD">Chennai CBD</option>
+            <option value="MAA-APT">Chennai Airport</option>
+            <option value="MAA-OMR" selected>OMR IT Corridor</option>
+            <option value="TN-MBP">Mahabalipuram</option>
+            <option value="BLR-APT">Bengaluru Airport</option>
+            <option value="BLR-ECT">Electronic City</option>
+            <option value="BOM-CTY">Mumbai</option>
+            <option value="PNQ-CTY">Pune</option>
+          </select>
+        </div>
+        <div class="bk-field">
+          <label>Departure</label>
           <input type="date" name="date" id="dateInput" />
         </div>
         <div class="bk-field">
-          <label>Passengers</label>
-          <select name="pax">
-            <option>1 Passenger</option>
-            <option>2 Passengers</option>
-            <option>3 Passengers</option>
-            <option>4 Passengers</option>
+          <label id="paxLab">Passengers</label>
+          <select name="pax" id="paxSel">
+            <option value="1">1 Passenger</option>
+            <option value="2">2 Passengers</option>
+            <option value="3">3 Passengers</option>
+            <option value="4">4 Passengers</option>
           </select>
         </div>
-        <button type="submit" class="booking-submit">Search flights</button>
+        <button type="submit" class="booking-submit" id="bk-search-label">Search Flights</button>
       </form>
+      <p class="hero-slide-text">Medical Priority · Corporate · Campus Delivery · Early Access. Flights operated by DGCA-licensed partner operators.</p>
     </div>
   </section>
 
-  <section class="features" id="features">
+  <section class="routes" id="routes">
+    <div class="routes-header">
+      <div class="feature-num">Popular Sectors</div>
+      <h2>Fly the Routes That Matter</h2>
+      <p class="section-body">Vertiport-to-vertiport target sectors across South and West India — minutes in the air instead of hours on the road.</p>
+    </div>
+    <div class="routes-grid">
+      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
+        <div class="route-from-to">
+          <div><span class="route-dot"></span><div class="route-city">Chennai CBD</div></div>
+          <div class="route-line"></div>
+          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">OMR IT Corridor</div></div>
+        </div>
+        <div class="route-stats">
+          <div><div class="route-stat-big">8 min</div><div class="route-stat-sm">by air</div></div>
+          <div style="text-align:right"><div class="route-stat-big">25 km</div><div class="route-stat-sm">1 h 10 m by road</div></div>
+        </div>
+      </a>
+      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
+        <div class="route-from-to">
+          <div><span class="route-dot"></span><div class="route-city">Chennai Airport</div></div>
+          <div class="route-line"></div>
+          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Mahabalipuram</div></div>
+        </div>
+        <div class="route-stats">
+          <div><div class="route-stat-big">15 min</div><div class="route-stat-sm">by air</div></div>
+          <div style="text-align:right"><div class="route-stat-big">55 km</div><div class="route-stat-sm">1 h 50 m by road</div></div>
+        </div>
+      </a>
+      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
+        <div class="route-from-to">
+          <div><span class="route-dot"></span><div class="route-city">Bengaluru Airport</div></div>
+          <div class="route-line"></div>
+          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Electronic City</div></div>
+        </div>
+        <div class="route-stats">
+          <div><div class="route-stat-big">14 min</div><div class="route-stat-sm">by air</div></div>
+          <div style="text-align:right"><div class="route-stat-big">52 km</div><div class="route-stat-sm">2 h 15 m by road</div></div>
+        </div>
+      </a>
+      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
+        <div class="route-from-to">
+          <div><span class="route-dot"></span><div class="route-city">Mumbai</div></div>
+          <div class="route-line"></div>
+          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Pune</div></div>
+        </div>
+        <div class="route-stats">
+          <div><div class="route-stat-big">40 min</div><div class="route-stat-sm">by air</div></div>
+          <div style="text-align:right"><div class="route-stat-big">150 km</div><div class="route-stat-sm">3 h 20 m by road</div></div>
+        </div>
+      </a>
+    </div>
+    <p class="section-body">* Projected vertiport-to-vertiport times on IraGo target sectors. Road times reflect typical peak-hour traffic.</p>
+  </section>
+
+  <section class="features" id="problem">
     <div class="features-inner">
-      <h2>Built on intelligent aviation infrastructure.</h2>
+      <div class="feature-num">The Challenge</div>
+      <h2>Why India Needs a New Mobility Layer</h2>
+      <p class="section-body">Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</p>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-num">01</div>
+          <h3>Congestion</h3>
+          <p>Millions of hours lost in traffic daily, costing India ₹2.1 lakh crore annually in economic productivity.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">02</div>
+          <h3>Delays</h3>
+          <p>Unpredictable travel times impact lives and businesses. Emergency response averages 14+ minutes in Tier-2 cities.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">03</div>
+          <h3>Limited Access</h3>
+          <p>Remote and high-value routes remain underserved. India needs a faster, more reliable mobility alternative.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="section-grid">
+      <h2>Introducing IraGo</h2>
+      <p class="section-body">An AI-powered air mobility platform designed to connect people and places through eVTOL-enabled journeys. IraGo is developing the digital and operational backbone for next-generation aerial mobility in India. Our platform is built to support route optimization, scheduling intelligence, and fleet visibility in real time, enabling efficient operations across emergency response, urgent travel, and high-value passenger movement.</p>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-inner">
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-num">AI-Powered Routing</div>
+          <h3>See How It Works</h3>
+          <p>Real-time optimization.</p>
+          <a href="#technology" class="route-city">See How It Works</a>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">Use Cases</div>
+          <h3>View Use Cases</h3>
+          <p>From urgency to premium experience.</p>
+          <a href="#use-cases" class="route-city">View Use Cases</a>
+        </div>
+        <div class="feature-item">
+          <img src="assets/images/hero-evtol.png" alt="IraGo eVTOL Platform" width="360" style="width:100%">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="how-it-works">
+    <div class="features-inner">
+      <div class="feature-num">Book With Ease</div>
+      <h2>Search. Book. Board.</h2>
+      <p class="section-body">Booking an air taxi should feel as simple as booking a flight — because it is.</p>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-num">01</div>
+          <h3>Search</h3>
+          <p>Choose your origin, destination, date, and passengers. See live availability across DGCA-licensed operators on your sector.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">02</div>
+          <h3>Book</h3>
+          <p>Confirm in minutes with transparent, all-inclusive pricing. Medical-priority dispatch available around the clock.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">03</div>
+          <h3>Board</h3>
+          <p>Arrive 10 minutes before departure at your vertiport or helipad. No queues, no security lines — just board and fly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="technology">
+    <div class="features-inner">
+      <div class="feature-num">Our Technology</div>
+      <h2>Built on Intelligent Aviation Infrastructure</h2>
+      <p class="section-body">Our proprietary technology layer powers route planning, scheduling, and fleet coordination with precision. IraGo's AI-first architecture is designed to improve operational reliability and support scalable eVTOL deployment.</p>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
@@ -648,21 +760,124 @@
           <h3>Scalable eVTOL Network</h3>
           <p>Reducing downtime and optimizing fleet utilization for cost-efficient flight operations, deployed at scale across cities and regions.</p>
         </div>
+      </div>
+      <p class="section-body"><a href="vision.html" class="route-city">Explore Our Technology →</a></p>
+    </div>
+  </section>
+
+  <section class="features" id="use-cases">
+    <div class="features-inner">
+      <div class="feature-num">Use Cases</div>
+      <h2>Designed for High-Value Mobility Needs</h2>
+      <p class="section-body">From urgency to premium experience, IraGo serves the journeys that matter most.</p>
+      <div class="features-grid">
         <div class="feature-item">
-          <div class="feature-num">04</div>
+          <div class="feature-num">Emergency</div>
           <h3>Emergency Travel</h3>
           <p>Rapid access for time-critical movement. Air ambulance dispatch in under 4 minutes.</p>
+          <img src="assets/images/use_cases_grid_1.png" alt="Emergency Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
         <div class="feature-item">
-          <div class="feature-num">05</div>
-          <h3>Campus Drone Delivery</h3>
-          <p>Documents, meals, and lightweight cargo across IIT Madras — hostels, departments, and gates.</p>
-        </div>
-        <div class="feature-item">
-          <div class="feature-num">06</div>
+          <div class="feature-num">Business</div>
           <h3>Urgent Business Travel</h3>
           <p>Faster city-to-city and airport-linked mobility for time-sensitive journeys.</p>
+          <img src="assets/images/use_cases_grid_2.png" alt="Urgent Business Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
+        <div class="feature-item">
+          <div class="feature-num">Premium</div>
+          <h3>Premium &amp; HNI Travel</h3>
+          <p>Private, seamless, elevated aerial journeys for high-value travellers.</p>
+          <img src="assets/images/use_cases_grid_3.png" alt="Premium &amp; HNI Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">Tourism</div>
+          <h3>Experiential Tourism</h3>
+          <p>Distinctive travel experiences across scenic routes and iconic destinations.</p>
+          <img src="assets/images/use_cases_grid_4.png" alt="Experiential Tourism" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">Campus</div>
+          <h3>Campus Drone Delivery</h3>
+          <p>Documents, meals, and lightweight cargo across IIT Madras — hostels, departments, and gates. Faster, cleaner, more connected.</p>
+          <img src="assets/images/hero-poster.jpg" alt="Campus Drone Delivery" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="why-irago">
+    <div class="section-grid">
+      <h2>What Sets IraGo Apart</h2>
+      <p class="section-body">IraGo is not just an air mobility concept. It is a systems platform built for intelligence, scale, and passenger experience. We are designing a mobility network that is Bharat-first, commercially viable, and operationally advanced.</p>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-inner">
+      <div class="features-grid">
+        <div class="feature-item"><div class="feature-num">01</div><h3>AI-driven routing and scheduling</h3></div>
+        <div class="feature-item"><div class="feature-num">02</div><h3>Real-time fleet monitoring and coordination</h3></div>
+        <div class="feature-item"><div class="feature-num">03</div><h3>Premium and urgent travel use cases</h3></div>
+        <div class="feature-item"><div class="feature-num">04</div><h3>Scalable architecture for future eVTOL networks</h3></div>
+        <div class="feature-item"><div class="feature-num">05</div><h3>Bharat-first mobility vision</h3></div>
+        <div class="feature-item"><div class="feature-num">06</div><h3>Campus drone delivery at IIT Madras</h3></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="routes" id="impact">
+    <div class="routes-header">
+      <div class="feature-num">Our Impact</div>
+      <h2>Saving Time. Expanding Access. Redefining Mobility.</h2>
+      <p class="section-body">IraGo is building toward a future where mobility is faster, cleaner, and more connected. Our mission is to reduce time loss, improve access, and create a modern transportation layer for Bharat.</p>
+    </div>
+    <div class="routes-grid">
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">60–70%</div><div class="route-stat-sm">Reduction in Travel Time</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">1,000+</div><div class="route-stat-sm">Potential Routes Across India</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">&lt; 4 min</div><div class="route-stat-sm">Emergency Response Target</div></div></div></div>
+    </div>
+    <p class="section-body"><a href="vision.html" class="route-city">Read Our Mission</a> · <a href="contact.html" class="route-city">Partner in Impact</a></p>
+  </section>
+
+  <section class="section" id="credibility">
+    <div class="section-grid">
+      <h2>Built for Real-World Scale</h2>
+      <p class="section-body">IraGo is grounded in a clear national and commercial opportunity. India needs new mobility infrastructure that can support speed, reliability, and access across cities and regions. IraGo is building toward that future through a technology-led, mission-aligned, and commercially scalable platform — working with DGCA-licensed operators and certified maintenance partners from day one.</p>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-inner">
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-num">01</div>
+          <h3>MInT, IIT Madras</h3>
+          <p>Mentorship Partner</p>
+          <img src="assets/images/mint_logo.png" alt="MInT - IIT Madras" width="160" height="80">
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">02</div>
+          <h3>Bosch</h3>
+          <p>Industry Partner</p>
+          <img src="assets/images/Bosch_symbol_logo_black_red.png" alt="Bosch" width="160" height="80">
+        </div>
+        <div class="feature-item">
+          <div class="feature-num">03</div>
+          <h3>DGCA-licensed partners</h3>
+          <p>Working with licensed operators and certified maintenance partners from day one.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="booking-section" id="join">
+    <div class="booking-inner">
+      <div class="feature-num">Join IraGo</div>
+      <h2>The Future of Mobility Is Airborne</h2>
+      <p class="hero-sub">Not just moving people. Saving time, creating access, and redefining what connected travel can mean for Bharat.</p>
+      <div class="booking-form">
+        <a href="contact.html" class="nav-cta">Join the Journey</a>
+        <a href="contact.html" class="nav-cta">Contact IraGo</a>
       </div>
     </div>
   </section>
@@ -671,22 +886,25 @@
     <div class="footer-inner">
       <div>
         <div class="footer-brand">IraGo</div>
-        <p class="footer-tagline">IraGo is building India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity.</p>
+        <p class="footer-tagline">Ready to explore air mobility?</p>
+        <p class="footer-tagline">IraGo Solutions Private Limited — AI-powered air mobility for Bharat. Flights operated by DGCA-licensed partners.</p>
         <div class="footer-newsletter">
           <input type="email" placeholder="Your email" />
         </div>
       </div>
       <div class="footer-col">
-        <h4>Discover</h4>
-        <a href="#routes">Routes</a>
-        <a href="#features">Technology</a>
+        <h4>Navigation</h4>
+        <a href="#about">About</a>
+        <a href="#technology">Technology</a>
+        <a href="#use-cases">Use Cases</a>
         <a href="app.html?mode=drones">Drone Delivery</a>
+        <a href="vision.html">Vision</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="vision.html">Vision</a>
         <a href="team.html">Team</a>
-        <a href="contact.html">Contact</a>
+        <a href="contact.html">Contact Us</a>
+        <a href="contact.html">Request Demo</a>
       </div>
       <div class="footer-col">
         <h4>Connect</h4>
@@ -695,17 +913,72 @@
         <a href="contact.html">Contact</a>
       </div>
     </div>
-    <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved.</div>
+    <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved. Platform Active.</div>
   </footer>
 
   <script>
     (function () {
+      var CAMPUS_POINTS = [
+        ['IITM-GATE', 'IIT Madras Main Gate'],
+        ['IITM-TARAMANI', 'Taramani Gate'],
+        ['IITM-GC', 'Gajendra Circle'],
+        ['IITM-LIB', 'Central Library'],
+        ['IITM-HIM', 'Himalaya Mess'],
+        ['IITM-CRC', 'CRC / Academic Complex'],
+        ['IITM-SAC', 'SAC'],
+        ['IITM-HOSTEL', 'Hostel Zone'],
+        ['IITM-MINT', 'NAC-2 / MInT'],
+        ['IITM-AERO', 'Department of Aerospace']
+      ];
+      function campusHtml(selected) {
+        return CAMPUS_POINTS.map(function (p, i) {
+          return '<option value="' + p[0] + '"' + (i === selected ? ' selected' : '') + '>' + p[1] + '</option>';
+        }).join('');
+      }
+      var modeSel = document.getElementById('modeSel');
+      var fromSel = document.getElementById('fromSel');
+      var toSel = document.getElementById('toSel');
+      var paxSel = document.getElementById('paxSel');
+      var fromLab = document.getElementById('fromLab');
+      var toLab = document.getElementById('toLab');
+      var paxLab = document.getElementById('paxLab');
+      var searchBtn = document.getElementById('bk-search-label');
+      var flightFrom = fromSel.innerHTML;
+      var flightTo = toSel.innerHTML;
+      var paxFlight = paxSel.innerHTML;
+      function setMode(mode) {
+        if (mode === 'drones') {
+          fromLab.textContent = 'Pickup';
+          toLab.textContent = 'Drop';
+          paxLab.textContent = 'Parcel';
+          fromSel.innerHTML = campusHtml(4);
+          toSel.innerHTML = campusHtml(3);
+          paxSel.innerHTML = '<option value="docs">Documents</option><option value="food">Meals</option><option value="med">Medical supplies</option><option value="other">Other</option>';
+          searchBtn.textContent = 'Book campus delivery';
+        } else {
+          fromLab.textContent = 'From';
+          toLab.textContent = 'To';
+          paxLab.textContent = 'Passengers';
+          fromSel.innerHTML = flightFrom;
+          toSel.innerHTML = flightTo;
+          paxSel.innerHTML = paxFlight;
+          searchBtn.textContent = 'Search Flights';
+        }
+      }
+      modeSel.addEventListener('change', function () { setMode(modeSel.value); });
       var dateInput = document.getElementById('dateInput');
-      if (!dateInput) return;
-      var t = new Date();
-      var iso = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
-      dateInput.value = iso;
-      dateInput.min = iso;
+      if (dateInput) {
+        var t = new Date();
+        var iso = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+        dateInput.value = iso;
+        dateInput.min = iso;
+      }
+      document.getElementById('bookingForm').addEventListener('submit', function (e) {
+        if (fromSel.value === toSel.value) {
+          e.preventDefault();
+          toSel.focus();
+        }
+      });
     })();
   </script>
 
