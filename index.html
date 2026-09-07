@@ -57,6 +57,7 @@
       justify-content: space-between;
       color: var(--cream);
       mix-blend-mode: difference;
+      animation: fadeDown 0.9s cubic-bezier(.165,.84,.44,1) both;
     }
     .nav-logo {
       font-family: var(--font-display);
@@ -129,11 +130,13 @@
       border-radius: inherit;
       overflow: hidden;
     }
-    .hero-media img {
+    .hero-media img,
+    .hero-media video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center;
+      animation: heroKen 18s cubic-bezier(.165,.84,.44,1) forwards;
     }
     .hero-overlay {
       position: absolute;
@@ -153,6 +156,7 @@
       letter-spacing: -0.24rem;
       color: var(--cream);
       margin-bottom: 2.4rem;
+      animation: fadeUp 1s cubic-bezier(.165,.84,.44,1) 0.12s both;
     }
     .hero-sub {
       font-size: 1.8rem;
@@ -162,6 +166,7 @@
       color: var(--cream);
       opacity: 0.8;
       max-width: 40rem;
+      animation: fadeUpSoft 1s cubic-bezier(.165,.84,.44,1) 0.28s both;
     }
 
     /* TEXT SLIDE (progress bar + text) */
@@ -174,6 +179,7 @@
       gap: 2.4rem;
       color: var(--cream);
       max-width: 36rem;
+      animation: fadeUp 1s cubic-bezier(.165,.84,.44,1) 0.45s both;
     }
     .hero-progress {
       width: 2px;
@@ -186,8 +192,9 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 50%;
+      height: 0;
       background: var(--cream);
+      animation: progressPlay 7s cubic-bezier(.165,.84,.44,1) infinite;
     }
     .hero-slide-text {
       font-size: 1.4rem;
@@ -252,9 +259,9 @@
       border: 1px solid var(--ink-10);
       border-radius: min(3vw, 48px);
       padding: 3.2rem;
-      transition: transform 0.3s cubic-bezier(.33,1,.68,1);
+      transition: transform 0.45s cubic-bezier(.33,1,.68,1), border-color 0.45s cubic-bezier(.33,1,.68,1);
     }
-    .route-card:hover { transform: translateY(-4px); }
+    .route-card:hover { transform: translateY(-8px); border-color: var(--ink-20); }
     .route-from-to {
       display: flex;
       align-items: center;
@@ -272,6 +279,10 @@
       flex: 1;
       height: 1px;
       background: var(--ink-10);
+      transform-origin: left;
+    }
+    .route-card.is-in .route-line {
+      animation: lineGrow 0.8s cubic-bezier(.165,.84,.44,1) 0.2s both;
     }
     .route-city {
       font-size: 1.4rem;
@@ -347,6 +358,7 @@
       outline: none;
       -webkit-appearance: none;
       border-radius: 0;
+      transition: border-bottom-color 0.35s cubic-bezier(.165,.84,.44,1);
     }
     .bk-field select:focus,
     .bk-field input:focus {
@@ -366,7 +378,7 @@
       font-weight: 500;
       letter-spacing: -0.028rem;
       cursor: pointer;
-      transition: background 0.3s, color 0.3s;
+      transition: background 0.35s cubic-bezier(.165,.84,.44,1), color 0.35s cubic-bezier(.165,.84,.44,1), transform 0.35s cubic-bezier(.33,1,.68,1);
       width: fit-content;
       margin-left: auto;
       margin-right: auto;
@@ -374,6 +386,7 @@
     .booking-submit:hover {
       background: var(--cream);
       color: var(--blue);
+      transform: translateY(-2px);
     }
 
     /* FEATURES — on cream */
@@ -401,6 +414,12 @@
     .feature-item {
       padding-top: 2.4rem;
       border-top: 1px solid var(--ink-10);
+    }
+    .feature-item img {
+      transition: transform 0.7s cubic-bezier(.33,1,.68,1);
+    }
+    .feature-item:hover img {
+      transform: scale(1.04);
     }
     .feature-num {
       font-family: var(--font-display);
@@ -466,6 +485,7 @@
       text-decoration: none;
       line-height: 2.4;
       letter-spacing: -0.036rem;
+      transition: opacity 0.3s cubic-bezier(.165,.84,.44,1);
     }
     .footer-col a:hover { opacity: 0.6; }
     .footer-bottom {
@@ -497,6 +517,42 @@
     }
     .footer-newsletter input::placeholder { color: var(--cream); opacity: 0.3; }
 
+    .reveal {
+      opacity: 0;
+      transform: translateY(2.8rem);
+    }
+    .reveal.is-in {
+      opacity: 1;
+      transform: none;
+      transition: opacity 0.9s cubic-bezier(.165,.84,.44,1), transform 0.9s cubic-bezier(.165,.84,.44,1);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(2.8rem); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes fadeUpSoft {
+      from { opacity: 0; transform: translateY(2.8rem); }
+      to { opacity: 0.8; transform: none; }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-1.2rem); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes heroKen {
+      from { transform: scale(1.08); }
+      to { transform: scale(1); }
+    }
+    @keyframes progressPlay {
+      0% { height: 0; }
+      65% { height: 100%; }
+      100% { height: 100%; }
+    }
+    @keyframes lineGrow {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+
     @media (max-width: 768px) {
       .nav { padding: 2rem 1.6rem; }
       .nav-links { display: none; }
@@ -510,6 +566,18 @@
       .booking-section { padding: 8rem 1.6rem; border-radius: 6.4rem 6.4rem 0 0; }
       .booking-form { grid-template-columns: 1fr; }
       .footer-inner { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; }
+      .hero-media img, .hero-media video,
+      .hero h1, .hero-sub, .hero-slides, .nav, .hero-progress-fill,
+      .route-card.is-in .route-line {
+        animation: none !important;
+      }
+      .route-card:hover, .booking-submit:hover, .feature-item:hover img {
+        transform: none;
+      }
     }
   </style>
 </head>
@@ -832,9 +900,9 @@
       <p class="section-body">IraGo is building toward a future where mobility is faster, cleaner, and more connected. Our mission is to reduce time loss, improve access, and create a modern transportation layer for Bharat.</p>
     </div>
     <div class="routes-grid">
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">60–70%</div><div class="route-stat-sm">Reduction in Travel Time</div></div></div></div>
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">1,000+</div><div class="route-stat-sm">Potential Routes Across India</div></div></div></div>
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">&lt; 4 min</div><div class="route-stat-sm">Emergency Response Target</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="70">0</span>%</div><div class="route-stat-sm">Reduction in Travel Time</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="1000">0</span>+</div><div class="route-stat-sm">Potential Routes Across India</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">&lt; <span data-count="4">0</span> min</div><div class="route-stat-sm">Emergency Response Target</div></div></div></div>
     </div>
     <p class="section-body"><a href="vision.html" class="route-city">Read Our Mission</a> · <a href="contact.html" class="route-city">Partner in Impact</a></p>
   </section>
@@ -979,6 +1047,55 @@
           toSel.focus();
         }
       });
+    })();
+
+    (function () {
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var sel = '.section h2, .section-body, .routes-header, .route-card, .feature-item, .features h2, .booking-inner, .footer-inner';
+      var nodes = document.querySelectorAll(sel);
+      if (reduce) {
+        Array.prototype.forEach.call(nodes, function (el) { el.classList.add('is-in'); });
+        return;
+      }
+      document.querySelectorAll('.routes-grid, .features-grid').forEach(function (grid) {
+        Array.prototype.forEach.call(grid.children, function (child, i) {
+          child.style.transitionDelay = (i * 0.08) + 's';
+        });
+      });
+      Array.prototype.forEach.call(nodes, function (el) { el.classList.add('reveal'); });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-in');
+          io.unobserve(entry.target);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      Array.prototype.forEach.call(nodes, function (el) { io.observe(el); });
+
+      function countUp(el) {
+        var target = parseFloat(el.getAttribute('data-count'));
+        var duration = 1600;
+        var start = performance.now();
+        function tick(now) {
+          var t = Math.min((now - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - t, 4);
+          var value = eased * target;
+          el.textContent = Number.isInteger(target)
+            ? Math.floor(value).toLocaleString('en-IN')
+            : value.toFixed(0);
+          if (t < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+      var counters = document.querySelectorAll('[data-count]');
+      var cio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          countUp(entry.target);
+          cio.unobserve(entry.target);
+        });
+      }, { threshold: 0.5 });
+      Array.prototype.forEach.call(counters, function (el) { cio.observe(el); });
     })();
   </script>
 
