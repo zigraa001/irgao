@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IraGo - India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity." />
+  <meta name="description" content="IraGo — India's AI-powered air mobility platform for air taxi, golden-hour medical flights, and campus drone delivery." />
   <link rel="icon" type="image/png" href="assets/images/irago-icon.png">
   <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
   <title>IraGo - AI-Powered Air Mobility for Bharat</title>
@@ -44,7 +44,7 @@
       overscroll-behavior: none;
     }
 
-    /* NAV — fixed, transparent on hero */
+    /* NAV — fixed, readable over the bright hero */
     .nav {
       position: fixed;
       top: 0;
@@ -55,17 +55,20 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 2rem;
       color: var(--cream);
-      mix-blend-mode: difference;
+      background: linear-gradient(180deg, rgba(14,22,32,0.62) 0%, rgba(14,22,32,0.18) 70%, transparent 100%);
       animation: fadeDown 0.9s cubic-bezier(.165,.84,.44,1) both;
     }
     .nav-logo {
       font-family: var(--font-display);
       font-size: 2.4rem;
       font-weight: 700;
-      color: var(--cream);
+      color: #fff;
       text-decoration: none;
       letter-spacing: -0.05rem;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.55);
+      flex-shrink: 0;
     }
     .nav-links {
       display: flex;
@@ -73,12 +76,13 @@
       list-style: none;
     }
     .nav-links a {
-      color: var(--cream);
+      color: #fff;
       text-decoration: none;
       font-size: 1.4rem;
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: -0.028rem;
       position: relative;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.65);
     }
     .nav-links a::after {
       content: '';
@@ -96,6 +100,12 @@
       transform: scaleX(1);
       transform-origin: 0;
     }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-shrink: 0;
+    }
     .nav-cta {
       border: 1px solid var(--cream);
       border-radius: 12rem;
@@ -106,10 +116,45 @@
       font-weight: 500;
       letter-spacing: -0.028rem;
       transition: background 0.3s, color 0.3s;
+      white-space: nowrap;
     }
     .nav-cta:hover {
       background: var(--cream);
       color: var(--ink);
+    }
+    .nav-login {
+      border-radius: 12rem;
+      padding: 1.2rem 2.4rem;
+      background: var(--cream);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.028rem;
+      white-space: nowrap;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .nav-login:hover {
+      background: #fff;
+      transform: translateY(-1px);
+    }
+    .nav-toggle {
+      display: none;
+      width: 4.4rem;
+      height: 4.4rem;
+      border: 1px solid var(--cream);
+      border-radius: 1.2rem;
+      background: transparent;
+      cursor: pointer;
+      padding: 1.1rem;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .nav-toggle span {
+      display: block;
+      height: 2px;
+      background: var(--cream);
+      border-radius: 2px;
     }
 
     /* HERO — full-height blue bg, "smile" bottom radius */
@@ -141,7 +186,7 @@
     .hero-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(0deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 50%, transparent 100%);
+      background: linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 45%, rgba(14,22,32,0.5) 100%);
     }
     .hero-content {
       position: relative;
@@ -156,6 +201,7 @@
       letter-spacing: -0.24rem;
       color: var(--cream);
       margin-bottom: 2.4rem;
+      text-shadow: 0 2px 22px rgba(0,0,0,0.55);
       animation: fadeUp 1s cubic-bezier(.165,.84,.44,1) 0.12s both;
     }
     .hero-sub {
@@ -164,8 +210,9 @@
       line-height: 1.3;
       letter-spacing: -0.036rem;
       color: var(--cream);
-      opacity: 0.8;
+      opacity: 0.92;
       max-width: 40rem;
+      text-shadow: 0 2px 16px rgba(0,0,0,0.5);
       animation: fadeUpSoft 1s cubic-bezier(.165,.84,.44,1) 0.28s both;
     }
 
@@ -388,6 +435,17 @@
       color: var(--blue);
       transform: translateY(-2px);
     }
+    #join .booking-form {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    #join .nav-login,
+    #join .nav-cta {
+      display: inline-block;
+    }
 
     /* FEATURES — on cream */
     .features {
@@ -554,8 +612,29 @@
     }
 
     @media (max-width: 768px) {
-      .nav { padding: 2rem 1.6rem; }
-      .nav-links { display: none; }
+      .nav { padding: 1.6rem; }
+      .nav-cta { display: none; }
+      .nav-toggle { display: flex; }
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 1.6rem;
+        right: 1.6rem;
+        flex-direction: column;
+        gap: 0;
+        background: var(--ink);
+        border-radius: 1.6rem;
+        padding: 1.2rem 0;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      }
+      .nav-links.is-open { display: flex; }
+      .nav-links a {
+        display: block;
+        padding: 1.4rem 2rem;
+        text-shadow: none;
+      }
+      .nav-links a::after { display: none; }
       .hero { padding: 0 1.6rem 4rem; border-radius: 0 0 6.4rem 6.4rem; }
       .hero-slides { display: none; }
       .section, .routes, .features { padding: 8rem 1.6rem; }
@@ -585,7 +664,7 @@
 
   <nav class="nav">
     <a href="/" class="nav-logo">IraGo</a>
-    <ul class="nav-links">
+    <ul class="nav-links" id="navLinks">
       <li><a href="/">Home</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#technology">Technology</a></li>
@@ -595,7 +674,13 @@
       <li><a href="app.html">Platform</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
-    <a href="contact.html" class="nav-cta">Request a Demo</a>
+    <div class="nav-actions">
+      <a href="/login/passenger" class="nav-login">Login</a>
+      <a href="contact.html" class="nav-cta">Request a Demo</a>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </nav>
 
   <section class="hero" id="home">
@@ -606,18 +691,18 @@
       <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
-      <h1>Move faster.<br>Reach farther.<br>Save time.</h1>
-      <p class="hero-sub">IraGo is building India's AI-powered air mobility platform for urgent travel, premium journeys, and future-ready urban connectivity.</p>
+      <h1>Air taxi.<br>Drone delivery.<br>Save time.</h1>
+      <p class="hero-sub">IraGo is India's AI-powered air mobility platform — air taxi, golden-hour medical flights, and campus drone delivery.</p>
     </div>
     <div class="hero-slides">
       <div class="hero-progress"><div class="hero-progress-fill"></div></div>
-      <div class="hero-slide-text">India's Air Mobility Platform. Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</div>
+      <div class="hero-slide-text">Air taxi for the journeys that can't wait. Campus drone delivery for the hops that shouldn't take a walk across IIT Madras. One platform, minutes instead of hours.</div>
     </div>
   </section>
 
   <section class="booking-section" id="booking">
     <div class="booking-inner">
-      <h2>Book your flight</h2>
+      <h2>Book a flight or campus drone delivery</h2>
       <form class="booking-form" action="app.html" method="get" id="bookingForm">
         <div class="bk-field">
           <label>Service</label>
@@ -669,7 +754,7 @@
         </div>
         <button type="submit" class="booking-submit" id="bk-search-label">Search Flights</button>
       </form>
-      <p class="hero-slide-text">Medical Priority · Corporate · Campus Delivery · Early Access. Flights operated by DGCA-licensed partner operators.</p>
+      <p class="hero-slide-text">Medical Priority · Corporate · Campus drone delivery · Early Access. Flights operated by DGCA-licensed partner operators.</p>
     </div>
   </section>
 
@@ -785,13 +870,13 @@
   <section class="features" id="how-it-works">
     <div class="features-inner">
       <div class="feature-num">Book With Ease</div>
-      <h2>Search. Book. Board.</h2>
-      <p class="section-body">Booking an air taxi should feel as simple as booking a flight — because it is.</p>
+      <h2>Search. Book. Fly or drop.</h2>
+      <p class="section-body">Booking an air taxi or a campus drone delivery should feel as simple as booking a flight — because it is.</p>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
           <h3>Search</h3>
-          <p>Choose your origin, destination, date, and passengers. See live availability across DGCA-licensed operators on your sector.</p>
+          <p>Choose air taxi, ambulance, or drone delivery. Set origin, destination, and time — live availability across licensed operators and campus pads.</p>
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
@@ -942,8 +1027,9 @@
     <div class="booking-inner">
       <div class="feature-num">Join IraGo</div>
       <h2>The Future of Mobility Is Airborne</h2>
-      <p class="hero-sub">Not just moving people. Saving time, creating access, and redefining what connected travel can mean for Bharat.</p>
+      <p class="hero-sub">Not just moving people. Air taxi, drone delivery, and a faster layer of access for Bharat.</p>
       <div class="booking-form">
+        <a href="/login/passenger" class="nav-login">Login</a>
         <a href="contact.html" class="nav-cta">Join the Journey</a>
         <a href="contact.html" class="nav-cta">Contact IraGo</a>
       </div>
@@ -977,6 +1063,7 @@
       <div class="footer-col">
         <h4>Connect</h4>
         <a href="app.html">Platform</a>
+        <a href="/login/passenger">Login</a>
         <a href="mailto:info@irago.in">info@irago.in</a>
         <a href="contact.html">Contact</a>
       </div>
@@ -985,6 +1072,23 @@
   </footer>
 
   <script>
+    (function () {
+      var toggle = document.getElementById('navToggle');
+      var links = document.getElementById('navLinks');
+      if (toggle && links) {
+        toggle.addEventListener('click', function () {
+          var open = links.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        links.querySelectorAll('a').forEach(function (a) {
+          a.addEventListener('click', function () {
+            links.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+    })();
+
     (function () {
       var CAMPUS_POINTS = [
         ['IITM-GATE', 'IIT Madras Main Gate'],

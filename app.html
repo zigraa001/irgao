@@ -996,6 +996,51 @@
         <div class="op-welcome" id="dop-welcome">Drone Dispatch</div>
         <div class="op-welcome-sub" id="dop-welcome-sub">IIT Madras campus deliveries</div>
       </div>
+      <div class="panel-section" id="dop-send-section">
+        <div class="panel-step-heading">Send a campus drop</div>
+        <p class="op-empty-sub" style="margin-bottom:10px;">Enter the recipient's IraGo email and destination. We'll dispatch from this pad.</p>
+        <div class="drone-form" id="dop-send-form">
+          <div class="drone-form-row">
+            <label>Recipient email</label>
+            <input id="dop-send-email" class="pd-input" type="email" placeholder="passenger@irago.in" autocomplete="email">
+          </div>
+          <div class="drone-form-row">
+            <label>Pickup</label>
+            <select id="dop-send-from" class="pd-input"></select>
+          </div>
+          <div class="drone-form-row">
+            <label>Destination</label>
+            <select id="dop-send-to" class="pd-input"></select>
+          </div>
+          <div class="drone-form-row">
+            <label>Parcel</label>
+            <select id="dop-send-parcel" class="pd-input">
+              <option value="food" selected>Food / mess</option>
+              <option value="documents">Documents</option>
+              <option value="pharmacy">Pharmacy</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="drone-form-row">
+            <label>Drone ID / callsign</label>
+            <input id="dop-send-callsign" class="pd-input" value="IITM-D1">
+          </div>
+          <div class="drone-form-row">
+            <label>Battery %</label>
+            <input id="dop-send-battery" class="pd-input" type="number" min="1" max="100" value="92">
+          </div>
+          <div class="drone-form-row">
+            <label>ETA (minutes)</label>
+            <input id="dop-send-eta" class="pd-input" type="number" min="1" max="60" value="8">
+          </div>
+          <div class="drone-form-row">
+            <label>Notes (optional)</label>
+            <input id="dop-send-notes" class="pd-input" placeholder="Pad, payload, contact">
+          </div>
+          <button type="button" class="op-btn drone-book-btn" id="dop-send-btn" onclick="submitDopSend()">Send &amp; dispatch</button>
+          <div id="dop-send-error" class="field-error" style="margin-top:6px;"></div>
+        </div>
+      </div>
       <div class="panel-section" id="dop-jobs-section">
         <div class="panel-step-heading">Incoming orders</div>
         <div id="dop-jobs">
@@ -1709,6 +1754,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=17a54070"></script>
+<script src="/js/app.bundle.js?v=94c3399d"></script>
 </body>
 </html>

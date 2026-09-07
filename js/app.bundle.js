@@ -33,6 +33,7 @@ let pickupCoord = null, destCoord = null;
 // The persisted booking returned by POST /api/bookings (US-006). Source of
 // truth for the confirmation screen and live tracking (US-007).
 let currentBooking = null;
+let paymentKind = 'taxi';
 let currentRoute = null;
 let currentDiscount = null;
 let currentCarbonComparison = null;
@@ -6949,44 +6950,57 @@ function renderWeatherBar(w) {
     '<span class="weather-risk" style="color:' + color + '">' + (riskLabels[w.riskLevel] || 'Good') + ' for flight</span>';
 }
 
-function showPaymentOverlay(booking) {
+function showPaymentOverlay(booking, opts) {
+  opts = opts || {};
+  paymentKind = opts.kind || (booking && booking._drone ? 'drone' : 'taxi');
   hideAuthError('payment-error');
   resetCoupon();
-  document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
-  updatePaymentTotals(booking.fareEstimate);
+  var prefix = paymentKind === 'drone' ? 'DRN-' : 'IRG-';
+  document.getElementById('payment-booking-id').textContent = prefix + String(booking.id).padStart(5, '0');
+  updatePaymentTotals(booking.fareEstimate != null ? booking.fareEstimate : booking.totalPrice);
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
-  document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
-  renderWeatherBar(booking._weather || null);
+  document.getElementById('payment-carbon').textContent =
+    paymentKind === 'drone' ? '\u2014' : (carbon != null ? '-' + carbon + ' kg' : '\u2014');
+  renderWeatherBar(paymentKind === 'drone' ? null : (booking._weather || null));
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
 
-  // Carbon credits section \u2014 always visible
   var credSec = document.getElementById('payment-credits-section');
   var credEarn = document.getElementById('payment-credits-earn');
+  var couponSec = document.getElementById('coupon-section');
+  var note = document.querySelector('#payment-overlay .payment-note');
   var cb = document.getElementById('payment-use-credits');
   if (cb) cb.checked = false;
-  var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
-  var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
-  credSec.style.display = 'block';
-  if (balance > 0) {
-    if (cb) cb.disabled = false;
-    document.getElementById('payment-credits-balance').textContent =
-      balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
-    document.getElementById('payment-credits-detail').textContent = '';
-  } else {
-    if (cb) cb.disabled = true;
-    document.getElementById('payment-credits-balance').textContent = '0 credits';
-    document.getElementById('payment-credits-detail').textContent = 'No credits to apply yet';
-  }
-  if (willEarn > 0) {
-    credEarn.style.display = 'block';
-    credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
-      willEarn + ' carbon credits</strong> from this flight';
-  } else {
-    credEarn.style.display = 'none';
-  }
 
-  // Fetch available coupons
-  loadAvailableCoupons(booking.id);
+  if (paymentKind === 'drone') {
+    if (credSec) credSec.style.display = 'none';
+    if (credEarn) credEarn.style.display = 'none';
+    if (couponSec) couponSec.style.display = 'none';
+    if (note) note.textContent = 'Demo payment only — no real charge. We then assign a campus drone and start live tracking.';
+  } else {
+    if (couponSec) couponSec.style.display = '';
+    if (note) note.textContent = "Confirm your booking and we'll notify nearby pilots.";
+    var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
+    var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
+    credSec.style.display = 'block';
+    if (balance > 0) {
+      if (cb) cb.disabled = false;
+      document.getElementById('payment-credits-balance').textContent =
+        balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
+      document.getElementById('payment-credits-detail').textContent = '';
+    } else {
+      if (cb) cb.disabled = true;
+      document.getElementById('payment-credits-balance').textContent = '0 credits';
+      document.getElementById('payment-credits-detail').textContent = 'No credits to apply yet';
+    }
+    if (willEarn > 0) {
+      credEarn.style.display = 'block';
+      credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
+        willEarn + ' carbon credits</strong> from this flight';
+    } else {
+      credEarn.style.display = 'none';
+    }
+    loadAvailableCoupons(booking.id);
+  }
 
   paymentGoToStep(1);
   document.getElementById('payment-overlay').classList.add('active');
@@ -7199,6 +7213,22 @@ async function payForBooking() {
   hideAuthError('payment-error');
   setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
   try {
+    if (paymentKind === 'drone' || currentBooking._drone) {
+      const res = await apiFetch('/api/drones/' + currentBooking.id + '/pay', { method: 'POST' });
+      const data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
+        return;
+      }
+      currentBooking = data.booking || currentBooking;
+      closePayment();
+      if (typeof loadDroneMyBookings === 'function') loadDroneMyBookings();
+      if (typeof startDroneTracking === 'function' && currentBooking.pickupName) {
+        startDroneTracking(currentBooking.id);
+      }
+      showToast('Payment successful. Assigning a campus drone…', 'success');
+      return;
+    }
     var useCredits = document.getElementById('payment-use-credits');
     var payData = {};
     if (useCredits && useCredits.checked) payData.useCredits = true;
@@ -8198,9 +8228,16 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.weatherSurcharge && fare.weatherSurcharge.amount) {
     weatherRow = '<div class="fb-row fb-surcharge"><span>' + escapeHtml(fare.weatherSurcharge.label) + '</span><span>+' + money(fare.weatherSurcharge.amount) + '</span></div>';
   }
+  var kmRow = (fare.perKm != null && fare.distanceKm != null)
+    ? '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>'
+    : '';
+  var opRow = fare.operatorFee
+    ? '<div class="fb-row"><span>Operator</span><span>' + money(fare.operatorFee) + '</span></div>'
+    : '';
   host.innerHTML =
     '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
-    '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
+    kmRow +
+    opRow +
     (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
     urgencyRow +
     weatherRow +
@@ -8919,14 +8956,37 @@ async function bookDrone() {
 
     closeDroneBooking();
     loadDroneMyBookings();
-    showToast('Order placed. Tracking your campus drone…', 'success');
-    if (fromEl && data.booking) startDroneTracking(data.booking.id);
+    openDronePayment(data.booking, data.fare);
   } catch (e) {
     errEl.textContent = e.message;
   } finally {
     btn.disabled = false;
     btn.textContent = 'Book Now';
   }
+}
+
+function openDronePayment(booking, fare) {
+  if (!booking) return;
+  currentBooking = Object.assign({}, booking, {
+    fareEstimate: booking.totalPrice,
+    _drone: true,
+  });
+  currentFareBreakdown = fare || {
+    base: booking.servicePrice,
+    operatorFee: booking.operatorPrice,
+    taxes: booking.gst,
+    taxLabel: 'GST (18%)',
+    subtotal: Number(booking.servicePrice || 0) + Number(booking.operatorPrice || 0),
+    total: booking.totalPrice,
+  };
+  currentCarbonCredits = null;
+  showPaymentOverlay(currentBooking, { kind: 'drone' });
+}
+
+function payDroneBooking(id) {
+  const b = droneMyBookings.find(function (x) { return Number(x.id) === Number(id); });
+  if (!b) return;
+  openDronePayment(b);
 }
 
 // ── Customer: My drone bookings ──
@@ -8955,7 +9015,8 @@ function renderDroneMyBookings() {
   let html = '';
   droneMyBookings.forEach(b => {
     const statusCls = droneStatusClass(b.status);
-    const live = ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
+    const unpaid = String(b.paymentStatus || '') === 'pending';
+    const live = !unpaid && ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
     const canCancel = b.status === 'confirmed' || b.status === 'pending' || b.status === 'dispatched';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
@@ -8964,13 +9025,14 @@ function renderDroneMyBookings() {
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
           '<div class="drone-booking-meta">' + escapeHtml((b.pickupName && b.dropName) ? (b.pickupName + ' → ' + b.dropName) : (b.category || '')) + '</div>' +
         '</div>' +
-        '<span class="drone-status ' + statusCls + '">' + escapeHtml(droneStatusLabel(b.status)) + '</span>' +
+        '<span class="drone-status ' + statusCls + '">' + escapeHtml(unpaid ? 'Awaiting payment' : droneStatusLabel(b.status)) + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
         (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
         (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
+      (unpaid ? '<button type="button" class="drone-track-btn" onclick="payDroneBooking(' + b.id + ')">Pay now</button>' : '') +
       (live ? '<button type="button" class="drone-track-btn" onclick="startDroneTracking(' + b.id + ')">Track live</button>' : '') +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
     '</div>';
@@ -9414,7 +9476,7 @@ function applyDroneTrackSnap(data) {
   if (subEl) {
     subEl.textContent = b.droneCallsign
       ? (b.droneCallsign + (b.batteryPct != null ? ' · ' + b.batteryPct + '% battery' : ''))
-      : 'Waiting for the pad to assign a drone';
+      : 'Assigning a campus drone…';
   }
   if (etaEl) etaEl.textContent = data.etaRemainingMin != null ? String(data.etaRemainingMin) : '--';
   if (fromEl) fromEl.textContent = b.pickupName || 'Pickup';
@@ -10449,11 +10511,20 @@ const DOP_NEXT = {
 };
 
 function initDroneOperatorConsole() {
+  fillDopSendPoints();
   initDopMap();
   loadDopJobs();
   if (dopPoll) clearInterval(dopPoll);
   dopPoll = setInterval(loadDopJobs, 4000);
   setTimeout(function () { if (dopMap) dopMap.invalidateSize(); }, 300);
+}
+
+function fillDopSendPoints() {
+  const fromSel = document.getElementById('dop-send-from');
+  const toSel = document.getElementById('dop-send-to');
+  if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
+  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
+  toSel.innerHTML = campusDropOptions('Central Library');
 }
 
 function initDopMap() {
@@ -10526,6 +10597,8 @@ function selectDopJob(id) {
   const item = dopJobs.find(function (j) { return Number(j.booking && j.booking.id) === Number(id); });
   if (!item) return;
   document.getElementById('dop-jobs-section').style.display = 'none';
+  const sendSec = document.getElementById('dop-send-section');
+  if (sendSec) sendSec.style.display = 'none';
   document.getElementById('dop-detail-section').style.display = '';
   renderDopDetail(item);
   drawDopJob(item);
@@ -10539,6 +10612,8 @@ function closeDopJob() {
   if (dopTrackPoll) { clearInterval(dopTrackPoll); dopTrackPoll = null; }
   document.getElementById('dop-detail-section').style.display = 'none';
   document.getElementById('dop-jobs-section').style.display = '';
+  const sendSec = document.getElementById('dop-send-section');
+  if (sendSec) sendSec.style.display = '';
   renderDopJobs();
 }
 
@@ -10687,5 +10762,111 @@ async function advanceDopStatus(id, status) {
   } catch (e) {
     if (err) err.textContent = e.message;
     else showToast(e.message, 'error');
+  }
+}
+
+async function submitDopSend() {
+  const err = document.getElementById('dop-send-error');
+  const btn = document.getElementById('dop-send-btn');
+  if (err) err.textContent = '';
+  const email = ((document.getElementById('dop-send-email') || {}).value || '').trim();
+  const fromName = (document.getElementById('dop-send-from') || {}).value;
+  const toName = (document.getElementById('dop-send-to') || {}).value;
+  if (!email) {
+    if (err) err.textContent = "Enter the recipient's email.";
+    return;
+  }
+  if (fromName && toName && fromName === toName) {
+    if (err) err.textContent = 'Pickup and destination must be different.';
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiFetch('/api/drones/operator/send', {
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({
+        recipientEmail: email,
+        pickupName: fromName,
+        dropName: toName,
+        parcelType: (document.getElementById('dop-send-parcel') || {}).value,
+        droneCallsign: (document.getElementById('dop-send-callsign') || {}).value,
+        batteryPct: Number((document.getElementById('dop-send-battery') || {}).value),
+        etaMin: Number((document.getElementById('dop-send-eta') || {}).value),
+        notes: (document.getElementById('dop-send-notes') || {}).value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
+    showToast('Drop dispatched to ' + email, 'success');
+    const emailEl = document.getElementById('dop-send-email');
+    if (emailEl) emailEl.value = '';
+    await loadDopJobs();
+    const booking = data.booking || data;
+    if (booking && booking.id) selectDopJob(booking.id);
+  } catch (e) {
+    if (err) err.textContent = e.message;
+    else showToast(e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send & dispatch';
+    }
+  }
+}
+
+async function submitDopSend() {
+  const err = document.getElementById('dop-send-error');
+  const btn = document.getElementById('dop-send-btn');
+  if (err) err.textContent = '';
+  const email = ((document.getElementById('dop-send-email') || {}).value || '').trim();
+  const fromName = (document.getElementById('dop-send-from') || {}).value;
+  const toName = (document.getElementById('dop-send-to') || {}).value;
+  if (!email) {
+    if (err) err.textContent = "Enter the recipient's email.";
+    return;
+  }
+  if (fromName && toName && fromName === toName) {
+    if (err) err.textContent = 'Pickup and destination must be different.';
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiFetch('/api/drones/operator/send', {
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({
+        recipientEmail: email,
+        pickupName: fromName,
+        dropName: toName,
+        parcelType: (document.getElementById('dop-send-parcel') || {}).value,
+        droneCallsign: (document.getElementById('dop-send-callsign') || {}).value,
+        batteryPct: Number((document.getElementById('dop-send-battery') || {}).value),
+        etaMin: Number((document.getElementById('dop-send-eta') || {}).value),
+        notes: (document.getElementById('dop-send-notes') || {}).value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
+    showToast('Drop dispatched to ' + email, 'success');
+    const emailEl = document.getElementById('dop-send-email');
+    if (emailEl) emailEl.value = '';
+    await loadDopJobs();
+    const booking = data.booking || data;
+    if (booking && booking.id) selectDopJob(booking.id);
+  } catch (e) {
+    if (err) err.textContent = e.message;
+    else showToast(e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send & dispatch';
+    }
   }
 }

@@ -353,14 +353,37 @@ async function bookDrone() {
 
     closeDroneBooking();
     loadDroneMyBookings();
-    showToast('Order placed. Tracking your campus drone…', 'success');
-    if (fromEl && data.booking) startDroneTracking(data.booking.id);
+    openDronePayment(data.booking, data.fare);
   } catch (e) {
     errEl.textContent = e.message;
   } finally {
     btn.disabled = false;
     btn.textContent = 'Book Now';
   }
+}
+
+function openDronePayment(booking, fare) {
+  if (!booking) return;
+  currentBooking = Object.assign({}, booking, {
+    fareEstimate: booking.totalPrice,
+    _drone: true,
+  });
+  currentFareBreakdown = fare || {
+    base: booking.servicePrice,
+    operatorFee: booking.operatorPrice,
+    taxes: booking.gst,
+    taxLabel: 'GST (18%)',
+    subtotal: Number(booking.servicePrice || 0) + Number(booking.operatorPrice || 0),
+    total: booking.totalPrice,
+  };
+  currentCarbonCredits = null;
+  showPaymentOverlay(currentBooking, { kind: 'drone' });
+}
+
+function payDroneBooking(id) {
+  const b = droneMyBookings.find(function (x) { return Number(x.id) === Number(id); });
+  if (!b) return;
+  openDronePayment(b);
 }
 
 // ── Customer: My drone bookings ──
@@ -389,7 +412,8 @@ function renderDroneMyBookings() {
   let html = '';
   droneMyBookings.forEach(b => {
     const statusCls = droneStatusClass(b.status);
-    const live = ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
+    const unpaid = String(b.paymentStatus || '') === 'pending';
+    const live = !unpaid && ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
     const canCancel = b.status === 'confirmed' || b.status === 'pending' || b.status === 'dispatched';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
@@ -398,13 +422,14 @@ function renderDroneMyBookings() {
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
           '<div class="drone-booking-meta">' + escapeHtml((b.pickupName && b.dropName) ? (b.pickupName + ' → ' + b.dropName) : (b.category || '')) + '</div>' +
         '</div>' +
-        '<span class="drone-status ' + statusCls + '">' + escapeHtml(droneStatusLabel(b.status)) + '</span>' +
+        '<span class="drone-status ' + statusCls + '">' + escapeHtml(unpaid ? 'Awaiting payment' : droneStatusLabel(b.status)) + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
         (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
         (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
+      (unpaid ? '<button type="button" class="drone-track-btn" onclick="payDroneBooking(' + b.id + ')">Pay now</button>' : '') +
       (live ? '<button type="button" class="drone-track-btn" onclick="startDroneTracking(' + b.id + ')">Track live</button>' : '') +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
     '</div>';
@@ -848,7 +873,7 @@ function applyDroneTrackSnap(data) {
   if (subEl) {
     subEl.textContent = b.droneCallsign
       ? (b.droneCallsign + (b.batteryPct != null ? ' · ' + b.batteryPct + '% battery' : ''))
-      : 'Waiting for the pad to assign a drone';
+      : 'Assigning a campus drone…';
   }
   if (etaEl) etaEl.textContent = data.etaRemainingMin != null ? String(data.etaRemainingMin) : '--';
   if (fromEl) fromEl.textContent = b.pickupName || 'Pickup';

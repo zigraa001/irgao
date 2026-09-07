@@ -33,9 +33,16 @@ function renderFareBreakdown(hostId, fare) {
   if (fare.weatherSurcharge && fare.weatherSurcharge.amount) {
     weatherRow = '<div class="fb-row fb-surcharge"><span>' + escapeHtml(fare.weatherSurcharge.label) + '</span><span>+' + money(fare.weatherSurcharge.amount) + '</span></div>';
   }
+  var kmRow = (fare.perKm != null && fare.distanceKm != null)
+    ? '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>'
+    : '';
+  var opRow = fare.operatorFee
+    ? '<div class="fb-row"><span>Operator</span><span>' + money(fare.operatorFee) + '</span></div>'
+    : '';
   host.innerHTML =
     '<div class="fb-row"><span>Base fare</span><span>' + money(fare.base) + '</span></div>' +
-    '<div class="fb-row"><span>Per-km (' + money(fare.perKm) + '/km &times; ' + fare.distanceKm + ' km)</span><span>' + money(fare.kmCharge) + '</span></div>' +
+    kmRow +
+    opRow +
     (fare.surge ? '<div class="fb-row"><span>Surge</span><span>' + money(fare.surge) + '</span></div>' : '') +
     urgencyRow +
     weatherRow +

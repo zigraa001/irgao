@@ -17,11 +17,20 @@ const DOP_NEXT = {
 };
 
 function initDroneOperatorConsole() {
+  fillDopSendPoints();
   initDopMap();
   loadDopJobs();
   if (dopPoll) clearInterval(dopPoll);
   dopPoll = setInterval(loadDopJobs, 4000);
   setTimeout(function () { if (dopMap) dopMap.invalidateSize(); }, 300);
+}
+
+function fillDopSendPoints() {
+  const fromSel = document.getElementById('dop-send-from');
+  const toSel = document.getElementById('dop-send-to');
+  if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
+  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
+  toSel.innerHTML = campusDropOptions('Central Library');
 }
 
 function initDopMap() {
@@ -94,6 +103,8 @@ function selectDopJob(id) {
   const item = dopJobs.find(function (j) { return Number(j.booking && j.booking.id) === Number(id); });
   if (!item) return;
   document.getElementById('dop-jobs-section').style.display = 'none';
+  const sendSec = document.getElementById('dop-send-section');
+  if (sendSec) sendSec.style.display = 'none';
   document.getElementById('dop-detail-section').style.display = '';
   renderDopDetail(item);
   drawDopJob(item);
@@ -107,6 +118,8 @@ function closeDopJob() {
   if (dopTrackPoll) { clearInterval(dopTrackPoll); dopTrackPoll = null; }
   document.getElementById('dop-detail-section').style.display = 'none';
   document.getElementById('dop-jobs-section').style.display = '';
+  const sendSec = document.getElementById('dop-send-section');
+  if (sendSec) sendSec.style.display = '';
   renderDopJobs();
 }
 
@@ -255,5 +268,111 @@ async function advanceDopStatus(id, status) {
   } catch (e) {
     if (err) err.textContent = e.message;
     else showToast(e.message, 'error');
+  }
+}
+
+async function submitDopSend() {
+  const err = document.getElementById('dop-send-error');
+  const btn = document.getElementById('dop-send-btn');
+  if (err) err.textContent = '';
+  const email = ((document.getElementById('dop-send-email') || {}).value || '').trim();
+  const fromName = (document.getElementById('dop-send-from') || {}).value;
+  const toName = (document.getElementById('dop-send-to') || {}).value;
+  if (!email) {
+    if (err) err.textContent = "Enter the recipient's email.";
+    return;
+  }
+  if (fromName && toName && fromName === toName) {
+    if (err) err.textContent = 'Pickup and destination must be different.';
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiFetch('/api/drones/operator/send', {
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({
+        recipientEmail: email,
+        pickupName: fromName,
+        dropName: toName,
+        parcelType: (document.getElementById('dop-send-parcel') || {}).value,
+        droneCallsign: (document.getElementById('dop-send-callsign') || {}).value,
+        batteryPct: Number((document.getElementById('dop-send-battery') || {}).value),
+        etaMin: Number((document.getElementById('dop-send-eta') || {}).value),
+        notes: (document.getElementById('dop-send-notes') || {}).value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
+    showToast('Drop dispatched to ' + email, 'success');
+    const emailEl = document.getElementById('dop-send-email');
+    if (emailEl) emailEl.value = '';
+    await loadDopJobs();
+    const booking = data.booking || data;
+    if (booking && booking.id) selectDopJob(booking.id);
+  } catch (e) {
+    if (err) err.textContent = e.message;
+    else showToast(e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send & dispatch';
+    }
+  }
+}
+
+async function submitDopSend() {
+  const err = document.getElementById('dop-send-error');
+  const btn = document.getElementById('dop-send-btn');
+  if (err) err.textContent = '';
+  const email = ((document.getElementById('dop-send-email') || {}).value || '').trim();
+  const fromName = (document.getElementById('dop-send-from') || {}).value;
+  const toName = (document.getElementById('dop-send-to') || {}).value;
+  if (!email) {
+    if (err) err.textContent = "Enter the recipient's email.";
+    return;
+  }
+  if (fromName && toName && fromName === toName) {
+    if (err) err.textContent = 'Pickup and destination must be different.';
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiFetch('/api/drones/operator/send', {
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({
+        recipientEmail: email,
+        pickupName: fromName,
+        dropName: toName,
+        parcelType: (document.getElementById('dop-send-parcel') || {}).value,
+        droneCallsign: (document.getElementById('dop-send-callsign') || {}).value,
+        batteryPct: Number((document.getElementById('dop-send-battery') || {}).value),
+        etaMin: Number((document.getElementById('dop-send-eta') || {}).value),
+        notes: (document.getElementById('dop-send-notes') || {}).value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
+    showToast('Drop dispatched to ' + email, 'success');
+    const emailEl = document.getElementById('dop-send-email');
+    if (emailEl) emailEl.value = '';
+    await loadDopJobs();
+    const booking = data.booking || data;
+    if (booking && booking.id) selectDopJob(booking.id);
+  } catch (e) {
+    if (err) err.textContent = e.message;
+    else showToast(e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send & dispatch';
+    }
   }
 }

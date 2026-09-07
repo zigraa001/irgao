@@ -708,44 +708,57 @@ function renderWeatherBar(w) {
     '<span class="weather-risk" style="color:' + color + '">' + (riskLabels[w.riskLevel] || 'Good') + ' for flight</span>';
 }
 
-function showPaymentOverlay(booking) {
+function showPaymentOverlay(booking, opts) {
+  opts = opts || {};
+  paymentKind = opts.kind || (booking && booking._drone ? 'drone' : 'taxi');
   hideAuthError('payment-error');
   resetCoupon();
-  document.getElementById('payment-booking-id').textContent = 'IRG-' + String(booking.id).padStart(5, '0');
-  updatePaymentTotals(booking.fareEstimate);
+  var prefix = paymentKind === 'drone' ? 'DRN-' : 'IRG-';
+  document.getElementById('payment-booking-id').textContent = prefix + String(booking.id).padStart(5, '0');
+  updatePaymentTotals(booking.fareEstimate != null ? booking.fareEstimate : booking.totalPrice);
   const carbon = booking.carbonSavedKg != null ? booking.carbonSavedKg : (selectedRide ? selectedRide.co2 : null);
-  document.getElementById('payment-carbon').textContent = carbon != null ? '-' + carbon + ' kg' : '\u2014';
-  renderWeatherBar(booking._weather || null);
+  document.getElementById('payment-carbon').textContent =
+    paymentKind === 'drone' ? '\u2014' : (carbon != null ? '-' + carbon + ' kg' : '\u2014');
+  renderWeatherBar(paymentKind === 'drone' ? null : (booking._weather || null));
   renderFareBreakdown('payment-fare-breakdown', currentFareBreakdown);
 
-  // Carbon credits section \u2014 always visible
   var credSec = document.getElementById('payment-credits-section');
   var credEarn = document.getElementById('payment-credits-earn');
+  var couponSec = document.getElementById('coupon-section');
+  var note = document.querySelector('#payment-overlay .payment-note');
   var cb = document.getElementById('payment-use-credits');
   if (cb) cb.checked = false;
-  var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
-  var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
-  credSec.style.display = 'block';
-  if (balance > 0) {
-    if (cb) cb.disabled = false;
-    document.getElementById('payment-credits-balance').textContent =
-      balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
-    document.getElementById('payment-credits-detail').textContent = '';
-  } else {
-    if (cb) cb.disabled = true;
-    document.getElementById('payment-credits-balance').textContent = '0 credits';
-    document.getElementById('payment-credits-detail').textContent = 'No credits to apply yet';
-  }
-  if (willEarn > 0) {
-    credEarn.style.display = 'block';
-    credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
-      willEarn + ' carbon credits</strong> from this flight';
-  } else {
-    credEarn.style.display = 'none';
-  }
 
-  // Fetch available coupons
-  loadAvailableCoupons(booking.id);
+  if (paymentKind === 'drone') {
+    if (credSec) credSec.style.display = 'none';
+    if (credEarn) credEarn.style.display = 'none';
+    if (couponSec) couponSec.style.display = 'none';
+    if (note) note.textContent = 'Demo payment only — no real charge. We then assign a campus drone and start live tracking.';
+  } else {
+    if (couponSec) couponSec.style.display = '';
+    if (note) note.textContent = "Confirm your booking and we'll notify nearby pilots.";
+    var balance = currentCarbonCredits ? currentCarbonCredits.balance : 0;
+    var willEarn = currentCarbonCredits ? currentCarbonCredits.willEarn : 0;
+    credSec.style.display = 'block';
+    if (balance > 0) {
+      if (cb) cb.disabled = false;
+      document.getElementById('payment-credits-balance').textContent =
+        balance.toLocaleString('en-IN') + ' credits (= \u20B9' + balance.toLocaleString('en-IN') + ')';
+      document.getElementById('payment-credits-detail').textContent = '';
+    } else {
+      if (cb) cb.disabled = true;
+      document.getElementById('payment-credits-balance').textContent = '0 credits';
+      document.getElementById('payment-credits-detail').textContent = 'No credits to apply yet';
+    }
+    if (willEarn > 0) {
+      credEarn.style.display = 'block';
+      credEarn.innerHTML = '<span class="credits-icon">&#9733;</span> You\'ll earn <strong>' +
+        willEarn + ' carbon credits</strong> from this flight';
+    } else {
+      credEarn.style.display = 'none';
+    }
+    loadAvailableCoupons(booking.id);
+  }
 
   paymentGoToStep(1);
   document.getElementById('payment-overlay').classList.add('active');
@@ -958,6 +971,22 @@ async function payForBooking() {
   hideAuthError('payment-error');
   setBusy('payment-pay-btn', true, 'Processing\u2026', 'Pay now');
   try {
+    if (paymentKind === 'drone' || currentBooking._drone) {
+      const res = await apiFetch('/api/drones/' + currentBooking.id + '/pay', { method: 'POST' });
+      const data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        showAuthError('payment-error', data.error || 'Payment failed. Please try again.');
+        return;
+      }
+      currentBooking = data.booking || currentBooking;
+      closePayment();
+      if (typeof loadDroneMyBookings === 'function') loadDroneMyBookings();
+      if (typeof startDroneTracking === 'function' && currentBooking.pickupName) {
+        startDroneTracking(currentBooking.id);
+      }
+      showToast('Payment successful. Assigning a campus drone…', 'success');
+      return;
+    }
     var useCredits = document.getElementById('payment-use-credits');
     var payData = {};
     if (useCredits && useCredits.checked) payData.useCredits = true;

@@ -26,6 +26,7 @@ let pickupCoord = null, destCoord = null;
 // The persisted booking returned by POST /api/bookings (US-006). Source of
 // truth for the confirmation screen and live tracking (US-007).
 let currentBooking = null;
+let paymentKind = 'taxi';
 let currentRoute = null;
 let currentDiscount = null;
 let currentCarbonComparison = null;
