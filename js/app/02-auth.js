@@ -89,6 +89,14 @@ const SIGNUP_CONFIG = {
     loginHint: 'Company accounts are created by an IraGo admin. Contact your administrator to be provisioned.',
     loginOnly: true,
   },
+  drone: {
+    loginPath: '/api/auth/drone/login',
+    loginUrl: '/login/drone',
+    loginTitle: 'Drone Dispatch',
+    loginSub: 'Sign in to dispatch campus drone deliveries',
+    loginHint: 'Campus drone operator accounts are provisioned by an admin.',
+    loginOnly: true,
+  },
 };
 
 function parsePortalFromLocation() {
@@ -97,13 +105,14 @@ function parsePortalFromLocation() {
     const params = new URLSearchParams(window.location.search);
     return { mode: params.has('register') ? 'signup' : 'login', role: 'passenger' };
   }
-  const m = path.match(/^\/(login|signup)\/(operator|admin|company)\/?$/);
+  const m = path.match(/^\/(login|signup)\/(operator|admin|company|drone)\/?$/);
   if (m) return { mode: m[1], role: m[2] };
   return { mode: 'login', role: 'passenger' };
 }
 
 function portalForDbRole(role) {
   if (role === 'customer') return 'passenger';
+  if (role === 'drone_operator') return 'drone';
   if (role === 'operator' || role === 'admin' || role === 'company') return role;
   return 'passenger';
 }
@@ -168,7 +177,14 @@ function initAuthPortal() {
     window.location.replace('/login/operator');
     return;
   }
+  if (portal.role === 'drone' && portal.mode === 'signup') {
+    window.location.replace('/login/drone');
+    return;
+  }
   applyPortalLabels(portal.role);
+  document.querySelectorAll('.auth-role-btn').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-role') === portal.role);
+  });
 
   // Handle Google OAuth redirects (success / error / pending phone).
   const params = new URLSearchParams(window.location.search);
@@ -1147,6 +1163,15 @@ function routeForRole(user) {
       if (typeof loadComplianceHistory === 'function') loadComplianceHistory();
       break;
     }
+    case 'drone_operator': {
+      const welcome = document.getElementById('dop-welcome');
+      if (welcome) welcome.textContent = 'Drone Dispatch';
+      const sub = document.getElementById('dop-welcome-sub');
+      if (sub) sub.textContent = (user && user.name) || 'Campus operator';
+      showView('drone-operator-view');
+      if (typeof initDroneOperatorConsole === 'function') initDroneOperatorConsole();
+      break;
+    }
     case 'customer':
     default: {
       showView('booking-view');
@@ -1156,6 +1181,7 @@ function routeForRole(user) {
       // reappears after a page refresh. Only active rides are restored — completed,
       // cancelled, and unpaid bookings are ignored.
       setTimeout(restoreActiveBooking, 600);
+      if (typeof restoreActiveDroneDelivery === 'function') setTimeout(restoreActiveDroneDelivery, 700);
       if (typeof applyLandingModeFromQuery === 'function') applyLandingModeFromQuery();
       // Auto-request GPS for pickup after map renders (non-blocking, silent on denial)
       setTimeout(function () {

@@ -527,6 +527,23 @@ async function initSchema() {
     INDEX idx_drone_bookings_operator (operatorId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
+  await ensureColumn("drone_bookings", "pickupName", "pickupName VARCHAR(255) NULL");
+  await ensureColumn("drone_bookings", "dropName", "dropName VARCHAR(255) NULL");
+  await ensureColumn("drone_bookings", "pickupLat", "pickupLat DOUBLE NULL");
+  await ensureColumn("drone_bookings", "pickupLng", "pickupLng DOUBLE NULL");
+  await ensureColumn("drone_bookings", "dropLat", "dropLat DOUBLE NULL");
+  await ensureColumn("drone_bookings", "dropLng", "dropLng DOUBLE NULL");
+  await ensureColumn("drone_bookings", "parcelType", "parcelType VARCHAR(64) NULL");
+  await ensureColumn("drone_bookings", "dispatcherUserId", "dispatcherUserId INT NULL");
+  await ensureColumn("drone_bookings", "droneCallsign", "droneCallsign VARCHAR(64) NULL");
+  await ensureColumn("drone_bookings", "batteryPct", "batteryPct INT NULL");
+  await ensureColumn("drone_bookings", "etaMin", "etaMin INT NULL");
+  await ensureColumn("drone_bookings", "dispatchNotes", "dispatchNotes TEXT NULL");
+  await ensureColumn("drone_bookings", "flightStartedAt", "flightStartedAt DATETIME NULL");
+  await ensureColumn("drone_bookings", "gpsLat", "gpsLat DOUBLE NULL");
+  await ensureColumn("drone_bookings", "gpsLng", "gpsLng DOUBLE NULL");
+  await ensureColumn("drone_bookings", "gpsUpdatedAt", "gpsUpdatedAt DATETIME NULL");
+
   // Seed drone services (idempotent).
   const droneServices = [
     { name: "Agricultural Spraying Drone", category: "agriculture", emoji: "🌾",

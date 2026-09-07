@@ -56,6 +56,7 @@ const ZONE_DRAW_ORDER = { flight_corridor: 0, restricted: 1, no_fly: 2 };
 const ROLE_BADGE = {
   admin:    { label: 'Admin',    cls: 'op-badge--purple' },
   operator: { label: 'Pilot', cls: 'op-badge--blue' },
+  drone_operator: { label: 'Drone', cls: 'op-badge--blue' },
   customer: { label: 'Passenger', cls: 'op-badge--gray' },
   company:  { label: 'Partner',  cls: 'op-badge--blue' },
 };
@@ -63,6 +64,7 @@ const ROLE_BADGE = {
 const ROLE_PROFILE = {
   admin:    { label: 'Admin',     dropdownClass: 'role-admin' },
   operator: { label: 'Pilot',  dropdownClass: 'role-operator' },
+  drone_operator: { label: 'Drone operator', dropdownClass: 'role-operator' },
   customer: { label: 'Passenger', dropdownClass: '' },
   company:  { label: 'Partner',   dropdownClass: 'role-company' },
 };
@@ -472,6 +474,7 @@ function loginUrlForRole(role) {
   if (role === 'operator') return '/login/operator';
   if (role === 'admin') return '/login/admin';
   if (role === 'company') return '/login/company';
+  if (role === 'drone' || role === 'drone_operator') return '/login/drone';
   return '/app.html';
 }
 
@@ -940,6 +943,8 @@ async function loadAdminPlatformStats() {
 function adminRoleLabel(role) {
   if (role === 'operator') return 'Pilot';
   if (role === 'admin') return 'Admin';
+  if (role === 'company') return 'Partner';
+  if (role === 'drone_operator') return 'Drone operator';
   return 'Passenger';
 }
 
@@ -1468,8 +1473,8 @@ async function doAddUser() {
   if (password.length < 6) {
     return showAuthError('admin-add-error', 'Password must be at least 6 characters.');
   }
-  if (role !== 'operator' && role !== 'admin' && role !== 'company') {
-    return showAuthError('admin-add-error', 'Role must be operator, admin, or company.');
+  if (role !== 'operator' && role !== 'admin' && role !== 'company' && role !== 'drone_operator') {
+    return showAuthError('admin-add-error', 'Role must be operator, admin, company, or drone operator.');
   }
   if ((role === 'operator' || role === 'company') && !companyId) {
     return showAuthError('admin-add-error', 'Please select a company for this account.');

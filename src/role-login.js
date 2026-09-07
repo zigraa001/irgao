@@ -7,6 +7,7 @@ const PORTAL_BY_DB_ROLE = {
   operator: "operator",
   admin: "admin",
   company: "company",
+  drone_operator: "drone",
 };
 
 function createRoleLoginHandler(expectedRole, authResponse) {

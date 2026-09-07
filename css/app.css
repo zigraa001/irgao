@@ -627,9 +627,9 @@ textarea:focus-visible, a:focus-visible {
 .auth-role-btn {
   background: none;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 10px;
   color: var(--gray-500);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   border-radius: var(--radius-full);
@@ -1212,7 +1212,7 @@ textarea:focus-visible, a:focus-visible {
   position: relative;
   overflow: hidden;
 }
-#map, #op-combined-map {
+#map, #op-combined-map, #dop-map {
   flex: 1;
   z-index: 1;
   min-height: 0;
@@ -5850,6 +5850,58 @@ body.admin-map-fs { overflow: hidden; }
   background: #fbe9e7;
 }
 
+.drone-status-flying { background: #e0f2fe; color: #0369a1; }
+.drone-track-btn {
+  margin-top: 8px;
+  margin-right: 8px;
+  background: var(--blue);
+  border: none;
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.drone-track-btn:hover { filter: brightness(1.05); }
+.campus-drone-marker { background: none !important; border: none !important; }
+.campus-drone-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
+  animation: campus-drone-bob 1.6s ease-in-out infinite;
+}
+@keyframes campus-drone-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.drone-track-meta {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+.dop-job-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.dop-job-card--active,
+.dop-job-card:hover {
+  border-color: var(--blue);
+  box-shadow: var(--shadow-sm);
+}
+.dop-advance { margin-top: 12px; }
+
 /* Admin drone styles (US-009) */
 .drone-admin-form {
   background: var(--surface-subtle);
@@ -7186,16 +7238,16 @@ body.admin-map-fs { overflow: hidden; }
    US-114: BOOKING DESKTOP SPACE
    ═══════════════════════════════════════════ */
 
-/* Drone catalog full-width on desktop */
+/* Drone catalog sits beside the campus map, like a food-delivery ticket. */
 @media (min-width: 901px) {
   #drone-panel {
-    width: 100%;
-    max-width: 100%;
-    border-right: none;
+    width: 420px;
+    max-width: 420px;
+    border-right: 1px solid var(--border-subtle);
   }
   #drone-panel > .panel-section {
-    max-width: 1160px;
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
     width: 100%;
   }
 }

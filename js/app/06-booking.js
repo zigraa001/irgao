@@ -13,13 +13,28 @@ function switchService(service) {
   const mapEl = document.getElementById('map');
 
   if (service === 'drones') {
+    if (typeof droneTrackId !== 'undefined' && droneTrackId) {
+      if (bookingPanel) bookingPanel.style.display = 'none';
+      if (dronePanel) dronePanel.style.display = 'none';
+      if (mapEl) mapEl.style.display = '';
+      const track = document.getElementById('drone-track-panel');
+      if (track) track.classList.add('active');
+      setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
+      return;
+    }
     if (bookingPanel) bookingPanel.style.display = 'none';
-    if (mapEl) mapEl.style.display = 'none';
     if (dronePanel) dronePanel.style.display = 'flex';
+    if (mapEl) mapEl.style.display = '';
+    if (typeof initMap === 'function') initMap();
+    if (typeof showCampusDeliveryMap === 'function') showCampusDeliveryMap();
     loadDroneServices();
     loadDroneMyBookings();
+    setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
     return;
   }
+
+  if (typeof hideCampusDeliveryMap === 'function') hideCampusDeliveryMap();
+  if (typeof endDroneTracking === 'function' && droneTrackId) endDroneTracking(true);
 
   if (bookingPanel) bookingPanel.style.display = 'flex';
   if (mapEl) mapEl.style.display = '';

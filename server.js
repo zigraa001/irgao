@@ -24,6 +24,7 @@ const { cleanupExpiredOtps } = require("./src/otp");
 const { attachWebSocketServer } = require("./src/dispatch-hub");
 const { recoverDispatch } = require("./src/dispatch");
 const { ensureAdmin } = require("./src/ensure-admin");
+const { ensureDroneOperator } = require("./src/ensure-drone-operator");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -44,7 +45,7 @@ app.use("/api", apiRouter);
 const APP_HTML = path.join(ROOT, "app.html");
 app.get("/login/passenger", (_req, res) => res.redirect(302, "/app.html"));
 app.get("/signup/passenger", (_req, res) => res.redirect(302, "/app.html?register=1"));
-for (const role of ["operator", "company"]) {
+for (const role of ["operator", "company", "drone"]) {
   app.get(`/login/${role}`, (_req, res) => res.sendFile(APP_HTML));
   app.get(`/signup/${role}`, (_req, res) => res.redirect(302, `/login/${role}`));
 }
@@ -124,6 +125,11 @@ async function connectDatabase() {
       await ensureAdmin();
     } catch (adminErr) {
       console.error("[startup] admin ensure failed:", adminErr.message);
+    }
+    try {
+      await ensureDroneOperator();
+    } catch (droneOpErr) {
+      console.error("[startup] drone operator ensure failed:", droneOpErr.message);
     }
     dbConnected = true;
     console.log(

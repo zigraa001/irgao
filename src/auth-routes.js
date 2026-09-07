@@ -149,6 +149,7 @@ router.post("/passenger/login", createRoleLoginHandler("customer", authResponse)
 router.post("/operator/login", createRoleLoginHandler("operator", authResponse));
 router.post("/admin/login", createRoleLoginHandler("admin", authResponse));
 router.post("/company/login", createRoleLoginHandler("company", authResponse));
+router.post("/drone/login", createRoleLoginHandler("drone_operator", authResponse));
 
 // Legacy passenger login alias
 router.post("/login", createRoleLoginHandler("customer", authResponse));

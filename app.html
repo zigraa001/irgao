@@ -95,6 +95,8 @@
         <button type="button" class="auth-role-btn" data-role="admin" onclick="switchLoginRole('admin')">Admin</button>
         <span class="auth-role-sep">&middot;</span>
         <button type="button" class="auth-role-btn" data-role="company" onclick="switchLoginRole('company')">Partner</button>
+        <span class="auth-role-sep">&middot;</span>
+        <button type="button" class="auth-role-btn" data-role="drone" onclick="switchLoginRole('drone')">Drone</button>
       </div>
     </div>
 
@@ -555,6 +557,40 @@
       </div>
       </div>
     </div>
+
+    <div class="tracking-panel" id="drone-track-panel">
+      <h3 class="tracking-panel-title">Campus drone live</h3>
+      <div class="tracking-progress">
+        <div class="tracking-progress-bar" id="drone-track-progress"></div>
+      </div>
+      <div class="tracking-header">
+        <div class="tracking-header-left">
+          <div class="tracking-status-dot" id="drone-track-dot"></div>
+          <div>
+            <div class="tracking-status-text" id="drone-track-status">Waiting for dispatch</div>
+            <div class="tracking-status-sub" id="drone-track-sub">Your order is in the kitchen</div>
+          </div>
+        </div>
+        <div class="tracking-eta">
+          <div class="tracking-eta-val" id="drone-track-eta">--</div>
+          <div class="tracking-eta-label">min ETA</div>
+        </div>
+      </div>
+      <div class="tracking-steps drone-track-steps" id="drone-track-steps"></div>
+      <div class="tracking-body">
+        <div class="tracking-route-mini">
+          <span class="t-dot t-dot-blue"></span>
+          <span class="t-place" id="drone-track-from">—</span>
+          <span class="t-arrow">&rarr;</span>
+          <span class="t-dot t-dot-red"></span>
+          <span class="t-place" id="drone-track-to">—</span>
+        </div>
+        <div class="drone-track-meta" id="drone-track-meta"></div>
+      </div>
+      <div class="tracking-footer">
+        <button type="button" class="btn-end-tracking" onclick="endDroneTracking()">Back to orders</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -938,6 +974,50 @@
 </div>
 
 
+<!-- ════════════════════════════════════════════
+     DRONE OPERATOR DISPATCH CONSOLE
+     ════════════════════════════════════════════ -->
+<div id="drone-operator-view" class="view">
+  <nav class="booking-nav">
+    <a href="/" class="booking-nav-logo">
+      <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
+    </a>
+    <span class="op-role-badge">Drone Dispatch</span>
+    <div class="nav-profile">
+      <button type="button" class="nav-text-btn js-open-profile">Profile</button>
+      <a href="/logout" class="nav-text-btn nav-logout-link">Log out</a>
+      <div class="nav-avatar nav-profile-avatar" id="dop-avatar" title="Your account">D</div>
+    </div>
+  </nav>
+
+  <div class="booking-body">
+    <div class="booking-panel op-panel" id="dop-panel">
+      <div class="panel-section">
+        <div class="op-welcome" id="dop-welcome">Drone Dispatch</div>
+        <div class="op-welcome-sub" id="dop-welcome-sub">IIT Madras campus deliveries</div>
+      </div>
+      <div class="panel-section" id="dop-jobs-section">
+        <div class="panel-step-heading">Incoming orders</div>
+        <div id="dop-jobs">
+          <div class="op-empty-sub">Loading campus orders…</div>
+        </div>
+      </div>
+      <div class="panel-section" id="dop-detail-section" style="display:none;">
+        <button type="button" class="op-back" onclick="closeDopJob()">&larr; Back to queue</button>
+        <div id="dop-detail"></div>
+      </div>
+    </div>
+    <div class="op-map-wrap">
+      <div id="dop-map"></div>
+      <div class="op-map-badge">
+        <span class="op-gps-dot"></span>
+        <span>Campus live · IIT Madras</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- ═══════════════════════════════════════════
      ADMIN DASHBOARD (US-004 shell; user list US-005, add-user form US-006)
      ═══════════════════════════════════════════ -->
@@ -1153,6 +1233,7 @@
               <label>Role</label>
               <select id="admin-add-role" class="admin-form-select" onchange="toggleAddMemberCompany()">
                 <option value="operator">Pilot</option>
+                <option value="drone_operator">Drone operator</option>
                 <option value="admin">Admin</option>
                 <option value="company">Company account</option>
               </select>
@@ -1628,6 +1709,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=eee9cf59"></script>
+<script src="/js/app.bundle.js?v=17a54070"></script>
 </body>
 </html>

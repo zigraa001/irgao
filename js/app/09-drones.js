@@ -23,6 +23,60 @@ const CAMPUS_DROPS = [
   'Department of Aerospace',
 ];
 
+const CAMPUS_POINTS = {
+  'IIT Madras Main Gate': [12.9915, 80.2337],
+  'Taramani Gate': [12.9858, 80.2410],
+  'Gajendra Circle': [12.9906, 80.2339],
+  'Central Library': [12.9908, 80.2334],
+  'Himalaya Mess': [12.9938, 80.2315],
+  'CRC / Academic Complex': [12.9916, 80.2358],
+  'SAC': [12.9892, 80.2318],
+  'Hostel Zone': [12.9940, 80.2308],
+  'NAC-2 / MInT': [12.9898, 80.2375],
+  'Department of Aerospace': [12.9904, 80.2365],
+};
+
+let campusMapLayer = null;
+let droneTrackLayer = null;
+let droneTrackMarker = null;
+let droneTrackPoll = null;
+let droneTrackAnim = null;
+let droneTrackId = null;
+let droneTrackSnap = null;
+
+function droneStatusLabel(status) {
+  const map = {
+    pending: 'Placed',
+    confirmed: 'Confirmed',
+    dispatched: 'Assigned',
+    picked_up: 'Picked up',
+    flying: 'En route',
+    arriving: 'Arriving',
+    delivered: 'Delivered',
+    completed: 'Delivered',
+    cancelled: 'Cancelled',
+    in_progress: 'In progress',
+  };
+  return map[status] || status || '';
+}
+
+function droneStatusClass(status) {
+  if (status === 'confirmed' || status === 'delivered' || status === 'completed') return 'drone-status-confirmed';
+  if (status === 'cancelled') return 'drone-status-cancelled';
+  if (status === 'flying' || status === 'arriving' || status === 'picked_up' || status === 'dispatched') return 'drone-status-flying';
+  return 'drone-status-pending';
+}
+
+function campusDroneIcon(heading) {
+  const rot = Number(heading) || 0;
+  return L.divIcon({
+    className: 'campus-drone-marker',
+    html: '<div class="campus-drone-icon" style="transform:rotate(' + rot + 'deg)">🛸</div>',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}
+
 function isCampusDelivery(s) {
   return !!(s && (s.category === 'campus' || /campus drone delivery/i.test(s.name || '')));
 }
@@ -140,11 +194,20 @@ function renderDroneBookingCard(s) {
   const locationFields = campus
     ? '<div class="drone-form-row">' +
         '<label>From</label>' +
-        '<select id="drone-campus-from" class="pd-input">' + campusDropOptions('Himalaya Mess') + '</select>' +
+        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Himalaya Mess') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>To</label>' +
-        '<select id="drone-campus-to" class="pd-input">' + campusDropOptions('Central Library') + '</select>' +
+        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Central Library') + '</select>' +
+      '</div>' +
+      '<div class="drone-form-row">' +
+        '<label>Parcel</label>' +
+        '<select id="drone-parcel-type" class="pd-input">' +
+          '<option value="food" selected>Food / mess</option>' +
+          '<option value="documents">Documents</option>' +
+          '<option value="pharmacy">Pharmacy</option>' +
+          '<option value="other">Other</option>' +
+        '</select>' +
       '</div>' +
       '<input type="hidden" id="drone-location" value="">'
     : '<div class="drone-form-row">' +
@@ -204,6 +267,7 @@ function renderDroneBookingCard(s) {
   document.getElementById('drone-time').value = '09:00';
 
   updateDroneQuote();
+  if (campus) previewCampusRoute();
 }
 
 function adjustDroneHours(delta) {
@@ -259,6 +323,7 @@ async function bookDrone() {
     }
     location = fromEl.value + ' → ' + toEl.value + ', IIT Madras Campus';
   }
+  const parcelEl = document.getElementById('drone-parcel-type');
   const scheduledDate = document.getElementById('drone-date').value;
   const scheduledTime = document.getElementById('drone-time').value;
   if (!location) { errEl.textContent = 'Please enter a location.'; return; }
@@ -275,6 +340,9 @@ async function bookDrone() {
         hours: Number(document.getElementById('drone-hours').value) || s.minHours,
         withOperator: document.getElementById('drone-with-operator').checked,
         location,
+        pickupName: fromEl ? fromEl.value : null,
+        dropName: toEl ? toEl.value : null,
+        parcelType: parcelEl ? parcelEl.value : null,
         scheduledDate,
         scheduledTime: scheduledTime || null,
         notes: document.getElementById('drone-notes').value.trim() || null,
@@ -285,7 +353,8 @@ async function bookDrone() {
 
     closeDroneBooking();
     loadDroneMyBookings();
-    showToast('Drone booked! Booking #' + data.booking.id, 'success');
+    showToast('Order placed. Tracking your campus drone…', 'success');
+    if (fromEl && data.booking) startDroneTracking(data.booking.id);
   } catch (e) {
     errEl.textContent = e.message;
   } finally {
@@ -319,22 +388,24 @@ function renderDroneMyBookings() {
   }
   let html = '';
   droneMyBookings.forEach(b => {
-    const statusCls = b.status === 'confirmed' ? 'drone-status-confirmed' : b.status === 'completed' ? 'drone-status-completed' : b.status === 'cancelled' ? 'drone-status-cancelled' : 'drone-status-pending';
-    const canCancel = b.status === 'confirmed' || b.status === 'pending';
+    const statusCls = droneStatusClass(b.status);
+    const live = ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
+    const canCancel = b.status === 'confirmed' || b.status === 'pending' || b.status === 'dispatched';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
         '<span class="drone-booking-emoji">' + (b.imageEmoji || '🛸') + '</span>' +
         '<div class="drone-booking-info">' +
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
-          '<div class="drone-booking-meta">' + escapeHtml(b.category) + ' · ' + b.hours + ' hr' + (b.hours > 1 ? 's' : '') + (b.withOperator ? ' · With operator' : '') + '</div>' +
+          '<div class="drone-booking-meta">' + escapeHtml((b.pickupName && b.dropName) ? (b.pickupName + ' → ' + b.dropName) : (b.category || '')) + '</div>' +
         '</div>' +
-        '<span class="drone-status ' + statusCls + '">' + b.status + '</span>' +
+        '<span class="drone-status ' + statusCls + '">' + escapeHtml(droneStatusLabel(b.status)) + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
         (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
         (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
+      (live ? '<button type="button" class="drone-track-btn" onclick="startDroneTracking(' + b.id + ')">Track live</button>' : '') +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
     '</div>';
   });
@@ -648,7 +719,7 @@ function renderDroneAdminBookings(bookings) {
         '<span class="das-meta-tag das-meta-tag--muted">' + (b.scheduledDate || 'No date') + '</span>' +
       '</div>' +
       '<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
-        ['pending','confirmed','in_progress','completed','cancelled'].map(function(st) {
+        ['pending','confirmed','dispatched','picked_up','flying','arriving','delivered','in_progress','completed','cancelled'].map(function(st) {
           return '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>';
         }).join('') +
       '</select>' +
@@ -679,4 +750,222 @@ function droneAdminSkeleton(count) {
     html += '<div class="das-skeleton-row"><div class="adm-skeleton" style="width:32px;height:32px;border-radius:50%"></div><div style="flex:1"><div class="adm-skeleton" style="height:14px;width:' + w + '%;border-radius:4px;margin-bottom:6px"></div><div class="adm-skeleton" style="height:10px;width:' + (w - 20) + '%;border-radius:4px"></div></div></div>';
   }
   return html;
+}
+
+function showCampusDeliveryMap() {
+  if (typeof initMap === 'function') initMap();
+  if (!map) return;
+  if (!campusMapLayer) campusMapLayer = L.layerGroup().addTo(map);
+  campusMapLayer.clearLayers();
+  CAMPUS_DROPS.forEach(function (name) {
+    const c = CAMPUS_POINTS[name];
+    if (!c) return;
+    L.circleMarker(c, { radius: 5, color: '#0f766e', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+      .addTo(campusMapLayer)
+      .bindTooltip(name, { permanent: false });
+  });
+  map.setView(IITM_COORD, 16);
+}
+
+function hideCampusDeliveryMap() {
+  if (campusMapLayer && map) {
+    map.removeLayer(campusMapLayer);
+    campusMapLayer = null;
+  }
+}
+
+function previewCampusRoute() {
+  const fromEl = document.getElementById('drone-campus-from');
+  const toEl = document.getElementById('drone-campus-to');
+  if (!fromEl || !toEl) return;
+  showCampusDeliveryMap();
+  const from = CAMPUS_POINTS[fromEl.value];
+  const to = CAMPUS_POINTS[toEl.value];
+  if (!from || !to || !campusMapLayer) return;
+  L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(campusMapLayer);
+  if (map) map.fitBounds([from, to], { padding: [48, 48], maxZoom: 17 });
+}
+
+function clientDronePos(booking, now) {
+  now = now || Date.now();
+  const pLat = Number(booking.pickupLat);
+  const pLng = Number(booking.pickupLng);
+  const dLat = Number(booking.dropLat);
+  const dLng = Number(booking.dropLng);
+  const status = booking.status;
+  if (!Number.isFinite(pLat) || !Number.isFinite(dLat)) return null;
+  if (status === 'delivered' || status === 'completed') return { lat: dLat, lng: dLng, progress: 1 };
+  if (['pending', 'confirmed', 'dispatched', 'picked_up'].includes(status) || !booking.flightStartedAt) {
+    return { lat: pLat, lng: pLng, progress: 0 };
+  }
+  if (status === 'arriving') {
+    return { lat: pLat + (dLat - pLat) * 0.92, lng: pLng + (dLng - pLng) * 0.92, progress: 0.92 };
+  }
+  const etaMs = Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000;
+  const started = booking.flightStartedUnix
+    ? Number(booking.flightStartedUnix) * 1000
+    : booking.flightStartedAt
+      ? new Date(booking.flightStartedAt).getTime()
+      : now;
+  const t = Math.min(1, Math.max(0, (now - started) / etaMs));
+  return { lat: pLat + (dLat - pLat) * t, lng: pLng + (dLng - pLng) * t, progress: t };
+}
+
+function droneTrackStepsHtml(status) {
+  const steps = [
+    { id: 'confirmed', match: ['confirmed', 'pending', 'dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
+    { id: 'assigned', match: ['dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
+    { id: 'picked', match: ['picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
+    { id: 'flying', match: ['flying', 'arriving', 'delivered', 'completed'] },
+    { id: 'drop', match: ['delivered', 'completed', 'arriving'] },
+  ];
+  const labels = { confirmed: 'Confirmed', assigned: 'Assigned', picked: 'Picked up', flying: 'Flying', drop: 'Drop' };
+  return steps.map(function (s) {
+    const done = s.match.includes(status);
+    const active = (s.id === 'assigned' && status === 'dispatched') ||
+      (s.id === 'picked' && status === 'picked_up') ||
+      (s.id === 'flying' && (status === 'flying' || status === 'arriving')) ||
+      (s.id === 'drop' && (status === 'delivered' || status === 'completed' || status === 'arriving')) ||
+      (s.id === 'confirmed' && (status === 'confirmed' || status === 'pending'));
+    return '<div class="tracking-step' + (done ? ' done' : '') + (active ? ' active' : '') + '">' +
+      '<div class="tracking-step-dot"></div>' +
+      '<div class="tracking-step-label">' + labels[s.id] + '</div></div>';
+  }).join('');
+}
+
+function applyDroneTrackSnap(data) {
+  droneTrackSnap = data;
+  const b = data.booking || {};
+  const statusEl = document.getElementById('drone-track-status');
+  const subEl = document.getElementById('drone-track-sub');
+  const etaEl = document.getElementById('drone-track-eta');
+  const fromEl = document.getElementById('drone-track-from');
+  const toEl = document.getElementById('drone-track-to');
+  const metaEl = document.getElementById('drone-track-meta');
+  const stepsEl = document.getElementById('drone-track-steps');
+  const bar = document.getElementById('drone-track-progress');
+  if (statusEl) statusEl.textContent = data.statusLabel || droneStatusLabel(b.status);
+  if (subEl) {
+    subEl.textContent = b.droneCallsign
+      ? (b.droneCallsign + (b.batteryPct != null ? ' · ' + b.batteryPct + '% battery' : ''))
+      : 'Waiting for the pad to assign a drone';
+  }
+  if (etaEl) etaEl.textContent = data.etaRemainingMin != null ? String(data.etaRemainingMin) : '--';
+  if (fromEl) fromEl.textContent = b.pickupName || 'Pickup';
+  if (toEl) toEl.textContent = b.dropName || 'Drop';
+  if (metaEl) {
+    metaEl.textContent = (b.parcelType ? ('Parcel: ' + b.parcelType) : '') +
+      (b.notes ? ((b.parcelType ? ' · ' : '') + b.notes) : '');
+  }
+  if (stepsEl) stepsEl.innerHTML = droneTrackStepsHtml(b.status);
+  const pos = data.drone || clientDronePos(b);
+  const pct = pos && pos.progress != null ? Math.round(pos.progress * 100) : (b.status === 'dispatched' || b.status === 'picked_up' ? 15 : 5);
+  if (bar) bar.style.width = pct + '%';
+  paintDroneOnMap(b, pos);
+}
+
+function paintDroneOnMap(booking, pos) {
+  if (typeof initMap === 'function') initMap();
+  if (!map) return;
+  if (!droneTrackLayer) droneTrackLayer = L.layerGroup().addTo(map);
+  droneTrackLayer.clearLayers();
+  droneTrackMarker = null;
+  const from = (booking.pickupLat != null) ? [Number(booking.pickupLat), Number(booking.pickupLng)] : CAMPUS_POINTS[booking.pickupName];
+  const to = (booking.dropLat != null) ? [Number(booking.dropLat), Number(booking.dropLng)] : CAMPUS_POINTS[booking.dropName];
+  if (from) L.circleMarker(from, { radius: 8, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 1, weight: 2 }).addTo(droneTrackLayer);
+  if (to) L.circleMarker(to, { radius: 8, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1, weight: 2 }).addTo(droneTrackLayer);
+  if (from && to) L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(droneTrackLayer);
+  const use = pos || clientDronePos(booking);
+  if (use && use.lat != null) {
+    droneTrackMarker = L.marker([use.lat, use.lng], { icon: campusDroneIcon(0), zIndexOffset: 800 }).addTo(droneTrackLayer);
+    if (!userMovedMapAt || Date.now() - userMovedMapAt > 8000) {
+      programmaticMapMove = true;
+      map.panTo([use.lat, use.lng], { animate: true, duration: 0.6 });
+      setTimeout(function () { programmaticMapMove = false; }, 50);
+    }
+  } else if (from && to) {
+    map.fitBounds([from, to], { padding: [48, 48], maxZoom: 17 });
+  }
+}
+
+async function pollDroneTrack() {
+  if (!droneTrackId) return;
+  try {
+    const res = await apiFetch('/api/drones/track/' + droneTrackId, { headers: AUTH.headers() });
+    const data = await res.json();
+    if (!res.ok) return;
+    applyDroneTrackSnap(data);
+  } catch (e) {}
+}
+
+function tickDroneTrackAnim() {
+  if (!droneTrackSnap || !droneTrackSnap.booking) return;
+  const pos = clientDronePos(droneTrackSnap.booking);
+  if (!pos) return;
+  droneTrackSnap.drone = Object.assign({}, droneTrackSnap.drone || {}, pos);
+  const bar = document.getElementById('drone-track-progress');
+  if (bar && pos.progress != null) bar.style.width = Math.round(pos.progress * 100) + '%';
+  if (droneTrackMarker) droneTrackMarker.setLatLng([pos.lat, pos.lng]);
+  else paintDroneOnMap(droneTrackSnap.booking, pos);
+}
+
+function startDroneTracking(id) {
+  droneTrackId = id;
+  if (currentService !== 'drones') switchService('drones');
+  hideCampusDeliveryMap();
+  const taxi = document.getElementById('tracking-panel');
+  if (taxi) taxi.classList.remove('active');
+  const dronePanel = document.getElementById('drone-panel');
+  if (dronePanel) dronePanel.style.display = 'none';
+  const mapEl = document.getElementById('map');
+  if (mapEl) mapEl.style.display = '';
+  const panel = document.getElementById('drone-track-panel');
+  if (panel) panel.classList.add('active');
+  if (typeof initMap === 'function') initMap();
+  if (map) {
+    map.invalidateSize(false);
+    setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
+  }
+  pollDroneTrack();
+  if (droneTrackPoll) clearInterval(droneTrackPoll);
+  if (droneTrackAnim) clearInterval(droneTrackAnim);
+  droneTrackPoll = setInterval(pollDroneTrack, 2000);
+  droneTrackAnim = setInterval(tickDroneTrackAnim, 500);
+}
+
+function endDroneTracking(silent) {
+  if (droneTrackPoll) { clearInterval(droneTrackPoll); droneTrackPoll = null; }
+  if (droneTrackAnim) { clearInterval(droneTrackAnim); droneTrackAnim = null; }
+  droneTrackId = null;
+  droneTrackSnap = null;
+  if (droneTrackLayer && map) {
+    map.removeLayer(droneTrackLayer);
+    droneTrackLayer = null;
+  }
+  droneTrackMarker = null;
+  const panel = document.getElementById('drone-track-panel');
+  if (panel) panel.classList.remove('active');
+  if (silent) return;
+  if (currentService === 'drones') {
+    const dronePanel = document.getElementById('drone-panel');
+    if (dronePanel) dronePanel.style.display = 'flex';
+    showCampusDeliveryMap();
+    loadDroneMyBookings();
+    if (map) setTimeout(function () { map.invalidateSize(false); }, 150);
+  }
+}
+
+async function restoreActiveDroneDelivery() {
+  try {
+    const res = await apiFetch('/api/drones/my-bookings', { headers: AUTH.headers() });
+    const data = await res.json();
+    if (!res.ok) return;
+    droneMyBookings = data.bookings || [];
+    const live = droneMyBookings.find(function (b) {
+      return ['dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
+    });
+    const taxiOn = document.getElementById('tracking-panel') && document.getElementById('tracking-panel').classList.contains('active');
+    if (live && !taxiOn) startDroneTracking(live.id);
+    else renderDroneMyBookings();
+  } catch (e) {}
 }

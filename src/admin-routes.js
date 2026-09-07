@@ -22,8 +22,8 @@ const router = express.Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Only admins can create operator/admin accounts (public self-signup for these
 // roles is closed). The first admin is still bootstrapped from .env.
-const CREATABLE_ROLES = ["operator", "admin", "company"];
-const FILTERABLE_ROLES = ["operator", "admin", "customer", "company"];
+const CREATABLE_ROLES = ["operator", "admin", "company", "drone_operator"];
+const FILTERABLE_ROLES = ["operator", "admin", "customer", "company", "drone_operator"];
 const LIST_FETCH_LIMIT = 6;
 const LIST_MAX_OFFSET = 10000;
 
@@ -111,7 +111,7 @@ router.post(
     if (!CREATABLE_ROLES.includes(role)) {
       return res.status(400).json({
         error:
-          "role must be operator, admin, or company",
+          "role must be operator, admin, company, or drone_operator",
       });
     }
 
