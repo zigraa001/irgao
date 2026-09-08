@@ -11,6 +11,12 @@ const {
   etaRemainingMin,
   STATUS_LABELS,
 } = require("./campus-points");
+const {
+  generateTrackingKey,
+  normalizeTrackingKey,
+  trackUrl,
+  sendDroneTrackEmail,
+} = require("./drone-track");
 
 const router = express.Router();
 
@@ -59,6 +65,7 @@ function trackPayload(booking) {
     drone: pos,
     etaRemainingMin: etaRemainingMin(booking),
     statusLabel: STATUS_LABELS[booking.status] || booking.status,
+    trackingKey: booking.trackingKey || null,
   };
 }
 
@@ -185,11 +192,156 @@ async function autoRunCampusDemo(bookingId) {
 function maybeStartCampusDemo(booking) {
   if (!booking || !platformSettings.get("demoMode")) return;
   if (booking.paymentStatus !== "paid") return;
-  if (booking.droneCallsign) return;
-  if (!["confirmed", "pending"].includes(booking.status)) return;
+  if (!["confirmed", "pending", "dispatched", "picked_up"].includes(booking.status)) return;
   autoRunCampusDemo(booking.id).catch((err) => {
     console.error(`[drones] campus demo start failed for #${booking.id}:`, err.message);
   });
+}
+
+async function allocateTrackingKey() {
+  for (let i = 0; i < 8; i += 1) {
+    const key = generateTrackingKey();
+    const clash = await queryOne("SELECT id FROM drone_bookings WHERE trackingKey = ?", [key]);
+    if (!clash) return key;
+  }
+  throw new Error("Could not allocate tracking key");
+}
+
+async function ensureTrackingKey(booking) {
+  if (!booking) return null;
+  if (booking.trackingKey) return booking.trackingKey;
+  const key = await allocateTrackingKey();
+  await query(
+    "UPDATE drone_bookings SET trackingKey = ? WHERE id = ? AND (trackingKey IS NULL OR trackingKey = '')",
+    [key, booking.id]
+  );
+  booking.trackingKey = key;
+  return key;
+}
+
+function publicTrackPayload(booking) {
+  const full = trackPayload(booking);
+  return {
+    trackingKey: booking.trackingKey,
+    statusLabel: full.statusLabel,
+    etaRemainingMin: full.etaRemainingMin,
+    drone: full.drone,
+    booking: {
+      id: booking.id,
+      status: booking.status,
+      pickupName: booking.pickupName,
+      dropName: booking.dropName,
+      parcelType: booking.parcelType,
+      droneCallsign: booking.droneCallsign,
+      notes: booking.notes,
+      pickupLat: booking.pickupLat,
+      pickupLng: booking.pickupLng,
+      dropLat: booking.dropLat,
+      dropLng: booking.dropLng,
+      flightStartedAt: booking.flightStartedAt,
+      etaMin: booking.etaMin,
+      batteryPct: booking.batteryPct,
+      serviceName: booking.serviceName,
+      imageEmoji: booking.imageEmoji,
+      location: booking.location,
+    },
+  };
+}
+
+async function mailTrackLink(req, booking) {
+  const email = String(booking.recipientEmail || booking.customerEmail || "").trim().toLowerCase();
+  if (!email) return { sent: false, reason: "NO_EMAIL" };
+  const key = await ensureTrackingKey(booking);
+  const mail = await sendDroneTrackEmail(email, {
+    trackingKey: key,
+    trackUrl: trackUrl(req, key),
+    pickupName: booking.pickupName,
+    dropName: booking.dropName,
+    parcelType: booking.parcelType,
+  });
+  return { ...mail, trackingKey: key, trackUrl: trackUrl(req, key), email };
+}
+
+async function createCampusDropForEmail(req) {
+  const b = req.body || {};
+  const email = String(b.recipientEmail || b.email || "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    const err = new Error("Enter the recipient's email.");
+    err.status = 400;
+    throw err;
+  }
+
+  const passenger = await queryOne(
+    `SELECT id, name, email, role FROM users WHERE email = ? AND ${USER_NOT_DELETED}`,
+    [email]
+  );
+  if (passenger && passenger.role !== "customer") {
+    const err = new Error("That email is not a passenger account.");
+    err.status = 409;
+    throw err;
+  }
+
+  const service =
+    (b.serviceId
+      ? await queryOne("SELECT * FROM drone_services WHERE id = ? AND active = 1", [Number(b.serviceId)])
+      : null) ||
+    (await queryOne(
+      "SELECT * FROM drone_services WHERE active = 1 AND (category = 'campus' OR name LIKE '%Campus Drone Delivery%') LIMIT 1"
+    ));
+  if (!service) {
+    const err = new Error("Campus drone delivery is not configured.");
+    err.status = 404;
+    throw err;
+  }
+
+  const { from, to } = campusCoordsFromBody(b);
+  if (!from || !to) {
+    const err = new Error("Pick campus pickup and drop points.");
+    err.status = 400;
+    throw err;
+  }
+  if (from.name === to.name) {
+    const err = new Error("Pickup and drop must be different.");
+    err.status = 400;
+    throw err;
+  }
+
+  const hours = Number(b.hours) || service.minHours;
+  const price = calcDronePrice(service, hours, true);
+  const operatorId = await pickCampusOperatorId();
+  const droneCallsign = String(b.droneCallsign || b.droneId || "IITM-D1").trim().slice(0, 64) || "IITM-D1";
+  const batteryPct = Math.min(100, Math.max(0, Number(b.batteryPct) || 92));
+  const etaMin = Math.min(60, Math.max(1, Number(b.etaMin) || 8));
+  const parcelType = b.parcelType || "food";
+  const location = `${from.name} → ${to.name}, IIT Madras Campus`;
+  const today = new Date().toISOString().slice(0, 10);
+  const trackingKey = await allocateTrackingKey();
+
+  const result = await query(
+    `INSERT INTO drone_bookings
+      (customerId, serviceId, operatorId, hours, servicePrice, operatorPrice, gst, totalPrice,
+       withOperator, scheduledDate, scheduledTime, location, locationLat, locationLng, notes,
+       status, paymentStatus,
+       pickupName, dropName, pickupLat, pickupLng, dropLat, dropLng, parcelType,
+       dispatcherUserId, droneCallsign, batteryPct, etaMin, dispatchNotes,
+       trackingKey, recipientEmail)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 'dispatched', 'paid',
+             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      passenger ? passenger.id : null, service.id, operatorId, price.hours,
+      price.servicePrice, price.operatorPrice, price.gst, price.total,
+      b.scheduledDate || today, b.scheduledTime || null,
+      location, from.lat, from.lng, b.notes || null,
+      from.name, to.name, from.lat, from.lng, to.lat, to.lng, parcelType,
+      req.user.id, droneCallsign, batteryPct, etaMin, b.dispatchNotes || b.notes || null,
+      trackingKey, email,
+    ]
+  );
+
+  const booking = await loadBooking(result.insertId);
+  const mail = await mailTrackLink(req, booking);
+  maybeStartCampusDemo(booking);
+  return { payload: trackPayload(booking), mail };
 }
 
 // GET /api/drones/campus-points — IIT Madras drop pins for the live map.
@@ -255,15 +407,12 @@ router.post("/book", requireAuth, requireRole("customer"), async (req, res) => {
   const price = calcDronePrice(service, hours, withOperator);
 
   const isCampus = isCampusService(service);
-  const { from, to } = campusCoordsFromBody(b);
   if (isCampus) {
-    if (!from || !to) {
-      return res.status(400).json({ error: "Pick campus pickup and drop points." });
-    }
-    if (from.name === to.name) {
-      return res.status(400).json({ error: "Pickup and drop must be different." });
-    }
+    return res.status(400).json({
+      error: "Campus drops are sent by dispatch. Use the tracking key from your email.",
+    });
   }
+  const { from, to } = campusCoordsFromBody(b);
 
   let operatorId = null;
   if (withOperator || isCampus) {
@@ -355,11 +504,32 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), async (req, res) =
 
 // GET /api/drones/my-bookings — customer's drone bookings.
 router.get("/my-bookings", requireAuth, requireRole("customer"), async (req, res) => {
+  const kind = String(req.query.kind || "all");
+  const email = String(req.user.email || "").trim().toLowerCase();
+  let extra = "";
+  if (kind === "rental") {
+    extra = " AND ds.category != 'campus' AND db.dispatcherUserId IS NULL AND (db.trackingKey IS NULL OR db.trackingKey = '')";
+  } else if (kind === "delivery") {
+    extra = " AND (ds.category = 'campus' OR db.dispatcherUserId IS NOT NULL OR (db.trackingKey IS NOT NULL AND db.trackingKey != ''))";
+  }
   const rows = await query(
-    `${BOOKING_SELECT} WHERE db.customerId = ? ORDER BY db.createdAt DESC LIMIT 50`,
-    [req.user.id]
+    `${BOOKING_SELECT}
+     WHERE (db.customerId = ? OR LOWER(COALESCE(db.recipientEmail, '')) = ?)
+     ${extra}
+     ORDER BY db.createdAt DESC LIMIT 50`,
+    [req.user.id, email]
   );
   res.json({ bookings: rows });
+});
+
+// GET /api/drones/follow/:key — public live track (no login). Tracking key from email.
+router.get("/follow/:key", async (req, res) => {
+  const key = normalizeTrackingKey(req.params.key);
+  if (!key) return res.status(400).json({ error: "Tracking key is required." });
+  const booking = await queryOne(`${BOOKING_SELECT} WHERE db.trackingKey = ?`, [key]);
+  if (!booking) return res.status(404).json({ error: "No drone found for that tracking key." });
+  maybeStartCampusDemo(booking);
+  res.json(publicTrackPayload(booking));
 });
 
 // GET /api/drones/track/:id — live campus snapshot (customer / dispatcher / admin).
@@ -394,74 +564,38 @@ router.get("/operator/jobs", requireAuth, requireRole("drone_operator"), async (
   res.json({ jobs: rows.map((row) => trackPayload(row)) });
 });
 
-// POST /api/drones/operator/send — pad starts a drop for a passenger email.
+// POST /api/drones/operator/send — pad starts a drop for any recipient email.
 router.post("/operator/send", requireAuth, requireRole("drone_operator"), async (req, res) => {
-  const b = req.body || {};
-  const email = String(b.recipientEmail || b.email || "").trim().toLowerCase();
-  if (!EMAIL_RE.test(email)) {
-    return res.status(400).json({ error: "Enter the recipient's email." });
-  }
-  const passenger = await queryOne(
-    `SELECT id, name, email, role FROM users WHERE email = ? AND ${USER_NOT_DELETED}`,
-    [email]
-  );
-  if (!passenger) {
-    return res.status(404).json({
-      error: "No passenger account for that email. Ask them to sign up on IraGo first.",
+  try {
+    const { payload, mail } = await createCampusDropForEmail(req);
+    res.status(201).json({
+      ...payload,
+      trackingKey: mail.trackingKey,
+      trackUrl: mail.trackUrl,
+      emailed: mail.sent,
     });
+  } catch (err) {
+    const status = err.status || 500;
+    if (status >= 500) console.error("[drones] operator send failed:", err.message);
+    res.status(status).json({ error: err.message || "Could not send this drop." });
   }
-  if (passenger.role !== "customer") {
-    return res.status(409).json({ error: "That email is not a passenger account." });
+});
+
+// POST /api/drones/admin/send — same drop, from admin console.
+router.post("/admin/send", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const { payload, mail } = await createCampusDropForEmail(req);
+    res.status(201).json({
+      ...payload,
+      trackingKey: mail.trackingKey,
+      trackUrl: mail.trackUrl,
+      emailed: mail.sent,
+    });
+  } catch (err) {
+    const status = err.status || 500;
+    if (status >= 500) console.error("[drones] admin send failed:", err.message);
+    res.status(status).json({ error: err.message || "Could not send this drop." });
   }
-
-  const service =
-    (b.serviceId
-      ? await queryOne("SELECT * FROM drone_services WHERE id = ? AND active = 1", [Number(b.serviceId)])
-      : null) ||
-    (await queryOne(
-      "SELECT * FROM drone_services WHERE active = 1 AND (category = 'campus' OR name LIKE '%Campus Drone Delivery%') LIMIT 1"
-    ));
-  if (!service) return res.status(404).json({ error: "Campus drone delivery is not configured." });
-
-  const { from, to } = campusCoordsFromBody(b);
-  if (!from || !to) {
-    return res.status(400).json({ error: "Pick campus pickup and drop points." });
-  }
-  if (from.name === to.name) {
-    return res.status(400).json({ error: "Pickup and drop must be different." });
-  }
-
-  const hours = Number(b.hours) || service.minHours;
-  const price = calcDronePrice(service, hours, true);
-  const operatorId = await pickCampusOperatorId();
-  const droneCallsign = String(b.droneCallsign || b.droneId || "IITM-D1").trim().slice(0, 64) || "IITM-D1";
-  const batteryPct = Math.min(100, Math.max(0, Number(b.batteryPct) || 92));
-  const etaMin = Math.min(60, Math.max(1, Number(b.etaMin) || 8));
-  const parcelType = b.parcelType || "food";
-  const location = `${from.name} → ${to.name}, IIT Madras Campus`;
-  const today = new Date().toISOString().slice(0, 10);
-
-  const result = await query(
-    `INSERT INTO drone_bookings
-      (customerId, serviceId, operatorId, hours, servicePrice, operatorPrice, gst, totalPrice,
-       withOperator, scheduledDate, scheduledTime, location, locationLat, locationLng, notes,
-       status, paymentStatus,
-       pickupName, dropName, pickupLat, pickupLng, dropLat, dropLng, parcelType,
-       dispatcherUserId, droneCallsign, batteryPct, etaMin, dispatchNotes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 'dispatched', 'paid',
-             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      passenger.id, service.id, operatorId, price.hours,
-      price.servicePrice, price.operatorPrice, price.gst, price.total,
-      b.scheduledDate || today, b.scheduledTime || null,
-      location, from.lat, from.lng, b.notes || null,
-      from.name, to.name, from.lat, from.lng, to.lat, to.lng, parcelType,
-      req.user.id, droneCallsign, batteryPct, etaMin, b.dispatchNotes || b.notes || null,
-    ]
-  );
-
-  const booking = await loadBooking(result.insertId);
-  res.status(201).json(trackPayload(booking));
 });
 
 // POST /api/drones/operator/jobs/:id/dispatch — fill drone ID, battery, ETA.
@@ -545,6 +679,30 @@ router.post("/operator/jobs/:id/location", requireAuth, requireRole("drone_opera
   );
   const updated = await loadBooking(id);
   res.json(trackPayload(updated));
+});
+
+async function handleResendTrack(req, res, booking) {
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  const mail = await mailTrackLink(req, booking);
+  if (!mail.email) {
+    return res.status(400).json({ error: "This drop has no recipient email." });
+  }
+  res.json({
+    emailed: mail.sent,
+    trackingKey: mail.trackingKey,
+    trackUrl: mail.trackUrl,
+    reason: mail.reason || null,
+  });
+}
+
+router.post("/operator/jobs/:id/resend-track", requireAuth, requireRole("drone_operator"), async (req, res) => {
+  const booking = await loadBooking(Number(req.params.id));
+  return handleResendTrack(req, res, booking);
+});
+
+router.post("/admin/bookings/:id/resend-track", requireAuth, requireRole("admin"), async (req, res) => {
+  const booking = await loadBooking(Number(req.params.id));
+  return handleResendTrack(req, res, booking);
 });
 
 // POST /api/drones/bookings/:id/cancel — cancel a drone booking.

@@ -194,6 +194,12 @@ function initAuthPortal() {
     return;
   }
 
+  const publicTrack = (params.get('track') || params.get('k') || '').trim();
+  if (publicTrack && typeof bootPublicDroneTrack === 'function') {
+    bootPublicDroneTrack(publicTrack);
+    return;
+  }
+
   if (!AUTH.user) {
     showView('login-view');
     if (portal.mode === 'signup') showRoleRegister();
@@ -415,7 +421,8 @@ async function apiFetch(path, opts = {}) {
     ...opts,
     headers: { ...AUTH.headers(), ...(opts.headers || {}) }
   }));
-  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup')) {
+  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup') && !path.startsWith('/api/drones/follow/')) {
+    if (typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey()) return res;
     AUTH.clear();
     showView('login-view');
     showLoginCard();
@@ -1126,6 +1133,12 @@ function logoutForcedReset() {
 function routeForRole(user) {
   syncProfileUI(user);
   bindProfileActions();
+
+  const trackKey = typeof pendingPublicTrackKey === 'function' ? pendingPublicTrackKey() : '';
+  if (trackKey && typeof bootPublicDroneTrack === 'function') {
+    bootPublicDroneTrack(trackKey);
+    return;
+  }
 
   switch (user && user.role) {
     case 'admin': {

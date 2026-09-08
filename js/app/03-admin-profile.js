@@ -2213,12 +2213,19 @@ function syncAdminBookingsKindUI() {
   var inflightBtn = document.querySelector('#admin-bookings-tabs [data-bk-filter="inflight"]');
   if (adminBookingsKind === 'drone') {
     if (title) title.textContent = 'Drone Bookings';
-    if (sub) sub.textContent = 'Campus deliveries — pickup, drop, customer, and payment.';
+    if (sub) sub.textContent = 'Operator-sent drops, tracking keys, and live deliveries.';
     if (inflightBtn) inflightBtn.textContent = 'Live';
+    var send = document.getElementById('admin-drone-send');
+    if (send) {
+      send.hidden = false;
+      fillAdminDroneSendPoints();
+    }
   } else {
     if (title) title.textContent = 'Air Taxi Bookings';
     if (sub) sub.textContent = 'Previous trips, in-flight rides, and completed bookings.';
     if (inflightBtn) inflightBtn.textContent = 'In flight';
+    var sendOff = document.getElementById('admin-drone-send');
+    if (sendOff) sendOff.hidden = true;
   }
 }
 
@@ -2339,27 +2346,27 @@ function renderAdminDroneBookingsTable(bookings) {
     return;
   }
   var rows = bookings.map(function (b) {
-    var fare = b.totalPrice != null ? INR(b.totalPrice) : '—';
-    var pay = b.paymentStatus ? escapeHtml(b.paymentStatus) : '—';
     var live = b.paymentStatus === 'paid' && ['confirmed','dispatched','picked_up','flying','arriving','in_progress'].indexOf(b.status) !== -1;
     var route = escapeHtml(b.pickupName || '—') + ' → ' + escapeHtml(b.dropName || '—');
+    var key = b.trackingKey || '';
     return '<tr>' +
       '<td><strong>#' + b.id + '</strong></td>' +
-      '<td><div>' + escapeHtml(b.customerName || 'Unknown') + '</div><div class="admin-users-meta">' + escapeHtml(b.customerEmail || '') + '</div></td>' +
+      '<td><div>' + escapeHtml(b.customerName || b.recipientEmail || 'Unknown') + '</div><div class="admin-users-meta">' + escapeHtml(b.customerEmail || b.recipientEmail || '') + '</div></td>' +
       '<td>' + route + '</td>' +
       '<td>' + escapeHtml(b.parcelType || b.serviceName || '—') + '</td>' +
       '<td>' + statusBadgeHtml(b.status) + '</td>' +
-      '<td>' + fare + '<div class="admin-users-meta">' + pay + '</div></td>' +
+      '<td>' + (key ? '<code>' + escapeHtml(key) + '</code>' : '—') + '</td>' +
       '<td>' + escapeHtml(b.droneCallsign || b.operatorName || '—') + '</td>' +
       '<td>' + formatAdminBookingWhen(b.createdAt) +
         (live ? '<div class="admin-users-meta"><button type="button" class="admin-btn-sm" onclick="showAdminSection(\'drone-live\')">Live map</button></div>' : '') +
+        (key ? '<div class="admin-users-meta"><button type="button" class="admin-btn-sm" onclick="resendAdminDroneTrack(' + b.id + ')">Resend track email</button></div>' : '') +
       '</td>' +
     '</tr>';
   }).join('');
   list.innerHTML =
     '<table class="admin-table">' +
       '<thead><tr>' +
-        '<th>ID</th><th>Customer</th><th>Route</th><th>Parcel</th><th>Status</th><th>Fare</th><th>Drone</th><th>Booked</th>' +
+        '<th>ID</th><th>Customer</th><th>Route</th><th>Parcel</th><th>Status</th><th>Track key</th><th>Drone</th><th>Booked</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>';
@@ -2394,6 +2401,77 @@ function renderAdminBookingsList(bookings) {
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>';
+}
+
+function fillAdminDroneSendPoints() {
+  const fromSel = document.getElementById('admin-drone-send-from');
+  const toSel = document.getElementById('admin-drone-send-to');
+  if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
+  if (fromSel.options.length) return;
+  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
+  toSel.innerHTML = campusDropOptions('Central Library');
+}
+
+async function submitAdminDroneSend() {
+  const err = document.getElementById('admin-drone-send-error');
+  const btn = document.getElementById('admin-drone-send-btn');
+  if (err) err.textContent = '';
+  const email = ((document.getElementById('admin-drone-send-email') || {}).value || '').trim();
+  const fromName = (document.getElementById('admin-drone-send-from') || {}).value;
+  const toName = (document.getElementById('admin-drone-send-to') || {}).value;
+  if (!email) {
+    if (err) err.textContent = "Enter the recipient's email.";
+    return;
+  }
+  if (fromName && toName && fromName === toName) {
+    if (err) err.textContent = 'Pickup and destination must be different.';
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+  }
+  try {
+    const res = await apiFetch('/api/drones/admin/send', {
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({
+        recipientEmail: email,
+        pickupName: fromName,
+        dropName: toName,
+        parcelType: (document.getElementById('admin-drone-send-parcel') || {}).value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
+    const key = data.trackingKey || (data.booking && data.booking.trackingKey);
+    showToast((data.emailed ? 'Tracking email sent · ' : 'Drop created · key ') + (key || email), 'success');
+    const emailEl = document.getElementById('admin-drone-send-email');
+    if (emailEl) emailEl.value = '';
+    loadAdminBookings();
+  } catch (e) {
+    if (err) err.textContent = e.message;
+    else showToast(e.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send & email tracking key';
+    }
+  }
+}
+
+async function resendAdminDroneTrack(id) {
+  try {
+    const res = await apiFetch('/api/drones/admin/bookings/' + id + '/resend-track', {
+      method: 'POST',
+      headers: AUTH.headers(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not resend.');
+    showToast(data.emailed ? 'Tracking email resent' : ('Key ' + (data.trackingKey || '') + ' — email not sent'), data.emailed ? 'success' : 'info');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
 

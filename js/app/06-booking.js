@@ -6,39 +6,59 @@ function switchService(service) {
   currentService = service;
   currentRoute = null;
   document.querySelectorAll('.service-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`[data-service="${service}"]`).classList.add('active');
+  const tab = document.querySelector(`[data-service="${service}"]`);
+  if (tab) tab.classList.add('active');
 
   const bookingPanel = document.getElementById('booking-panel');
   const dronePanel = document.getElementById('drone-panel');
+  const rentalPanel = document.getElementById('drone-rental-panel');
   const mapEl = document.getElementById('map');
 
+  function hideAirPanels() {
+    if (bookingPanel) bookingPanel.style.display = 'none';
+    if (dronePanel) dronePanel.style.display = 'none';
+    if (rentalPanel) rentalPanel.style.display = 'none';
+  }
+
   if (service === 'drones') {
-    if (typeof droneTrackId !== 'undefined' && droneTrackId) {
-      if (bookingPanel) bookingPanel.style.display = 'none';
-      if (dronePanel) dronePanel.style.display = 'none';
+    if (typeof droneTrackId !== 'undefined' && (droneTrackId || droneTrackKey)) {
+      hideAirPanels();
       if (mapEl) mapEl.style.display = '';
       const track = document.getElementById('drone-track-panel');
       if (track) track.classList.add('active');
       setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
       return;
     }
-    if (bookingPanel) bookingPanel.style.display = 'none';
+    hideAirPanels();
     if (dronePanel) dronePanel.style.display = 'flex';
     if (mapEl) mapEl.style.display = '';
     if (typeof initMap === 'function') initMap();
     if (typeof showCampusDeliveryMap === 'function') showCampusDeliveryMap();
+    if (typeof loadDroneMyDeliveries === 'function') loadDroneMyDeliveries();
+    setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
+    return;
+  }
+
+  if (service === 'drone-rental') {
+    if (typeof hideCampusDeliveryMap === 'function') hideCampusDeliveryMap();
+    if (typeof endDroneTracking === 'function' && (droneTrackId || droneTrackKey)) endDroneTracking(true);
+    hideAirPanels();
+    if (rentalPanel) rentalPanel.style.display = 'flex';
+    if (mapEl) mapEl.style.display = '';
+    if (typeof initMap === 'function') initMap();
     loadDroneServices();
-    loadDroneMyBookings();
+    loadDroneRentalBookings();
     setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
     return;
   }
 
   if (typeof hideCampusDeliveryMap === 'function') hideCampusDeliveryMap();
-  if (typeof endDroneTracking === 'function' && droneTrackId) endDroneTracking(true);
+  if (typeof endDroneTracking === 'function' && (droneTrackId || droneTrackKey)) endDroneTracking(true);
 
   if (bookingPanel) bookingPanel.style.display = 'flex';
   if (mapEl) mapEl.style.display = '';
   if (dronePanel) dronePanel.style.display = 'none';
+  if (rentalPanel) rentalPanel.style.display = 'none';
 
   const btn = document.getElementById('search-btn');
   const btnText = document.getElementById('search-btn-text');
@@ -97,6 +117,11 @@ function switchService(service) {
 
 function applyLandingModeFromQuery() {
   const params = new URLSearchParams(window.location.search);
+  const track = (params.get('track') || params.get('k') || '').trim();
+  if (track && typeof startDroneTrackingByKey === 'function') {
+    startDroneTrackingByKey(track);
+    return;
+  }
   const raw = (params.get('mode') || '').toLowerCase();
   const map = {
     'air-taxi': 'taxi',
@@ -109,6 +134,8 @@ function applyLandingModeFromQuery() {
     drones: 'drones',
     drone: 'drones',
     'drone-delivery': 'drones',
+    rental: 'drone-rental',
+    'drone-rental': 'drone-rental',
   };
   const service = map[raw];
   if (service) switchService(service);
@@ -980,11 +1007,14 @@ async function payForBooking() {
       }
       currentBooking = data.booking || currentBooking;
       closePayment();
-      if (typeof loadDroneMyBookings === 'function') loadDroneMyBookings();
-      if (typeof startDroneTracking === 'function' && currentBooking.pickupName) {
-        startDroneTracking(currentBooking.id);
+      if (typeof loadDroneRentalBookings === 'function') loadDroneRentalBookings();
+      if (typeof loadDroneMyDeliveries === 'function') loadDroneMyDeliveries();
+      if (currentBooking.trackingKey && typeof startDroneTrackingByKey === 'function') {
+        startDroneTrackingByKey(currentBooking.trackingKey);
+        showToast('Payment successful. Track your drone.', 'success');
+      } else {
+        showToast('Payment successful.', 'success');
       }
-      showToast('Payment successful. Assigning a campus drone…', 'success');
       return;
     }
     var useCredits = document.getElementById('payment-use-credits');

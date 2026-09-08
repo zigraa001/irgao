@@ -946,12 +946,17 @@ async function restoreSession() {
     const res = await fetch('/api/me', AUTH.fetchOpts({ headers: AUTH.headers() }));
     if (res.status === 401) {
       AUTH.clear();
+      const publicKey = (typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey()) || '';
+      if (publicKey && typeof bootPublicDroneTrack === 'function') {
+        bootPublicDroneTrack(publicKey);
+        return;
+      }
       showView('login-view');
       showLoginCard();
       return;
     }
     if (!res.ok) {
-      if (!cached) showView('login-view');
+      if (!cached && !(typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey())) showView('login-view');
       return;
     }
     const data = await res.json();
@@ -962,11 +967,11 @@ async function restoreSession() {
       } else {
         routeForRole(data.user);
       }
-    } else if (!cached) {
+    } else if (!cached && !(typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey())) {
       showView('login-view');
     }
   } catch (e) {
-    if (!cached) showView('login-view');
+    if (!cached && !(typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey())) showView('login-view');
   }
 }
 

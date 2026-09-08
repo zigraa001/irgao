@@ -157,6 +157,9 @@ function renderDopDetail(item) {
   } else {
     actions = '<div class="op-empty-sub">This order is ' + escapeHtml(droneStatusLabel(b.status)) + '.</div>';
   }
+  if (b.trackingKey || b.recipientEmail) {
+    actions += '<button type="button" class="drone-track-btn" onclick="resendDopTrack(' + b.id + ')">Resend tracking email</button>';
+  }
 
   host.innerHTML =
     '<div class="drone-booking-card" style="margin:0;">' +
@@ -164,7 +167,8 @@ function renderDopDetail(item) {
         '<span class="drone-booking-emoji">' + (b.imageEmoji || '📦') + '</span>' +
         '<div class="drone-booking-info">' +
           '<div class="drone-booking-name">' + escapeHtml(route) + '</div>' +
-          '<div class="drone-booking-meta">' + escapeHtml(b.customerName || 'Passenger') +
+          '<div class="drone-booking-meta">' + escapeHtml(b.customerName || b.recipientEmail || 'Passenger') +
+            (b.trackingKey ? ' · ' + escapeHtml(b.trackingKey) : '') +
             (b.notes ? ' · ' + escapeHtml(b.notes) : '') +
           '</div>' +
         '</div>' +
@@ -307,7 +311,13 @@ async function submitDopSend() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
-    showToast('Drop dispatched to ' + email, 'success');
+    const key = data.trackingKey || (data.booking && data.booking.trackingKey);
+    showToast(
+      (data.emailed ? 'Tracking email sent to ' : 'Drop dispatched. Give them key ') +
+        (data.emailed ? email : (key || email)) +
+        (data.emailed && key ? ' · ' + key : ''),
+      'success'
+    );
     const emailEl = document.getElementById('dop-send-email');
     if (emailEl) emailEl.value = '';
     await loadDopJobs();
@@ -324,55 +334,16 @@ async function submitDopSend() {
   }
 }
 
-async function submitDopSend() {
-  const err = document.getElementById('dop-send-error');
-  const btn = document.getElementById('dop-send-btn');
-  if (err) err.textContent = '';
-  const email = ((document.getElementById('dop-send-email') || {}).value || '').trim();
-  const fromName = (document.getElementById('dop-send-from') || {}).value;
-  const toName = (document.getElementById('dop-send-to') || {}).value;
-  if (!email) {
-    if (err) err.textContent = "Enter the recipient's email.";
-    return;
-  }
-  if (fromName && toName && fromName === toName) {
-    if (err) err.textContent = 'Pickup and destination must be different.';
-    return;
-  }
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-  }
+async function resendDopTrack(id) {
   try {
-    const res = await apiFetch('/api/drones/operator/send', {
+    const res = await apiFetch('/api/drones/operator/jobs/' + id + '/resend-track', {
       method: 'POST',
       headers: AUTH.headers(),
-      body: JSON.stringify({
-        recipientEmail: email,
-        pickupName: fromName,
-        dropName: toName,
-        parcelType: (document.getElementById('dop-send-parcel') || {}).value,
-        droneCallsign: (document.getElementById('dop-send-callsign') || {}).value,
-        batteryPct: Number((document.getElementById('dop-send-battery') || {}).value),
-        etaMin: Number((document.getElementById('dop-send-eta') || {}).value),
-        notes: (document.getElementById('dop-send-notes') || {}).value,
-      }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Could not send this drop.');
-    showToast('Drop dispatched to ' + email, 'success');
-    const emailEl = document.getElementById('dop-send-email');
-    if (emailEl) emailEl.value = '';
-    await loadDopJobs();
-    const booking = data.booking || data;
-    if (booking && booking.id) selectDopJob(booking.id);
+    if (!res.ok) throw new Error(data.error || 'Could not resend.');
+    showToast(data.emailed ? 'Tracking email resent' : ('Key ' + (data.trackingKey || '') + ' — email not sent'), data.emailed ? 'success' : 'info');
   } catch (e) {
-    if (err) err.textContent = e.message;
-    else showToast(e.message, 'error');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Send & dispatch';
-    }
+    showToast(e.message, 'error');
   }
 }

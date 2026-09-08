@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=1b6ffd34">
+  <link rel="stylesheet" href="/css/app.css?v=2c9e73db">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -289,6 +289,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 4l4 4M16 4l-4 4M4 20l4 -4M16 20l-4 -4"/><circle cx="4" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg>
         <span>Drone Delivery</span>
       </button>
+      <button class="service-tab" data-service="drone-rental" onclick="switchService('drone-rental')" aria-label="Drone Rental">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4"/></svg>
+        <span>Drone Rental</span>
+      </button>
     </div>
 
     <span class="customer-role-badge">Passenger Dashboard</span>
@@ -407,33 +411,50 @@
 
     </div>
 
-    <!-- Drone Rental Panel (shown when Drones tab is active) -->
+    <!-- Drone Delivery: track only -->
     <div class="booking-panel" id="drone-panel" style="display:none;">
       <div class="panel-section">
         <div class="shuttle-info-banner" id="drone-campus-banner">
-          <strong>Campus Drone Delivery · IIT Madras.</strong> Documents, meals, and lightweight cargo between hostels, departments, and gates — minutes, not a campus walk.
+          <strong>Track your drone.</strong> Dispatch sends a drop to your email. Open the link, or paste the tracking key here.
         </div>
+        <div class="drone-form" id="drone-track-key-form">
+          <div class="drone-form-row">
+            <label>Tracking key</label>
+            <input id="drone-track-key-input" class="pd-input" type="text" autocomplete="off" placeholder="IRG-XXXX-XXXX" maxlength="24" onkeydown="if(event.key==='Enter')submitDroneTrackKey()">
+          </div>
+          <button type="button" class="op-btn drone-book-btn" id="drone-track-key-btn" onclick="submitDroneTrackKey()">Track drone</button>
+          <div id="drone-track-key-error" class="field-error" style="margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="panel-section" id="drone-my-bookings-section">
+        <div class="drone-my-heading">Your deliveries</div>
+        <div id="drone-my-bookings">
+          <div class="op-empty-sub">Drops sent to your email will show up here.</div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Drone Rental (separate from delivery tracking) -->
+    <div class="booking-panel" id="drone-rental-panel" style="display:none;">
+      <div class="panel-section">
+        <div class="shuttle-info-banner">
+          <strong>Drone rental.</strong> Agriculture, survey, photo, and inspection drones — book by the hour. Delivery tracking lives on the Drone Delivery tab.
+        </div>
         <div class="drone-category-filter" id="drone-category-filter">
           <button type="button" class="dashboard-pill drone-cat-btn active" data-cat="all" onclick="filterDroneCategory('all')">All</button>
         </div>
-
         <div id="drone-services-list">
           <div class="pd-loading">Fetching drone services...</div>
         </div>
       </div>
-
-      <!-- Drone booking detail (shown when a service is selected) -->
       <div id="drone-book-section" style="display:none;" class="panel-section">
         <button type="button" class="op-back" onclick="closeDroneBooking()">&larr; Back to services</button>
         <div id="drone-book-card"></div>
       </div>
-
-      <!-- My drone bookings -->
-      <div class="panel-section" id="drone-my-bookings-section">
-        <div class="drone-my-heading">My Drone Bookings</div>
-        <div id="drone-my-bookings">
-          <div class="op-empty-sub">Loading your bookings...</div>
+      <div class="panel-section" id="drone-rental-bookings-section">
+        <div class="drone-my-heading">My rental bookings</div>
+        <div id="drone-rental-bookings">
+          <div class="op-empty-sub">Loading your rentals...</div>
         </div>
       </div>
     </div>
@@ -559,7 +580,7 @@
     </div>
 
     <div class="tracking-panel" id="drone-track-panel">
-      <h3 class="tracking-panel-title">Campus drone live</h3>
+      <h3 class="tracking-panel-title">Track your drone</h3>
       <div class="tracking-progress">
         <div class="tracking-progress-bar" id="drone-track-progress"></div>
       </div>
@@ -588,7 +609,7 @@
         <div class="drone-track-meta" id="drone-track-meta"></div>
       </div>
       <div class="tracking-footer">
-        <button type="button" class="btn-end-tracking" onclick="endDroneTracking()">Back to orders</button>
+        <button type="button" class="btn-end-tracking" onclick="endDroneTracking()">Back</button>
       </div>
     </div>
   </div>
@@ -998,11 +1019,11 @@
       </div>
       <div class="panel-section" id="dop-send-section">
         <div class="panel-step-heading">Send a campus drop</div>
-        <p class="op-empty-sub" style="margin-bottom:10px;">Enter the recipient's IraGo email and destination. We'll dispatch from this pad.</p>
+        <p class="op-empty-sub" style="margin-bottom:10px;">Enter the recipient's email and destination. We'll email them a tracking link with their key.</p>
         <div class="drone-form" id="dop-send-form">
           <div class="drone-form-row">
             <label>Recipient email</label>
-            <input id="dop-send-email" class="pd-input" type="email" placeholder="passenger@irago.in" autocomplete="email">
+            <input id="dop-send-email" class="pd-input" type="email" placeholder="customer@email.com" autocomplete="email">
           </div>
           <div class="drone-form-grid">
             <div class="drone-form-row">
@@ -1247,6 +1268,35 @@
             <div class="adm-header-sub" id="admin-bookings-sub">Air taxi trips and campus drone deliveries.</div>
           </div>
         </div>
+        <div id="admin-drone-send" class="drone-form admin-drone-send" hidden>
+          <div class="panel-step-heading">Send a drone drop</div>
+          <p class="op-empty-sub" style="margin-bottom:10px;">Books for the customer's email and mails them a tracking-key link.</p>
+          <div class="drone-form-grid">
+            <div class="drone-form-row">
+              <label>Recipient email</label>
+              <input id="admin-drone-send-email" class="pd-input" type="email" placeholder="customer@email.com">
+            </div>
+            <div class="drone-form-row">
+              <label>Pickup</label>
+              <select id="admin-drone-send-from" class="pd-input"></select>
+            </div>
+            <div class="drone-form-row">
+              <label>Destination</label>
+              <select id="admin-drone-send-to" class="pd-input"></select>
+            </div>
+            <div class="drone-form-row">
+              <label>Parcel</label>
+              <select id="admin-drone-send-parcel" class="pd-input">
+                <option value="food" selected>Food / mess</option>
+                <option value="documents">Documents</option>
+                <option value="pharmacy">Pharmacy</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" class="op-btn drone-book-btn" id="admin-drone-send-btn" onclick="submitAdminDroneSend()">Send &amp; email tracking key</button>
+          <div id="admin-drone-send-error" class="field-error" style="margin-top:6px;"></div>
+        </div>
         <div id="admin-bookings-kpis"></div>
         <div class="admin-users-toolbar" id="admin-bookings-taxi-toolbar">
           <div class="admin-user-tabs" id="admin-bookings-tabs">
@@ -1469,7 +1519,7 @@
         <div class="admin-page-header">
           <div>
             <div class="adm-header-title">Drone Services</div>
-            <div class="adm-header-sub">Catalog for campus drone delivery — services and operators.</div>
+            <div class="adm-header-sub">Rental catalog and operators. Delivery drops live under Drone → Bookings.</div>
           </div>
         </div>
 
@@ -1767,6 +1817,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=1b6ffd34"></script>
+<script src="/js/app.bundle.js?v=2c9e73db"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ let droneCategories = [];
 let droneCurrentCategory = 'all';
 let droneSelectedService = null;
 let droneMyBookings = [];
+let droneRentalList = [];
 let droneAdminServicesLoaded = false;
 let droneAdminOperatorsLoaded = false;
 let droneAdminBookingsLoaded = false;
@@ -42,7 +43,9 @@ let droneTrackMarker = null;
 let droneTrackPoll = null;
 let droneTrackAnim = null;
 let droneTrackId = null;
+let droneTrackKey = null;
 let droneTrackSnap = null;
+let droneGuestTrack = false;
 
 function droneStatusLabel(status) {
   const map = {
@@ -98,7 +101,7 @@ async function loadDroneServices() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load');
     droneServices = data.services || [];
-    const cats = [...new Set(droneServices.map(s => s.category))].sort();
+    const cats = [...new Set(droneServices.filter(function (s) { return !isCampusDelivery(s); }).map(s => s.category))].sort();
     droneCategories = cats;
     renderDroneCategoryFilter(cats);
     renderDroneServices();
@@ -126,20 +129,30 @@ function filterDroneCategory(cat) {
   renderDroneServices();
 }
 
+function pendingPublicTrackKey() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('track') || params.get('k') || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
 function renderDroneServices() {
   const list = document.getElementById('drone-services-list');
   if (!list) return;
-  const filtered = droneCurrentCategory === 'all' ? droneServices.slice() : droneServices.filter(s => s.category === droneCurrentCategory);
-  filtered.sort(function (a, b) { return Number(isCampusDelivery(b)) - Number(isCampusDelivery(a)); });
+  const rentals = droneServices.filter(function (s) { return !isCampusDelivery(s); });
+  const filtered = droneCurrentCategory === 'all' ? rentals.slice() : rentals.filter(s => s.category === droneCurrentCategory);
   if (!filtered.length) {
-    list.innerHTML = '<div class="op-empty-sub">No drone services in this category yet. Check back soon.</div>';
+    list.innerHTML = '<div class="op-empty-sub">No drone rentals in this category yet. Check back soon.</div>';
     return;
   }
   let html = '<div class="drone-grid">';
   filtered.forEach(s => {
     const campus = isCampusDelivery(s);
+    if (campus) return;
     const opBadge = s.operatorRequired ? '<span class="drone-op-badge">Operator included</span>' : '<span class="drone-op-badge drone-op-optional">Operator optional</span>';
-    const unit = campus ? '/delivery' : '/hr';
+    const unit = '/hr';
     html += '<div class="drone-card' + (campus ? ' drone-card-campus' : '') + '" onclick="selectDroneService(' + s.id + ')">' +
       '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
       '<div class="drone-card-body">' +
@@ -352,7 +365,7 @@ async function bookDrone() {
     if (!res.ok) throw new Error(data.error || 'Booking failed');
 
     closeDroneBooking();
-    loadDroneMyBookings();
+    loadDroneRentalBookings();
     openDronePayment(data.booking, data.fare);
   } catch (e) {
     errEl.textContent = e.message;
@@ -381,56 +394,103 @@ function openDronePayment(booking, fare) {
 }
 
 function payDroneBooking(id) {
-  const b = droneMyBookings.find(function (x) { return Number(x.id) === Number(id); });
+  const b = droneMyBookings.find(function (x) { return Number(x.id) === Number(id); })
+    || droneRentalList.find(function (x) { return Number(x.id) === Number(id); });
   if (!b) return;
   openDronePayment(b);
 }
 
-// ── Customer: My drone bookings ──
+// ── Customer: My drone deliveries (track-only) ──
 
-async function loadDroneMyBookings() {
+async function loadDroneMyDeliveries() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
+  if (!AUTH.user) {
+    wrap.innerHTML = '<div class="op-empty-sub">Log in to see drops sent to your email, or paste a tracking key above.</div>';
+    return;
+  }
   try {
-    const res = await apiFetch('/api/drones/my-bookings', { headers: AUTH.headers() });
+    const res = await apiFetch('/api/drones/my-bookings?kind=delivery', { headers: AUTH.headers() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
     droneMyBookings = data.bookings || [];
-    renderDroneMyBookings();
+    renderDroneMyDeliveries();
   } catch (e) {
-    wrap.innerHTML = '<div class="op-empty-sub">Could not load your drone bookings. Please try again.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">Could not load your deliveries. Paste a tracking key to follow a drone.</div>';
   }
 }
 
-function renderDroneMyBookings() {
+function loadDroneMyBookings() {
+  return loadDroneMyDeliveries();
+}
+
+function renderDroneMyDeliveries() {
   const wrap = document.getElementById('drone-my-bookings');
   if (!wrap) return;
   if (!droneMyBookings.length) {
-    wrap.innerHTML = '<div class="op-empty-sub">No drone bookings yet. Campus drone delivery at IIT Madras is live — pick a drop above.</div>';
+    wrap.innerHTML = '<div class="op-empty-sub">No deliveries yet. Dispatch will email you a tracking key when a drone is sent.</div>';
     return;
   }
   let html = '';
   droneMyBookings.forEach(b => {
     const statusCls = droneStatusClass(b.status);
+    const live = ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
+    const key = b.trackingKey || '';
+    html += '<div class="drone-booking-card">' +
+      '<div class="drone-booking-head">' +
+        '<span class="drone-booking-emoji">' + (b.imageEmoji || '📦') + '</span>' +
+        '<div class="drone-booking-info">' +
+          '<div class="drone-booking-name">' + escapeHtml((b.pickupName && b.dropName) ? (b.pickupName + ' → ' + b.dropName) : (b.serviceName || 'Drone drop')) + '</div>' +
+          '<div class="drone-booking-meta">' + escapeHtml(key ? ('Key ' + key) : (b.parcelType || 'Delivery')) + '</div>' +
+        '</div>' +
+        '<span class="drone-status ' + statusCls + '">' + escapeHtml(droneStatusLabel(b.status)) + '</span>' +
+      '</div>' +
+      (live ? '<button type="button" class="drone-track-btn" onclick="' + (key ? ('startDroneTrackingByKey(\'' + escapeHtml(key) + '\')') : ('startDroneTracking(' + b.id + ')')) + ')">Track live</button>' : '') +
+    '</div>';
+  });
+  wrap.innerHTML = html;
+}
+
+async function loadDroneRentalBookings() {
+  const wrap = document.getElementById('drone-rental-bookings');
+  if (!wrap) return;
+  try {
+    const res = await apiFetch('/api/drones/my-bookings?kind=rental', { headers: AUTH.headers() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    droneRentalList = data.bookings || [];
+    renderDroneRentalBookings(droneRentalList);
+  } catch (e) {
+    wrap.innerHTML = '<div class="op-empty-sub">Could not load your rental bookings.</div>';
+  }
+}
+
+function renderDroneRentalBookings(bookings) {
+  const wrap = document.getElementById('drone-rental-bookings');
+  if (!wrap) return;
+  if (!bookings.length) {
+    wrap.innerHTML = '<div class="op-empty-sub">No rental bookings yet. Pick a drone above.</div>';
+    return;
+  }
+  let html = '';
+  bookings.forEach(b => {
+    const statusCls = droneStatusClass(b.status);
     const unpaid = String(b.paymentStatus || '') === 'pending';
-    const live = !unpaid && ['confirmed', 'dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
     const canCancel = b.status === 'confirmed' || b.status === 'pending' || b.status === 'dispatched';
     html += '<div class="drone-booking-card">' +
       '<div class="drone-booking-head">' +
         '<span class="drone-booking-emoji">' + (b.imageEmoji || '🛸') + '</span>' +
         '<div class="drone-booking-info">' +
           '<div class="drone-booking-name">' + escapeHtml(b.serviceName) + '</div>' +
-          '<div class="drone-booking-meta">' + escapeHtml((b.pickupName && b.dropName) ? (b.pickupName + ' → ' + b.dropName) : (b.category || '')) + '</div>' +
+          '<div class="drone-booking-meta">' + escapeHtml(b.location || b.category || '') + '</div>' +
         '</div>' +
         '<span class="drone-status ' + statusCls + '">' + escapeHtml(unpaid ? 'Awaiting payment' : droneStatusLabel(b.status)) + '</span>' +
       '</div>' +
       '<div class="drone-booking-details">' +
-        (b.location ? '<div>📍 ' + escapeHtml(b.location) + '</div>' : '') +
         (b.scheduledDate ? '<div>📅 ' + b.scheduledDate + (b.scheduledTime ? ' at ' + b.scheduledTime : '') + '</div>' : '') +
         '<div class="drone-booking-price">₹' + Number(b.totalPrice).toLocaleString('en-IN') + '</div>' +
       '</div>' +
       (unpaid ? '<button type="button" class="drone-track-btn" onclick="payDroneBooking(' + b.id + ')">Pay now</button>' : '') +
-      (live ? '<button type="button" class="drone-track-btn" onclick="startDroneTracking(' + b.id + ')">Track live</button>' : '') +
       (canCancel ? '<button type="button" class="drone-cancel-btn" onclick="cancelDroneBooking(' + b.id + ')">Cancel Booking</button>' : '') +
     '</div>';
   });
@@ -447,7 +507,8 @@ async function cancelDroneBooking(id) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Cancel failed');
     showToast('Booking cancelled.', 'info');
-    loadDroneMyBookings();
+    loadDroneRentalBookings();
+    loadDroneMyDeliveries();
   } catch (e) {
     showToast(e.message, 'error');
   }
@@ -738,7 +799,8 @@ function renderDroneAdminBookings(bookings) {
       '<div class="das-row-avatar">' + custInitials + '</div>' +
       '<div class="das-row-identity">' +
         '<div class="das-row-name">' + escapeHtml(b.customerName || 'Unknown') + '</div>' +
-        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.customerEmail || '') + '</div>' +
+        '<div class="das-row-meta">#' + b.id + ' · ' + escapeHtml(b.customerEmail || b.recipientEmail || '') +
+          (b.trackingKey ? ' · ' + escapeHtml(b.trackingKey) : '') + '</div>' +
       '</div>' +
       '<div class="das-row-tags">' +
         '<span class="das-booking-price">' + INR(b.totalPrice) + '</span>' +
@@ -881,8 +943,10 @@ function applyDroneTrackSnap(data) {
   if (fromEl) fromEl.textContent = b.pickupName || 'Pickup';
   if (toEl) toEl.textContent = b.dropName || 'Drop';
   if (metaEl) {
-    metaEl.textContent = (b.parcelType ? ('Parcel: ' + b.parcelType) : '') +
-      (b.notes ? ((b.parcelType ? ' · ' : '') + b.notes) : '');
+    const key = data.trackingKey || b.trackingKey || droneTrackKey || '';
+    metaEl.textContent = (key ? ('Key ' + key) : '') +
+      (b.parcelType ? ((key ? ' · ' : '') + 'Parcel: ' + b.parcelType) : '') +
+      (b.notes ? (((key || b.parcelType) ? ' · ' : '') + b.notes) : '');
   }
   if (stepsEl) stepsEl.innerHTML = droneTrackStepsHtml(b.status);
   const pos = data.drone || clientDronePos(b);
@@ -916,11 +980,34 @@ function paintDroneOnMap(booking, pos) {
 }
 
 async function pollDroneTrack() {
-  if (!droneTrackId) return;
+  if (!droneTrackId && !droneTrackKey) return;
   try {
-    const res = await apiFetch('/api/drones/track/' + droneTrackId, { headers: AUTH.headers() });
+    let res;
+    if (droneTrackKey) {
+      res = await fetch('/api/drones/follow/' + encodeURIComponent(droneTrackKey), { credentials: 'include' });
+    } else {
+      res = await apiFetch('/api/drones/track/' + droneTrackId, { headers: AUTH.headers() });
+    }
     const data = await res.json();
-    if (!res.ok) return;
+    if (!res.ok) {
+      const msg = data.error || 'No drone found for that key.';
+      const keyTried = droneTrackKey;
+      const wasGuest = droneGuestTrack;
+      endDroneTracking(true);
+      if (wasGuest) {
+        droneGuestTrack = true;
+        document.body.classList.add('guest-drone-track');
+        showView('booking-view');
+      }
+      if (typeof switchService === 'function') switchService('drones');
+      const err = document.getElementById('drone-track-key-error');
+      const input = document.getElementById('drone-track-key-input');
+      if (input && keyTried) input.value = keyTried;
+      if (err) err.textContent = msg;
+      return;
+    }
+    if (data.trackingKey) droneTrackKey = data.trackingKey;
+    if (data.booking && data.booking.id) droneTrackId = data.booking.id;
     applyDroneTrackSnap(data);
   } catch (e) {}
 }
@@ -936,34 +1023,84 @@ function tickDroneTrackAnim() {
   else paintDroneOnMap(droneTrackSnap.booking, pos);
 }
 
-function startDroneTracking(id) {
-  droneTrackId = id;
-  if (currentService !== 'drones') switchService('drones');
+function openDroneTrackUi() {
+  currentService = 'drones';
   hideCampusDeliveryMap();
   const taxi = document.getElementById('tracking-panel');
   if (taxi) taxi.classList.remove('active');
   const dronePanel = document.getElementById('drone-panel');
   if (dronePanel) dronePanel.style.display = 'none';
+  const rentalPanel = document.getElementById('drone-rental-panel');
+  if (rentalPanel) rentalPanel.style.display = 'none';
+  const bookingPanel = document.getElementById('booking-panel');
+  if (bookingPanel) bookingPanel.style.display = 'none';
   const mapEl = document.getElementById('map');
   if (mapEl) mapEl.style.display = '';
   const panel = document.getElementById('drone-track-panel');
   if (panel) panel.classList.add('active');
+  document.querySelectorAll('.service-tab').forEach(function (t) {
+    t.classList.toggle('active', t.getAttribute('data-service') === 'drones');
+  });
   if (typeof initMap === 'function') initMap();
   if (map) {
     map.invalidateSize(false);
     setTimeout(function () { if (map) map.invalidateSize(false); }, 200);
   }
-  pollDroneTrack();
   if (droneTrackPoll) clearInterval(droneTrackPoll);
   if (droneTrackAnim) clearInterval(droneTrackAnim);
+  pollDroneTrack();
   droneTrackPoll = setInterval(pollDroneTrack, 2000);
   droneTrackAnim = setInterval(tickDroneTrackAnim, 500);
+}
+
+function startDroneTracking(id) {
+  droneTrackId = id;
+  droneTrackKey = null;
+  droneGuestTrack = false;
+  document.body.classList.remove('guest-drone-track');
+  openDroneTrackUi();
+}
+
+function startDroneTrackingByKey(key) {
+  const cleaned = String(key || '').trim().toUpperCase();
+  if (!cleaned) return;
+  droneTrackKey = cleaned;
+  droneTrackId = null;
+  const input = document.getElementById('drone-track-key-input');
+  if (input) input.value = cleaned;
+  openDroneTrackUi();
+}
+
+function submitDroneTrackKey() {
+  const err = document.getElementById('drone-track-key-error');
+  const raw = ((document.getElementById('drone-track-key-input') || {}).value || '').trim();
+  if (err) err.textContent = '';
+  if (!raw) {
+    if (err) err.textContent = 'Paste the tracking key from your email.';
+    return;
+  }
+  startDroneTrackingByKey(raw);
+}
+
+function bootPublicDroneTrack(key) {
+  droneGuestTrack = !AUTH.user;
+  if (droneGuestTrack) {
+    document.body.classList.add('guest-drone-track');
+    const badge = document.querySelector('#booking-view .customer-role-badge');
+    if (badge) badge.textContent = 'Track your drone';
+  } else {
+    document.body.classList.remove('guest-drone-track');
+  }
+  showView('booking-view');
+  if (typeof initMap === 'function') initMap();
+  startDroneTrackingByKey(key);
 }
 
 function endDroneTracking(silent) {
   if (droneTrackPoll) { clearInterval(droneTrackPoll); droneTrackPoll = null; }
   if (droneTrackAnim) { clearInterval(droneTrackAnim); droneTrackAnim = null; }
   droneTrackId = null;
+  droneTrackKey = null;
   droneTrackSnap = null;
   if (droneTrackLayer && map) {
     map.removeLayer(droneTrackLayer);
@@ -973,18 +1110,34 @@ function endDroneTracking(silent) {
   const panel = document.getElementById('drone-track-panel');
   if (panel) panel.classList.remove('active');
   if (silent) return;
+  if (droneGuestTrack) {
+    droneGuestTrack = false;
+    document.body.classList.remove('guest-drone-track');
+    showView('login-view');
+    if (typeof showLoginCard === 'function') showLoginCard();
+    return;
+  }
   if (currentService === 'drones') {
     const dronePanel = document.getElementById('drone-panel');
     if (dronePanel) dronePanel.style.display = 'flex';
     showCampusDeliveryMap();
-    loadDroneMyBookings();
+    loadDroneMyDeliveries();
     if (map) setTimeout(function () { map.invalidateSize(false); }, 150);
+  } else if (currentService === 'drone-rental') {
+    const rentalPanel = document.getElementById('drone-rental-panel');
+    if (rentalPanel) rentalPanel.style.display = 'flex';
+    loadDroneRentalBookings();
   }
 }
 
 async function restoreActiveDroneDelivery() {
+  const publicKey = pendingPublicTrackKey();
+  if (publicKey) {
+    startDroneTrackingByKey(publicKey);
+    return;
+  }
   try {
-    const res = await apiFetch('/api/drones/my-bookings', { headers: AUTH.headers() });
+    const res = await apiFetch('/api/drones/my-bookings?kind=delivery', { headers: AUTH.headers() });
     const data = await res.json();
     if (!res.ok) return;
     droneMyBookings = data.bookings || [];
@@ -992,7 +1145,9 @@ async function restoreActiveDroneDelivery() {
       return ['dispatched', 'picked_up', 'flying', 'arriving'].includes(b.status);
     });
     const taxiOn = document.getElementById('tracking-panel') && document.getElementById('tracking-panel').classList.contains('active');
-    if (live && !taxiOn) startDroneTracking(live.id);
-    else renderDroneMyBookings();
+    if (live && !taxiOn) {
+      if (live.trackingKey) startDroneTrackingByKey(live.trackingKey);
+      else startDroneTracking(live.id);
+    } else renderDroneMyDeliveries();
   } catch (e) {}
 }

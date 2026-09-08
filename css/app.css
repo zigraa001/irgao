@@ -7272,12 +7272,14 @@ body.admin-map-fs { overflow: hidden; }
 
 /* Drone catalog sits beside the campus map, like a food-delivery ticket. */
 @media (min-width: 901px) {
-  #drone-panel {
+  #drone-panel,
+  #drone-rental-panel {
     width: 420px;
     max-width: 420px;
     border-right: 1px solid var(--border-subtle);
   }
-  #drone-panel > .panel-section {
+  #drone-panel > .panel-section,
+  #drone-rental-panel > .panel-section {
     max-width: none;
     margin-inline: 0;
     width: 100%;
@@ -7395,4 +7397,16 @@ body.admin-map-fs { overflow: hidden; }
   *::after {
     transition-duration: 0.01ms !important;
   }
+}
+
+body.guest-drone-track .service-tabs,
+body.guest-drone-track .nav-profile {
+  display: none !important;
+}
+.admin-drone-send {
+  margin: 0 0 18px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
 }

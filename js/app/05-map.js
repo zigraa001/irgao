@@ -14,7 +14,7 @@ function initMap() {
 
   // Click to set locations
   map.on('click', function(e) {
-    if (typeof currentService !== 'undefined' && currentService === 'drones') return;
+    if (typeof currentService !== 'undefined' && (currentService === 'drones' || currentService === 'drone-rental')) return;
     if (typeof droneTrackId !== 'undefined' && droneTrackId) return;
     if (mapPickTarget) {
       var target = mapPickTarget;

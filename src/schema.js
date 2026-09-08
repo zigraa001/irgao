@@ -89,6 +89,33 @@ async function tableExists(table) {
   return rows.length > 0;
 }
 
+async function indexExists(table, indexName) {
+  const rows = await query(`SHOW INDEX FROM \`${table}\` WHERE Key_name = ?`, [indexName]);
+  return rows.length > 0;
+}
+
+async function ensureDroneBookingCustomerNullable() {
+  if (!(await tableExists("drone_bookings"))) return;
+  const info = await columnInfo("drone_bookings", "customerId");
+  if (info && String(info.Null || "").toUpperCase() === "NO") {
+    await query("ALTER TABLE drone_bookings MODIFY customerId INT NULL");
+    dbg("initSchema: drone_bookings.customerId is now nullable");
+  }
+}
+
+async function ensureDroneTrackingKeyIndex() {
+  if (!(await tableExists("drone_bookings"))) return;
+  if (await indexExists("drone_bookings", "idx_drone_bookings_trackingKey")) return;
+  try {
+    await query(
+      "CREATE UNIQUE INDEX idx_drone_bookings_trackingKey ON drone_bookings (trackingKey)"
+    );
+    dbg("initSchema: added unique index on drone_bookings.trackingKey");
+  } catch (err) {
+    if (!/Duplicate/i.test(err.message || "")) throw err;
+  }
+}
+
 // Ensure otp_requests has every column the OTP module expects (handles partial
 // or legacy tables that predate the current schema).
 async function ensureOtpRequestsSchema() {
@@ -543,6 +570,10 @@ async function initSchema() {
   await ensureColumn("drone_bookings", "gpsLat", "gpsLat DOUBLE NULL");
   await ensureColumn("drone_bookings", "gpsLng", "gpsLng DOUBLE NULL");
   await ensureColumn("drone_bookings", "gpsUpdatedAt", "gpsUpdatedAt DATETIME NULL");
+  await ensureColumn("drone_bookings", "trackingKey", "trackingKey VARCHAR(32) NULL");
+  await ensureColumn("drone_bookings", "recipientEmail", "recipientEmail VARCHAR(255) NULL");
+  await ensureDroneBookingCustomerNullable();
+  await ensureDroneTrackingKeyIndex();
 
   // Seed drone services (idempotent).
   const droneServices = [
