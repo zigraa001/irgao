@@ -1,371 +1,125 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Meet the IraGo leadership team - building India's AI-powered air mobility platform.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="IraGo team — Ishant Rao and Mohammad S." />
   <link rel="icon" type="image/png" href="assets/images/irago-icon.png">
-    <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
-    <title>Team - IraGo Air Mobility</title>
-
-  <link rel="stylesheet" href="css/reset.css?v=aero3">
-  <link rel="stylesheet" href="css/tokens.css?v=aero3">
-  <link rel="stylesheet" href="css/layout.css?v=aero3">
-  <link rel="stylesheet" href="css/components.css?v=aero3">
-  <link rel="stylesheet" href="css/animations.css?v=aero3">
-  <link rel="stylesheet" href="css/responsive.css?v=aero3">
-
-  <style>
-    body {
-      background: var(--bg-main);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-    }
-
-    .team-hero {
-      background: var(--bg-dark);
-      padding: var(--space-32) 0 var(--space-20);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-
-    .team-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-8);
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    @media (max-width: 768px) {
-      .team-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .team-card-inner {
-      padding: var(--space-8);
-    }
-
-    .team-card-header {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--space-5);
-      margin-bottom: var(--space-6);
-    }
-
-    .team-card-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-      margin-bottom: var(--space-6);
-    }
-
-    .team-strength {
-      background: var(--bg-subtle);
-      border: 1px solid var(--card-border);
-      border-radius: 0;
-      padding: var(--space-3) 0;
-      margin-top: var(--space-5);
-      overflow: hidden;
-    }
-
-    .team-strength-label {
-      font-size: var(--text-xs);
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: var(--space-2);
-      padding: 0 var(--space-4);
-    }
-
-    .team-strength-text {
-      font-size: var(--text-sm);
-      color: var(--text-body);
-      line-height: 1.6;
-    }
-
-    .team-divider {
-      height: 1px;
-      background: var(--card-border);
-      margin: var(--space-5) 0;
-    }
-
-    .team-cta-section {
-      background: var(--bg-dark);
-      position: relative;
-      overflow: hidden;
-    }
-  </style>
+  <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
+  <title>Team — IraGo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     NAVBAR
-═══════════════════════════════════════════════ -->
-<nav class="navbar" id="navbar">
-  <div class="container navbar-inner">
-    <a href="/" class="navbar-logo" aria-label="IraGo Home">
-      <img src="assets/images/irago-logo.png" alt="IraGo Logo" class="brand-logo">
-    </a>
-
-    <ul class="navbar-links">
-      <li><a href="/" class="nav-link">Home</a></li>
-      <li><a href="/#about" class="nav-link">About</a></li>
-      <li><a href="/#technology" class="nav-link">Technology</a></li>
-      <li><a href="/#use-cases" class="nav-link">Use Cases</a></li>
-      <li><a href="vision.html" class="nav-link">Vision</a></li>
-      <li><a href="team.html" class="nav-link active">Team</a></li>
+  <nav class="nav">
+    <a href="/" class="nav-logo">IraGo</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/">Home</a></li>
+      <li><a href="/#about">About</a></li>
+      <li><a href="/#technology">Technology</a></li>
+      <li><a href="/#use-cases">Use Cases</a></li>
+      <li><a href="vision.html">Vision</a></li>
+      <li><a href="team.html" class="is-active">Team</a></li>
+      <li><a href="app.html">Platform</a></li>
+      <li><a href="contact.html">Contact</a></li>
     </ul>
-
-    <div class="navbar-actions">
-      <a href="contact.html" class="nav-link nav-contact-link">Contact</a>
-      <a href="contact.html" class="btn-nav-cta">Request a Demo
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-      </a>
+    <div class="nav-actions">
+      <a href="/login/passenger" class="nav-login">Login</a>
+      <a href="contact.html" class="nav-cta">Request a Demo</a>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
+  </nav>
 
-    <button class="navbar-toggle" id="navToggle" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-
-  <div class="navbar-drawer" id="navDrawer">
-    <div class="drawer-nav-group">
-      <div class="drawer-label">Navigation</div>
-      <a href="/" class="drawer-link">Home</a>
-      <a href="/#about" class="drawer-link">About</a>
-      <a href="/#technology" class="drawer-link">Technology</a>
-      <a href="/#use-cases" class="drawer-link">Use Cases</a>
-      <a href="vision.html" class="drawer-link">Vision</a>
-      <a href="team.html" class="drawer-link">Team</a>
+  <section class="page-hero">
+    <div class="hero-media">
+      <img src="assets/images/hero-poster.jpg" alt="" />
+      <div class="hero-overlay"></div>
     </div>
-    <div class="drawer-nav-group">
-      <div class="drawer-label">Get in Touch</div>
-      <a href="contact.html" class="drawer-link">Contact Us</a>
+    <div class="hero-content">
+      <h1>Two people.<br>One pad.</h1>
+      <p class="hero-sub">IIT Madras + IIT Delhi. Roads, code, and aircraft.</p>
     </div>
-    <a href="contact.html" class="btn btn-primary drawer-cta">Request a Demo →</a>
-  </div>
-</nav>
+  </section>
 
-<!-- ═══════════════════════════════════════════════
-     TEAM HERO
-═══════════════════════════════════════════════ -->
-<section class="team-hero">
-  <div class="container" style="position: relative; z-index: 1">
-    <span class="section-label" style="color: var(--accent-light); display: block; text-align: center; margin-bottom: var(--space-6)">Leadership</span>
-    <h1 style="font-size: clamp(36px, 6vw, 64px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: #fff; margin-bottom: var(--space-6)" class="reveal">
-      The People Behind<br>IraGo
-    </h1>
-    <p style="font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.78); max-width: 580px; margin: 0 auto; line-height: 1.75" class="reveal">
-      A team combining deep AI expertise, aviation systems knowledge, and a shared mission to transform mobility in Bharat.
-    </p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     LEADERSHIP TEAM
-═══════════════════════════════════════════════ -->
-<section class="section" style="background: var(--bg-main)">
-  <div class="container">
-    <div class="section-center" style="margin-bottom: var(--space-12)">
-      <span class="section-label accent" style="text-align: center; display: block">Our Team</span>
-      <h2 class="section-heading reveal" style="text-align: center">Leadership Team</h2>
+  <section class="routes">
+    <div class="routes-header">
+      <div class="feature-num">Team</div>
+      <h2>Who flies it</h2>
     </div>
-
-    <div class="team-grid stagger">
-
-      <!-- ISHAAN RAO — CEO -->
-      <div class="team-card reveal">
-        <div class="team-card-inner">
-          <div class="team-card-header">
-            <div class="team-avatar">
-              <img src="assets/images/ceo.jpg" alt="Ishant Rao" style="object-position: center 10%">
-            </div>
-            <div>
-              <h3 style="font-size: var(--text-xl); font-weight: 700; color: var(--navy); margin-bottom: var(--space-1)">Ishant Rao</h3>
-              <div style="font-size: var(--text-sm); color: var(--sky); font-weight: 600; margin-bottom: var(--space-2)">CEO | IIT Madras</div>
-              <div class="team-card-meta">
-                <span class="team-tag" style="color: var(--sky); background: rgba(74, 144, 217, 0.08); border-color: rgba(74, 144, 217, 0.15)">Strategy</span>
-                <span class="team-tag" style="color: var(--sky); background: rgba(74, 144, 217, 0.08); border-color: rgba(74, 144, 217, 0.15)">Collaboration</span>
-                <span class="team-tag" style="color: var(--sky); background: rgba(74, 144, 217, 0.08); border-color: rgba(74, 144, 217, 0.15)">Regulatory</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="team-divider"></div>
-
-          <div style="margin-top: var(--space-4)">
-            <div class="team-highlight">
-              <div class="team-highlight-dot" style="background: var(--sky)"></div>
-              <span>Transportation Engineering background with road accident studies & sustainable mobility research</span>
-            </div>
-            <div class="team-highlight">
-              <div class="team-highlight-dot" style="background: var(--sky)"></div>
-              <span>Lead NPD of AI/ML enabled smart soil testing device with IIT Kanpur</span>
-            </div>
-            <div class="team-highlight">
-              <div class="team-highlight-dot" style="background: var(--sky)"></div>
-              <span>Leading business development at various scales across mobility and infrastructure</span>
-            </div>
-          </div>
-
-          <div class="team-strength">
-            <div class="team-strength-label" style="color: var(--sky)">Core Strength</div>
-            <div class="team-strength-item">
-              <div class="team-strength-dot" style="background: var(--sky)"></div>
-              <span>Policy alignment</span>
-            </div>
-            <div class="team-strength-item">
-              <div class="team-strength-dot" style="background: var(--sky)"></div>
-              <span>Execution in emerging infrastructure ecosystems</span>
-            </div>
-          </div>
-        </div>
+    <div class="routes-grid team-grid">
+      <div class="route-card">
+        <img class="team-photo" src="assets/images/ceo.jpg" alt="Ishant Rao" />
+        <div class="feature-num">CEO · IIT Madras</div>
+        <h3 class="route-city" style="font-size:2.4rem;font-weight:600;margin-bottom:1.6rem">Ishant Rao</h3>
+        <ul class="bullet-list">
+          <li>Transport + road-crash work</li>
+          <li>Soil-test hardware with IIT Kanpur</li>
+          <li>Deals across mobility and infra</li>
+          <li>Policy and getting things built</li>
+        </ul>
       </div>
-
-      <!-- S. MOHAMMAD — CTO -->
-      <div class="team-card reveal">
-        <div class="team-card-inner">
-          <div class="team-card-header">
-            <div class="team-avatar">
-              <img src="assets/images/cto.jpg" alt="Mohammad S" style="object-position: center 5%">
-            </div>
-            <div>
-              <h3 style="font-size: var(--text-xl); font-weight: 700; color: var(--navy); margin-bottom: var(--space-1)">Mohammad S</h3>
-              <div style="font-size: var(--text-sm); color: var(--accent); font-weight: 600; margin-bottom: var(--space-2)">CTO | IIT Delhi</div>
-              <div class="team-card-meta">
-                <span class="team-tag">AI/ML</span>
-                <span class="team-tag">Architecture</span>
-                <span class="team-tag">Leadership</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="team-divider"></div>
-
-          <div style="margin-top: var(--space-4)">
-            <div class="team-highlight">
-              <div class="team-highlight-dot"></div>
-              <span>Worked with Amazon, Oracle, and Microsoft across software engineering and technical leadership</span>
-            </div>
-            <div class="team-highlight">
-              <div class="team-highlight-dot"></div>
-              <span>IIT Delhi graduate with deep expertise in software architecture and design patterns</span>
-            </div>
-          </div>
-
-          <div class="team-strength">
-            <div class="team-strength-label">Core Strength</div>
-            <div class="team-strength-item">
-              <div class="team-strength-dot"></div>
-              <span>AI agents & machine learning systems</span>
-            </div>
-            <div class="team-strength-item">
-              <div class="team-strength-dot"></div>
-              <span>Software architecture at scale</span>
-            </div>
-            <div class="team-strength-item">
-              <div class="team-strength-dot"></div>
-              <span>Technical leadership & engineering excellence</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     JOIN CTA
-═══════════════════════════════════════════════ -->
-<section class="section team-cta-section" style="padding: var(--space-20) 0; text-align: center">
-  <div class="container" style="position: relative; z-index: 1; max-width: 700px">
-    <span class="section-label" style="color: var(--accent-light); text-align: center; display: block">Careers</span>
-    <h2 class="section-heading reveal" style="color: #fff; margin-bottom: var(--space-6)">Build the Future<br>With Us</h2>
-    <p class="section-body reveal" style="color: rgba(255,255,255,0.75); margin: 0 auto var(--space-10); text-align: center">
-      We're looking for passionate engineers, designers, and operators who want to reshape mobility in Bharat.
-    </p>
-    <div style="display: flex; justify-content: center; gap: var(--space-4); flex-wrap: wrap">
-      <a href="contact.html" class="btn btn-primary reveal" style="padding: 15px 36px; font-size: 15px">Get in Touch</a>
-      <a href="vision.html" class="btn btn-ghost-white reveal" style="padding: 15px 36px; font-size: 15px">Read Our Vision</a>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════ -->
-<footer class="site-footer">
-  <div class="footer-glow-divider"></div>
-
-  <div class="footer-cta-band">
-    <div class="container">
-      <div class="footer-cta-inner">
-        <div class="footer-cta-text">
-          <h3>Ready to explore air mobility?</h3>
-          <p>IraGo Solutions Private Limited — AI-powered air mobility for Bharat.</p>
-        </div>
-        <div class="footer-cta-actions">
-          <a href="contact.html" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/></svg>
-            Request Demo
-          </a>
-          <a href="contact.html" class="btn btn-ghost-white">Contact Us</a>
-        </div>
+      <div class="route-card">
+        <img class="team-photo" src="assets/images/cto.jpg" alt="Mohammad S" />
+        <div class="feature-num">CTO · IIT Delhi</div>
+        <h3 class="route-city" style="font-size:2.4rem;font-weight:600;margin-bottom:1.6rem">Mohammad S</h3>
+        <ul class="bullet-list">
+          <li>Amazon, Oracle, Microsoft</li>
+          <li>Architecture at messy scale</li>
+          <li>AI agents and ML systems</li>
+          <li>The stack that runs the fleet</li>
+        </ul>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="footer-main">
-    <div class="container">
-      <div class="footer-grid-premium">
-        <div class="footer-brand-col">
-          <a href="/" class="footer-logo" aria-label="IraGo Home">
-            <img src="assets/images/irago-logo.png" alt="IraGo Logo">
-          </a>
-          <p class="footer-tagline">IraGo Solutions Private Limited<br>AI-powered air mobility for Bharat.</p>
-        </div>
-        <div>
-          <div class="footer-col-title">Navigation</div>
-          <div class="footer-links">
-            <a href="/" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Home</a>
-            <a href="/#about" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> About</a>
-            <a href="vision.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Vision</a>
-            <a href="team.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Team</a>
-          </div>
-        </div>
-        <div>
-          <div class="footer-col-title">Company</div>
-          <div class="footer-links">
-            <a href="contact.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Contact</a>
-          </div>
-        </div>
+  <section class="booking-section" id="join">
+    <div class="booking-inner">
+      <div class="feature-num">Jobs</div>
+      <h2>Want in?</h2>
+      <p class="hero-sub">Engineers, ops, people who like aircraft.</p>
+      <div class="booking-form">
+        <a href="contact.html" class="nav-login">Write to us</a>
+        <a href="vision.html" class="nav-cta">Read the vision</a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="footer-bottom">
-    <div class="container">
-      <div class="footer-bottom-inner">
-        <span class="footer-copyright">© 2025 IraGo Solutions Pvt. Ltd. All rights reserved.</span>
-        <span class="footer-status"><span class="footer-status-dot"></span> Platform Active</span>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">IraGo</div>
+        <p class="footer-tagline">Air taxi and drone drop for India.</p>
+        <p class="footer-tagline">IraGo Solutions Pvt. Ltd. Licensed partners fly the aircraft.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <a href="/#about">About</a>
+        <a href="/#technology">Technology</a>
+        <a href="/#use-cases">Use Cases</a>
+        <a href="app.html?mode=drones">Drone Delivery</a>
+        <a href="vision.html">Vision</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="team.html">Team</a>
+        <a href="contact.html">Contact Us</a>
+        <a href="contact.html">Request Demo</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="app.html">Platform</a>
+        <a href="/login/passenger">Login</a>
+        <a href="mailto:info@irago.in">info@irago.in</a>
       </div>
     </div>
-  </div>
-</footer>
+    <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved.</div>
+  </footer>
 
-
-<button id="scrollToTopBtn" class="scroll-to-top" aria-label="Back to top">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
-</button>
-
-<script src="js/scroll-animations.js?v=aero3"></script>
-<script src="js/main.js?v=aero3"></script>
-
+  <script src="js/site-nav.js"></script>
 </body>
 </html>

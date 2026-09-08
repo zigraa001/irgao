@@ -10,655 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --cream: #f5f4df;
-      --ink: #0e1620;
-      --blue: #007ae5;
-      --dark-blue: #1c3f99;
-      --dark-blue-ui: #083e6f;
-      --orange: #eb6110;
-      --grey: #3f3e36;
-      --pink: #ffd9c9;
-      --ink-20: #0e162033;
-      --ink-10: #0e16201a;
-      --cream-20: #f5f4df33;
-      --font-display: 'DM Sans', system-ui, sans-serif;
-      --font-text: 'DM Sans', system-ui, sans-serif;
-      --base: 10px;
-    }
-
-    html {
-      font-size: var(--base);
-      scroll-behavior: smooth;
-    }
-    body {
-      font-family: var(--font-text);
-      background: var(--cream);
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-      font-size: 1.6rem;
-      line-height: 1.3;
-      overscroll-behavior: none;
-    }
-
-    /* NAV — fixed, readable over the bright hero */
-    .nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 2.4rem 4rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 2rem;
-      color: var(--cream);
-      background: linear-gradient(180deg, rgba(14,22,32,0.62) 0%, rgba(14,22,32,0.18) 70%, transparent 100%);
-      animation: fadeDown 0.9s cubic-bezier(.165,.84,.44,1) both;
-    }
-    .nav-logo {
-      font-family: var(--font-display);
-      font-size: 2.4rem;
-      font-weight: 700;
-      color: #fff;
-      text-decoration: none;
-      letter-spacing: -0.05rem;
-      text-shadow: 0 1px 12px rgba(0,0,0,0.55);
-      flex-shrink: 0;
-    }
-    .nav-links {
-      display: flex;
-      gap: 3.2rem;
-      list-style: none;
-    }
-    .nav-links a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: -0.028rem;
-      position: relative;
-      text-shadow: 0 1px 12px rgba(0,0,0,0.65);
-    }
-    .nav-links a::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 100%;
-      height: 1.5px;
-      background: var(--cream);
-      transform: scaleX(0);
-      transform-origin: 100%;
-      transition: transform 0.3s cubic-bezier(.165,.84,.44,1);
-    }
-    .nav-links a:hover::after {
-      transform: scaleX(1);
-      transform-origin: 0;
-    }
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      flex-shrink: 0;
-    }
-    .nav-cta {
-      border: 1px solid var(--cream);
-      border-radius: 12rem;
-      padding: 1.2rem 2.4rem;
-      color: var(--cream);
-      text-decoration: none;
-      font-size: 1.4rem;
-      font-weight: 500;
-      letter-spacing: -0.028rem;
-      transition: background 0.3s, color 0.3s;
-      white-space: nowrap;
-    }
-    .nav-cta:hover {
-      background: var(--cream);
-      color: var(--ink);
-    }
-    .nav-login {
-      border-radius: 12rem;
-      padding: 1.2rem 2.4rem;
-      background: var(--cream);
-      color: var(--ink);
-      text-decoration: none;
-      font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: -0.028rem;
-      white-space: nowrap;
-      transition: background 0.3s, transform 0.3s;
-    }
-    .nav-login:hover {
-      background: #fff;
-      transform: translateY(-1px);
-    }
-    .nav-toggle {
-      display: none;
-      width: 4.4rem;
-      height: 4.4rem;
-      border: 1px solid var(--cream);
-      border-radius: 1.2rem;
-      background: transparent;
-      cursor: pointer;
-      padding: 1.1rem;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .nav-toggle span {
-      display: block;
-      height: 2px;
-      background: var(--cream);
-      border-radius: 2px;
-    }
-
-    /* HERO — full-height blue bg, "smile" bottom radius */
-    .hero {
-      min-height: 100vh;
-      background: var(--blue);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 0 4rem 8rem;
-      border-radius: 0 0 min(10.25vw, 164px) min(10.25vw, 164px);
-      overflow: hidden;
-    }
-    .hero-media {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      overflow: hidden;
-    }
-    .hero-media img,
-    .hero-media video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      animation: heroKen 18s cubic-bezier(.165,.84,.44,1) forwards;
-    }
-    .hero-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 45%, rgba(14,22,32,0.5) 100%);
-    }
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      max-width: 56rem;
-    }
-    .hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(4.8rem, 8vw, 8rem);
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: -0.24rem;
-      color: var(--cream);
-      margin-bottom: 2.4rem;
-      text-shadow: 0 2px 22px rgba(0,0,0,0.55);
-      animation: fadeUp 1s cubic-bezier(.165,.84,.44,1) 0.12s both;
-    }
-    .hero-sub {
-      font-size: 1.8rem;
-      font-weight: 400;
-      line-height: 1.3;
-      letter-spacing: -0.036rem;
-      color: var(--cream);
-      opacity: 0.92;
-      max-width: 40rem;
-      text-shadow: 0 2px 16px rgba(0,0,0,0.5);
-      animation: fadeUpSoft 1s cubic-bezier(.165,.84,.44,1) 0.28s both;
-    }
-
-    /* TEXT SLIDE (progress bar + text) */
-    .hero-slides {
-      position: absolute;
-      right: 4rem;
-      bottom: 8rem;
-      z-index: 2;
-      display: flex;
-      gap: 2.4rem;
-      color: var(--cream);
-      max-width: 36rem;
-      animation: fadeUp 1s cubic-bezier(.165,.84,.44,1) 0.45s both;
-    }
-    .hero-progress {
-      width: 2px;
-      background: rgba(245,244,223,0.2);
-      position: relative;
-      flex-shrink: 0;
-    }
-    .hero-progress-fill {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 0;
-      background: var(--cream);
-      animation: progressPlay 7s cubic-bezier(.165,.84,.44,1) infinite;
-    }
-    .hero-slide-text {
-      font-size: 1.4rem;
-      font-weight: 400;
-      line-height: 1.5;
-      letter-spacing: -0.014rem;
-      opacity: 0.7;
-    }
-
-    /* SECTION — cream bg, ink text */
-    .section {
-      padding: 12rem 4rem;
-    }
-    .section-grid {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(16, 1fr);
-      gap: 0 1.6rem;
-    }
-    .section h2 {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 5vw, 6.4rem);
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: -0.192rem;
-      grid-column: 1 / 9;
-    }
-    .section-body {
-      grid-column: 10 / 17;
-      font-size: 1.6rem;
-      color: var(--grey);
-      line-height: 1.5;
-      letter-spacing: -0.032rem;
-      align-self: end;
-    }
-
-    /* ROUTES — cards with "smile" radius */
-    .routes {
-      padding: 12rem 4rem;
-    }
-    .routes-header {
-      max-width: 1200px;
-      margin: 0 auto 6.4rem;
-    }
-    .routes-header h2 {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 5vw, 6.4rem);
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: -0.192rem;
-    }
-    .routes-grid {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.6rem;
-    }
-    .route-card {
-      background: var(--cream);
-      border: 1px solid var(--ink-10);
-      border-radius: min(3vw, 48px);
-      padding: 3.2rem;
-      transition: transform 0.45s cubic-bezier(.33,1,.68,1), border-color 0.45s cubic-bezier(.33,1,.68,1);
-    }
-    .route-card:hover { transform: translateY(-8px); border-color: var(--ink-20); }
-    .route-from-to {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      margin-bottom: 2.4rem;
-    }
-    .route-dot {
-      width: 0.8rem;
-      height: 0.8rem;
-      border-radius: 50%;
-      background: var(--blue);
-      flex-shrink: 0;
-    }
-    .route-line {
-      flex: 1;
-      height: 1px;
-      background: var(--ink-10);
-      transform-origin: left;
-    }
-    .route-card.is-in .route-line {
-      animation: lineGrow 0.8s cubic-bezier(.165,.84,.44,1) 0.2s both;
-    }
-    .route-city {
-      font-size: 1.4rem;
-      font-weight: 500;
-      letter-spacing: -0.028rem;
-    }
-    .route-stats {
-      display: flex;
-      justify-content: space-between;
-      padding-top: 2rem;
-      border-top: 1px solid var(--ink-10);
-    }
-    .route-stat-big {
-      font-family: var(--font-display);
-      font-size: 2.4rem;
-      font-weight: 700;
-      letter-spacing: -0.048rem;
-    }
-    .route-stat-sm {
-      font-size: 1.2rem;
-      color: var(--grey);
-      margin-top: 0.2rem;
-    }
-
-    /* BOOKING — blue background section */
-    .booking-section {
-      background: var(--blue);
-      padding: 12rem 4rem;
-      border-radius: min(10.25vw, 164px) min(10.25vw, 164px) 0 0;
-      color: var(--cream);
-    }
-    .booking-inner {
-      max-width: 72rem;
-      margin: 0 auto;
-    }
-    .booking-section h2 {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 5vw, 4.8rem);
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: -0.144rem;
-      text-align: center;
-      margin-bottom: 4.8rem;
-    }
-    .booking-form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.6rem;
-    }
-    .bk-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-    }
-    .bk-field label {
-      font-size: 1.2rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05rem;
-      opacity: 0.6;
-    }
-    .bk-field select,
-    .bk-field input {
-      background: transparent;
-      border: none;
-      border-bottom: 1.5px solid var(--dark-blue-ui);
-      padding: 1.2rem 0;
-      color: var(--cream);
-      font-family: var(--font-display);
-      font-size: 1.8rem;
-      font-weight: 500;
-      letter-spacing: -0.036rem;
-      outline: none;
-      -webkit-appearance: none;
-      border-radius: 0;
-      transition: border-bottom-color 0.35s cubic-bezier(.165,.84,.44,1);
-    }
-    .bk-field select:focus,
-    .bk-field input:focus {
-      border-bottom-color: var(--cream);
-    }
-    .bk-field select option { color: var(--ink); background: var(--cream); }
-    .booking-submit {
-      grid-column: 1 / -1;
-      margin-top: 2.4rem;
-      border: 1px solid var(--cream);
-      background: transparent;
-      color: var(--cream);
-      border-radius: 12rem;
-      padding: 1.6rem 3.2rem;
-      font-family: var(--font-text);
-      font-size: 1.4rem;
-      font-weight: 500;
-      letter-spacing: -0.028rem;
-      cursor: pointer;
-      transition: background 0.35s cubic-bezier(.165,.84,.44,1), color 0.35s cubic-bezier(.165,.84,.44,1), transform 0.35s cubic-bezier(.33,1,.68,1);
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .booking-submit:hover {
-      background: var(--cream);
-      color: var(--blue);
-      transform: translateY(-2px);
-    }
-    #join .booking-form {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 1.2rem;
-    }
-    #join .nav-login,
-    #join .nav-cta {
-      display: inline-block;
-    }
-
-    /* FEATURES — on cream */
-    .features {
-      padding: 12rem 4rem;
-    }
-    .features-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .features h2 {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 5vw, 4.8rem);
-      font-weight: 600;
-      line-height: 1.05;
-      letter-spacing: -0.144rem;
-      margin-bottom: 6.4rem;
-      max-width: 48rem;
-    }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3.2rem;
-    }
-    .feature-item {
-      padding-top: 2.4rem;
-      border-top: 1px solid var(--ink-10);
-    }
-    .feature-item img {
-      transition: transform 0.7s cubic-bezier(.33,1,.68,1);
-    }
-    .feature-item:hover img {
-      transform: scale(1.04);
-    }
-    .feature-num {
-      font-family: var(--font-display);
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--grey);
-      margin-bottom: 1.6rem;
-    }
-    .feature-item h3 {
-      font-family: var(--font-display);
-      font-size: 2.4rem;
-      font-weight: 600;
-      line-height: 1.15;
-      letter-spacing: -0.048rem;
-      margin-bottom: 1.2rem;
-    }
-    .feature-item p {
-      font-size: 1.4rem;
-      color: var(--grey);
-      line-height: 1.5;
-      letter-spacing: -0.014rem;
-    }
-
-    /* FOOTER — blue background */
-    .footer {
-      background: var(--blue);
-      color: var(--cream);
-      padding: 8rem 4rem 4rem;
-    }
-    .footer-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 3.2rem;
-    }
-    .footer-brand {
-      font-family: var(--font-display);
-      font-size: 2.4rem;
-      font-weight: 700;
-      letter-spacing: -0.05rem;
-      margin-bottom: 1.6rem;
-    }
-    .footer-tagline {
-      font-size: 1.4rem;
-      color: var(--cream);
-      opacity: 0.85;
-      line-height: 1.5;
-    }
-    .footer-col h4 {
-      font-size: 1.2rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05rem;
-      opacity: 0.8;
-      margin-bottom: 1.6rem;
-    }
-    .footer-col a {
-      display: block;
-      font-size: 1.8rem;
-      font-weight: 400;
-      color: var(--cream);
-      text-decoration: none;
-      line-height: 2.4;
-      letter-spacing: -0.036rem;
-      transition: opacity 0.3s cubic-bezier(.165,.84,.44,1);
-    }
-    .footer-col a:hover { opacity: 0.6; }
-    .footer-bottom {
-      max-width: 1200px;
-      margin: 6.4rem auto 0;
-      padding-top: 2.4rem;
-      border-top: 1px solid var(--dark-blue-ui);
-      font-size: 1.2rem;
-      opacity: 0.75;
-    }
-
-    /* Newsletter input in footer */
-    .footer-newsletter {
-      margin-top: 2.4rem;
-    }
-    .footer-newsletter input {
-      background: transparent;
-      border: none;
-      border-bottom: 1.5px solid var(--dark-blue-ui);
-      color: var(--cream);
-      font-family: var(--font-display);
-      font-size: 1.8rem;
-      font-weight: 500;
-      letter-spacing: -0.036rem;
-      padding: 0.8rem 0;
-      width: 16ch;
-      outline: none;
-      caret-color: var(--cream);
-    }
-    .footer-newsletter input::placeholder { color: var(--cream); opacity: 0.3; }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(2.8rem);
-    }
-    .reveal.is-in {
-      opacity: 1;
-      transform: none;
-      transition: opacity 0.9s cubic-bezier(.165,.84,.44,1), transform 0.9s cubic-bezier(.165,.84,.44,1);
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(2.8rem); }
-      to { opacity: 1; transform: none; }
-    }
-    @keyframes fadeUpSoft {
-      from { opacity: 0; transform: translateY(2.8rem); }
-      to { opacity: 0.8; transform: none; }
-    }
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-1.2rem); }
-      to { opacity: 1; transform: none; }
-    }
-    @keyframes heroKen {
-      from { transform: scale(1.08); }
-      to { transform: scale(1); }
-    }
-    @keyframes progressPlay {
-      0% { height: 0; }
-      65% { height: 100%; }
-      100% { height: 100%; }
-    }
-    @keyframes lineGrow {
-      from { transform: scaleX(0); }
-      to { transform: scaleX(1); }
-    }
-
-    @media (max-width: 768px) {
-      .nav { padding: 1.6rem; }
-      .nav-cta { display: none; }
-      .nav-toggle { display: flex; }
-      .nav-links {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 1.6rem;
-        right: 1.6rem;
-        flex-direction: column;
-        gap: 0;
-        background: var(--ink);
-        border-radius: 1.6rem;
-        padding: 1.2rem 0;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.25);
-      }
-      .nav-links.is-open { display: flex; }
-      .nav-links a {
-        display: block;
-        padding: 1.4rem 2rem;
-        text-shadow: none;
-      }
-      .nav-links a::after { display: none; }
-      .hero { padding: 0 1.6rem 4rem; border-radius: 0 0 6.4rem 6.4rem; }
-      .hero-slides { display: none; }
-      .section, .routes, .features { padding: 8rem 1.6rem; }
-      .section h2 { grid-column: 1 / -1; margin-bottom: 2.4rem; }
-      .section-body { grid-column: 1 / -1; }
-      .routes-grid { grid-template-columns: 1fr; }
-      .features-grid { grid-template-columns: 1fr; }
-      .booking-section { padding: 8rem 1.6rem; border-radius: 6.4rem 6.4rem 0 0; }
-      .booking-form { grid-template-columns: 1fr; }
-      .footer-inner { grid-template-columns: 1fr 1fr; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .reveal { opacity: 1; transform: none; }
-      .hero-media img, .hero-media video,
-      .hero h1, .hero-sub, .hero-slides, .nav, .hero-progress-fill,
-      .route-card.is-in .route-line {
-        animation: none !important;
-      }
-      .route-card:hover, .booking-submit:hover, .feature-item:hover img {
-        transform: none;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="css/site.css" />
 </head>
 <body>
 
@@ -692,17 +44,17 @@
     </div>
     <div class="hero-content">
       <h1>Air taxi.<br>Drone delivery.<br>Save time.</h1>
-      <p class="hero-sub">IraGo is India's AI-powered air mobility platform — air taxi, golden-hour medical flights, and campus drone delivery.</p>
+      <p class="hero-sub">Skip the traffic. Fly or drop. One app.</p>
     </div>
     <div class="hero-slides">
       <div class="hero-progress"><div class="hero-progress-fill"></div></div>
-      <div class="hero-slide-text">Air taxi for the journeys that can't wait. Drone delivery PAN INDIA for the hops that shouldn't wait on the ground. One platform, minutes instead of hours.</div>
+      <div class="hero-slide-text">Air taxi when the road is a write-off. Drone drops PAN INDIA when a bike run is overkill.</div>
     </div>
   </section>
 
   <section class="booking-section" id="booking">
     <div class="booking-inner">
-      <h2>Book a flight or campus drone delivery</h2>
+      <h2>Book a flight or a drop</h2>
       <form class="booking-form" action="app.html" method="get" id="bookingForm">
         <div class="bk-field">
           <label>Service</label>
@@ -754,15 +106,14 @@
         </div>
         <button type="submit" class="booking-submit" id="bk-search-label">Search Flights</button>
       </form>
-      <p class="hero-slide-text">Medical Priority · Corporate · Campus drone delivery · Early Access. Flights operated by DGCA-licensed partner operators.</p>
+      <p class="hero-slide-text">Medical · corporate · drone drop. Licensed operators only.</p>
     </div>
   </section>
 
   <section class="routes" id="routes">
     <div class="routes-header">
-      <div class="feature-num">Popular Sectors</div>
-      <h2>Fly the Routes That Matter</h2>
-      <p class="section-body">Vertiport-to-vertiport target sectors across South and West India — minutes in the air instead of hours on the road.</p>
+      <div class="feature-num">Sectors</div>
+      <h2>Minutes, not hours</h2>
     </div>
     <div class="routes-grid">
       <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
@@ -810,29 +161,37 @@
         </div>
       </a>
     </div>
-    <p class="section-body">* Projected vertiport-to-vertiport times on IraGo target sectors. Road times reflect typical peak-hour traffic.</p>
+    <p class="section-body">* Air times are target hops. Road times are peak traffic.</p>
   </section>
 
   <section class="features" id="problem">
     <div class="features-inner">
-      <div class="feature-num">The Challenge</div>
-      <h2>Why India Needs a New Mobility Layer</h2>
-      <p class="section-body">Every day, millions of hours are lost to congestion, delayed access, and fragmented transport systems. For urgent travel, premium mobility, and time-critical movement, today's ground transport networks are often too slow, too uncertain, and too constrained.</p>
+      <div class="feature-num">The problem</div>
+      <h2>Roads are full</h2>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
-          <h3>Congestion</h3>
-          <p>Millions of hours lost in traffic daily, costing India ₹2.1 lakh crore annually in economic productivity.</p>
+          <h3>Stuck</h3>
+          <ul class="bullet-list">
+            <li>Hours lost in traffic every day</li>
+            <li>₹2.1 lakh crore a year, gone</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
-          <h3>Delays</h3>
-          <p>Unpredictable travel times impact lives and businesses. Emergency response averages 14+ minutes in Tier-2 cities.</p>
+          <h3>Late</h3>
+          <ul class="bullet-list">
+            <li>You cannot trust an ETA</li>
+            <li>Ambulance: 14+ min in Tier-2 cities</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">03</div>
-          <h3>Limited Access</h3>
-          <p>Remote and high-value routes remain underserved. India needs a faster, more reliable mobility alternative.</p>
+          <h3>Cut off</h3>
+          <ul class="bullet-list">
+            <li>Some routes just do not work by road</li>
+            <li>Air is the spare lane</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -840,8 +199,12 @@
 
   <section class="section" id="about">
     <div class="section-grid">
-      <h2>Introducing IraGo</h2>
-      <p class="section-body">An AI-powered air mobility platform designed to connect people and places through eVTOL-enabled journeys. IraGo is developing the digital and operational backbone for next-generation aerial mobility in India. Our platform is built to support route optimization, scheduling intelligence, and fleet visibility in real time, enabling efficient operations across emergency response, urgent travel, and high-value passenger movement.</p>
+      <h2>What IraGo is</h2>
+      <ul class="bullet-list">
+        <li>Book an air taxi or a drone drop</li>
+        <li>Live routes, live fleet, live ETAs</li>
+        <li>Medical, city hops, and last-mile cargo</li>
+      </ul>
     </div>
   </section>
 
@@ -849,16 +212,14 @@
     <div class="features-inner">
       <div class="features-grid">
         <div class="feature-item">
-          <div class="feature-num">AI-Powered Routing</div>
-          <h3>See How It Works</h3>
-          <p>Real-time optimization.</p>
-          <a href="#technology" class="route-city">See How It Works</a>
+          <div class="feature-num">How it works</div>
+          <h3>Search. Book. Go.</h3>
+          <a href="#technology" class="route-city">How we fly it →</a>
         </div>
         <div class="feature-item">
-          <div class="feature-num">Use Cases</div>
-          <h3>View Use Cases</h3>
-          <p>From urgency to premium experience.</p>
-          <a href="#use-cases" class="route-city">View Use Cases</a>
+          <div class="feature-num">Who it is for</div>
+          <h3>Hospital, office, campus</h3>
+          <a href="#use-cases" class="route-city">See the jobs →</a>
         </div>
         <div class="feature-item">
           <img src="assets/images/hero-evtol.png" alt="IraGo eVTOL Platform" width="360" style="width:100%">
@@ -869,24 +230,32 @@
 
   <section class="features" id="how-it-works">
     <div class="features-inner">
-      <div class="feature-num">Book With Ease</div>
-      <h2>Search. Book. Fly or drop.</h2>
-      <p class="section-body">Booking an air taxi or a campus drone delivery should feel as simple as booking a flight — because it is.</p>
+      <div class="feature-num">Booking</div>
+      <h2>Search. Book. Go.</h2>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
           <h3>Search</h3>
-          <p>Choose air taxi, ambulance, or drone delivery. Set origin, destination, and time — live availability across licensed operators and campus pads.</p>
+          <ul class="bullet-list">
+            <li>Air taxi, ambulance, or drone</li>
+            <li>Pick from, to, and when</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
           <h3>Book</h3>
-          <p>Confirm in minutes with transparent, all-inclusive pricing. Medical-priority dispatch available around the clock.</p>
+          <ul class="bullet-list">
+            <li>Price up front. No surprise extras</li>
+            <li>Medical jobs jump the queue</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">03</div>
-          <h3>Board</h3>
-          <p>Arrive 10 minutes before departure at your vertiport or helipad. No queues, no security lines — just board and fly.</p>
+          <h3>Show up</h3>
+          <ul class="bullet-list">
+            <li>10 minutes before wheels up</li>
+            <li>No airport circus. Board and go</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -894,64 +263,86 @@
 
   <section class="features" id="technology">
     <div class="features-inner">
-      <div class="feature-num">Our Technology</div>
-      <h2>Built on Intelligent Aviation Infrastructure</h2>
-      <p class="section-body">Our proprietary technology layer powers route planning, scheduling, and fleet coordination with precision. IraGo's AI-first architecture is designed to improve operational reliability and support scalable eVTOL deployment.</p>
+      <div class="feature-num">Tech</div>
+      <h2>The ops layer</h2>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">01</div>
-          <h3>AI-Powered Infrastructure</h3>
-          <p>IraGo utilizes hub-and-spoke network architecture, AI-enabled routing strategies, and intelligent scheduling to optimize fleet operations.</p>
+          <h3>Routing</h3>
+          <ul class="bullet-list">
+            <li>Hub-and-spoke, not guesswork</li>
+            <li>AI picks the next hop</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
-          <h3>Real-Time Fleet Coordination</h3>
-          <p>Mobility leaders and fleet operators can monitor responses, coordinate in real-time, and achieve seamless operations.</p>
+          <h3>Live fleet</h3>
+          <ul class="bullet-list">
+            <li>Where every bird is, right now</li>
+            <li>Pads, batteries, crew</li>
+          </ul>
         </div>
         <div class="feature-item">
           <div class="feature-num">03</div>
-          <h3>Scalable eVTOL Network</h3>
-          <p>Reducing downtime and optimizing fleet utilization for cost-efficient flight operations, deployed at scale across cities and regions.</p>
+          <h3>Scale</h3>
+          <ul class="bullet-list">
+            <li>Less sitting on the tarmac</li>
+            <li>Same stack from one city to many</li>
+          </ul>
         </div>
       </div>
-      <p class="section-body"><a href="vision.html" class="route-city">Explore Our Technology →</a></p>
+      <p class="section-body"><a href="vision.html" class="route-city">Vision →</a></p>
     </div>
   </section>
 
   <section class="features" id="use-cases">
     <div class="features-inner">
-      <div class="feature-num">Use Cases</div>
-      <h2>Designed for High-Value Mobility Needs</h2>
-      <p class="section-body">From urgency to premium experience, IraGo serves the journeys that matter most.</p>
+      <div class="feature-num">Jobs</div>
+      <h2>What we fly</h2>
       <div class="features-grid">
         <div class="feature-item">
           <div class="feature-num">Emergency</div>
-          <h3>Emergency Travel</h3>
-          <p>Rapid access for time-critical movement. Air ambulance dispatch in under 4 minutes.</p>
+          <h3>Medical</h3>
+          <ul class="bullet-list">
+            <li>Air ambulance on the clock</li>
+            <li>Dispatch target: under 4 min</li>
+          </ul>
           <img src="assets/images/use_cases_grid_1.png" alt="Emergency Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
         <div class="feature-item">
           <div class="feature-num">Business</div>
-          <h3>Urgent Business Travel</h3>
-          <p>Faster city-to-city and airport-linked mobility for time-sensitive journeys.</p>
+          <h3>Work hops</h3>
+          <ul class="bullet-list">
+            <li>City to city, or airport to office</li>
+            <li>When the meeting will not wait</li>
+          </ul>
           <img src="assets/images/use_cases_grid_2.png" alt="Urgent Business Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
         <div class="feature-item">
           <div class="feature-num">Premium</div>
-          <h3>Premium &amp; HNI Travel</h3>
-          <p>Private, seamless, elevated aerial journeys for high-value travellers.</p>
+          <h3>Private</h3>
+          <ul class="bullet-list">
+            <li>Quiet cabin. Direct pad.</li>
+            <li>No terminal shuffle</li>
+          </ul>
           <img src="assets/images/use_cases_grid_3.png" alt="Premium &amp; HNI Travel" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
         <div class="feature-item">
           <div class="feature-num">Tourism</div>
-          <h3>Experiential Tourism</h3>
-          <p>Distinctive travel experiences across scenic routes and iconic destinations.</p>
+          <h3>Scenic</h3>
+          <ul class="bullet-list">
+            <li>Coast, hills, the long way — short</li>
+            <li>The view is the point</li>
+          </ul>
           <img src="assets/images/use_cases_grid_4.png" alt="Experiential Tourism" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
         <div class="feature-item">
           <div class="feature-num">PAN INDIA</div>
-          <h3>Drone Delivery</h3>
-          <p>Documents, meals, and lightweight cargo PAN INDIA — cities, campuses, and last-mile drops. Faster, cleaner, more connected.</p>
+          <h3>Drone drop</h3>
+          <ul class="bullet-list">
+            <li>Docs, meals, light cargo</li>
+            <li>Cities, campuses, last mile</li>
+          </ul>
           <img src="assets/images/drone-delivery.png" alt="PAN INDIA drone delivery" width="360" style="width:100%;margin-top:1.6rem;object-fit:cover">
         </div>
       </div>
@@ -960,42 +351,48 @@
 
   <section class="section" id="why-irago">
     <div class="section-grid">
-      <h2>What Sets IraGo Apart</h2>
-      <p class="section-body">IraGo is not just an air mobility concept. It is a systems platform built for intelligence, scale, and passenger experience. We are designing a mobility network that is Bharat-first, commercially viable, and operationally advanced.</p>
+      <h2>Why us</h2>
+      <ul class="bullet-list">
+        <li>Bharat-first. Built here, for here</li>
+        <li>Software that runs the fleet, not a slide deck</li>
+      </ul>
     </div>
   </section>
 
   <section class="features">
     <div class="features-inner">
       <div class="features-grid">
-        <div class="feature-item"><div class="feature-num">01</div><h3>AI-driven routing and scheduling</h3></div>
-        <div class="feature-item"><div class="feature-num">02</div><h3>Real-time fleet monitoring and coordination</h3></div>
-        <div class="feature-item"><div class="feature-num">03</div><h3>Premium and urgent travel use cases</h3></div>
-        <div class="feature-item"><div class="feature-num">04</div><h3>Scalable architecture for future eVTOL networks</h3></div>
-        <div class="feature-item"><div class="feature-num">05</div><h3>Bharat-first mobility vision</h3></div>
-        <div class="feature-item"><div class="feature-num">06</div><h3>Drone delivery PAN INDIA</h3></div>
+        <div class="feature-item"><div class="feature-num">01</div><h3>AI routing</h3></div>
+        <div class="feature-item"><div class="feature-num">02</div><h3>Live fleet map</h3></div>
+        <div class="feature-item"><div class="feature-num">03</div><h3>Medical and private hops</h3></div>
+        <div class="feature-item"><div class="feature-num">04</div><h3>Ready for eVTOL</h3></div>
+        <div class="feature-item"><div class="feature-num">05</div><h3>India first</h3></div>
+        <div class="feature-item"><div class="feature-num">06</div><h3>Drone drop PAN INDIA</h3></div>
       </div>
     </div>
   </section>
 
   <section class="routes" id="impact">
     <div class="routes-header">
-      <div class="feature-num">Our Impact</div>
-      <h2>Saving Time. Expanding Access. Redefining Mobility.</h2>
-      <p class="section-body">IraGo is building toward a future where mobility is faster, cleaner, and more connected. Our mission is to reduce time loss, improve access, and create a modern transportation layer for Bharat.</p>
+      <div class="feature-num">Impact</div>
+      <h2>Less wait. More reach.</h2>
     </div>
     <div class="routes-grid">
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="70">0</span>%</div><div class="route-stat-sm">Reduction in Travel Time</div></div></div></div>
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="1000">0</span>+</div><div class="route-stat-sm">Potential Routes Across India</div></div></div></div>
-      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">&lt; <span data-count="4">0</span> min</div><div class="route-stat-sm">Emergency Response Target</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="70">0</span>%</div><div class="route-stat-sm">Less travel time</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big"><span data-count="1000">0</span>+</div><div class="route-stat-sm">Routes we can open</div></div></div></div>
+      <div class="route-card"><div class="route-stats"><div><div class="route-stat-big">&lt; <span data-count="4">0</span> min</div><div class="route-stat-sm">Medical dispatch target</div></div></div></div>
     </div>
-    <p class="section-body"><a href="vision.html" class="route-city">Read Our Mission</a> · <a href="contact.html" class="route-city">Partner in Impact</a></p>
+    <p class="section-body"><a href="vision.html" class="route-city">Vision</a> · <a href="contact.html" class="route-city">Talk to us</a></p>
   </section>
 
   <section class="section" id="credibility">
     <div class="section-grid">
-      <h2>Built for Real-World Scale</h2>
-      <p class="section-body">IraGo is grounded in a clear national and commercial opportunity. India needs new mobility infrastructure that can support speed, reliability, and access across cities and regions. IraGo is building toward that future through a technology-led, mission-aligned, and commercially scalable platform — working with DGCA-licensed operators and certified maintenance partners from day one.</p>
+      <h2>Built to fly, not to pitch</h2>
+      <ul class="bullet-list">
+        <li>DGCA-licensed operators from day one</li>
+        <li>Certified maintenance partners</li>
+        <li>IIT Madras MInT + Bosch in the room</li>
+      </ul>
     </div>
   </section>
 
@@ -1005,19 +402,19 @@
         <div class="feature-item">
           <div class="feature-num">01</div>
           <h3>MInT, IIT Madras</h3>
-          <p>Mentorship Partner</p>
+          <p>Mentors</p>
           <img src="assets/images/mint_logo.png" alt="MInT - IIT Madras" width="160" height="80">
         </div>
         <div class="feature-item">
           <div class="feature-num">02</div>
           <h3>Bosch</h3>
-          <p>Industry Partner</p>
+          <p>Industry</p>
           <img src="assets/images/Bosch_symbol_logo_black_red.png" alt="Bosch" width="160" height="80">
         </div>
         <div class="feature-item">
           <div class="feature-num">03</div>
-          <h3>DGCA-licensed partners</h3>
-          <p>Working with licensed operators and certified maintenance partners from day one.</p>
+          <h3>DGCA partners</h3>
+          <p>Licensed operators. Certified maintainers.</p>
         </div>
       </div>
     </div>
@@ -1025,13 +422,12 @@
 
   <section class="booking-section" id="join">
     <div class="booking-inner">
-      <div class="feature-num">Join IraGo</div>
-      <h2>The Future of Mobility Is Airborne</h2>
-      <p class="hero-sub">Not just moving people. Air taxi, drone delivery, and a faster layer of access for Bharat.</p>
+      <div class="feature-num">Join</div>
+      <h2>Come fly it</h2>
+      <p class="hero-sub">Air taxi. Drone drop. A spare lane over the jam.</p>
       <div class="booking-form">
         <a href="/login/passenger" class="nav-login">Login</a>
-        <a href="contact.html" class="nav-cta">Join the Journey</a>
-        <a href="contact.html" class="nav-cta">Contact IraGo</a>
+        <a href="contact.html" class="nav-cta">Write to us</a>
       </div>
     </div>
   </section>
@@ -1040,10 +436,10 @@
     <div class="footer-inner">
       <div>
         <div class="footer-brand">IraGo</div>
-        <p class="footer-tagline">Ready to explore air mobility?</p>
-        <p class="footer-tagline">IraGo Solutions Private Limited — AI-powered air mobility for Bharat. Flights operated by DGCA-licensed partners.</p>
+        <p class="footer-tagline">Air taxi and drone drop for India.</p>
+        <p class="footer-tagline">IraGo Solutions Pvt. Ltd. Licensed partners fly the aircraft.</p>
         <div class="footer-newsletter">
-          <input type="email" placeholder="Your email" />
+          <input type="email" placeholder="Email" autocomplete="off" />
         </div>
       </div>
       <div class="footer-col">
@@ -1087,6 +483,13 @@
           });
         });
       }
+      var nav = document.querySelector('.nav');
+      function solidNav() {
+        if (!nav) return;
+        nav.classList.toggle('is-solid', window.scrollY > 24);
+      }
+      solidNav();
+      window.addEventListener('scroll', solidNav, { passive: true });
     })();
 
     (function () {

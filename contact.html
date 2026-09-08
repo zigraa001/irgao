@@ -1,367 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Contact IraGo - Get in touch with our team for demo requests, partnerships, or general inquiries.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Write to IraGo — demos, operator partners, press." />
   <link rel="icon" type="image/png" href="assets/images/irago-icon.png">
-    <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
-    <title>Contact Us - IraGo Air Mobility</title>
-
-  <link rel="stylesheet" href="css/reset.css?v=aero3">
-  <link rel="stylesheet" href="css/tokens.css?v=aero3">
-  <link rel="stylesheet" href="css/layout.css?v=aero3">
-  <link rel="stylesheet" href="css/components.css?v=aero3">
-
-  <link rel="stylesheet" href="css/animations.css?v=aero3">
-  <link rel="stylesheet" href="css/responsive.css?v=aero3">
-
-  <style>
-    body {
-      background: var(--bg-main);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-    }
-
-    .contact-hero {
-      padding-top: calc(var(--nav-height) + var(--space-16));
-      padding-bottom: var(--space-16);
-      position: relative;
-      overflow: hidden;
-      background: var(--bg-dark);
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-      margin-bottom: var(--space-5);
-    }
-
-    .form-label {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .form-control {
-      background: #fff;
-      border: 1px solid #C4CDD8;
-      border-radius: 0;
-      padding: var(--space-3) var(--space-4);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      font-size: var(--text-base);
-      transition: border-color var(--transition-fast);
-      outline: none;
-    }
-
-    .form-control:focus {
-      border-color: var(--accent);
-    }
-
-    .form-control::placeholder {
-      color: var(--text-hint);
-    }
-
-    textarea.form-control {
-      resize: vertical;
-      min-height: 120px;
-    }
-
-    .contact-info-item {
-      display: flex;
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
-    }
-  </style>
+  <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
+  <title>Contact — IraGo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     NAVBAR
-═══════════════════════════════════════════════ -->
-<nav class="navbar" id="navbar">
-  <div class="container navbar-inner">
-    <a href="/" class="navbar-logo" aria-label="IraGo Home">
-      <img src="assets/images/irago-logo.png" alt="IraGo Logo" class="brand-logo">
-    </a>
-
-    <ul class="navbar-links">
-      <li><a href="/" class="nav-link">Home</a></li>
-      <li><a href="/#about" class="nav-link">About</a></li>
-      <li><a href="/#technology" class="nav-link">Technology</a></li>
-      <li><a href="/#use-cases" class="nav-link">Use Cases</a></li>
-      <li><a href="vision.html" class="nav-link">Vision</a></li>
-      <li><a href="team.html" class="nav-link">Team</a></li>
+  <nav class="nav">
+    <a href="/" class="nav-logo">IraGo</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/">Home</a></li>
+      <li><a href="/#about">About</a></li>
+      <li><a href="/#technology">Technology</a></li>
+      <li><a href="/#use-cases">Use Cases</a></li>
+      <li><a href="vision.html">Vision</a></li>
+      <li><a href="team.html">Team</a></li>
+      <li><a href="app.html">Platform</a></li>
+      <li><a href="contact.html" class="is-active">Contact</a></li>
     </ul>
-
-    <div class="navbar-actions">
-      <a href="contact.html" class="nav-link nav-contact-link" style="color: #fff !important">Contact</a>
-      <a href="contact.html" class="btn-nav-cta">Request a Demo
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
-      </a>
+    <div class="nav-actions">
+      <a href="/login/passenger" class="nav-login">Login</a>
+      <a href="contact.html" class="nav-cta">Request a Demo</a>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
+  </nav>
 
-    <button class="navbar-toggle" id="navToggle" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-
-  <div class="navbar-drawer" id="navDrawer">
-    <div class="drawer-nav-group">
-      <div class="drawer-label">Navigation</div>
-      <a href="/" class="drawer-link">Home</a>
-      <a href="/#about" class="drawer-link">About</a>
-      <a href="vision.html" class="drawer-link">Vision</a>
-      <a href="team.html" class="drawer-link">Team</a>
+  <section class="page-hero">
+    <div class="hero-media">
+      <img src="assets/images/hero-poster.jpg" alt="" />
+      <div class="hero-overlay"></div>
     </div>
-    <a href="contact.html" class="btn btn-primary drawer-cta">Request a Demo →</a>
-  </div>
-</nav>
-
-<!-- ═══════════════════════════════════════════════
-     CONTACT HERO & FORM
-═══════════════════════════════════════════════ -->
-<section class="contact-hero" id="contact-hero">
-  <div class="container" style="position:relative;z-index:1">
-    <div style="text-align:center">
-      <span class="section-label" style="color: var(--accent-light); display: block; text-align: center">Contact Us</span>
-      <h1 style="font-size:clamp(32px, 4.5vw, 52px);font-weight:700;letter-spacing:-0.02em;margin-bottom:var(--space-4);color:#fff">We're here to help.</h1>
-      <p style="font-size:var(--text-lg);color:rgba(255,255,255,0.78);max-width:600px;margin:0 auto">
-        Whether you have an emergency dispatch request, want to become an operator partner, or just have a general inquiry.
-      </p>
+    <div class="hero-content">
+      <h1>Write to us</h1>
+      <p class="hero-sub">Demo, partner, press — send a note.</p>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="section" style="background: var(--bg-main)">
-  <div class="container">
-    <div class="grid-split" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);align-items:start;max-width:1100px;margin:0 auto">
-      
-      <!-- Contact Info Left Side -->
-      <div class="reveal">
-        <h3 style="font-size:var(--text-2xl);font-weight:700;margin-bottom:var(--space-8)">Get in touch</h3>
-        
-        <div class="contact-info-item">
-          <div class="icon-circle red" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-          </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">Golden Hour Emergency</div>
-            <div style="font-size:var(--text-nav);color:var(--emergency)">Contact number: </div>
-            <div style="font-size:var(--text-sm);color:var(--text-muted);margin-top:var(--space-1)">24/7 dedicated dispatch line.</div>
-          </div>
+  <section class="features">
+    <div class="features-inner">
+      <div class="contact-wrap">
+        <div>
+          <div class="feature-num">Reach us</div>
+          <h2 class="has-body">Where we sit</h2>
+          <ul class="bullet-list">
+            <li>General: <a href="mailto:info@irago.in">info@irago.in</a></li>
+            <li>The MInT, NAC-2, IIT Madras</li>
+            <li>Chennai 600 036</li>
+          </ul>
         </div>
-
-        <div class="contact-info-item">
-          <div class="icon-circle sky" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7FB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-              <polyline points="22,6 12,13 2,6"/>
-            </svg>
+        <form class="contact-form" id="contactForm" autocomplete="off">
+          <div class="bk-field">
+            <label for="firstName">First name</label>
+            <input type="text" id="firstName" name="firstName" required autocomplete="off" />
           </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">General Support</div>
-            <div style="font-size:var(--text-nav);color:var(--text-muted)"><a href="mailto:info@irago.in" style="color:inherit;text-decoration:none">info@irago.in</a></div>
+          <div class="bk-field">
+            <label for="lastName">Last name</label>
+            <input type="text" id="lastName" name="lastName" required autocomplete="off" />
           </div>
-        </div>
-
-        <div class="contact-info-item">
-          <div class="icon-circle navy" style="flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
+          <div class="bk-field full">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="off" />
           </div>
-          <div>
-            <div style="font-weight:600;color:var(--text-primary);margin-bottom:var(--space-1)">Headquarters</div>
-            <div style="font-size:var(--text-nav);color:var(--text-muted);line-height:1.6">
-              The MInT, NAC-2<br>
-              IIT Madras<br>
-              Chennai - 600 036, India
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Form Right Side -->
-      <div class="white-card reveal" style="padding:var(--space-8);position:relative">
-        <form id="contactForm">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
-            <div class="form-group">
-              <label class="form-label" for="firstName">First Name</label>
-              <input type="text" id="firstName" class="form-control" placeholder="Jane" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="lastName">Last Name</label>
-              <input type="text" id="lastName" class="form-control" placeholder="Doe" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label" for="email">Email Address</label>
-            <input type="email" id="email" class="form-control" placeholder="jane@example.com" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="subject">Subject</label>
-            <select id="subject" class="form-control" style="appearance:none;background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23A1A1AA%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E');background-repeat:no-repeat;background-position:right 12px center;background-size:16px;" required>
-              <option value="" disabled selected>Select an option</option>
-              <option value="general">General Inquiry</option>
-              <option value="operator">Become an Operator</option>
-              <option value="emergency">Emergency Services Partner</option>
-              <option value="press">Press & Media</option>
+          <div class="bk-field full">
+            <label for="subject">Topic</label>
+            <select id="subject" name="subject" required>
+              <option value="" selected disabled></option>
+              <option value="general">General</option>
+              <option value="operator">Fly with us</option>
+              <option value="emergency">Hospital / EMS</option>
+              <option value="press">Press</option>
             </select>
           </div>
-
-          <div class="form-group">
-            <label class="form-label" for="message">Message</label>
-            <textarea id="message" class="form-control" placeholder="How can we help you?" required></textarea>
+          <div class="bk-field full">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required></textarea>
           </div>
-
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:var(--space-2)">
-            Send Message
-          </button>
+          <button type="submit" class="booking-submit">Send</button>
         </form>
       </div>
-
     </div>
-  </div>
-</section>
+  </section>
 
-<footer class="site-footer">
-  <div class="footer-glow-divider"></div>
-
-  <!-- CTA Band -->
-  <div class="footer-cta-band">
-    <div class="container">
-      <div class="footer-cta-inner">
-        <div class="footer-cta-text">
-          <h3>Ready to fly?</h3>
-          <p>Join India's air mobility revolution. Book your first flight in under 2 minutes.</p>
-        </div>
-        <div class="footer-cta-actions">
-          <a href="app.html" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" />
-            </svg>
-            Try Irago
-          </a>
-          <a href="contact.html" class="btn btn-ghost-white">Contact Us</a>
-        </div>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">IraGo</div>
+        <p class="footer-tagline">Air taxi and drone drop for India.</p>
+        <p class="footer-tagline">IraGo Solutions Pvt. Ltd. Licensed partners fly the aircraft.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <a href="/#about">About</a>
+        <a href="/#technology">Technology</a>
+        <a href="/#use-cases">Use Cases</a>
+        <a href="app.html?mode=drones">Drone Delivery</a>
+        <a href="vision.html">Vision</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="team.html">Team</a>
+        <a href="contact.html">Contact Us</a>
+        <a href="contact.html">Request Demo</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="app.html">Platform</a>
+        <a href="/login/passenger">Login</a>
+        <a href="mailto:info@irago.in">info@irago.in</a>
       </div>
     </div>
-  </div>
+    <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved.</div>
+  </footer>
 
-  <!-- Main Footer -->
-  <div class="footer-main">
-    <div class="container">
-      <div class="footer-grid-premium">
-        <div class="footer-brand-col">
-          <a href="/" class="footer-logo" aria-label="Irago Home">
-            <img src="assets/images/irago-logo.png" alt="Irago Logo" />
-          </a>
-          <p class="footer-tagline">Sky is not the limit.<br>India's on-demand air mobility platform.</p>
-          <div class="footer-socials">
-          </div>
-        </div>
-        <div>
-          <div class="footer-col-title">Platform</div>
-          <div class="footer-links">
-            <a href="/#air-taxi" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Air Taxi</a>
-            <a href="/#golden-hour" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Golden Hour</a>
-            <a href="/#air-shuttle" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Air Shuttle</a>
-            <a href="app.html?mode=drones" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Drone Delivery</a>
-            <a href="/#operators" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> For Operators</a>
-          </div>
-        </div>
-        <div>
-          <div class="footer-col-title">Company</div>
-          <div class="footer-links">
-            <a href="vision.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Our Vision</a>
-            <a href="contact.html" class="footer-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> Contact Us</a>
-          </div>
-        </div>
-        <div>
-          <div class="footer-col-title">Get in Touch</div>
-          <div class="footer-links">
-            <div class="footer-contact-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-              <a href="mailto:info@irago.in" style="color:inherit;text-decoration:none">info@irago.in</a>
-            </div>
-            <div class="footer-contact-item emergency">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-              Contact number: 
-            </div>
-            <div class="footer-contact-item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-              The MInT, NAC-2, IIT Madras, Chennai - 600 036
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Bar -->
-  <div class="footer-bottom">
-    <div class="container">
-      <div class="footer-bottom-inner">
-        <span class="footer-copyright">© 2025 Irago. All rights reserved.</span>
-        <span class="footer-status">
-          <span class="footer-status-dot"></span>
-          Platform Online
-        </span>
-        <div class="footer-bottom-links">
-        </div>
-      </div>
-    </div>
-  </div>
-</footer>
-
-
-<!-- ═══════════════════════════════════════════════
-     BACK TO TOP BUTTON
-═══════════════════════════════════════════════ -->
-<button id="scrollToTopBtn" class="scroll-to-top" aria-label="Back to top">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-  </svg>
-</button>
-
-<!-- Scripts -->
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // Form submission listener (placeholder)
-    const form = document.getElementById('contactForm');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const btn = form.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = 'Sending...';
-        btn.style.opacity = '0.7';
-        
-        setTimeout(() => {
-          btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Message Sent`;
-          btn.style.opacity = '1';
-          btn.style.background = 'var(--green)';
-          form.reset();
-          
-          setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = '';
-          }, 3000);
-        }, 1500);
-      });
-    }
-  });
-</script>
-<script src="js/scroll-animations.js?v=aero3"></script>
-<script src="js/main.js?v=aero3"></script>
-
+  <script src="js/site-nav.js"></script>
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = this.querySelector('button[type="submit"]');
+      var label = btn.textContent;
+      btn.textContent = 'Sent';
+      this.reset();
+      setTimeout(function () { btn.textContent = label; }, 2500);
+    });
+  </script>
 </body>
 </html>
