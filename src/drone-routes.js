@@ -29,6 +29,7 @@ const DRONE_STATUSES = [
   "flying",
   "arriving",
   "delivered",
+  "returning",
   "in_progress",
   "completed",
   "cancelled",
@@ -41,6 +42,8 @@ const ACTIVE_JOB_STATUSES = [
   "picked_up",
   "flying",
   "arriving",
+  "delivered",
+  "returning",
   "in_progress",
 ];
 
@@ -48,6 +51,7 @@ const BOOKING_SELECT = `SELECT db.*, ds.name AS serviceName, ds.category, ds.ima
             do2.name AS operatorName, u.name AS customerName, u.email AS customerEmail,
             disp.name AS dispatcherName,
             UNIX_TIMESTAMP(db.flightStartedAt) AS flightStartedUnix,
+            UNIX_TIMESTAMP(db.returnStartedAt) AS returnStartedUnix,
             UNIX_TIMESTAMP(db.gpsUpdatedAt) AS gpsUpdatedUnix
      FROM drone_bookings db
      JOIN drone_services ds ON ds.id = db.serviceId
@@ -183,6 +187,7 @@ async function autoRunCampusDemo(bookingId) {
         [id]
       );
     }
+    await autoReturnToPad(id);
   } catch (err) {
     console.error(`[drones] campus demo failed for #${id}:`, err.message);
   } finally {
@@ -197,6 +202,64 @@ function maybeStartCampusDemo(booking) {
   autoRunCampusDemo(booking.id).catch((err) => {
     console.error(`[drones] campus demo start failed for #${booking.id}:`, err.message);
   });
+}
+
+const campusReturnRunning = new Set();
+
+async function autoReturnToPad(bookingId) {
+  const id = Number(bookingId);
+  if (!Number.isInteger(id) || id <= 0) return;
+  if (campusReturnRunning.has(id)) return;
+  campusReturnRunning.add(id);
+  try {
+    let b = await queryOne("SELECT * FROM drone_bookings WHERE id = ?", [id]);
+    if (!b) return;
+    if (b.status === "delivered") {
+      await sleep(2500);
+      await query(
+        `UPDATE drone_bookings
+         SET status = 'returning',
+             returnStartedAt = COALESCE(returnStartedAt, NOW()),
+             gpsLat = NULL,
+             gpsLng = NULL,
+             gpsUpdatedAt = NULL
+         WHERE id = ? AND status = 'delivered'`,
+        [id]
+      );
+    }
+    b = await queryOne("SELECT * FROM drone_bookings WHERE id = ?", [id]);
+    if (!b || b.status !== "returning") return;
+    const etaMin = Math.max(1, Number(b.etaMin) || 1);
+    const started = b.returnStartedAt ? new Date(b.returnStartedAt).getTime() : Date.now();
+    const duration = (etaMin * 60 * 1000) / DRONE_ANIM_SPEED;
+    await sleep(Math.max(600, duration - (Date.now() - started) + 800));
+    await query(
+      `UPDATE drone_bookings
+       SET status = 'completed',
+           gpsLat = COALESCE(pickupLat, gpsLat),
+           gpsLng = COALESCE(pickupLng, gpsLng),
+           gpsUpdatedAt = NOW()
+       WHERE id = ? AND status = 'returning'`,
+      [id]
+    );
+  } catch (err) {
+    console.error(`[drones] return-to-pad failed for #${id}:`, err.message);
+  } finally {
+    campusReturnRunning.delete(id);
+  }
+}
+
+function maybeStartCampusReturn(booking) {
+  if (!booking) return;
+  if (!["delivered", "returning"].includes(booking.status)) return;
+  autoReturnToPad(booking.id).catch((err) => {
+    console.error(`[drones] return-to-pad start failed for #${booking.id}:`, err.message);
+  });
+}
+
+function maybeStartDroneMotion(booking) {
+  maybeStartCampusDemo(booking);
+  maybeStartCampusReturn(booking);
 }
 
 async function allocateTrackingKey() {
@@ -240,6 +303,9 @@ function publicTrackPayload(booking) {
       dropLat: booking.dropLat,
       dropLng: booking.dropLng,
       flightStartedAt: booking.flightStartedAt,
+      flightStartedUnix: booking.flightStartedUnix,
+      returnStartedAt: booking.returnStartedAt,
+      returnStartedUnix: booking.returnStartedUnix,
       etaMin: booking.etaMin,
       batteryPct: booking.batteryPct,
       serviceName: booking.serviceName,
@@ -341,7 +407,7 @@ async function createCampusDropForEmail(req) {
 
   const booking = await loadBooking(result.insertId);
   const mail = await mailTrackLink(req, booking);
-  maybeStartCampusDemo(booking);
+  maybeStartDroneMotion(booking);
   return { payload: trackPayload(booking), mail };
 }
 
@@ -474,7 +540,7 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), async (req, res) =
   );
   if (claim.affectedRows === 0) {
     const already = await loadBooking(id);
-    maybeStartCampusDemo(already);
+    maybeStartDroneMotion(already);
     return res.json({
       booking: already,
       fare: droneFareBreakdown({
@@ -489,7 +555,7 @@ router.post("/:id/pay", requireAuth, requireRole("customer"), async (req, res) =
   }
 
   const updated = await loadBooking(id);
-  maybeStartCampusDemo(updated);
+  maybeStartDroneMotion(updated);
   res.json({
     booking: updated,
     fare: droneFareBreakdown({
@@ -529,7 +595,7 @@ router.get("/follow/:key", async (req, res) => {
   if (!key) return res.status(400).json({ error: "Tracking key is required." });
   const booking = await queryOne(`${BOOKING_SELECT} WHERE db.trackingKey = ?`, [key]);
   if (!booking) return res.status(404).json({ error: "No drone found for that tracking key." });
-  maybeStartCampusDemo(booking);
+  maybeStartDroneMotion(booking);
   res.json(publicTrackPayload(booking));
 });
 
@@ -547,7 +613,7 @@ router.get("/track/:id", requireAuth, async (req, res) => {
   if (booking.paymentStatus !== "paid" && role === "customer") {
     return res.status(409).json({ error: "Pay for this order to start live tracking." });
   }
-  maybeStartCampusDemo(booking);
+  maybeStartDroneMotion(booking);
   res.json(trackPayload(booking));
 });
 
@@ -561,7 +627,7 @@ router.get("/operator/jobs", requireAuth, requireRole("drone_operator"), async (
      LIMIT 80`,
     ACTIVE_JOB_STATUSES
   );
-  rows.forEach((row) => maybeStartCampusDemo(row));
+  rows.forEach((row) => maybeStartDroneMotion(row));
   res.json({ jobs: rows.map((row) => trackPayload(row)) });
 });
 
@@ -638,8 +704,10 @@ router.post("/operator/jobs/:id/status", requireAuth, requireRole("drone_operato
     dispatched: ["picked_up"],
     picked_up: ["flying"],
     flying: ["arriving"],
-    arriving: ["delivered", "completed"],
-    in_progress: ["arriving", "delivered", "completed"],
+    arriving: ["delivered"],
+    delivered: ["returning"],
+    returning: ["completed"],
+    in_progress: ["arriving", "delivered"],
   };
   const okNext = allowed[booking.status] || [];
   if (!okNext.includes(next)) {
@@ -653,14 +721,26 @@ router.post("/operator/jobs/:id/status", requireAuth, requireRole("drone_operato
   if (next === "flying") {
     fields.push("flightStartedAt = COALESCE(flightStartedAt, NOW())");
   }
-  if (next === "delivered" || next === "completed") {
+  if (next === "returning") {
+    fields.push("returnStartedAt = COALESCE(returnStartedAt, NOW())");
+    fields.push("gpsLat = NULL");
+    fields.push("gpsLng = NULL");
+    fields.push("gpsUpdatedAt = NULL");
+  }
+  if (next === "delivered") {
     fields.push("gpsLat = COALESCE(dropLat, gpsLat)");
     fields.push("gpsLng = COALESCE(dropLng, gpsLng)");
+    fields.push("gpsUpdatedAt = NOW()");
+  }
+  if (next === "completed") {
+    fields.push("gpsLat = COALESCE(pickupLat, gpsLat)");
+    fields.push("gpsLng = COALESCE(pickupLng, gpsLng)");
     fields.push("gpsUpdatedAt = NOW()");
   }
   params.push(id);
   await query(`UPDATE drone_bookings SET ${fields.join(", ")} WHERE id = ?`, params);
   const updated = await loadBooking(id);
+  maybeStartDroneMotion(updated);
   res.json(trackPayload(updated));
 });
 
@@ -771,9 +851,9 @@ router.get("/admin/bookings", requireAuth, requireRole("admin"), async (req, res
   const filter = String(req.query.filter || "all");
   let where = "";
   if (filter === "live" || filter === "inflight") {
-    where = `WHERE db.status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress')`;
+    where = `WHERE db.status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','delivered','returning','in_progress')`;
   } else if (filter === "done") {
-    where = `WHERE db.status IN ('delivered','completed')`;
+    where = `WHERE db.status = 'completed'`;
   } else if (filter === "cancelled") {
     where = `WHERE db.status = 'cancelled'`;
   }
@@ -785,9 +865,9 @@ router.get("/admin/bookings", requireAuth, requireRole("admin"), async (req, res
   );
   const stats = await queryOne(
     `SELECT COUNT(*) AS total,
-            SUM(CASE WHEN status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress') THEN 1 ELSE 0 END) AS live,
+            SUM(CASE WHEN status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','delivered','returning','in_progress') THEN 1 ELSE 0 END) AS live,
             SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed,
-            SUM(CASE WHEN status IN ('delivered','completed') THEN 1 ELSE 0 END) AS completed,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
             SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
             COALESCE(SUM(CASE WHEN status != 'cancelled' THEN totalPrice ELSE 0 END), 0) AS revenue
      FROM drone_bookings`
@@ -800,11 +880,12 @@ router.get("/admin/live", requireAuth, requireRole("admin"), async (_req, res) =
   const rows = await query(
     `${BOOKING_SELECT}
      WHERE db.paymentStatus = 'paid'
-       AND db.status IN ('pending','confirmed','dispatched','picked_up','flying','arriving','in_progress')
+       AND db.status IN (${ACTIVE_JOB_STATUSES.map(() => "?").join(",")})
      ORDER BY db.createdAt DESC
-     LIMIT 50`
+     LIMIT 50`,
+    ACTIVE_JOB_STATUSES
   );
-  rows.forEach((row) => maybeStartCampusDemo(row));
+  rows.forEach((row) => maybeStartDroneMotion(row));
   res.json({
     deliveries: rows.map((row) => trackPayload(row)),
     campusPoints: CAMPUS_POINTS,
@@ -860,7 +941,31 @@ router.patch("/admin/bookings/:id/status", requireAuth, requireRole("admin"), as
   if (!DRONE_STATUSES.includes(status)) {
     return res.status(400).json({ error: "Invalid status" });
   }
-  await query("UPDATE drone_bookings SET status = ? WHERE id = ?", [status, id]);
+  const fields = ["status = ?"];
+  const params = [status];
+  if (status === "flying") {
+    fields.push("flightStartedAt = COALESCE(flightStartedAt, NOW())");
+  }
+  if (status === "returning") {
+    fields.push("returnStartedAt = COALESCE(returnStartedAt, NOW())");
+    fields.push("gpsLat = NULL");
+    fields.push("gpsLng = NULL");
+    fields.push("gpsUpdatedAt = NULL");
+  }
+  if (status === "delivered") {
+    fields.push("gpsLat = COALESCE(dropLat, gpsLat)");
+    fields.push("gpsLng = COALESCE(dropLng, gpsLng)");
+    fields.push("gpsUpdatedAt = NOW()");
+  }
+  if (status === "completed") {
+    fields.push("gpsLat = COALESCE(pickupLat, gpsLat)");
+    fields.push("gpsLng = COALESCE(pickupLng, gpsLng)");
+    fields.push("gpsUpdatedAt = NOW()");
+  }
+  params.push(id);
+  await query(`UPDATE drone_bookings SET ${fields.join(", ")} WHERE id = ?`, params);
+  const updated = await loadBooking(id);
+  maybeStartDroneMotion(updated);
   res.json({ message: "Status updated", bookingId: id, status });
 });
 

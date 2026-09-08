@@ -9134,7 +9134,8 @@ function droneStatusLabel(status) {
     flying: 'En route',
     arriving: 'Arriving',
     delivered: 'Delivered',
-    completed: 'Delivered',
+    returning: 'Returning',
+    completed: 'Back at pad',
     cancelled: 'Cancelled',
     in_progress: 'In progress',
   };
@@ -9144,7 +9145,7 @@ function droneStatusLabel(status) {
 function droneStatusClass(status) {
   if (status === 'confirmed' || status === 'delivered' || status === 'completed') return 'drone-status-confirmed';
   if (status === 'cancelled') return 'drone-status-cancelled';
-  if (status === 'flying' || status === 'arriving' || status === 'picked_up' || status === 'dispatched') return 'drone-status-flying';
+  if (status === 'flying' || status === 'arriving' || status === 'picked_up' || status === 'dispatched' || status === 'returning') return 'drone-status-flying';
   return 'drone-status-pending';
 }
 
@@ -9886,7 +9887,7 @@ function renderDroneAdminBookings(bookings) {
         '<span class="das-meta-tag das-meta-tag--muted">' + escapeHtml(b.parcelType || b.serviceName || '') + '</span>' +
       '</div>' +
       '<select class="drone-status-select das-status-select" onchange="updateDroneBookingStatus(' + b.id + ', this.value)">' +
-        ['pending','confirmed','dispatched','picked_up','flying','arriving','delivered','in_progress','completed','cancelled'].map(function(st) {
+        ['pending','confirmed','dispatched','picked_up','flying','arriving','delivered','returning','in_progress','completed','cancelled'].map(function(st) {
           return '<option value="' + st + '"' + (b.status === st ? ' selected' : '') + '>' + st + '</option>';
         }).join('') +
       '</select>' +
@@ -9953,6 +9954,15 @@ function previewCampusRoute() {
   if (map) map.fitBounds([from, to], { padding: [48, 48], maxZoom: 17 });
 }
 
+function droneHeadingDeg(lat1, lng1, lat2, lng2) {
+  const p1 = lat1 * Math.PI / 180;
+  const p2 = lat2 * Math.PI / 180;
+  const d = (lng2 - lng1) * Math.PI / 180;
+  const y = Math.sin(d) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(d);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+}
+
 function clientDronePos(booking, now) {
   now = now || Date.now();
   const pLat = Number(booking.pickupLat);
@@ -9961,12 +9971,30 @@ function clientDronePos(booking, now) {
   const dLng = Number(booking.dropLng);
   const status = booking.status;
   if (!Number.isFinite(pLat) || !Number.isFinite(dLat)) return null;
-  if (status === 'delivered' || status === 'completed') return { lat: dLat, lng: dLng, progress: 1 };
+  const headingOut = droneHeadingDeg(pLat, pLng, dLat, dLng);
+  const headingBack = droneHeadingDeg(dLat, dLng, pLat, pLng);
+  if (status === 'completed') return { lat: pLat, lng: pLng, progress: 1, heading: headingBack };
+  if (status === 'returning') {
+    const etaMs = (Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000) / 3;
+    const started = booking.returnStartedUnix
+      ? Number(booking.returnStartedUnix) * 1000
+      : booking.returnStartedAt
+        ? new Date(booking.returnStartedAt).getTime()
+        : now;
+    const t = Math.min(1, Math.max(0, (now - started) / etaMs));
+    return {
+      lat: dLat + (pLat - dLat) * t,
+      lng: dLng + (pLng - dLng) * t,
+      progress: t,
+      heading: headingBack,
+    };
+  }
+  if (status === 'delivered') return { lat: dLat, lng: dLng, progress: 1, heading: headingOut };
   if (['pending', 'confirmed', 'dispatched', 'picked_up'].includes(status) || !booking.flightStartedAt) {
-    return { lat: pLat, lng: pLng, progress: 0 };
+    return { lat: pLat, lng: pLng, progress: 0, heading: headingOut };
   }
   if (status === 'arriving') {
-    return { lat: pLat + (dLat - pLat) * 0.92, lng: pLng + (dLng - pLng) * 0.92, progress: 0.92 };
+    return { lat: pLat + (dLat - pLat) * 0.92, lng: pLng + (dLng - pLng) * 0.92, progress: 0.92, heading: headingOut };
   }
   const etaMs = (Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000) / 3;
   const started = booking.flightStartedUnix
@@ -9975,16 +10003,16 @@ function clientDronePos(booking, now) {
       ? new Date(booking.flightStartedAt).getTime()
       : now;
   const t = Math.min(1, Math.max(0, (now - started) / etaMs));
-  return { lat: pLat + (dLat - pLat) * t, lng: pLng + (dLng - pLng) * t, progress: t };
+  return { lat: pLat + (dLat - pLat) * t, lng: pLng + (dLng - pLng) * t, progress: t, heading: headingOut };
 }
 
 function droneTrackStepsHtml(status) {
   const steps = [
-    { id: 'confirmed', match: ['confirmed', 'pending', 'dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
-    { id: 'assigned', match: ['dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
-    { id: 'picked', match: ['picked_up', 'flying', 'arriving', 'delivered', 'completed'] },
-    { id: 'flying', match: ['flying', 'arriving', 'delivered', 'completed'] },
-    { id: 'drop', match: ['delivered', 'completed', 'arriving'] },
+    { id: 'confirmed', match: ['confirmed', 'pending', 'dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'returning', 'completed'] },
+    { id: 'assigned', match: ['dispatched', 'picked_up', 'flying', 'arriving', 'delivered', 'returning', 'completed'] },
+    { id: 'picked', match: ['picked_up', 'flying', 'arriving', 'delivered', 'returning', 'completed'] },
+    { id: 'flying', match: ['flying', 'arriving', 'delivered', 'returning', 'completed'] },
+    { id: 'drop', match: ['delivered', 'returning', 'completed', 'arriving'] },
   ];
   const labels = { confirmed: 'Confirmed', assigned: 'Assigned', picked: 'Picked up', flying: 'Flying', drop: 'Drop' };
   return steps.map(function (s) {
@@ -9992,7 +10020,7 @@ function droneTrackStepsHtml(status) {
     const active = (s.id === 'assigned' && status === 'dispatched') ||
       (s.id === 'picked' && status === 'picked_up') ||
       (s.id === 'flying' && (status === 'flying' || status === 'arriving')) ||
-      (s.id === 'drop' && (status === 'delivered' || status === 'completed' || status === 'arriving')) ||
+      (s.id === 'drop' && (status === 'delivered' || status === 'returning' || status === 'completed' || status === 'arriving')) ||
       (s.id === 'confirmed' && (status === 'confirmed' || status === 'pending'));
     return '<div class="tracking-step' + (done ? ' done' : '') + (active ? ' active' : '') + '">' +
       '<div class="tracking-step-dot"></div>' +
@@ -10046,7 +10074,7 @@ function paintDroneOnMap(booking, pos) {
   if (from && to) L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(droneTrackLayer);
   const use = pos || clientDronePos(booking);
   if (use && use.lat != null) {
-    droneTrackMarker = L.marker([use.lat, use.lng], { icon: campusDroneIcon(0), zIndexOffset: 800 }).addTo(droneTrackLayer);
+    droneTrackMarker = L.marker([use.lat, use.lng], { icon: campusDroneIcon(use.heading || 0), zIndexOffset: 800 }).addTo(droneTrackLayer);
     if (!userMovedMapAt || Date.now() - userMovedMapAt > 8000) {
       programmaticMapMove = true;
       map.panTo([use.lat, use.lng], { animate: true, duration: 0.6 });
@@ -11134,12 +11162,14 @@ let dopLayer = null;
 let dopMarker = null;
 let dopPoll = null;
 let dopTrackPoll = null;
+let dopAnim = null;
 
 const DOP_NEXT = {
   dispatched: { status: 'picked_up', label: 'Mark picked up' },
   picked_up: { status: 'flying', label: 'Launch drone' },
   flying: { status: 'arriving', label: 'Mark arriving' },
   arriving: { status: 'delivered', label: 'Mark delivered' },
+  delivered: { status: 'returning', label: 'Return to pad' },
 };
 
 function initDroneOperatorConsole() {
@@ -11237,11 +11267,14 @@ function selectDopJob(id) {
   renderDopJobs();
   if (dopTrackPoll) clearInterval(dopTrackPoll);
   dopTrackPoll = setInterval(function () { refreshDopSelected(); }, 2000);
+  if (dopAnim) clearInterval(dopAnim);
+  dopAnim = setInterval(tickDopAnim, 160);
 }
 
 function closeDopJob() {
   dopSelectedId = null;
   if (dopTrackPoll) { clearInterval(dopTrackPoll); dopTrackPoll = null; }
+  if (dopAnim) { clearInterval(dopAnim); dopAnim = null; }
   document.getElementById('dop-detail-section').style.display = 'none';
   document.getElementById('dop-jobs-section').style.display = '';
   const sendSec = document.getElementById('dop-send-section');
@@ -11308,6 +11341,15 @@ function renderDopDetail(item) {
     '</div>';
 }
 
+function tickDopAnim() {
+  if (!dopSelectedId || !dopMarker) return;
+  const item = dopJobs.find(function (j) { return Number(j.booking && j.booking.id) === Number(dopSelectedId); });
+  if (!item) return;
+  const b = item.booking || item;
+  const pos = typeof clientDronePos === 'function' ? clientDronePos(b) : null;
+  if (pos && pos.lat != null) dopMarker.setLatLng([pos.lat, pos.lng]);
+}
+
 function drawDopJob(item) {
   if (!dopMap) initDopMap();
   if (!dopLayer) return;
@@ -11326,7 +11368,7 @@ function drawDopJob(item) {
     L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(dopLayer);
     dopMap.fitBounds([from, to], { padding: [40, 40], maxZoom: 17 });
   }
-  const pos = item.drone;
+  const pos = item.drone || (typeof clientDronePos === 'function' ? clientDronePos(b) : null);
   if (pos && pos.lat != null) {
     dopMarker = L.marker([pos.lat, pos.lng], { icon: campusDroneIcon(pos.heading || 0), zIndexOffset: 600 }).addTo(dopLayer);
   }
@@ -11388,7 +11430,7 @@ async function advanceDopStatus(id, status) {
     showToast(droneStatusLabel(status), 'success');
     const idx = dopJobs.findIndex(function (j) { return Number(j.booking && j.booking.id) === Number(id); });
     if (idx >= 0) dopJobs[idx] = data;
-    if (status === 'delivered' || status === 'completed') {
+    if (status === 'completed') {
       closeDopJob();
       loadDopJobs();
       return;

@@ -8,12 +8,14 @@ let dopLayer = null;
 let dopMarker = null;
 let dopPoll = null;
 let dopTrackPoll = null;
+let dopAnim = null;
 
 const DOP_NEXT = {
   dispatched: { status: 'picked_up', label: 'Mark picked up' },
   picked_up: { status: 'flying', label: 'Launch drone' },
   flying: { status: 'arriving', label: 'Mark arriving' },
   arriving: { status: 'delivered', label: 'Mark delivered' },
+  delivered: { status: 'returning', label: 'Return to pad' },
 };
 
 function initDroneOperatorConsole() {
@@ -111,11 +113,14 @@ function selectDopJob(id) {
   renderDopJobs();
   if (dopTrackPoll) clearInterval(dopTrackPoll);
   dopTrackPoll = setInterval(function () { refreshDopSelected(); }, 2000);
+  if (dopAnim) clearInterval(dopAnim);
+  dopAnim = setInterval(tickDopAnim, 160);
 }
 
 function closeDopJob() {
   dopSelectedId = null;
   if (dopTrackPoll) { clearInterval(dopTrackPoll); dopTrackPoll = null; }
+  if (dopAnim) { clearInterval(dopAnim); dopAnim = null; }
   document.getElementById('dop-detail-section').style.display = 'none';
   document.getElementById('dop-jobs-section').style.display = '';
   const sendSec = document.getElementById('dop-send-section');
@@ -182,6 +187,15 @@ function renderDopDetail(item) {
     '</div>';
 }
 
+function tickDopAnim() {
+  if (!dopSelectedId || !dopMarker) return;
+  const item = dopJobs.find(function (j) { return Number(j.booking && j.booking.id) === Number(dopSelectedId); });
+  if (!item) return;
+  const b = item.booking || item;
+  const pos = typeof clientDronePos === 'function' ? clientDronePos(b) : null;
+  if (pos && pos.lat != null) dopMarker.setLatLng([pos.lat, pos.lng]);
+}
+
 function drawDopJob(item) {
   if (!dopMap) initDopMap();
   if (!dopLayer) return;
@@ -200,7 +214,7 @@ function drawDopJob(item) {
     L.polyline([from, to], { color: '#0f766e', weight: 3, dashArray: '6 8' }).addTo(dopLayer);
     dopMap.fitBounds([from, to], { padding: [40, 40], maxZoom: 17 });
   }
-  const pos = item.drone;
+  const pos = item.drone || (typeof clientDronePos === 'function' ? clientDronePos(b) : null);
   if (pos && pos.lat != null) {
     dopMarker = L.marker([pos.lat, pos.lng], { icon: campusDroneIcon(pos.heading || 0), zIndexOffset: 600 }).addTo(dopLayer);
   }
@@ -262,7 +276,7 @@ async function advanceDopStatus(id, status) {
     showToast(droneStatusLabel(status), 'success');
     const idx = dopJobs.findIndex(function (j) { return Number(j.booking && j.booking.id) === Number(id); });
     if (idx >= 0) dopJobs[idx] = data;
-    if (status === 'delivered' || status === 'completed') {
+    if (status === 'completed') {
       closeDopJob();
       loadDopJobs();
       return;

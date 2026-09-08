@@ -572,6 +572,7 @@ async function initSchema() {
   await ensureColumn("drone_bookings", "gpsUpdatedAt", "gpsUpdatedAt DATETIME NULL");
   await ensureColumn("drone_bookings", "trackingKey", "trackingKey VARCHAR(32) NULL");
   await ensureColumn("drone_bookings", "recipientEmail", "recipientEmail VARCHAR(255) NULL");
+  await ensureColumn("drone_bookings", "returnStartedAt", "returnStartedAt DATETIME NULL");
   await ensureDroneBookingCustomerNullable();
   await ensureDroneTrackingKeyIndex();
 

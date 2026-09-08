@@ -60,7 +60,6 @@ function lerp(a, b, t) {
 }
 
 const PRE_FLIGHT = new Set(["pending", "confirmed", "dispatched", "picked_up"]);
-const DONE = new Set(["delivered", "completed"]);
 const DRONE_ANIM_SPEED = 3;
 
 function flightDurationMs(booking) {
@@ -73,10 +72,15 @@ function computeDronePosition(booking, now = Date.now()) {
   const dLat = Number(booking.dropLat);
   const dLng = Number(booking.dropLng);
   const status = String(booking.status || "");
-  const heading =
+  const headingOut =
     Number.isFinite(pLat) && Number.isFinite(dLat)
       ? bearingDeg(pLat, pLng, dLat, dLng)
       : 0;
+  const headingBack =
+    Number.isFinite(pLat) && Number.isFinite(dLat)
+      ? bearingDeg(dLat, dLng, pLat, pLng)
+      : 0;
+  const heading = headingOut;
 
   const gpsLat = Number(booking.gpsLat);
   const gpsLng = Number(booking.gpsLng);
@@ -87,16 +91,35 @@ function computeDronePosition(booking, now = Date.now()) {
       : 0;
   const gpsFresh = Number.isFinite(gpsLat) && Number.isFinite(gpsLng) && now - gpsAt < 20000;
 
-  if (gpsFresh && !DONE.has(status) && !PRE_FLIGHT.has(status)) {
-    return { lat: gpsLat, lng: gpsLng, progress: null, heading, source: "gps" };
-  }
-
   if (!Number.isFinite(pLat) || !Number.isFinite(dLat)) {
     return null;
   }
 
-  if (DONE.has(status)) {
-    return { lat: dLat, lng: dLng, progress: 1, heading, source: "drop" };
+  if (status === "completed") {
+    return { lat: pLat, lng: pLng, progress: 1, heading: headingBack, source: "pad" };
+  }
+  if (status === "returning") {
+    const etaMs = flightDurationMs(booking);
+    const started = booking.returnStartedUnix
+      ? Number(booking.returnStartedUnix) * 1000
+      : booking.returnStartedAt
+        ? new Date(booking.returnStartedAt).getTime()
+        : now;
+    const t = Math.min(1, Math.max(0, (now - started) / etaMs));
+    return {
+      lat: lerp(dLat, pLat, t),
+      lng: lerp(dLng, pLng, t),
+      progress: t,
+      heading: headingBack,
+      source: "return",
+    };
+  }
+  if (status === "delivered") {
+    return { lat: dLat, lng: dLng, progress: 1, heading: headingOut, source: "drop" };
+  }
+
+  if (gpsFresh && !PRE_FLIGHT.has(status) && !["delivered", "returning", "completed"].includes(status)) {
+    return { lat: gpsLat, lng: gpsLng, progress: null, heading, source: "gps" };
   }
   if (PRE_FLIGHT.has(status) || (!booking.flightStartedAt && booking.flightStartedUnix == null)) {
     return { lat: pLat, lng: pLng, progress: 0, heading, source: "pickup" };
@@ -135,14 +158,25 @@ const STATUS_LABELS = {
   flying: "Drone en route",
   arriving: "Arriving at drop",
   delivered: "Delivered",
-  completed: "Delivered",
+  returning: "Returning to pad",
+  completed: "Back at pad",
   cancelled: "Cancelled",
   in_progress: "In progress",
 };
 
 function etaRemainingMin(booking, pos, now = Date.now()) {
-  if (!booking || ["delivered", "completed", "cancelled"].includes(booking.status)) return 0;
+  if (!booking || ["completed", "cancelled"].includes(booking.status)) return 0;
+  if (booking.status === "delivered") return 0;
   if (booking.status === "arriving") return 1;
+  if (booking.status === "returning") {
+    const etaMs = flightDurationMs(booking);
+    const started = booking.returnStartedUnix
+      ? Number(booking.returnStartedUnix) * 1000
+      : booking.returnStartedAt
+        ? new Date(booking.returnStartedAt).getTime()
+        : now;
+    return Math.max(0, Math.ceil((etaMs - (now - started)) / 60000));
+  }
   if (["pending", "confirmed", "dispatched", "picked_up"].includes(booking.status)) {
     return Math.max(1, Math.ceil((Number(booking.etaMin) || 8) / DRONE_ANIM_SPEED));
   }
