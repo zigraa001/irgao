@@ -61,6 +61,11 @@ function lerp(a, b, t) {
 
 const PRE_FLIGHT = new Set(["pending", "confirmed", "dispatched", "picked_up"]);
 const DONE = new Set(["delivered", "completed"]);
+const DRONE_ANIM_SPEED = 3;
+
+function flightDurationMs(booking) {
+  return (Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000) / DRONE_ANIM_SPEED;
+}
 
 function computeDronePosition(booking, now = Date.now()) {
   const pLat = Number(booking.pickupLat);
@@ -106,7 +111,7 @@ function computeDronePosition(booking, now = Date.now()) {
     };
   }
 
-  const etaMs = Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000;
+  const etaMs = flightDurationMs(booking);
   const started = booking.flightStartedUnix
     ? Number(booking.flightStartedUnix) * 1000
     : booking.flightStartedAt
@@ -139,10 +144,12 @@ function etaRemainingMin(booking, pos, now = Date.now()) {
   if (!booking || ["delivered", "completed", "cancelled"].includes(booking.status)) return 0;
   if (booking.status === "arriving") return 1;
   if (["pending", "confirmed", "dispatched", "picked_up"].includes(booking.status)) {
-    return Number(booking.etaMin) || 8;
+    return Math.max(1, Math.ceil((Number(booking.etaMin) || 8) / DRONE_ANIM_SPEED));
   }
-  if (!booking.flightStartedAt && booking.flightStartedUnix == null) return Number(booking.etaMin) || 8;
-  const etaMs = Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000;
+  if (!booking.flightStartedAt && booking.flightStartedUnix == null) {
+    return Math.max(1, Math.ceil((Number(booking.etaMin) || 8) / DRONE_ANIM_SPEED));
+  }
+  const etaMs = flightDurationMs(booking);
   const started = booking.flightStartedUnix
     ? Number(booking.flightStartedUnix) * 1000
     : new Date(booking.flightStartedAt).getTime();
@@ -157,4 +164,5 @@ module.exports = {
   computeDronePosition,
   etaRemainingMin,
   STATUS_LABELS,
+  DRONE_ANIM_SPEED,
 };

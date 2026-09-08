@@ -890,7 +890,7 @@ function clientDronePos(booking, now) {
   if (status === 'arriving') {
     return { lat: pLat + (dLat - pLat) * 0.92, lng: pLng + (dLng - pLng) * 0.92, progress: 0.92 };
   }
-  const etaMs = Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000;
+  const etaMs = (Math.max(1, Number(booking.etaMin) || 8) * 60 * 1000) / 3;
   const started = booking.flightStartedUnix
     ? Number(booking.flightStartedUnix) * 1000
     : booking.flightStartedAt
@@ -1050,7 +1050,7 @@ function openDroneTrackUi() {
   if (droneTrackAnim) clearInterval(droneTrackAnim);
   pollDroneTrack();
   droneTrackPoll = setInterval(pollDroneTrack, 2000);
-  droneTrackAnim = setInterval(tickDroneTrackAnim, 500);
+  droneTrackAnim = setInterval(tickDroneTrackAnim, 160);
 }
 
 function startDroneTracking(id) {

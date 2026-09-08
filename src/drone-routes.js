@@ -10,6 +10,7 @@ const {
   computeDronePosition,
   etaRemainingMin,
   STATUS_LABELS,
+  DRONE_ANIM_SPEED,
 } = require("./campus-points");
 const {
   generateTrackingKey,
@@ -164,7 +165,7 @@ async function autoRunCampusDemo(bookingId) {
     }
     b = await queryOne("SELECT * FROM drone_bookings WHERE id = ?", [id]);
     const etaMin = Math.max(1, Number(b && b.etaMin) || 1);
-    await sleep(etaMin * 60 * 1000 + 1500);
+    await sleep(etaMin * 60 * 1000 / DRONE_ANIM_SPEED + 1500);
     b = await queryOne("SELECT * FROM drone_bookings WHERE id = ?", [id]);
     if (b && b.status === "flying") {
       await query("UPDATE drone_bookings SET status = 'arriving' WHERE id = ? AND status = 'flying'", [id]);

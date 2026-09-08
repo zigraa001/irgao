@@ -5895,7 +5895,7 @@ body.admin-map-fs { overflow: hidden; }
   justify-content: center;
   font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
-  animation: campus-drone-bob 1.6s ease-in-out infinite;
+  animation: campus-drone-bob 0.53s ease-in-out infinite;
 }
 .campus-user-marker { background: none !important; border: none !important; }
 .campus-user-icon {
