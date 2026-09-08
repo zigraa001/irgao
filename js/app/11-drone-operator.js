@@ -31,15 +31,18 @@ function fillDopSendPoints() {
   const fromSel = document.getElementById('dop-send-from');
   const toSel = document.getElementById('dop-send-to');
   if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
-  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
-  toSel.innerHTML = campusDropOptions('Central Library');
+  fromSel.innerHTML = campusDropOptions('Mandi Town');
+  toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
 }
 
 function initDopMap() {
   if (dopMap || typeof L === 'undefined') return;
   const el = document.getElementById('dop-map');
   if (!el) return;
-  dopMap = L.map('dop-map', { zoomControl: false }).setView(IITM_COORD, 16);
+  const start = (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus'])
+    ? CAMPUS_POINTS['IIT Mandi North Campus']
+    : [31.7759, 76.986];
+  dopMap = L.map('dop-map', { zoomControl: false }).setView(start, 14);
   L.control.zoom({ position: 'topright' }).addTo(dopMap);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',

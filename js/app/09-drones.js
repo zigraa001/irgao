@@ -11,20 +11,28 @@ let droneAdminServicesLoaded = false;
 let droneAdminOperatorsLoaded = false;
 let droneAdminBookingsLoaded = false;
 
-const CAMPUS_DROPS = [
-  'IIT Madras Main Gate',
-  'Taramani Gate',
-  'Gajendra Circle',
-  'Central Library',
-  'Himalaya Mess',
-  'CRC / Academic Complex',
-  'SAC',
-  'Hostel Zone',
-  'NAC-2 / MInT',
-  'Department of Aerospace',
+const CAMPUS_GROUPS = [
+  { label: 'IIT Mandi', names: ['Mandi Town', 'IIT Mandi North Campus', 'IIT Mandi South Campus'] },
+  { label: 'IIT Madras', names: [
+    'IIT Madras Main Gate',
+    'Taramani Gate',
+    'Gajendra Circle',
+    'Central Library',
+    'Himalaya Mess',
+    'CRC / Academic Complex',
+    'SAC',
+    'Hostel Zone',
+    'NAC-2 / MInT',
+    'Department of Aerospace',
+  ] },
 ];
 
+const CAMPUS_DROPS = CAMPUS_GROUPS.reduce(function (acc, g) { return acc.concat(g.names); }, []);
+
 const CAMPUS_POINTS = {
+  'Mandi Town': [31.7082, 76.9315],
+  'IIT Mandi North Campus': [31.7759, 76.986],
+  'IIT Mandi South Campus': [31.7685, 76.9938],
   'IIT Madras Main Gate': [12.9915, 80.2337],
   'Taramani Gate': [12.9858, 80.2410],
   'Gajendra Circle': [12.9906, 80.2339],
@@ -85,10 +93,18 @@ function isCampusDelivery(s) {
   return !!(s && (s.category === 'campus' || /campus drone delivery/i.test(s.name || '')));
 }
 
+function campusGroupFor(name) {
+  return CAMPUS_GROUPS.find(function (g) {
+    return g.names.indexOf(name) !== -1;
+  }) || CAMPUS_GROUPS[0];
+}
+
 function campusDropOptions(selected) {
-  return CAMPUS_DROPS.map(function (name) {
-    const sel = name === selected ? ' selected' : '';
-    return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+  return CAMPUS_GROUPS.map(function (g) {
+    return '<optgroup label="' + escapeHtml(g.label) + '">' + g.names.map(function (name) {
+      const sel = name === selected ? ' selected' : '';
+      return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+    }).join('') + '</optgroup>';
   }).join('');
 }
 
@@ -158,7 +174,7 @@ function renderDroneServices() {
       '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'Campus delivery' : escapeHtml(s.category)) + '</div>' +
         '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + unit + '</div>' +
         (campus ? '<span class="drone-op-badge">Campus delivery</span>' : opBadge) +
       '</div>' +
@@ -208,11 +224,11 @@ function renderDroneBookingCard(s) {
   const locationFields = campus
     ? '<div class="drone-form-row">' +
         '<label>From</label>' +
-        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Himalaya Mess') + '</select>' +
+        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Mandi Town') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>To</label>' +
-        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Central Library') + '</select>' +
+        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('IIT Mandi North Campus') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>Parcel</label>' +
@@ -234,7 +250,7 @@ function renderDroneBookingCard(s) {
       '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'Campus delivery' : escapeHtml(s.category)) + '</div>' +
       '</div>' +
     '</div>' +
     (s.description ? '<p class="drone-desc">' + escapeHtml(s.description) + '</p>' : '') +
@@ -847,14 +863,20 @@ function showCampusDeliveryMap() {
   if (!map) return;
   if (!campusMapLayer) campusMapLayer = L.layerGroup().addTo(map);
   campusMapLayer.clearLayers();
-  CAMPUS_DROPS.forEach(function (name) {
+  const fromEl = document.getElementById('drone-campus-from')
+    || document.getElementById('dop-send-from')
+    || document.getElementById('admin-drone-send-from');
+  const group = campusGroupFor(fromEl && fromEl.value);
+  const pads = [];
+  group.names.forEach(function (name) {
     const c = CAMPUS_POINTS[name];
     if (!c) return;
+    pads.push(c);
     L.circleMarker(c, { radius: 5, color: '#0f766e', weight: 2, fillColor: '#fff', fillOpacity: 1 })
       .addTo(campusMapLayer)
       .bindTooltip(name, { permanent: false });
   });
-  map.setView(IITM_COORD, 16);
+  if (pads.length) map.fitBounds(pads, { padding: [48, 48], maxZoom: 15 });
 }
 
 function hideCampusDeliveryMap() {

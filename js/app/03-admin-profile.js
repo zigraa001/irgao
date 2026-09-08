@@ -2408,8 +2408,8 @@ function fillAdminDroneSendPoints() {
   const toSel = document.getElementById('admin-drone-send-to');
   if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
   if (fromSel.options.length) return;
-  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
-  toSel.innerHTML = campusDropOptions('Central Library');
+  fromSel.innerHTML = campusDropOptions('Mandi Town');
+  toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
 }
 
 async function submitAdminDroneSend() {

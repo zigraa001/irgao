@@ -1,6 +1,9 @@
-// IIT Madras campus drop points for drone delivery.
+// Campus drone pads: IIT Mandi (demo) + IIT Madras.
 // Approximate coordinates (good enough for in-campus live tracking).
 const CAMPUS_POINTS = {
+  "Mandi Town": [31.7082, 76.9315],
+  "IIT Mandi North Campus": [31.7759, 76.9860],
+  "IIT Mandi South Campus": [31.7685, 76.9938],
   "IIT Madras Main Gate": [12.9915, 80.2337],
   "Taramani Gate": [12.9858, 80.2410],
   "Gajendra Circle": [12.9906, 80.2339],
@@ -18,6 +21,7 @@ const CAMPUS_NAMES = Object.keys(CAMPUS_POINTS);
 function normalizeCampusName(name) {
   return String(name || "")
     .replace(/,?\s*IIT Madras Campus/i, "")
+    .replace(/,?\s*IIT Mandi Campus/i, "")
     .trim()
     .toLowerCase();
 }

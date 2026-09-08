@@ -601,6 +601,8 @@ function paintAdminDroneLive(deliveries, campusPoints) {
     programmaticMapMove = true;
     if (points.length) {
       adminLiveMap.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 16 });
+    } else if (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus']) {
+      adminLiveMap.setView(CAMPUS_POINTS['IIT Mandi North Campus'], 14);
     } else if (typeof IITM_COORD !== 'undefined') {
       adminLiveMap.setView(IITM_COORD, 16);
     }
@@ -1043,11 +1045,16 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     });
     var scored = [];
     if (q.length < 1) {
-      // No query yet: surface the vertiports closest to IIT Madras so opening
-      // the destination (or pickup) field shows locations near IITM by default.
+      var origin = IITM_COORD;
+      if (target === 'dest' && pickupCoord) origin = pickupCoord;
+      else if (target === 'pickup' && destCoord) origin = destCoord;
+      else if (map) {
+        var center = map.getCenter();
+        origin = [center.lat, center.lng];
+      }
       scored = names.map(function (n) {
         var c = demoLocations[n];
-        return { name: n, dist: haversineKmClient(IITM_COORD[0], IITM_COORD[1], c[0], c[1]) };
+        return { name: n, dist: haversineKmClient(origin[0], origin[1], c[0], c[1]) };
       });
       scored.sort(function (a, b) { return a.dist - b.dist; });
       scored = scored.slice(0, 6).map(function (o) { return { name: o.name, score: 0 }; });

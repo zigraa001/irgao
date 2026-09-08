@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/site.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -68,27 +69,21 @@
         <div class="bk-field">
           <label id="fromLab">From</label>
           <select name="from" id="fromSel">
-            <option value="MAA-CBD">Chennai CBD</option>
-            <option value="MAA-APT">Chennai Airport</option>
-            <option value="MAA-OMR">OMR IT Corridor</option>
-            <option value="TN-MBP">Mahabalipuram</option>
-            <option value="BLR-APT">Bengaluru Airport</option>
-            <option value="BLR-ECT">Electronic City</option>
-            <option value="BOM-CTY">Mumbai</option>
-            <option value="PNQ-CTY">Pune</option>
+            <option value="Delhi" selected>Delhi</option>
+            <option value="Chandigarh">Chandigarh</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Bengaluru">Bengaluru</option>
+            <option value="Chennai">Chennai</option>
           </select>
         </div>
         <div class="bk-field">
           <label id="toLab">To</label>
           <select name="to" id="toSel">
-            <option value="MAA-CBD">Chennai CBD</option>
-            <option value="MAA-APT">Chennai Airport</option>
-            <option value="MAA-OMR" selected>OMR IT Corridor</option>
-            <option value="TN-MBP">Mahabalipuram</option>
-            <option value="BLR-APT">Bengaluru Airport</option>
-            <option value="BLR-ECT">Electronic City</option>
-            <option value="BOM-CTY">Mumbai</option>
-            <option value="PNQ-CTY">Pune</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Chandigarh">Chandigarh</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Bengaluru">Bengaluru</option>
+            <option value="Chennai" selected>Chennai</option>
           </select>
         </div>
         <div class="bk-field">
@@ -112,56 +107,17 @@
 
   <section class="routes" id="routes">
     <div class="routes-header">
-      <div class="feature-num">Sectors</div>
-      <h2>Minutes, not hours</h2>
+      <div class="feature-num">PAN India</div>
+      <h2>Hops under two hours</h2>
     </div>
-    <div class="routes-grid">
-      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Chennai CBD</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">OMR IT Corridor</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">8 min</div><div class="route-stat-sm">by air</div></div>
-          <div style="text-align:right"><div class="route-stat-big">25 km</div><div class="route-stat-sm">1 h 10 m by road</div></div>
-        </div>
-      </a>
-      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Chennai Airport</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Mahabalipuram</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">15 min</div><div class="route-stat-sm">by air</div></div>
-          <div style="text-align:right"><div class="route-stat-big">55 km</div><div class="route-stat-sm">1 h 50 m by road</div></div>
-        </div>
-      </a>
-      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Bengaluru Airport</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Electronic City</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">14 min</div><div class="route-stat-sm">by air</div></div>
-          <div style="text-align:right"><div class="route-stat-big">52 km</div><div class="route-stat-sm">2 h 15 m by road</div></div>
-        </div>
-      </a>
-      <a href="app.html" class="route-card" style="color:inherit;text-decoration:none">
-        <div class="route-from-to">
-          <div><span class="route-dot"></span><div class="route-city">Mumbai</div></div>
-          <div class="route-line"></div>
-          <div style="text-align:right"><span class="route-dot"></span><div class="route-city">Pune</div></div>
-        </div>
-        <div class="route-stats">
-          <div><div class="route-stat-big">40 min</div><div class="route-stat-sm">by air</div></div>
-          <div style="text-align:right"><div class="route-stat-big">150 km</div><div class="route-stat-sm">3 h 20 m by road</div></div>
-        </div>
-      </a>
+    <div class="sector-tools">
+      <input id="sector-q" class="sector-search" type="search" placeholder="Search a city" autocomplete="off" />
+      <div class="sector-chips" id="sector-chips"></div>
     </div>
-    <p class="section-body">* Air times are target hops. Road times are peak traffic.</p>
+    <div id="sector-map" class="sector-map" role="img" aria-label="Map of IraGo sectors across India"></div>
+    <p class="sector-meta" id="sector-meta"></p>
+    <div class="routes-grid sector-grid" id="sector-grid"></div>
+    <p class="section-body">Air times at 250 km/h cruise. Road times are peak traffic. Tap a hop to fill the booking form. Licensed partners fly the aircraft. Map © OpenStreetMap.</p>
   </section>
 
   <section class="features" id="problem">
@@ -467,6 +423,8 @@
     <div class="footer-bottom">&copy; 2025–2026 IraGo Solutions Pvt. Ltd. All rights reserved. Platform Active.</div>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/sectors.js?v=20260909"></script>
   <script>
     (function () {
       var toggle = document.getElementById('navToggle');
@@ -493,23 +451,8 @@
     })();
 
     (function () {
-      var CAMPUS_POINTS = [
-        ['IITM-GATE', 'IIT Madras Main Gate'],
-        ['IITM-TARAMANI', 'Taramani Gate'],
-        ['IITM-GC', 'Gajendra Circle'],
-        ['IITM-LIB', 'Central Library'],
-        ['IITM-HIM', 'Himalaya Mess'],
-        ['IITM-CRC', 'CRC / Academic Complex'],
-        ['IITM-SAC', 'SAC'],
-        ['IITM-HOSTEL', 'Hostel Zone'],
-        ['IITM-MINT', 'NAC-2 / MInT'],
-        ['IITM-AERO', 'Department of Aerospace']
-      ];
-      function campusHtml(selected) {
-        return CAMPUS_POINTS.map(function (p, i) {
-          return '<option value="' + p[0] + '"' + (i === selected ? ' selected' : '') + '>' + p[1] + '</option>';
-        }).join('');
-      }
+      var S = window.IRAGO_SECTORS;
+      if (S && S.fillBookingCities) S.fillBookingCities();
       var modeSel = document.getElementById('modeSel');
       var fromSel = document.getElementById('fromSel');
       var toSel = document.getElementById('toSel');
@@ -521,13 +464,17 @@
       var flightFrom = fromSel.innerHTML;
       var flightTo = toSel.innerHTML;
       var paxFlight = paxSel.innerHTML;
+      function campusHtml(selected) {
+        if (S && S.campusHtml) return S.campusHtml(selected);
+        return '';
+      }
       function setMode(mode) {
         if (mode === 'drones') {
           fromLab.textContent = 'Pickup';
           toLab.textContent = 'Drop';
           paxLab.textContent = 'Parcel';
-          fromSel.innerHTML = campusHtml(4);
-          toSel.innerHTML = campusHtml(3);
+          fromSel.innerHTML = campusHtml('Mandi Town');
+          toSel.innerHTML = campusHtml('IIT Mandi North Campus');
           paxSel.innerHTML = '<option value="docs">Documents</option><option value="food">Meals</option><option value="med">Medical supplies</option><option value="other">Other</option>';
           searchBtn.textContent = 'Book campus delivery';
         } else {
@@ -554,6 +501,7 @@
           toSel.focus();
         }
       });
+      if (S && S.mount) S.mount();
     })();
 
     (function () {

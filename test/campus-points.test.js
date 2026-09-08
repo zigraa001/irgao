@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { computeDronePosition, etaRemainingMin } = require("../src/campus-points");
+const { computeDronePosition, etaRemainingMin, lookupCampusPoint } = require("../src/campus-points");
 
 const BASE = {
   pickupLat: 12.99,
@@ -34,4 +34,14 @@ test("returning flies from drop back to pad", () => {
   assert.ok(Math.abs(mid.lat - 12.985) < 1e-9);
   assert.ok(Math.abs(mid.lng - 80.235) < 1e-9);
   assert.equal(etaRemainingMin({ ...BASE, status: "returning", returnStartedUnix: now / 1000 }, null, now), 1);
+});
+
+test("IIT Mandi pads resolve for operator send", () => {
+  const town = lookupCampusPoint("Mandi Town");
+  const north = lookupCampusPoint("IIT Mandi North Campus");
+  const south = lookupCampusPoint("IIT Mandi South Campus");
+  assert.ok(town && north && south);
+  assert.equal(town.lat, 31.7082);
+  assert.equal(north.lat, 31.7759);
+  assert.equal(south.lat, 31.7685);
 });

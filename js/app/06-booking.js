@@ -139,6 +139,15 @@ function applyLandingModeFromQuery() {
   };
   const service = map[raw];
   if (service) switchService(service);
+  const fromName = (params.get('from') || '').trim();
+  const toName = (params.get('to') || '').trim();
+  if (service === 'drones' || service === 'drone-rental') return;
+  if (fromName && demoLocations[fromName] && typeof setPickup === 'function') {
+    setPickup(demoLocations[fromName], fromName, true);
+  }
+  if (toName && demoLocations[toName] && typeof setDest === 'function') {
+    setTimeout(function () { setDest(demoLocations[toName], toName, true); }, 200);
+  }
 }
 
 // ── Popular Routes per Service ──

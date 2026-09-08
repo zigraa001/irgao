@@ -208,6 +208,48 @@ const demoLocations = {
   'Annadale Helipad, Shimla':     [31.1030, 77.1550],
   'Nalagarh Helipad, Baddi':      [31.0430, 76.7220],
   'MM Medical College, Solan':    [30.8577, 77.0966],
+
+  // PAN-India city pads (homepage sector explorer / booking form)
+  'Delhi': [28.6139, 77.209],
+  'Agra': [27.1767, 78.0081],
+  'Chandigarh': [30.7333, 76.7794],
+  'Mandi': [31.7086, 76.9319],
+  'Kullu': [31.9579, 77.1095],
+  'Shimla': [31.1048, 77.1734],
+  'Solan': [30.9045, 77.0967],
+  'Manali': [32.2432, 77.1892],
+  'Dharamshala': [32.219, 76.3234],
+  'Jaipur': [26.9124, 75.7873],
+  'Udaipur': [24.5854, 73.7125],
+  'Kolhapur': [16.705, 74.2433],
+  'Mumbai': [19.076, 72.8777],
+  'Pune': [18.5204, 73.8567],
+  'Nagpur': [21.1458, 79.0882],
+  'Jalandhar': [31.326, 75.5762],
+  'Jammu': [32.7266, 74.8571],
+  'Amritsar': [31.634, 74.8723],
+  'Gwalior': [26.2183, 78.1828],
+  'Lucknow': [26.8467, 80.9462],
+  'Ayodhya': [26.799, 82.204],
+  'Haridwar': [29.9457, 78.1642],
+  'Ludhiana': [30.901, 75.8573],
+  'Surat': [21.1702, 72.8311],
+  'Ahmedabad': [23.0225, 72.5714],
+  'Gandhinagar': [23.2156, 72.6369],
+  'Hyderabad': [17.385, 78.4867],
+  'Chennai': [13.0827, 80.2707],
+  'Kochi': [9.9312, 76.2673],
+  'Bengaluru': [12.9716, 77.5946],
+  'Mysuru': [12.2958, 76.6394],
+  'Bhopal': [23.2599, 77.4126],
+  'Indore': [22.7196, 75.8577],
+  'Visakhapatnam': [17.6868, 83.2185],
+  'Chennai CBD': [13.0827, 80.2707],
+  'Chennai Airport': [12.9941, 80.1709],
+  'OMR IT Corridor': [12.8996, 80.2289],
+  'Mahabalipuram': [12.6208, 80.1945],
+  'Bengaluru Airport': [13.1986, 77.7066],
+  'Electronic City': [12.839, 77.677],
 };
 
 
@@ -3877,8 +3919,8 @@ function fillAdminDroneSendPoints() {
   const toSel = document.getElementById('admin-drone-send-to');
   if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
   if (fromSel.options.length) return;
-  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
-  toSel.innerHTML = campusDropOptions('Central Library');
+  fromSel.innerHTML = campusDropOptions('Mandi Town');
+  toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
 }
 
 async function submitAdminDroneSend() {
@@ -5546,6 +5588,8 @@ function paintAdminDroneLive(deliveries, campusPoints) {
     programmaticMapMove = true;
     if (points.length) {
       adminLiveMap.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 16 });
+    } else if (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus']) {
+      adminLiveMap.setView(CAMPUS_POINTS['IIT Mandi North Campus'], 14);
     } else if (typeof IITM_COORD !== 'undefined') {
       adminLiveMap.setView(IITM_COORD, 16);
     }
@@ -5988,11 +6032,16 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     });
     var scored = [];
     if (q.length < 1) {
-      // No query yet: surface the vertiports closest to IIT Madras so opening
-      // the destination (or pickup) field shows locations near IITM by default.
+      var origin = IITM_COORD;
+      if (target === 'dest' && pickupCoord) origin = pickupCoord;
+      else if (target === 'pickup' && destCoord) origin = destCoord;
+      else if (map) {
+        var center = map.getCenter();
+        origin = [center.lat, center.lng];
+      }
       scored = names.map(function (n) {
         var c = demoLocations[n];
-        return { name: n, dist: haversineKmClient(IITM_COORD[0], IITM_COORD[1], c[0], c[1]) };
+        return { name: n, dist: haversineKmClient(origin[0], origin[1], c[0], c[1]) };
       });
       scored.sort(function (a, b) { return a.dist - b.dist; });
       scored = scored.slice(0, 6).map(function (o) { return { name: o.name, score: 0 }; });
@@ -6826,6 +6875,15 @@ function applyLandingModeFromQuery() {
   };
   const service = map[raw];
   if (service) switchService(service);
+  const fromName = (params.get('from') || '').trim();
+  const toName = (params.get('to') || '').trim();
+  if (service === 'drones' || service === 'drone-rental') return;
+  if (fromName && demoLocations[fromName] && typeof setPickup === 'function') {
+    setPickup(demoLocations[fromName], fromName, true);
+  }
+  if (toName && demoLocations[toName] && typeof setDest === 'function') {
+    setTimeout(function () { setDest(demoLocations[toName], toName, true); }, 200);
+  }
 }
 
 // ── Popular Routes per Service ──
@@ -9089,20 +9147,28 @@ let droneAdminServicesLoaded = false;
 let droneAdminOperatorsLoaded = false;
 let droneAdminBookingsLoaded = false;
 
-const CAMPUS_DROPS = [
-  'IIT Madras Main Gate',
-  'Taramani Gate',
-  'Gajendra Circle',
-  'Central Library',
-  'Himalaya Mess',
-  'CRC / Academic Complex',
-  'SAC',
-  'Hostel Zone',
-  'NAC-2 / MInT',
-  'Department of Aerospace',
+const CAMPUS_GROUPS = [
+  { label: 'IIT Mandi', names: ['Mandi Town', 'IIT Mandi North Campus', 'IIT Mandi South Campus'] },
+  { label: 'IIT Madras', names: [
+    'IIT Madras Main Gate',
+    'Taramani Gate',
+    'Gajendra Circle',
+    'Central Library',
+    'Himalaya Mess',
+    'CRC / Academic Complex',
+    'SAC',
+    'Hostel Zone',
+    'NAC-2 / MInT',
+    'Department of Aerospace',
+  ] },
 ];
 
+const CAMPUS_DROPS = CAMPUS_GROUPS.reduce(function (acc, g) { return acc.concat(g.names); }, []);
+
 const CAMPUS_POINTS = {
+  'Mandi Town': [31.7082, 76.9315],
+  'IIT Mandi North Campus': [31.7759, 76.986],
+  'IIT Mandi South Campus': [31.7685, 76.9938],
   'IIT Madras Main Gate': [12.9915, 80.2337],
   'Taramani Gate': [12.9858, 80.2410],
   'Gajendra Circle': [12.9906, 80.2339],
@@ -9163,10 +9229,18 @@ function isCampusDelivery(s) {
   return !!(s && (s.category === 'campus' || /campus drone delivery/i.test(s.name || '')));
 }
 
+function campusGroupFor(name) {
+  return CAMPUS_GROUPS.find(function (g) {
+    return g.names.indexOf(name) !== -1;
+  }) || CAMPUS_GROUPS[0];
+}
+
 function campusDropOptions(selected) {
-  return CAMPUS_DROPS.map(function (name) {
-    const sel = name === selected ? ' selected' : '';
-    return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+  return CAMPUS_GROUPS.map(function (g) {
+    return '<optgroup label="' + escapeHtml(g.label) + '">' + g.names.map(function (name) {
+      const sel = name === selected ? ' selected' : '';
+      return '<option value="' + escapeHtml(name) + '"' + sel + '>' + escapeHtml(name) + '</option>';
+    }).join('') + '</optgroup>';
   }).join('');
 }
 
@@ -9236,7 +9310,7 @@ function renderDroneServices() {
       '<div class="drone-card-emoji">' + (s.imageEmoji || '🛸') + '</div>' +
       '<div class="drone-card-body">' +
         '<div class="drone-card-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'Campus delivery' : escapeHtml(s.category)) + '</div>' +
         '<div class="drone-card-price">₹' + Number(s.pricePerHour).toLocaleString('en-IN') + unit + '</div>' +
         (campus ? '<span class="drone-op-badge">Campus delivery</span>' : opBadge) +
       '</div>' +
@@ -9286,11 +9360,11 @@ function renderDroneBookingCard(s) {
   const locationFields = campus
     ? '<div class="drone-form-row">' +
         '<label>From</label>' +
-        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Himalaya Mess') + '</select>' +
+        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Mandi Town') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>To</label>' +
-        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Central Library') + '</select>' +
+        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('IIT Mandi North Campus') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>Parcel</label>' +
@@ -9312,7 +9386,7 @@ function renderDroneBookingCard(s) {
       '<span class="drone-detail-emoji">' + (s.imageEmoji || '🛸') + '</span>' +
       '<div>' +
         '<div class="drone-detail-name">' + escapeHtml(s.name) + '</div>' +
-        '<div class="drone-card-cat">' + (campus ? 'IIT Madras campus' : escapeHtml(s.category)) + '</div>' +
+        '<div class="drone-card-cat">' + (campus ? 'Campus delivery' : escapeHtml(s.category)) + '</div>' +
       '</div>' +
     '</div>' +
     (s.description ? '<p class="drone-desc">' + escapeHtml(s.description) + '</p>' : '') +
@@ -9925,14 +9999,20 @@ function showCampusDeliveryMap() {
   if (!map) return;
   if (!campusMapLayer) campusMapLayer = L.layerGroup().addTo(map);
   campusMapLayer.clearLayers();
-  CAMPUS_DROPS.forEach(function (name) {
+  const fromEl = document.getElementById('drone-campus-from')
+    || document.getElementById('dop-send-from')
+    || document.getElementById('admin-drone-send-from');
+  const group = campusGroupFor(fromEl && fromEl.value);
+  const pads = [];
+  group.names.forEach(function (name) {
     const c = CAMPUS_POINTS[name];
     if (!c) return;
+    pads.push(c);
     L.circleMarker(c, { radius: 5, color: '#0f766e', weight: 2, fillColor: '#fff', fillOpacity: 1 })
       .addTo(campusMapLayer)
       .bindTooltip(name, { permanent: false });
   });
-  map.setView(IITM_COORD, 16);
+  if (pads.length) map.fitBounds(pads, { padding: [48, 48], maxZoom: 15 });
 }
 
 function hideCampusDeliveryMap() {
@@ -11185,15 +11265,18 @@ function fillDopSendPoints() {
   const fromSel = document.getElementById('dop-send-from');
   const toSel = document.getElementById('dop-send-to');
   if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
-  fromSel.innerHTML = campusDropOptions('Himalaya Mess');
-  toSel.innerHTML = campusDropOptions('Central Library');
+  fromSel.innerHTML = campusDropOptions('Mandi Town');
+  toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
 }
 
 function initDopMap() {
   if (dopMap || typeof L === 'undefined') return;
   const el = document.getElementById('dop-map');
   if (!el) return;
-  dopMap = L.map('dop-map', { zoomControl: false }).setView(IITM_COORD, 16);
+  const start = (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus'])
+    ? CAMPUS_POINTS['IIT Mandi North Campus']
+    : [31.7759, 76.986];
+  dopMap = L.map('dop-map', { zoomControl: false }).setView(start, 14);
   L.control.zoom({ position: 'topright' }).addTo(dopMap);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
