@@ -261,35 +261,16 @@
       fromSel.value = s.from;
       toSel.value = s.to;
     }
-    var booking = document.getElementById("booking");
-    if (booking) booking.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function mount() {
-    var chips = document.getElementById("sector-chips");
+    var region = document.getElementById("sector-region");
     var q = document.getElementById("sector-q");
     var grid = document.getElementById("sector-grid");
-    if (chips) {
-      [
-        ["all", "All"],
-        ["himalaya", "Himalaya"],
-        ["north", "North"],
-        ["west", "West"],
-        ["south", "South"],
-        ["drone", "Drone"],
-      ].forEach(function (c) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.className = "sector-chip" + (c[0] === "all" ? " is-on" : "");
-        b.textContent = c[1];
-        b.setAttribute("data-chip", c[0]);
-        b.addEventListener("click", function () {
-          activeChip = c[0];
-          chips.querySelectorAll(".sector-chip").forEach(function (x) { x.classList.remove("is-on"); });
-          b.classList.add("is-on");
-          render();
-        });
-        chips.appendChild(b);
+    if (region) {
+      region.addEventListener("change", function () {
+        activeChip = region.value || "all";
+        render();
       });
     }
     if (q) {
@@ -308,10 +289,19 @@
     }
     var el = document.getElementById("sector-map");
     if (el && typeof L !== "undefined") {
-      map = L.map(el, { zoomControl: false }).setView([22.5, 79], 5);
+      map = L.map(el, {
+        zoomControl: false,
+        attributionControl: false,
+        scrollWheelZoom: false,
+        dragging: false,
+        tap: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        touchZoom: false,
+      }).setView([22.5, 79], 5);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 12,
-        attribution: '&copy; OpenStreetMap',
       }).addTo(map);
       setTimeout(function () { map.invalidateSize(); }, 200);
     }

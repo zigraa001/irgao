@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/site.css" />
+  <link rel="stylesheet" href="css/site.css?v=20260909b" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -112,7 +112,14 @@
     </div>
     <div class="sector-tools">
       <input id="sector-q" class="sector-search" type="search" placeholder="Search a city" autocomplete="off" />
-      <div class="sector-chips" id="sector-chips"></div>
+      <select id="sector-region" class="sector-search sector-region" aria-label="Region">
+        <option value="all" selected>All India</option>
+        <option value="himalaya">Himalaya</option>
+        <option value="north">North</option>
+        <option value="west">West</option>
+        <option value="south">South</option>
+        <option value="drone">Campus drone</option>
+      </select>
     </div>
     <div id="sector-map" class="sector-map" role="img" aria-label="Map of IraGo sectors across India"></div>
     <p class="sector-meta" id="sector-meta"></p>
@@ -424,7 +431,7 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/sectors.js?v=20260909"></script>
+  <script src="js/sectors.js?v=20260909b"></script>
   <script>
     (function () {
       var toggle = document.getElementById('navToggle');
