@@ -280,6 +280,10 @@
       line-height: 1;
       letter-spacing: -0.192rem;
     }
+    .routes-header .section-body {
+      max-width: 56rem;
+      margin-top: 1.6rem;
+    }
     .routes-grid {
       max-width: 1200px;
       margin: 0 auto;
