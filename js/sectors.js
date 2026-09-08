@@ -235,8 +235,7 @@
       grid.innerHTML = list.map(cardHtml).join("") || '<p class="section-body">No hop matches that search.</p>';
     }
     if (meta) {
-      var n2 = list.filter(function (s) { return s.under2h; }).length;
-      meta.textContent = list.length + " hops · " + n2 + " inside 2 hours in the air";
+      meta.textContent = list.length + " sectors";
     }
     paintMap(list);
   }
