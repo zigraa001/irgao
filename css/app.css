@@ -2491,6 +2491,11 @@ textarea:focus-visible, a:focus-visible {
   gap: 6px;
 }
 .popular-routes-title svg { width: 14px; height: 14px; }
+.popular-routes-list {
+  max-height: min(48vh, 420px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 .route-chip {
   display: flex;

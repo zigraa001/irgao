@@ -862,17 +862,20 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     for (var i = 0; i < keywords.length; i++) {
       var k = keywords[i];
       if (!k) continue;
-      if (lower.indexOf(k) === 0) score += 3;
+      if (lower === k) score += 12;
+      else if (lower.indexOf(k) === 0) score += 6;
       else if (lower.indexOf(k) >= 0) score += 1;
       else {
         var parts = lower.split(/[\s,]+/);
         var found = false;
         for (var j = 0; j < parts.length; j++) {
+          if (parts[j] === k) { score += 8; found = true; break; }
           if (parts[j].indexOf(k) === 0) { score += 2; found = true; break; }
         }
         if (!found) return 0;
       }
     }
+    if (lower.indexOf('vertiport') === -1 && lower.indexOf('hospital') === -1) score += 2;
     return score;
   }
 
@@ -1065,7 +1068,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         if (s > 0) scored.push({ name: names[i], score: s });
       }
       scored.sort(function (a, b) { return b.score - a.score; });
-      scored = scored.slice(0, 5);
+      scored = scored.slice(0, 12);
     }
     return scored;
   }

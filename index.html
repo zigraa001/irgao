@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/site.css?v=20260909b" />
+  <link rel="stylesheet" href="css/site.css?v=20260909d" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -69,21 +69,25 @@
         <div class="bk-field">
           <label id="fromLab">From</label>
           <select name="from" id="fromSel">
-            <option value="Delhi" selected>Delhi</option>
-            <option value="Chandigarh">Chandigarh</option>
+            <option value="Chandigarh" selected>Chandigarh</option>
+            <option value="Mandi">Mandi</option>
+            <option value="Delhi">Delhi</option>
             <option value="Mumbai">Mumbai</option>
             <option value="Bengaluru">Bengaluru</option>
             <option value="Chennai">Chennai</option>
+            <option value="Shimla">Shimla</option>
           </select>
         </div>
         <div class="bk-field">
           <label id="toLab">To</label>
           <select name="to" id="toSel">
-            <option value="Delhi">Delhi</option>
             <option value="Chandigarh">Chandigarh</option>
+            <option value="Mandi" selected>Mandi</option>
+            <option value="Delhi">Delhi</option>
             <option value="Mumbai">Mumbai</option>
             <option value="Bengaluru">Bengaluru</option>
-            <option value="Chennai" selected>Chennai</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Shimla">Shimla</option>
           </select>
         </div>
         <div class="bk-field">
@@ -109,21 +113,9 @@
     <div class="routes-header">
       <h2>PAN India</h2>
     </div>
-    <div class="sector-tools">
-      <input id="sector-q" class="sector-search" type="search" placeholder="Search a city" autocomplete="off" />
-      <select id="sector-region" class="sector-search sector-region" aria-label="Region">
-        <option value="all" selected>All India</option>
-        <option value="himalaya">Himalaya</option>
-        <option value="north">North</option>
-        <option value="west">West</option>
-        <option value="south">South</option>
-        <option value="drone">Campus drone</option>
-      </select>
-    </div>
-    <div id="sector-map" class="sector-map" role="img" aria-label="Map of IraGo sectors across India"></div>
-    <p class="sector-meta" id="sector-meta"></p>
+    <div id="sector-map" class="sector-map" role="img" aria-label="Map of featured IraGo hops"></div>
     <div class="routes-grid sector-grid" id="sector-grid"></div>
-    <p class="section-body">Air times at 250 km/h cruise. Road times are peak traffic. Tap a hop to fill the booking form. Licensed partners fly the aircraft. Map © OpenStreetMap.</p>
+    <p class="section-body">Tap a hop to fill the form. Full list is in booking search. Map © OpenStreetMap.</p>
   </section>
 
   <section class="features" id="problem">
@@ -430,7 +422,7 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/sectors.js?v=20260909c"></script>
+  <script src="js/sectors.js?v=20260909d"></script>
   <script>
     (function () {
       var toggle = document.getElementById('navToggle');

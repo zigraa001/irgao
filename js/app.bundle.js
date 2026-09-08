@@ -252,6 +252,43 @@ const demoLocations = {
   'Electronic City': [12.839, 77.677],
 };
 
+// PAN-India air hops — full set for in-app booking search (homepage shows a short subset).
+const SECTOR_TAXI_ROUTES = [
+  ['Delhi', 'Agra', 'North'],
+  ['Chandigarh', 'Mandi', 'Himalaya'],
+  ['Chandigarh', 'Kullu', 'Himalaya'],
+  ['Chandigarh', 'Shimla', 'Himalaya'],
+  ['Solan', 'Chandigarh', 'Himalaya'],
+  ['Shimla', 'Manali', 'Himalaya'],
+  ['Shimla', 'Dharamshala', 'Himalaya'],
+  ['Dharamshala', 'Chandigarh', 'Himalaya'],
+  ['Jaipur', 'Udaipur', 'West'],
+  ['Kolhapur', 'Mumbai', 'West'],
+  ['Mumbai', 'Pune', 'West'],
+  ['Pune', 'Nagpur', 'West'],
+  ['Jalandhar', 'Delhi', 'North'],
+  ['Jammu', 'Chandigarh', 'Himalaya'],
+  ['Amritsar', 'Chandigarh', 'North'],
+  ['Gwalior', 'Delhi', 'North'],
+  ['Delhi', 'Lucknow', 'North'],
+  ['Delhi', 'Ayodhya', 'North'],
+  ['Delhi', 'Haridwar', 'North'],
+  ['Delhi', 'Ludhiana', 'North'],
+  ['Surat', 'Ahmedabad', 'West'],
+  ['Surat', 'Gandhinagar', 'West'],
+  ['Hyderabad', 'Chennai', 'South'],
+  ['Chennai', 'Kochi', 'South'],
+  ['Bengaluru', 'Mysuru', 'South'],
+  ['Bengaluru', 'Chennai', 'South'],
+  ['Bhopal', 'Delhi', 'North'],
+  ['Indore', 'Mumbai', 'West'],
+  ['Indore', 'Delhi', 'North'],
+  ['Visakhapatnam', 'Hyderabad', 'South'],
+  ['Chennai CBD', 'OMR IT Corridor', 'South'],
+  ['Chennai Airport', 'Mahabalipuram', 'South'],
+  ['Bengaluru Airport', 'Electronic City', 'South'],
+];
+
 
 
 // ===== 02-auth.js =====
@@ -5849,17 +5886,20 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
     for (var i = 0; i < keywords.length; i++) {
       var k = keywords[i];
       if (!k) continue;
-      if (lower.indexOf(k) === 0) score += 3;
+      if (lower === k) score += 12;
+      else if (lower.indexOf(k) === 0) score += 6;
       else if (lower.indexOf(k) >= 0) score += 1;
       else {
         var parts = lower.split(/[\s,]+/);
         var found = false;
         for (var j = 0; j < parts.length; j++) {
+          if (parts[j] === k) { score += 8; found = true; break; }
           if (parts[j].indexOf(k) === 0) { score += 2; found = true; break; }
         }
         if (!found) return 0;
       }
     }
+    if (lower.indexOf('vertiport') === -1 && lower.indexOf('hospital') === -1) score += 2;
     return score;
   }
 
@@ -6052,7 +6092,7 @@ function setupAutocomplete(inputId, suggestId, callback, target) {
         if (s > 0) scored.push({ name: names[i], score: s });
       }
       scored.sort(function (a, b) { return b.score - a.score; });
-      scored = scored.slice(0, 5);
+      scored = scored.slice(0, 12);
     }
     return scored;
   }
@@ -6886,20 +6926,30 @@ function applyLandingModeFromQuery() {
   }
 }
 
+function sectorAirMeta(from, to) {
+  const a = demoLocations[from];
+  const b = demoLocations[to];
+  if (!a || !b || typeof haversineKmClient !== 'function') return '';
+  const km = haversineKmClient(a[0], a[1], b[0], b[1]);
+  const min = Math.max(1, Math.round((km / 250) * 60));
+  const air = min < 60 ? (min + ' min') : (Math.floor(min / 60) + ' h' + (min % 60 ? ' ' + (min % 60) + ' m' : ''));
+  return air + ' by air · ' + Math.round(km) + ' km';
+}
+
 // ── Popular Routes per Service ──
 const popularRoutes = {
-  taxi: [
-    { from: 'Aerocity Vertiport, Delhi', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128188;', meta: '18&ndash;25 min &middot; 2 pax &middot; &#8377;3,600&ndash;5,600', tag: 'Executive Shuttle' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Taj Mahal Vertiport, Agra', emoji: '&#128508;', meta: '55 min/way &middot; 4 pax &middot; &#8377;13,000&ndash;19,000', tag: 'Agra Express' },
-    { from: 'Embassy Vertiport, Chanakyapuri', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128737;&#65039;', meta: 'Custom &middot; 2&ndash;4 pax &middot; &#8377;9,000&ndash;16,000', tag: 'Diplomatic' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Chandigarh Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
-    { from: 'Aerocity Vertiport, Delhi', to: 'Dehradun Vertiport', emoji: '&#128640;', meta: '45 min/sector &middot; 6 pax &middot; &#8377;24,000&ndash;40,000', tag: 'Corporate Charter' },
-    { from: 'Noida Sec 62 Vertiport', to: 'Gurugram Cyber Hub', emoji: '&#9992;&#65039;', meta: '22 min &middot; 40 km', tag: 'Inter-city' },
-    { from: 'Dwarka Sector 21 Vertiport', to: 'Faridabad Vertiport', emoji: '&#127747;', meta: '16 min &middot; 30 km', tag: 'Inter-city' },
-    { from: 'Navi Mumbai Vertiport', to: 'Powai Vertiport, Mumbai', emoji: '&#9992;&#65039;', meta: '12 min &middot; 22 km', tag: 'Business' },
-    { from: 'Whitefield Vertiport', to: 'Electronic City Vertiport', emoji: '&#128187;', meta: '16 min &middot; 28 km', tag: 'Tech Hub' },
-    { from: 'Hi-Tech City Vertiport', to: 'Shamshabad Vertiport', emoji: '&#9992;&#65039;', meta: '14 min &middot; 25 km', tag: 'Airport Link' },
-  ],
+  taxi: (typeof SECTOR_TAXI_ROUTES !== 'undefined' ? SECTOR_TAXI_ROUTES : []).map(function (r) {
+    return {
+      from: r[0],
+      to: r[1],
+      emoji: '&#9992;&#65039;',
+      meta: sectorAirMeta(r[0], r[1]),
+      tag: r[2] || 'Sector',
+    };
+  }).concat([
+    { from: 'Aerocity Vertiport, Delhi', to: 'Hotel Leela Rooftop, Delhi', emoji: '&#128188;', meta: '18&ndash;25 min &middot; 2 pax', tag: 'Executive' },
+    { from: 'Aerocity Vertiport, Delhi', to: 'Taj Mahal Vertiport, Agra', emoji: '&#128508;', meta: '55 min/way &middot; 4 pax', tag: 'Agra Express' },
+  ]),
   golden: [
     { from: 'Barmana Helipad, Bilaspur', to: 'AIIMS Bilaspur', emoji: '&#127973;', meta: '12 min &middot; Golden Hour corridor', tag: 'HP EMS' },
     { from: 'Bharmour Helipad, Chamba', to: 'Pt. JLN Medical College, Chamba', emoji: '&#128657;', meta: '22 min &middot; 66% fatality district', tag: 'Critical' },

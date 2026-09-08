@@ -621,6 +621,7 @@
         border-radius: 1.6rem;
         padding: 1.2rem 0;
         box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+        z-index: 120;
       }
       .nav-links.is-open { display: flex; }
       .nav-links a {
@@ -635,14 +636,17 @@
       .section, .routes, .features { padding: 8rem 1.6rem; }
       .section h2 { grid-column: 1 / -1; margin-bottom: 2.4rem; }
       .section-body, .section-grid .bullet-list { grid-column: 1 / -1; }
+      .routes-header { margin-bottom: 3.2rem; }
       .routes-grid, .features-grid, .routes-grid.team-grid { grid-template-columns: 1fr; }
       .booking-section { padding: 8rem 1.6rem; border-radius: 6.4rem 6.4rem 0 0; }
       .booking-form { grid-template-columns: 1fr; }
+      .booking-submit { width: 100%; }
+      .bk-field select,
+      .bk-field input { font-size: 1.6rem; }
       .footer-inner { grid-template-columns: 1fr; }
       .page-hero { padding: 10rem 1.6rem 4rem; border-radius: 0 0 6.4rem 6.4rem; min-height: 42vh; }
       .contact-wrap, .contact-form { grid-template-columns: 1fr; }
-      .sector-map { height: 28rem; }
-      .routes-grid.sector-grid { max-height: none; }
+      .sector-map { height: 22rem; }
     }
 
     @media (max-width: 480px) {

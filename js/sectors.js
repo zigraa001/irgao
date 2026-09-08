@@ -148,9 +148,16 @@
     };
   });
 
-  var FLIGHT_CITIES = Object.keys(CITIES).filter(function (n) {
-    return n.indexOf("IIT Mandi") === -1 && n !== "Mandi Town";
-  }).sort();
+  var FRONT_CITIES = ["Chandigarh", "Mandi", "Delhi", "Mumbai", "Bengaluru", "Chennai", "Shimla"];
+  var FEATURED = [
+    "Chandigarh|Mandi",
+    "Chandigarh|Shimla",
+    "Chandigarh|Kullu",
+    "Delhi|Agra",
+    "Mumbai|Pune",
+    "Bengaluru|Chennai",
+    "Mandi Town|IIT Mandi North Campus",
+  ];
 
   function optionHtml(names, selected) {
     return names.map(function (n) {
@@ -162,8 +169,20 @@
     var fromSel = document.getElementById("fromSel");
     var toSel = document.getElementById("toSel");
     if (!fromSel || !toSel) return;
-    fromSel.innerHTML = optionHtml(FLIGHT_CITIES, "Chandigarh");
-    toSel.innerHTML = optionHtml(FLIGHT_CITIES, "Mandi");
+    fromSel.innerHTML = optionHtml(FRONT_CITIES, "Chandigarh");
+    toSel.innerHTML = optionHtml(FRONT_CITIES, "Mandi");
+  }
+
+  function ensureCity(sel, name) {
+    if (!sel || !name) return;
+    var i;
+    for (i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === name) {
+        sel.value = name;
+        return;
+      }
+    }
+    sel.appendChild(new Option(name, name, false, true));
   }
 
   function campusHtml(selected) {
@@ -179,16 +198,15 @@
 
   var map;
   var layer;
-  var activeChip = "all";
-  var query = "";
 
   function filtered() {
-    var q = query.trim().toLowerCase();
-    return SECTORS.filter(function (s) {
-      if (activeChip !== "all" && s.region !== activeChip) return false;
-      if (!q) return true;
-      return (s.from + " " + s.to).toLowerCase().indexOf(q) !== -1;
-    });
+    return FEATURED.map(function (key) {
+      var i;
+      for (i = 0; i < SECTORS.length; i++) {
+        if (SECTORS[i].from + "|" + SECTORS[i].to === key) return SECTORS[i];
+      }
+      return null;
+    }).filter(Boolean);
   }
 
   function cardHtml(s, i) {
@@ -220,8 +238,7 @@
       L.circleMarker(b, { radius: 4, color: color, fillColor: "#fff", fillOpacity: 1, weight: 2 }).addTo(layer);
     });
     if (bounds.length) {
-      var droneOnly = list.length && list.every(function (s) { return s.drone; });
-      map.fitBounds(bounds, { padding: [28, 28], maxZoom: droneOnly ? 13 : 7 });
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 6 });
     } else {
       map.setView([22.5, 79], 5);
     }
@@ -232,11 +249,9 @@
     var grid = document.getElementById("sector-grid");
     var meta = document.getElementById("sector-meta");
     if (grid) {
-      grid.innerHTML = list.map(cardHtml).join("") || '<p class="section-body">No hop matches that search.</p>';
+      grid.innerHTML = list.map(cardHtml).join("");
     }
-    if (meta) {
-      meta.textContent = list.length + " sectors";
-    }
+    if (meta) meta.textContent = "";
     paintMap(list);
   }
 
@@ -250,34 +265,20 @@
         modeSel.value = "drones";
         modeSel.dispatchEvent(new Event("change"));
       }
-      fromSel.value = s.from;
-      toSel.value = s.to;
+      ensureCity(fromSel, s.from);
+      ensureCity(toSel, s.to);
     } else {
       if (modeSel && modeSel.value === "drones") {
         modeSel.value = "air-taxi";
         modeSel.dispatchEvent(new Event("change"));
       }
-      fromSel.value = s.from;
-      toSel.value = s.to;
+      ensureCity(fromSel, s.from);
+      ensureCity(toSel, s.to);
     }
   }
 
   function mount() {
-    var region = document.getElementById("sector-region");
-    var q = document.getElementById("sector-q");
     var grid = document.getElementById("sector-grid");
-    if (region) {
-      region.addEventListener("change", function () {
-        activeChip = region.value || "all";
-        render();
-      });
-    }
-    if (q) {
-      q.addEventListener("input", function () {
-        query = q.value;
-        render();
-      });
-    }
     if (grid) {
       grid.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-i]");
