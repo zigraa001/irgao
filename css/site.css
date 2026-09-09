@@ -718,7 +718,7 @@
     }
     .bullet-list li {
       position: relative;
-      padding: 1.2rem 0 1.2rem 2rem;
+      padding: 1.2rem 0 1.2rem 2.8rem;
       border-top: 1px solid var(--ink-10);
       font-size: 1.6rem;
       color: var(--grey);
@@ -726,15 +726,15 @@
       letter-spacing: -0.032rem;
     }
     .bullet-list li:last-child { border-bottom: 1px solid var(--ink-10); }
+    /* Hairline dash, to match the 1px rules used elsewhere. */
     .bullet-list li::before {
       content: '';
       position: absolute;
       left: 0;
-      top: 2rem;
-      width: 0.6rem;
-      height: 0.6rem;
-      border-radius: 50%;
-      background: var(--blue);
+      top: 2.35rem;
+      width: 1.4rem;
+      height: 1px;
+      background: var(--ink-20);
     }
     .section-body .bullet-list { grid-column: 10 / 17; }
     .section-grid .bullet-list {
@@ -742,13 +742,15 @@
       align-self: end;
     }
     .feature-item .bullet-list li,
-    .route-card .bullet-list li { font-size: 1.4rem; padding: 0.8rem 0 0.8rem 2rem; }
+    .route-card .bullet-list li { font-size: 1.4rem; padding: 0.8rem 0 0.8rem 2.4rem; }
     .feature-item .bullet-list li:first-child,
     .route-card .bullet-list li:first-child { border-top: none; padding-top: 0; }
     .feature-item .bullet-list li:last-child,
     .route-card .bullet-list li:last-child { border-bottom: none; }
     .feature-item .bullet-list li::before,
-    .route-card .bullet-list li::before { top: 1.4rem; }
+    .route-card .bullet-list li::before { top: 1.8rem; width: 1.2rem; }
+    .feature-item .bullet-list li:first-child::before,
+    .route-card .bullet-list li:first-child::before { top: 1rem; }
 
     .contact-wrap {
       max-width: 1200px;
