@@ -197,7 +197,7 @@
       letter-spacing: -0.036rem;
       color: var(--cream);
       opacity: 0.92;
-      max-width: 40rem;
+      max-width: 52rem;
       text-shadow: 0 2px 16px rgba(0,0,0,0.5);
       animation: fadeUpSoft 1s cubic-bezier(.165,.84,.44,1) 0.28s both;
     }
@@ -862,4 +862,27 @@
       color: var(--grey);
     }
     .sector-card { appearance: none; display: block; }
+
+    /* Contact form: two columns on desktop, stack on phones.
+       These rules sit after .contact-form so they actually win. */
+    @media (max-width: 768px) {
+      .contact-wrap,
+      .contact-form {
+        grid-template-columns: 1fr;
+        gap: 2.4rem;
+      }
+      .contact-form .bk-field,
+      .contact-form .bk-field.full,
+      .contact-form .booking-submit {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+      .contact-form .bk-field input,
+      .contact-form .bk-field select,
+      .contact-form .bk-field textarea {
+        font-size: 1.6rem;
+        width: 100%;
+      }
+      .page-hero .hero-sub { max-width: none; }
+    }
 

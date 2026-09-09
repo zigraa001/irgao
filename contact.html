@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Write to IraGo — demos, operator partners, press." />
+  <meta name="description" content="Contact IraGo - Get in touch with our team for demo requests, partnerships, or general inquiries." />
   <link rel="icon" type="image/png" href="assets/images/irago-icon.png">
   <link rel="apple-touch-icon" href="assets/images/irago-icon.png">
-  <title>Contact — IraGo</title>
+  <title>Contact Us - IraGo Air Mobility</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/site.css?v=20260909e" />
+  <link rel="stylesheet" href="css/site.css?v=20260909f" />
 </head>
 <body>
 
@@ -41,8 +41,8 @@
       <div class="hero-overlay"></div>
     </div>
     <div class="hero-content">
-      <h1>Write to us</h1>
-      <p class="hero-sub">Demo, partner, press — send a note.</p>
+      <h1>We're here to help.</h1>
+      <p class="hero-sub">Whether you have an emergency dispatch request, want to become an operator partner, or just have a general inquiry.</p>
     </div>
   </section>
 
@@ -50,42 +50,41 @@
     <div class="features-inner">
       <div class="contact-wrap">
         <div>
-          <div class="feature-num">Reach us</div>
-          <h2 class="has-body">Where we sit</h2>
+          <div class="feature-num">Contact Us</div>
+          <h2 class="has-body">Get in touch</h2>
           <ul class="bullet-list">
-            <li>General: <a href="mailto:info@irago.in">info@irago.in</a></li>
-            <li>The MInT, NAC-2, IIT Madras</li>
-            <li>Chennai 600 036</li>
+            <li>General Support: <a href="mailto:info@irago.in">info@irago.in</a></li>
+            <li>Headquarters: The MInT, NAC-2, IIT Madras, Chennai - 600 036, India</li>
           </ul>
         </div>
         <form class="contact-form" id="contactForm" autocomplete="off">
           <div class="bk-field">
-            <label for="firstName">First name</label>
+            <label for="firstName">First Name</label>
             <input type="text" id="firstName" name="firstName" required autocomplete="off" />
           </div>
           <div class="bk-field">
-            <label for="lastName">Last name</label>
+            <label for="lastName">Last Name</label>
             <input type="text" id="lastName" name="lastName" required autocomplete="off" />
           </div>
           <div class="bk-field full">
-            <label for="email">Email</label>
+            <label for="email">Email Address</label>
             <input type="email" id="email" name="email" required autocomplete="off" />
           </div>
           <div class="bk-field full">
-            <label for="subject">Topic</label>
+            <label for="subject">Subject</label>
             <select id="subject" name="subject" required>
-              <option value="" selected disabled></option>
-              <option value="general">General</option>
-              <option value="operator">Fly with us</option>
-              <option value="emergency">Hospital / EMS</option>
-              <option value="press">Press</option>
+              <option value="" selected disabled>Select an option</option>
+              <option value="general">General Inquiry</option>
+              <option value="operator">Become an Operator</option>
+              <option value="emergency">Emergency Services Partner</option>
+              <option value="press">Press &amp; Media</option>
             </select>
           </div>
           <div class="bk-field full">
             <label for="message">Message</label>
             <textarea id="message" name="message" required></textarea>
           </div>
-          <button type="submit" class="booking-submit">Send</button>
+          <button type="submit" class="booking-submit">Send Message</button>
         </form>
       </div>
     </div>
@@ -95,8 +94,8 @@
     <div class="footer-inner">
       <div>
         <div class="footer-brand">IraGo</div>
-        <p class="footer-tagline">Air taxi and drone drop for India.</p>
-        <p class="footer-tagline">IraGo Solutions Pvt. Ltd. Licensed partners fly the aircraft.</p>
+        <p class="footer-tagline">IraGo Solutions Private Limited — AI-powered air mobility for Bharat.</p>
+        <p class="footer-tagline">Flights operated by DGCA-licensed partners.</p>
       </div>
       <div class="footer-col">
         <h4>Navigation</h4>
@@ -128,7 +127,7 @@
       e.preventDefault();
       var btn = this.querySelector('button[type="submit"]');
       var label = btn.textContent;
-      btn.textContent = 'Sent';
+      btn.textContent = 'Message sent';
       this.reset();
       setTimeout(function () { btn.textContent = label; }, 2500);
     });
