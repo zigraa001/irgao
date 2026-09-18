@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=5fddad38">
+  <link rel="stylesheet" href="/css/app.css?v=34816769">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -63,13 +63,13 @@
       <div id="login-success" class="auth-success" role="status"></div>
       <div class="auth-field">
         <label for="login-email">Email</label>
-        <input id="login-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()" onblur="validateLoginField('login-email')">
+        <input id="login-email" type="email" placeholder="" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()" onblur="validateLoginField('login-email')">
         <div class="auth-field-hint" id="login-email-hint"></div>
       </div>
       <div class="auth-field">
         <div class="auth-label-row"><label for="login-password">Password</label><button type="button" class="auth-forgot-link" id="login-forgot-link" onclick="showForgotCard()">Forgot password?</button></div>
         <div class="password-input-wrap">
-          <input id="login-password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" onblur="validateLoginField('login-password')">
+          <input id="login-password" type="password" placeholder="" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" onblur="validateLoginField('login-password')">
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password',this)" aria-label="Show password" tabindex="-1">
             <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -106,7 +106,7 @@
       <p class="auth-subtext">Book eVTOL air taxis across India in minutes.</p>
       <div class="auth-field">
         <label>Full Name</label>
-        <input id="register-passenger-name" type="text" placeholder="Priya Sharma" autocomplete="name">
+        <input id="register-passenger-name" type="text" placeholder="" autocomplete="name">
       </div>
       <div class="auth-field">
         <label>Gender <span class="auth-optional">(optional)</span></label>
@@ -120,11 +120,11 @@
       </div>
       <div class="auth-field">
         <label>Age <span class="auth-optional">(optional)</span></label>
-        <input id="register-passenger-age" type="number" min="1" max="120" placeholder="25" inputmode="numeric">
+        <input id="register-passenger-age" type="number" min="1" max="120" placeholder="" inputmode="numeric">
       </div>
       <div class="auth-field">
         <label>Email Address</label>
-        <input id="register-passenger-email" type="email" placeholder="you@example.com" autocomplete="email">
+        <input id="register-passenger-email" type="email" placeholder="" autocomplete="email">
       </div>
       <div class="auth-field">
         <label for="register-passenger-password">Password</label>
@@ -169,7 +169,7 @@
       </div>
       <div class="auth-field">
         <label>Verification code</label>
-        <input id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')doVerifySignup()">
+        <input id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')doVerifySignup()">
       </div>
       <button id="otp-submit" class="btn-auth-primary" onclick="doVerifySignup()">Verify &amp; Create Account</button>
       <div id="otp-error" class="auth-error" role="alert"></div>
@@ -188,7 +188,7 @@
       <div class="auth-field auth-email-otp-field">
         <label for="forgot-email">Email Address</label>
         <div class="auth-email-otp-row">
-          <input id="forgot-email" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
+          <input id="forgot-email" type="email" placeholder="" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
           <button id="forgot-submit" type="button" class="btn-send-otp" onclick="doForgotPassword()">Send OTP</button>
         </div>
       </div>
@@ -206,7 +206,7 @@
       </div>
       <div class="auth-field">
         <label>Verification code</label>
-        <input id="reset-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+        <input id="reset-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="" autocomplete="one-time-code">
       </div>
       <div class="auth-field">
         <label>New password</label>
@@ -233,7 +233,7 @@
           <div class="auth-email-otp-row">
             <div class="mobile-phone-input" style="flex:1">
               <span class="mobile-country-code">+91</span>
-              <input id="google-phone-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="9876543210" autocomplete="tel-national" onkeydown="if(event.key==='Enter')googlePhoneSendOtp()">
+              <input id="google-phone-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="" autocomplete="tel-national" onkeydown="if(event.key==='Enter')googlePhoneSendOtp()">
             </div>
             <button id="google-phone-send-btn" type="button" class="btn-send-otp" onclick="googlePhoneSendOtp()">Send OTP</button>
           </div>
@@ -247,7 +247,7 @@
         </div>
         <div class="auth-field">
           <label>Verification code</label>
-          <input id="google-phone-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')googlePhoneVerify()">
+          <input id="google-phone-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')googlePhoneVerify()">
         </div>
         <button id="google-phone-verify-btn" type="button" class="btn-auth-primary" onclick="googlePhoneVerify()">Verify &amp; Create Account</button>
         <p id="google-phone-resend-hint" class="otp-resend-hint"></p>
@@ -268,7 +268,7 @@
 <div id="booking-view" class="view">
   <!-- Nav -->
   <nav class="booking-nav">
-    <a href="/" class="booking-nav-logo">
+    <a href="/app.html" class="booking-nav-logo" onclick="return stayInAppHome(event)">
       <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
     </a>
 
@@ -683,8 +683,8 @@
         <div class="payment-summary-offers" id="payment-offers-recap"></div>
       </div>
       <div class="payment-fields">
-        <input type="text" id="payment-card" placeholder="Card number (demo)" value="4242 4242 4242 4242" autocomplete="off">
-        <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="passenger@upi" autocomplete="off">
+        <input type="text" id="payment-card" placeholder="Card number" value="" autocomplete="off">
+        <input type="text" id="payment-upi" placeholder="UPI ID (optional)" value="" autocomplete="off">
       </div>
       <p class="payment-note">Confirm your booking and we'll notify nearby pilots.</p>
       <div class="auth-error payment-error" id="payment-error" role="alert"></div>
@@ -799,7 +799,7 @@
 <div id="operator-view" class="view">
   <!-- Nav -->
   <nav class="booking-nav">
-    <a href="/" class="booking-nav-logo">
+    <a href="/app.html" class="booking-nav-logo" onclick="return stayInAppHome(event)">
       <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
     </a>
     <span class="op-role-badge">Pilot Console</span>
@@ -1000,7 +1000,7 @@
      ════════════════════════════════════════════ -->
 <div id="drone-operator-view" class="view">
   <nav class="booking-nav">
-    <a href="/" class="booking-nav-logo">
+    <a href="/app.html" class="booking-nav-logo" onclick="return stayInAppHome(event)">
       <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
     </a>
     <span class="op-role-badge">Drone Dispatch</span>
@@ -1092,7 +1092,7 @@
 <div id="admin-view" class="view">
   <!-- Nav (mirrors operator-view) -->
   <nav class="booking-nav">
-    <a href="/" class="booking-nav-logo">
+    <a href="/app.html" class="booking-nav-logo" onclick="return stayInAppHome(event)">
       <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
     </a>
     <span class="admin-role-badge">Admin Console</span>
@@ -1583,7 +1583,7 @@
      ═══════════════════════════════════════════ -->
 <div id="company-view" class="view">
   <nav class="booking-nav">
-    <a href="/" class="booking-nav-logo">
+    <a href="/app.html" class="booking-nav-logo" onclick="return stayInAppHome(event)">
       <img src="assets/images/irago-logo.png" alt="IraGo" onerror="this.style.display='none'">
     </a>
     <span class="company-role-badge">Partner Console</span>
@@ -1817,6 +1817,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=5fddad38"></script>
+<script src="/js/app.bundle.js?v=34816769"></script>
 </body>
 </html>

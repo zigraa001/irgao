@@ -929,7 +929,7 @@ async function restoreSession() {
     showView('login-view');
     showLoginCard();
     if (window.history.replaceState) {
-      window.history.replaceState({}, '', window.location.pathname);
+      stripAuthQueryFromUrl();
     }
     return;
   }

@@ -7415,3 +7415,366 @@ body.guest-drone-track .nav-profile {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
 }
+/* ═══════════════════════════════════════════
+   MOBILE PHONE RESPONSIVE (operator → auth → booking)
+   Target: ~360–430px; also harden ≤768px sheet layouts.
+   Cascades after earlier @media blocks; IDs/classes unchanged.
+   ═══════════════════════════════════════════ */
+
+/* Shared: keep chrome off the notch / home indicator */
+@media (max-width: 768px) {
+  .booking-nav {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    height: 56px;
+  }
+  .booking-nav-logo img { height: 32px; max-width: 96px; object-fit: contain; }
+
+  /* Passenger chrome: logo + avatar on row 1, all 5 service tabs on row 2.
+     Previously the tabs sat in the 56px bar and 2–3 were clipped off-screen. */
+  #booking-view .booking-nav {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    row-gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  #booking-view .booking-nav-logo {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  #booking-view .nav-profile {
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+  #booking-view .service-tabs {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: stretch;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #booking-view .service-tabs::-webkit-scrollbar { display: none; }
+  #booking-view .service-tab {
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 8px 4px;
+  }
+
+  /* Operator / admin / partner / drone-op still show Profile+Logout text —
+     booking already uses avatar dropdown. Hide text buttons on phone chrome. */
+  #operator-view .nav-text-btn,
+  #drone-operator-view .nav-text-btn,
+  #admin-view .nav-text-btn,
+  #company-view .nav-text-btn {
+    display: none;
+  }
+  #operator-view .nav-bell,
+  #drone-operator-view .nav-bell,
+  #admin-view .nav-bell {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Bottom sheets: leave map usable above; respect home indicator */
+  .booking-panel,
+  .op-panel {
+    max-height: min(62vh, calc(100% - 140px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Map fills the body when panel is absolute */
+  .booking-body > #map,
+  .op-map-wrap {
+    width: 100%;
+    min-height: 140px;
+  }
+
+  /* Operator section nav → compact horizontal tabs (big win on phone) */
+  .op-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .op-nav::-webkit-scrollbar { display: none; }
+  .op-nav .admin-nav-group-label { display: none; }
+  .op-nav-group-system {
+    display: contents;
+  }
+  .op-nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 44px;
+    padding: 8px 14px;
+    white-space: nowrap;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-subtle);
+  }
+  .op-nav-item.active {
+    border-color: var(--blue-light);
+    background: var(--blue-50);
+  }
+  .op-nav-group-system .op-nav-item {
+    color: var(--gray-500);
+  }
+
+  /* Touch targets */
+  .op-nav-item,
+  .op-empty-cta,
+  .op-btn,
+  .op-back,
+  .op-check-item,
+  .auth-role-btn,
+  .btn-auth-primary,
+  .auth-create-link,
+  .dispatch-actions .op-btn,
+  .nav-avatar {
+    min-height: 44px;
+  }
+  .op-check-item {
+    padding: 12px 0;
+    gap: 12px;
+  }
+  .op-check-item input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .op-btn,
+  .dispatch-actions .op-btn {
+    min-height: 48px;
+    padding: 14px 16px;
+  }
+  .op-actions {
+    flex-wrap: wrap;
+  }
+  .op-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .op-detail-card {
+    padding: 16px;
+  }
+  .op-trip-route {
+    font-size: 14px;
+    word-break: break-word;
+  }
+  .op-trip-meta {
+    flex-wrap: wrap;
+  }
+  .op-welcome {
+    font-size: 20px;
+  }
+  .op-map-badge {
+    max-width: calc(100% - 24px);
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .op-map-legend {
+    max-width: min(160px, 42vw);
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 6px 8px;
+  }
+
+  /* Dispatch offer: phone-friendly sheet */
+  .dispatch-overlay {
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    align-items: flex-end;
+  }
+  .dispatch-card {
+    max-width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-lg) var(--radius-lg);
+  }
+  .dispatch-head { padding: 18px 16px; }
+  .dispatch-body { padding: 16px; }
+  .dispatch-actions {
+    padding: 0 16px max(16px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  /* Auth */
+  .login-left {
+    padding: 28px 16px max(28px, env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: 100%;
+  }
+  .auth-card {
+    padding: 28px 20px 24px;
+    max-width: 100%;
+    width: 100%;
+    border-radius: var(--radius-xl);
+  }
+  .auth-logo img { height: 48px; }
+  .auth-role-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    border-radius: var(--radius-lg);
+    padding: 4px;
+  }
+  .auth-role-btn {
+    flex: none;
+    width: auto;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+  .auth-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .auth-actions .btn-auth-primary {
+    width: 100%;
+    min-height: 48px;
+    margin-left: 0;
+  }
+  #login-register-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .auth-create-link {
+    min-height: 44px;
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+  }
+  .auth-email-otp-row {
+    flex-wrap: wrap;
+  }
+  .auth-email-otp-row .btn-send-otp {
+    width: 100%;
+  }
+
+  /* Booking / tracking / confirm / payment */
+  .tracking-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: min(70vh, calc(100% - 120px));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tracking-header,
+  .tracking-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .tracking-eta-val { font-size: 24px; }
+  .confirm-overlay,
+  .payment-page {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .confirm-card {
+    max-width: 100%;
+    margin: 0;
+  }
+  .ride-card {
+    min-width: 0;
+  }
+  .ride-company-chip {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .location-inputs {
+    min-width: 0;
+  }
+  .panel-section {
+    padding: 16px;
+  }
+  .map-follow-pill {
+    top: max(12px, env(safe-area-inset-top));
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* Phones in the 360–430 band */
+@media (max-width: 480px) {
+  .booking-panel,
+  .op-panel {
+    max-height: min(68vh, calc(100% - 120px));
+  }
+  .booking-nav {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+  .service-tabs {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .op-nav-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .op-duty-card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .op-duty-status { font-size: 14px; }
+  .auth-card {
+    padding: 24px 16px 20px;
+    box-shadow: var(--shadow-md);
+  }
+  .auth-logo .logo-sub { letter-spacing: 2px; }
+  .auth-role-btn {
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+  .dispatch-actions {
+    grid-template-columns: 1fr;
+  }
+  .op-actions {
+    flex-direction: column;
+  }
+  .op-actions .op-btn {
+    width: 100%;
+  }
+  .booking-map-legend {
+    max-width: min(150px, 40vw);
+    font-size: 9px;
+  }
+  .panel-step-heading {
+    font-size: 15px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .op-nav-item {
+    padding: 8px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
+  .auth-role-btn {
+    flex: none;
+    font-size: 11px;
+  }
+  .nav-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+}

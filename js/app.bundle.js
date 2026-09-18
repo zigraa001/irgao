@@ -955,6 +955,45 @@ async function googlePhoneVerify() {
   }
 }
 
+// Stay on the product app after auth. Production `/` is the marketing site,
+// so never leave a ?register=1 / google_* URL (or a `/` pathname) in the bar.
+function appStayPath() {
+  var path = window.location.pathname || '/app.html';
+  if (path === '/' || path === '/index.html' || path === '/login' || path === '/login/' ||
+      path === '/login/passenger' || path === '/signup/passenger' || path === '/signup/passenger/') {
+    return '/app.html';
+  }
+  return path;
+}
+
+function stripAuthQueryFromUrl() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var keep = new URLSearchParams();
+    var track = (params.get('track') || params.get('k') || '').trim();
+    if (track) keep.set('track', track);
+    var mode = (params.get('mode') || '').trim();
+    if (mode) keep.set('mode', mode);
+    var qs = keep.toString();
+    var next = appStayPath() + (qs ? '?' + qs : '');
+    if (window.history.replaceState) window.history.replaceState({}, '', next);
+  } catch (e) { /* ignore */ }
+}
+
+function stayInAppHome(e) {
+  if (e) e.preventDefault();
+  stripAuthQueryFromUrl();
+  var user = AUTH.user;
+  if (user) {
+    if (user.mustResetPassword) showForcedResetOverlay(user);
+    else routeForRole(user);
+  } else {
+    showView('login-view');
+    showLoginCard();
+  }
+  return false;
+}
+
 function handleGoogleAuthOnLoad() {
   const params = new URLSearchParams(window.location.search);
 
@@ -969,7 +1008,7 @@ function handleGoogleAuthOnLoad() {
       server_error: 'Something went wrong. Please try again.',
     };
     showAuthError('login-error', msgs[err] || 'Google sign-in failed.');
-    window.history.replaceState({}, '', window.location.pathname);
+    stripAuthQueryFromUrl();
     return;
   }
 
@@ -985,14 +1024,13 @@ function handleGoogleAuthOnLoad() {
         const auth = JSON.parse(raw);
         // Clear the temp cookie.
         document.cookie = 'irago_google_auth=; Max-Age=0; Path=/';
-        window.history.replaceState({}, '', window.location.pathname);
         onAuthSuccess(auth.user, auth.token);
         return;
       }
     } catch (e) {
       console.error('Google auth cookie parse failed:', e);
     }
-    window.history.replaceState({}, '', window.location.pathname);
+    stripAuthQueryFromUrl();
     return;
   }
 
@@ -1000,7 +1038,7 @@ function handleGoogleAuthOnLoad() {
   if (params.has('google_pending')) {
     const state = params.get('state');
     if (state) {
-      window.history.replaceState({}, '', window.location.pathname);
+      stripAuthQueryFromUrl();
       showGooglePhoneCard(state);
       return;
     }
@@ -1358,6 +1396,8 @@ async function resendOtp(forcedPurpose) {
 function onAuthSuccess(user, token) {
   AUTH.save(user, token);
   syncProfileUI(user);
+  stripAuthQueryFromUrl();
+  document.title = 'IraGo — Book Your Air Taxi';
   // Admin-provisioned accounts must choose their own password on first login
   // before they can use the app.
   if (user && user.mustResetPassword) {
@@ -4958,7 +4998,7 @@ async function restoreSession() {
     showView('login-view');
     showLoginCard();
     if (window.history.replaceState) {
-      window.history.replaceState({}, '', window.location.pathname);
+      stripAuthQueryFromUrl();
     }
     return;
   }
