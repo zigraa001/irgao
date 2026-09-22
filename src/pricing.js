@@ -15,20 +15,43 @@
 // All amounts in INR (₹). base = flat boarding fee, perKm = per-kilometre.
 // 18% GST is applied on top by estimateFare / fareBreakdown.
 const SERVICE_PRICING = {
-  taxi:    { base: 500, perKm: 200 },
+  taxi:    { base: 0, perKm: 0, slab: "evtol" },
   golden:  { base: 5000, perKm: 600 },
   shuttle: { base: 500,  perKm: 80 },
 };
+
+// eVTOL distance charge, before GST. ₹15/km to 20 km, ₹12/km to 50 km,
+// ₹10/km to 78 km, and ₹10/km after that. Never below ₹300.
+const EVTOL_MIN_FARE = 300;
+const EVTOL_SLABS = [
+  { uptoKm: 20, perKm: 15 },
+  { uptoKm: 50, perKm: 12 },
+  { uptoKm: 78, perKm: 10 },
+  { uptoKm: Infinity, perKm: 10 },
+];
+
+function evtolDistanceCharge(distanceKm) {
+  const km = Math.max(0, Number(distanceKm) || 0);
+  let prev = 0;
+  let charge = 0;
+  for (const slab of EVTOL_SLABS) {
+    const span = Math.min(Math.max(0, km - prev), slab.uptoKm - prev);
+    charge += span * slab.perKm;
+    prev = slab.uptoKm;
+    if (km <= slab.uptoKm) break;
+  }
+  return Math.max(EVTOL_MIN_FARE, Math.round(charge));
+}
 
 // Cabin classes shown on the flight picker. The default SERVICE_PRICING row is
 // the entry tier; a chosen ride uses its own per-km rate so Lite, Comfort,
 // Premium, and Eco do not collapse to one fare.
 const RIDE_PRICING = {
   taxi: {
-    "IraGo Lite": { base: 500, perKm: 200 },
-    "IraGo Comfort": { base: 500, perKm: 280 },
-    "IraGo Premium": { base: 500, perKm: 450 },
-    "IraGo Eco": { base: 500, perKm: 150 },
+    "IraGo Lite": { base: 0, perKm: 0, slab: "evtol" },
+    "IraGo Comfort": { base: 0, perKm: 0, slab: "evtol" },
+    "IraGo Premium": { base: 0, perKm: 0, slab: "evtol" },
+    "IraGo Eco": { base: 0, perKm: 0, slab: "evtol" },
   },
   golden: {
     "Air Ambulance Basic": { base: 5000, perKm: 600 },
@@ -161,7 +184,9 @@ function estimateFare(service, distanceKm, opts = {}) {
     throw new Error(`Unknown service: ${service}`);
   }
   const km = Math.max(0, Number(distanceKm) || 0);
-  const base = pricing.base + pricing.perKm * km;
+  const base = pricing.slab === "evtol"
+    ? evtolDistanceCharge(km)
+    : pricing.base + pricing.perKm * km;
 
   const rates = opts._rates || { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
   const urgencyRate = rates.urgency[opts.bookingType] || 0;
@@ -197,6 +222,8 @@ function applyNewFlyerDiscount(fare, completedFlights) {
 module.exports = {
   SERVICE_PRICING,
   RIDE_PRICING,
+  EVTOL_MIN_FARE,
+  evtolDistanceCharge,
   pricingForRide,
   SERVICES,
   haversineKm,

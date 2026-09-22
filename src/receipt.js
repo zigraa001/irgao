@@ -29,7 +29,9 @@ function buildReceipt({ booking, fare, customerName }) {
     "",
     "Fare breakdown",
     `  Base fare:        ${money(fb.base)}`,
-    `  Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km): ${money(fb.kmCharge)}`,
+    fb.slab
+      ? `  Distance (₹15/km to 20, ₹12/km to 50, ₹10/km after, min ₹300): ${money(fb.kmCharge)}`
+      : `  Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km): ${money(fb.kmCharge)}`,
     fb.surge ? `  Surge:            ${money(fb.surge)}` : null,
     `  Subtotal:         ${money(fb.subtotal)}`,
     fb.taxes ? `  ${fb.taxLabel || "Taxes"}:       ${money(fb.taxes)}` : null,
@@ -60,7 +62,7 @@ function buildReceipt({ booking, fare, customerName }) {
       <h3 style="margin-bottom:6px;">Fare breakdown</h3>
       <table style="width:100%;border-collapse:collapse;">
         ${row("Base fare", money(fb.base))}
-        ${row(`Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km)`, money(fb.kmCharge))}
+        ${row(fb.slab ? "Distance (₹15/km to 20, ₹12/km to 50, ₹10/km after, min ₹300)" : `Per-km (${money(fb.perKm)}/km × ${fb.distanceKm} km)`, money(fb.kmCharge))}
         ${fb.surge ? row("Surge", money(fb.surge)) : ""}
         ${row("Subtotal", money(fb.subtotal))}
         ${fb.taxes ? row(fb.taxLabel || "Taxes", money(fb.taxes)) : ""}

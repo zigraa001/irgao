@@ -7164,6 +7164,23 @@ function selectRoute(from, to) {
 
 // ── Ride Data ──
 const GST_RATE_CLIENT = 0.18;
+const EVTOL_MIN_FARE = 300;
+
+function evtolDistanceCharge(distanceKm) {
+  const km = Math.max(0, Number(distanceKm) || 0);
+  const slabs = [[20, 15], [50, 12], [78, 10], [Infinity, 10]];
+  let prev = 0;
+  let charge = 0;
+  for (let i = 0; i < slabs.length; i++) {
+    const upto = slabs[i][0];
+    const rate = slabs[i][1];
+    const span = Math.min(Math.max(0, km - prev), upto - prev);
+    charge += span * rate;
+    prev = upto;
+    if (km <= upto) break;
+  }
+  return Math.max(EVTOL_MIN_FARE, Math.round(charge));
+}
 
 // eVTOL operating envelope: aircraft serve routes inside a 150 km radius.
 // Cruise ~250 km/h makes that about a 36-minute flight. Mirrored server-side
@@ -7338,7 +7355,7 @@ async function searchRides() {
   var discountRemaining = hasDiscount ? currentDiscount.remaining : 0;
 
   list.innerHTML = rides.map((r, i) => {
-    const subtotal = r.base + r.perKm * dist;
+    const subtotal = currentService === 'taxi' ? evtolDistanceCharge(dist) : r.base + r.perKm * dist;
     const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
     const discountedBase = hasDiscount ? subtotal * (1 - discountRate) : subtotal;
     const price = Math.round(discountedBase * (1 + GST_RATE_CLIENT) / 100) * 100;
