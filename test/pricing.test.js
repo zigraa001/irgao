@@ -10,6 +10,7 @@ const {
   estimateFare,
   pricingForRide,
   evtolDistanceCharge,
+  evtolCabinCharge,
 } = require("../src/pricing");
 
 test("estimateFare uses base + per-km per service with 18% GST", () => {
@@ -62,13 +63,17 @@ test("haversineKm is zero for identical points", () => {
   assert.equal(haversineKm(28.6, 77.2, 28.6, 77.2), 0);
 });
 
-test("every eVTOL cabin uses the same distance slabs", () => {
-  const km = 116;
+test("eVTOL cabins scale the slab fare from 1x up to 2x", () => {
+  const km = 50;
+  const bare = evtolDistanceCharge(km);
+  assert.equal(evtolCabinCharge(km, 1), bare);
+  assert.equal(evtolCabinCharge(km, 2), bare * 2);
   const fare = (name) =>
     estimateFare("taxi", km, { _servicePricing: pricingForRide("taxi", name) });
-  const expected = Math.round(evtolDistanceCharge(km) * 1.18 / 100) * 100;
-  assert.equal(fare("IraGo Eco"), expected);
-  assert.equal(fare("IraGo Lite"), expected);
-  assert.equal(fare("IraGo Comfort"), expected);
-  assert.equal(fare("IraGo Premium"), expected);
+  const eco = fare("IraGo Eco");
+  const lite = fare("IraGo Lite");
+  const comfort = fare("IraGo Comfort");
+  const premium = fare("IraGo Premium");
+  assert.ok(eco < lite && lite < comfort && comfort < premium);
+  assert.equal(premium, Math.round(bare * 2 * 1.18 / 100) * 100);
 });

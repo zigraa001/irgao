@@ -43,15 +43,20 @@ function evtolDistanceCharge(distanceKm) {
   return Math.max(EVTOL_MIN_FARE, Math.round(charge));
 }
 
+function evtolCabinCharge(distanceKm, factor) {
+  const scale = Number(factor) > 0 ? Number(factor) : 1;
+  return Math.round(evtolDistanceCharge(distanceKm) * scale);
+}
+
 // Cabin classes shown on the flight picker. The default SERVICE_PRICING row is
 // the entry tier; a chosen ride uses its own per-km rate so Lite, Comfort,
 // Premium, and Eco do not collapse to one fare.
 const RIDE_PRICING = {
   taxi: {
-    "IraGo Lite": { base: 0, perKm: 0, slab: "evtol" },
-    "IraGo Comfort": { base: 0, perKm: 0, slab: "evtol" },
-    "IraGo Premium": { base: 0, perKm: 0, slab: "evtol" },
-    "IraGo Eco": { base: 0, perKm: 0, slab: "evtol" },
+    "IraGo Eco": { base: 0, perKm: 0, slab: "evtol", factor: 1 },
+    "IraGo Lite": { base: 0, perKm: 0, slab: "evtol", factor: 4 / 3 },
+    "IraGo Comfort": { base: 0, perKm: 0, slab: "evtol", factor: 5 / 3 },
+    "IraGo Premium": { base: 0, perKm: 0, slab: "evtol", factor: 2 },
   },
   golden: {
     "Air Ambulance Basic": { base: 5000, perKm: 600 },
@@ -185,7 +190,7 @@ function estimateFare(service, distanceKm, opts = {}) {
   }
   const km = Math.max(0, Number(distanceKm) || 0);
   const base = pricing.slab === "evtol"
-    ? evtolDistanceCharge(km)
+    ? evtolCabinCharge(km, pricing.factor)
     : pricing.base + pricing.perKm * km;
 
   const rates = opts._rates || { urgency: URGENCY_SURCHARGE, weather: WEATHER_SURCHARGE, gst: GST_RATE };
@@ -224,6 +229,7 @@ module.exports = {
   RIDE_PRICING,
   EVTOL_MIN_FARE,
   evtolDistanceCharge,
+  evtolCabinCharge,
   pricingForRide,
   SERVICES,
   haversineKm,

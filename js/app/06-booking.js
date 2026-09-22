@@ -307,10 +307,10 @@ const EVTOL_MAX_FLIGHT_MIN = 36;
 const EVTOL_CRUISE_KMH = 250;
 const rideOptions = {
   taxi: [
-    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 500, perKm: 200, baseTime: 18, co2: 2.1 },
-    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', base: 500, perKm: 280, baseTime: 22, co2: 3.4 },
-    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', base: 500, perKm: 450, baseTime: 20, co2: 4.8 },
-    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', base: 500, perKm: 150, baseTime: 32, co2: 1.2 },
+    { name: 'IraGo Lite', desc: '2-seater eVTOL, solo or duo', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', factor: 4 / 3, baseTime: 18, co2: 2.1 },
+    { name: 'IraGo Comfort', desc: '4-seater, spacious cabin', icon: 'gold', badge: '', badgeCls: '', factor: 5 / 3, baseTime: 22, co2: 3.4 },
+    { name: 'IraGo Premium', desc: '6-seater luxury, lounge seats', icon: 'purple', badge: 'Premium', badgeCls: 'badge-premium', factor: 2, baseTime: 20, co2: 4.8 },
+    { name: 'IraGo Eco', desc: 'Shared ride, lowest cost', icon: 'green', badge: 'Cheapest', badgeCls: 'badge-cheapest', factor: 1, baseTime: 32, co2: 1.2 },
   ],
   golden: [
     { name: 'Air Ambulance Basic', desc: 'Stretcher + paramedic', icon: 'blue', badge: 'Fastest', badgeCls: 'badge-fastest', base: 5000, perKm: 600, baseTime: 12, co2: 5.2 },
@@ -472,7 +472,9 @@ async function searchRides() {
   var discountRemaining = hasDiscount ? currentDiscount.remaining : 0;
 
   list.innerHTML = rides.map((r, i) => {
-    const subtotal = currentService === 'taxi' ? evtolDistanceCharge(dist) : r.base + r.perKm * dist;
+    const subtotal = currentService === 'taxi'
+      ? Math.round(evtolDistanceCharge(dist) * (r.factor || 1))
+      : r.base + r.perKm * dist;
     const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
     const discountedBase = hasDiscount ? subtotal * (1 - discountRate) : subtotal;
     const price = Math.round(discountedBase * (1 + GST_RATE_CLIENT) / 100) * 100;
