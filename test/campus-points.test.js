@@ -1,6 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { computeDronePosition, etaRemainingMin, lookupCampusPoint } = require("../src/campus-points");
+const { computeDronePosition, etaRemainingMin, lookupCampusPoint, campusDeliveryFare } = require("../src/campus-points");
 
 const BASE = {
   pickupLat: 12.99,
@@ -34,6 +34,19 @@ test("returning flies from drop back to pad", () => {
   assert.ok(Math.abs(mid.lat - 12.985) < 1e-9);
   assert.ok(Math.abs(mid.lng - 80.235) < 1e-9);
   assert.equal(etaRemainingMin({ ...BASE, status: "returning", returnStartedUnix: now / 1000 }, null, now), 1);
+});
+
+test("campus drone delivery is ₹49 plus ₹7 per km, then GST", () => {
+  const from = lookupCampusPoint("Mandi Town");
+  const to = lookupCampusPoint("IIT Mandi North Campus");
+  const fare = campusDeliveryFare(from, to);
+  assert.equal(fare.base, 49);
+  assert.equal(fare.perKm, 7);
+  assert.equal(fare.kmCharge, Math.round(fare.distanceKm * 7));
+  assert.equal(fare.subtotal, 49 + fare.kmCharge);
+  assert.equal(fare.gst, Math.round(fare.subtotal * 0.18));
+  assert.equal(fare.total, fare.subtotal + fare.gst);
+  assert.ok(fare.distanceKm > 1);
 });
 
 test("IIT Mandi pads resolve for operator send", () => {

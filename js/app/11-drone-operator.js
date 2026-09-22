@@ -33,6 +33,7 @@ function fillDopSendPoints() {
   if (!fromSel || !toSel || typeof campusDropOptions !== 'function') return;
   fromSel.innerHTML = campusDropOptions('Mandi Town');
   toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
+  refreshCampusSendFare('dop-send-from', 'dop-send-to', 'dop-send-fare');
 }
 
 function initDopMap() {
@@ -94,6 +95,7 @@ function renderDopJobs() {
           '<div class="drone-booking-meta">' + escapeHtml(b.customerName || 'Passenger') +
             (b.parcelType ? ' · ' + escapeHtml(b.parcelType) : '') +
             (b.droneCallsign ? ' · ' + escapeHtml(b.droneCallsign) : '') +
+            (b.totalPrice != null ? ' · ₹' + Number(b.totalPrice).toLocaleString('en-IN') : '') +
           '</div>' +
         '</div>' +
         '<span class="drone-status ' + droneStatusClass(b.status) + '">' + escapeHtml(droneStatusLabel(b.status)) + '</span>' +

@@ -9,6 +9,7 @@ const {
   parseCampusRoute,
   computeDronePosition,
   etaRemainingMin,
+  campusDeliveryFare,
   STATUS_LABELS,
   DRONE_ANIM_SPEED,
 } = require("./campus-points");
@@ -373,8 +374,8 @@ async function createCampusDropForEmail(req) {
     throw err;
   }
 
-  const hours = Number(b.hours) || service.minHours;
-  const price = calcDronePrice(service, hours, true);
+  const price = campusDeliveryFare(from, to);
+  const hours = 1;
   const operatorId = await pickCampusOperatorId();
   const droneCallsign = String(b.droneCallsign || b.droneId || "IITM-D1").trim().slice(0, 64) || "IITM-D1";
   const batteryPct = Math.min(100, Math.max(0, Number(b.batteryPct) || 92));
@@ -395,8 +396,8 @@ async function createCampusDropForEmail(req) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 'dispatched', 'paid',
              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      passenger ? passenger.id : null, service.id, operatorId, price.hours,
-      price.servicePrice, price.operatorPrice, price.gst, price.total,
+      passenger ? passenger.id : null, service.id, operatorId, hours,
+      price.subtotal, 0, price.gst, price.total,
       b.scheduledDate || today, b.scheduledTime || null,
       location, from.lat, from.lng, b.notes || null,
       from.name, to.name, from.lat, from.lng, to.lat, to.lng, parcelType,
@@ -444,6 +445,28 @@ router.post("/quote", async (req, res) => {
   const service = await queryOne("SELECT * FROM drone_services WHERE id = ? AND active = 1", [serviceId]);
   if (!service) return res.status(404).json({ error: "Service not found" });
   const h = Number(hours) || service.minHours;
+  if (isCampusService(service)) {
+    const { from, to } = campusCoordsFromBody(req.body || {});
+    if (!from || !to || from.name === to.name) {
+      return res.status(400).json({ error: "Pick two different campus points." });
+    }
+    const fare = campusDeliveryFare(from, to);
+    return res.json({
+      service: { id: service.id, name: service.name, pricePerHour: service.pricePerHour, operatorPricePerHour: 0 },
+      hours: 1,
+      servicePrice: fare.subtotal,
+      operatorPrice: 0,
+      gst: fare.gst,
+      total: fare.total,
+      distanceKm: fare.distanceKm,
+      base: fare.base,
+      perKm: fare.perKm,
+      kmCharge: fare.kmCharge,
+      withOperator: false,
+      operatorRequired: false,
+      campus: true,
+    });
+  }
   const price = calcDronePrice(service, h, Boolean(withOperator));
   res.json({
     service: { id: service.id, name: service.name, pricePerHour: service.pricePerHour, operatorPricePerHour: service.operatorPricePerHour },

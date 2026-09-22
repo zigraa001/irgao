@@ -29,6 +29,45 @@ const CAMPUS_GROUPS = [
 
 const CAMPUS_DROPS = CAMPUS_GROUPS.reduce(function (acc, g) { return acc.concat(g.names); }, []);
 
+const DRONE_DELIVERY_BASE = 49;
+const DRONE_DELIVERY_PER_KM = 7;
+const DRONE_DELIVERY_GST = 0.18;
+
+function campusHopKm(a, b) {
+  const R = 6371;
+  const dLat = (b[0] - a[0]) * Math.PI / 180;
+  const dLng = (b[1] - a[1]) * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[0] * Math.PI / 180) * Math.cos(b[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function campusDeliveryQuote(fromName, toName) {
+  const from = CAMPUS_POINTS[fromName];
+  const to = CAMPUS_POINTS[toName];
+  if (!from || !to || fromName === toName) return null;
+  const km = Math.round(campusHopKm(from, to) * 10) / 10;
+  const kmCharge = Math.round(km * DRONE_DELIVERY_PER_KM);
+  const subtotal = DRONE_DELIVERY_BASE + kmCharge;
+  const gst = Math.round(subtotal * DRONE_DELIVERY_GST);
+  return { km: km, kmCharge: kmCharge, subtotal: subtotal, gst: gst, total: subtotal + gst };
+}
+
+function campusFareLine(fromName, toName) {
+  const q = campusDeliveryQuote(fromName, toName);
+  if (!q) return 'Pickup and destination must be different.';
+  return '₹' + q.total.toLocaleString('en-IN') +
+    ' · ₹49 base + ₹7 × ' + q.km + ' km, incl. GST';
+}
+
+function refreshCampusSendFare(fromId, toId, outId) {
+  const out = document.getElementById(outId);
+  if (!out) return;
+  const fromName = (document.getElementById(fromId) || {}).value;
+  const toName = (document.getElementById(toId) || {}).value;
+  out.textContent = campusFareLine(fromName, toName);
+}
+
 const CAMPUS_POINTS = {
   'Mandi Town': [31.7082, 76.9315],
   'IIT Mandi North Campus': [31.7759, 76.986],
@@ -224,11 +263,11 @@ function renderDroneBookingCard(s) {
   const locationFields = campus
     ? '<div class="drone-form-row">' +
         '<label>From</label>' +
-        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('Mandi Town') + '</select>' +
+        '<select id="drone-campus-from" class="pd-input" onchange="previewCampusRoute(); updateDroneQuote()">' + campusDropOptions('Mandi Town') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>To</label>' +
-        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute()">' + campusDropOptions('IIT Mandi North Campus') + '</select>' +
+        '<select id="drone-campus-to" class="pd-input" onchange="previewCampusRoute(); updateDroneQuote()">' + campusDropOptions('IIT Mandi North Campus') + '</select>' +
       '</div>' +
       '<div class="drone-form-row">' +
         '<label>Parcel</label>' +
@@ -315,15 +354,29 @@ async function updateDroneQuote() {
   const summary = document.getElementById('drone-quote-summary');
 
   try {
+    const fromEl = document.getElementById('drone-campus-from');
+    const toEl = document.getElementById('drone-campus-to');
     const res = await apiFetch('/api/drones/quote', {
       method: 'POST',
       headers: AUTH.headers(),
-      body: JSON.stringify({ serviceId: s.id, hours, withOperator: withOp }),
+      body: JSON.stringify({
+        serviceId: s.id,
+        hours,
+        withOperator: withOp,
+        pickupName: fromEl ? fromEl.value : null,
+        dropName: toEl ? toEl.value : null,
+      }),
     });
     const data = await res.json();
     if (!res.ok) { summary.textContent = 'Could not get quote'; return; }
 
-    let html = '<div class="drone-quote-line"><span>Service' + (isCampusDelivery(s) ? ' (campus delivery × ₹' : ' (' + data.hours + ' hrs × ₹') + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
+    let html = '';
+    if (data.campus) {
+      html += '<div class="drone-quote-line"><span>Base</span><span>₹' + Number(data.base).toLocaleString('en-IN') + '</span></div>';
+      html += '<div class="drone-quote-line"><span>Distance (₹' + Number(data.perKm) + '/km × ' + data.distanceKm + ' km)</span><span>₹' + Number(data.kmCharge).toLocaleString('en-IN') + '</span></div>';
+    } else {
+      html += '<div class="drone-quote-line"><span>Service (' + data.hours + ' hrs × ₹' + Number(s.pricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.servicePrice).toLocaleString('en-IN') + '</span></div>';
+    }
     if (data.withOperator || data.operatorRequired) {
       html += '<div class="drone-quote-line"><span>Operator (' + data.hours + ' hrs × ₹' + Number(s.operatorPricePerHour).toLocaleString('en-IN') + ')</span><span>₹' + Number(data.operatorPrice).toLocaleString('en-IN') + '</span></div>';
     }

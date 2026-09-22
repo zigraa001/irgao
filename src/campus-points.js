@@ -18,6 +18,40 @@ const CAMPUS_POINTS = {
 
 const CAMPUS_NAMES = Object.keys(CAMPUS_POINTS);
 
+// Campus drone delivery: ₹49 to launch, then ₹7 per kilometre. GST is added
+// on top, same as the other drone charges.
+const DRONE_DELIVERY_BASE = 49;
+const DRONE_DELIVERY_PER_KM = 7;
+const DRONE_DELIVERY_GST = 0.18;
+
+function haversineKm(aLat, aLng, bLat, bLng) {
+  const R = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) *
+      Math.cos((bLat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function campusDeliveryFare(from, to) {
+  const km = Math.round(haversineKm(from.lat, from.lng, to.lat, to.lng) * 10) / 10;
+  const kmCharge = Math.round(km * DRONE_DELIVERY_PER_KM);
+  const subtotal = DRONE_DELIVERY_BASE + kmCharge;
+  const gst = Math.round(subtotal * DRONE_DELIVERY_GST);
+  return {
+    distanceKm: km,
+    base: DRONE_DELIVERY_BASE,
+    perKm: DRONE_DELIVERY_PER_KM,
+    kmCharge,
+    subtotal,
+    gst,
+    total: subtotal + gst,
+  };
+}
+
 function normalizeCampusName(name) {
   return String(name || "")
     .replace(/,?\s*IIT Madras Campus/i, "")
@@ -197,6 +231,9 @@ function etaRemainingMin(booking, pos, now = Date.now()) {
 module.exports = {
   CAMPUS_POINTS,
   CAMPUS_NAMES,
+  DRONE_DELIVERY_BASE,
+  DRONE_DELIVERY_PER_KM,
+  campusDeliveryFare,
   lookupCampusPoint,
   parseCampusRoute,
   computeDronePosition,

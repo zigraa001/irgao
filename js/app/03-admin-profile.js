@@ -2410,6 +2410,9 @@ function fillAdminDroneSendPoints() {
   if (fromSel.options.length) return;
   fromSel.innerHTML = campusDropOptions('Mandi Town');
   toSel.innerHTML = campusDropOptions('IIT Mandi North Campus');
+  if (typeof refreshCampusSendFare === 'function') {
+    refreshCampusSendFare('admin-drone-send-from', 'admin-drone-send-to', 'admin-drone-send-fare');
+  }
 }
 
 async function submitAdminDroneSend() {
