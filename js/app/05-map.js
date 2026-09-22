@@ -6,11 +6,7 @@ function initMap() {
   if (map) return;
   map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 12);
   L.control.zoom({ position: 'topright' }).addTo(map);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 18
-  }).addTo(map);
+  IraGoBasemap.add(map, { maxZoom: 20 });
 
   // Click to set locations
   map.on('click', function(e) {
@@ -381,10 +377,7 @@ async function initAdminLiveFlights() {
   const el = document.getElementById('admin-live-map');
   if (el && !adminLiveMap) {
     adminLiveMap = L.map('admin-live-map', { zoomControl: true }).setView([22.5, 79.0], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 18,
-    }).addTo(adminLiveMap);
+    IraGoBasemap.add(adminLiveMap, { maxZoom: 20 });
     attachAdminMapZoomProfiles();
   }
   applyAdminLiveKindUI();

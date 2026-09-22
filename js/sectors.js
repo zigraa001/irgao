@@ -300,9 +300,7 @@
         keyboard: false,
         touchZoom: false,
       }).setView([22.5, 79], 5);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 12,
-      }).addTo(map);
+      if (window.IraGoBasemap) IraGoBasemap.add(map, { maxZoom: 12 });
       setTimeout(function () { map.invalidateSize(); }, 200);
     }
     render();

@@ -19,6 +19,7 @@ const { requireAuth, USER_NOT_DELETED } = require("./auth");
 const { requireTailscale } = require("./tailscale");
 const { buildProfileStats } = require("./profile-stats");
 const { fetchWeather } = require("./weather");
+const { mapsClientConfig } = require("./maps-config");
 
 const router = express.Router();
 
@@ -82,6 +83,12 @@ router.get("/health", async (req, res) => {
   } catch (err) {
     res.status(503).json({ status: "error", db: "disconnected", message: err.message });
   }
+});
+
+// Background map: Google when GOOGLE_MAPS_API_KEY is set, otherwise OSM.
+router.get("/config/maps", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json(mapsClientConfig());
 });
 
 // Auth: signup + login.

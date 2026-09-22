@@ -664,9 +664,7 @@ async function initOpSelfMap() {
   if (!opSelfMap) {
     opSelfMap = L.map('op-combined-map', { zoomControl: true, attributionControl: false })
       .setView([22.5, 79.0], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
-    }).addTo(opSelfMap);
+    IraGoBasemap.add(opSelfMap, { maxZoom: 20 });
     bindMapZoneLoader(opSelfMap, operatorZoneLayers, zoneOpts);
     opSelfMap.whenReady(function () {
       scheduleMapZoneRefresh(opSelfMap, operatorZoneLayers, zoneOpts, 80);

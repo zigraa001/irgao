@@ -45,10 +45,7 @@ function initDopMap() {
     : [31.7759, 76.986];
   dopMap = L.map('dop-map', { zoomControl: false }).setView(start, 14);
   L.control.zoom({ position: 'topright' }).addTo(dopMap);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19,
-  }).addTo(dopMap);
+  IraGoBasemap.add(dopMap, { maxZoom: 20 });
   dopLayer = L.layerGroup().addTo(dopMap);
 }
 

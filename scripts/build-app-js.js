@@ -44,9 +44,11 @@ fs.writeFileSync(OUT, bundle);
 const crypto = require("crypto");
 const cssPath = path.join(__dirname, "..", "css", "app.css");
 const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf8") : "";
+const basemapPath = path.join(__dirname, "..", "js", "basemap.js");
+const basemap = fs.existsSync(basemapPath) ? fs.readFileSync(basemapPath, "utf8") : "";
 const version = crypto
   .createHash("sha1")
-  .update(bundle + css)
+  .update(bundle + css + basemap)
   .digest("hex")
   .slice(0, 8);
 
@@ -61,6 +63,10 @@ html = html.replace(
 html = html.replace(
   /src="\/js\/app\.bundle\.js(?:\?v=[^"]*)?"/,
   `src="/js/app.bundle.js?v=${version}"`
+);
+html = html.replace(
+  /src="\/js\/basemap\.js(?:\?v=[^"]*)?"/,
+  `src="/js/basemap.js?v=${version}"`
 );
 if (html !== before) fs.writeFileSync(appHtmlPath, html);
 
