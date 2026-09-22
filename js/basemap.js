@@ -77,10 +77,15 @@
     }).addTo(map);
   }
 
+  function hideLeafletLogo(map) {
+    if (map.attributionControl) map.attributionControl.setPrefix(false);
+  }
+
   function add(map, options) {
     options = options || {};
     var maxZoom = options.maxZoom || 20;
     if (!map || !root.L || map._iragoBasemap) return;
+    hideLeafletLogo(map);
     map._iragoBasemap = "pending";
     prepare().then(function (mode) {
       try {

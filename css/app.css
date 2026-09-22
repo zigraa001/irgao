@@ -1219,6 +1219,11 @@ textarea:focus-visible, a:focus-visible {
   min-width: 0;
   background: var(--gray-100);
 }
+.leaflet-attribution-flag,
+.leaflet-control-attribution a[href*="leafletjs.com"],
+.leaflet-control-attribution a[title*="JavaScript library for interactive maps"] {
+  display: none !important;
+}
 
 /* Left Panel */
 .booking-panel {

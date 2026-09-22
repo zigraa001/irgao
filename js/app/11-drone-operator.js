@@ -43,7 +43,7 @@ function initDopMap() {
   const start = (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus'])
     ? CAMPUS_POINTS['IIT Mandi North Campus']
     : [31.78129, 76.99751];
-  dopMap = L.map('dop-map', { zoomControl: false }).setView(start, 14);
+  dopMap = L.map('dop-map', { zoomControl: false, attributionControl: false }).setView(start, 14);
   L.control.zoom({ position: 'topright' }).addTo(dopMap);
   IraGoBasemap.add(dopMap, { maxZoom: 20 });
   dopLayer = L.layerGroup().addTo(dopMap);

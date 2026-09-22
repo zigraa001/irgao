@@ -874,6 +874,10 @@
       pointer-events: none;
       touch-action: pan-y;
     }
+    .leaflet-attribution-flag,
+    .leaflet-control-attribution a[href*="leafletjs.com"] {
+      display: none !important;
+    }
     .sector-meta {
       max-width: 1200px;
       margin: 0 auto 2.4rem;

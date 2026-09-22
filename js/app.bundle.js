@@ -5142,7 +5142,7 @@ window.closeProfileModal = closeProfileModal;
 // ── Map Init ──
 function initMap() {
   if (map) return;
-  map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 12);
+  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([28.6139, 77.2090], 12);
   L.control.zoom({ position: 'topright' }).addTo(map);
   IraGoBasemap.add(map, { maxZoom: 20 });
 
@@ -5514,7 +5514,7 @@ function renderZoneAltitudeStack(zones, hostId) {
 async function initAdminLiveFlights() {
   const el = document.getElementById('admin-live-map');
   if (el && !adminLiveMap) {
-    adminLiveMap = L.map('admin-live-map', { zoomControl: true }).setView([22.5, 79.0], 5);
+    adminLiveMap = L.map('admin-live-map', { zoomControl: true, attributionControl: false }).setView([22.5, 79.0], 5);
     IraGoBasemap.add(adminLiveMap, { maxZoom: 20 });
     attachAdminMapZoomProfiles();
   }
@@ -11608,7 +11608,7 @@ function initDopMap() {
   const start = (typeof CAMPUS_POINTS !== 'undefined' && CAMPUS_POINTS['IIT Mandi North Campus'])
     ? CAMPUS_POINTS['IIT Mandi North Campus']
     : [31.78129, 76.99751];
-  dopMap = L.map('dop-map', { zoomControl: false }).setView(start, 14);
+  dopMap = L.map('dop-map', { zoomControl: false, attributionControl: false }).setView(start, 14);
   L.control.zoom({ position: 'topright' }).addTo(dopMap);
   IraGoBasemap.add(dopMap, { maxZoom: 20 });
   dopLayer = L.layerGroup().addTo(dopMap);
