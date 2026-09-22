@@ -20,6 +20,34 @@ const SERVICE_PRICING = {
   shuttle: { base: 500,  perKm: 80 },
 };
 
+// Cabin classes shown on the flight picker. The default SERVICE_PRICING row is
+// the entry tier; a chosen ride uses its own per-km rate so Lite, Comfort,
+// Premium, and Eco do not collapse to one fare.
+const RIDE_PRICING = {
+  taxi: {
+    "IraGo Lite": { base: 500, perKm: 200 },
+    "IraGo Comfort": { base: 500, perKm: 280 },
+    "IraGo Premium": { base: 500, perKm: 450 },
+    "IraGo Eco": { base: 500, perKm: 150 },
+  },
+  golden: {
+    "Air Ambulance Basic": { base: 5000, perKm: 600 },
+    "Air Ambulance ICU": { base: 5000, perKm: 1100 },
+    "Neonatal Transport": { base: 5000, perKm: 1200 },
+  },
+  shuttle: {
+    "Shuttle Standard": { base: 500, perKm: 80 },
+    "Shuttle Business": { base: 500, perKm: 130 },
+    "Shuttle Express": { base: 500, perKm: 180 },
+  },
+};
+
+function pricingForRide(service, rideName) {
+  const tiers = RIDE_PRICING[service];
+  if (!tiers || typeof rideName !== "string") return null;
+  return tiers[rideName.trim()] || null;
+}
+
 const SERVICES = Object.keys(SERVICE_PRICING);
 
 // Great-circle distance between two lat/lng points, in kilometres. Lives here
@@ -53,11 +81,6 @@ function parseCoord(v, kind) {
 }
 
 const GST_RATE = 0.18;
-
-// Hard ceiling on the total flight cost charged to a customer (INR, GST
-// inclusive). No single flight may cost more than this; the terminal fare
-// computations (estimateFare, fareBreakdown) clamp their result to it.
-const MAX_FLIGHT_COST = 4380;
 
 const URGENCY_SURCHARGE = {
   medical_emergency: 0.30,
@@ -147,7 +170,7 @@ function estimateFare(service, distanceKm, opts = {}) {
 
   const gstRate = typeof rates.gst === "number" ? rates.gst : GST_RATE;
   const withGst = subtotal * (1 + gstRate);
-  return Math.min(MAX_FLIGHT_COST, Math.round(withGst / 100) * 100);
+  return Math.round(withGst / 100) * 100;
 }
 
 async function estimateFareWithConfig(service, distanceKm, opts = {}) {
@@ -173,6 +196,8 @@ function applyNewFlyerDiscount(fare, completedFlights) {
 
 module.exports = {
   SERVICE_PRICING,
+  RIDE_PRICING,
+  pricingForRide,
   SERVICES,
   haversineKm,
   estimateFare,
@@ -181,7 +206,6 @@ module.exports = {
   applyNewFlyerDiscount,
   NEW_FLYER_DISCOUNT,
   NEW_FLYER_MAX_FLIGHTS,
-  MAX_FLIGHT_COST,
   URGENCY_SURCHARGE,
   WEATHER_SURCHARGE,
   loadPricingConfig,

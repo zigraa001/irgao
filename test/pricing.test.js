@@ -8,6 +8,7 @@ const {
   SERVICES,
   haversineKm,
   estimateFare,
+  pricingForRide,
 } = require("../src/pricing");
 
 test("estimateFare uses base + per-km per service with 18% GST", () => {
@@ -46,4 +47,16 @@ test("haversineKm computes a sane distance (CP -> IGI ~ 15-20km)", () => {
 
 test("haversineKm is zero for identical points", () => {
   assert.equal(haversineKm(28.6, 77.2, 28.6, 77.2), 0);
+});
+
+test("taxi classes keep distinct fares on a long trip", () => {
+  const km = 116;
+  const fare = (name) =>
+    estimateFare("taxi", km, { _servicePricing: pricingForRide("taxi", name) });
+  const eco = fare("IraGo Eco");
+  const lite = fare("IraGo Lite");
+  const comfort = fare("IraGo Comfort");
+  const premium = fare("IraGo Premium");
+  assert.ok(eco < lite && lite < comfort && comfort < premium);
+  assert.ok(premium > 4380, "class fares are not flattened to one ceiling");
 });

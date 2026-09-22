@@ -16,6 +16,7 @@ const {
   loadPricingConfig,
   getSurchargeRates,
   loadCompanyPricing,
+  pricingForRide,
 } = require("./pricing");
 const { estimateCarbonSavedKg, carbonComparison, CREDITS_PER_KM } = require("./carbon");
 const { startDispatch, stopDispatch, setOperatorDuty, listAvailableOperatorsNear } = require("./dispatch");
@@ -99,7 +100,8 @@ async function fareBaseForUser(booking, userId, surchargeOpts = {}) {
   // Resolve company pricing: use booking.companyId to load per-company rate card
   const companyPricing = await loadCompanyPricing(booking.companyId, booking.service);
   const optsWithRates = { ...surchargeOpts, _rates: rates };
-  if (companyPricing) optsWithRates._servicePricing = companyPricing;
+  const ridePricing = pricingForRide(booking.service, booking.rideName) || companyPricing;
+  if (ridePricing) optsWithRates._servicePricing = ridePricing;
   const baseFare = estimateFare(booking.service, booking.distanceKm, optsWithRates);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
   const fb = fareBreakdown(booking.service, booking.distanceKm, discountInfo, 0, null, optsWithRates);
@@ -154,11 +156,10 @@ async function buildPaymentQuote(booking, userId, opts) {
 // priced at just the base fare — reject it.
 const MIN_TRIP_KM = 0.1;
 
-// eVTOL operating envelope: aircraft serve routes up to 500 km and roughly a
-// 2-hour flight. Cruise ~250 km/h (500 km in 2 h) turns the great-circle
-// distance into an estimated flight time. Mirrors js/app/06-booking.js.
-const EVTOL_MAX_RANGE_KM = 500;
-const EVTOL_MAX_FLIGHT_MIN = 120;
+// eVTOL operating envelope: aircraft serve routes inside a 150 km radius.
+// Cruise ~250 km/h makes that about a 36-minute flight. Mirrors js/app/06-booking.js.
+const EVTOL_MAX_RANGE_KM = 150;
+const EVTOL_MAX_FLIGHT_MIN = 36;
 const EVTOL_CRUISE_KMH = 250;
 
 // POST /api/bookings — create a booking for the logged-in customer.
@@ -174,6 +175,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
   const destLat = parseCoord(b.destLat, "lat");
   const destLng = parseCoord(b.destLng, "lng");
   const service = typeof b.service === "string" ? b.service : "";
+  const rideName = typeof b.rideName === "string" ? b.rideName.trim() : "";
 
   // Guard: a booking cannot be created unless pickup, destination, and service
   // are all set (mirrors the client-side bookingDraftReady() gate).
@@ -192,6 +194,9 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
   if (!SERVICES.includes(service)) {
     return res.status(400).json({ error: "A valid service must be selected" });
   }
+  if (rideName && !pricingForRide(service, rideName)) {
+    return res.status(400).json({ error: "Unknown flight class" });
+  }
 
   const distanceKm =
     Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
@@ -203,9 +208,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
   const estFlightMin = Math.round((distanceKm / EVTOL_CRUISE_KMH) * 60);
   if (distanceKm > EVTOL_MAX_RANGE_KM || estFlightMin > EVTOL_MAX_FLIGHT_MIN) {
     return res.status(400).json({
-      error: `Route is out of range: eVTOLs fly up to ${EVTOL_MAX_RANGE_KM} km and ${Math.round(
-        EVTOL_MAX_FLIGHT_MIN / 60,
-      )} hours (this route is ~${distanceKm} km).`,
+      error: `Route is out of range: eVTOLs fly within a ${EVTOL_MAX_RANGE_KM} km radius (this route is ~${distanceKm} km).`,
     });
   }
 
@@ -268,18 +271,20 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
 
   // Company pricing: territory-based rate card override
   const companyPricing = await loadCompanyPricing(bookingCompanyId, service);
-  if (companyPricing) surchargeOpts._servicePricing = companyPricing;
+  const ridePricing = pricingForRide(service, rideName) || companyPricing;
+  if (ridePricing) surchargeOpts._servicePricing = ridePricing;
 
   const baseFare = estimateFare(service, distanceKm, surchargeOpts);
   const discountInfo = applyNewFlyerDiscount(baseFare, completedFlights);
-  let fareEstimate = discountInfo.fare;
+  const quotedFare = fareBreakdown(service, distanceKm, discountInfo, 0, null, surchargeOpts);
+  const fareEstimate = quotedFare.total;
 
   const result = await query(
     `INSERT INTO bookings
        (customerId, pickupName, pickupLat, pickupLng, destName, destLat, destLng,
         service, distanceKm, fareEstimate, carbonSavedKg, paymentStatus, status,
-        companyId, officeId, bookingType, weatherRisk)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+        companyId, officeId, bookingType, weatherRisk, rideName)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`,
     [
       req.user.id,
       pickupName,
@@ -297,6 +302,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
       bookingOfficeId,
       bookingType,
       weatherRisk,
+      rideName || null,
     ]
   );
 
@@ -310,7 +316,7 @@ router.post("/", requireAuth, requireRole("customer"), rateLimit("bookings.creat
 
   res.status(201).json({
     booking,
-    fare: fareBreakdown(service, distanceKm, discountInfo, 0, null, surchargeOpts),
+    fare: quotedFare,
     discount: discountInfo,
     weather,
     carbonCredits: { balance: creditBalance, willEarn: Math.round(creditsRate * distanceKm) },
@@ -446,6 +452,14 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
   if (!SERVICES.includes(service)) {
     return res.status(400).json({ error: "A valid service must be selected" });
   }
+  const distanceKm =
+    Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
+  const estFlightMin = Math.round((distanceKm / EVTOL_CRUISE_KMH) * 60);
+  if (distanceKm > EVTOL_MAX_RANGE_KM || estFlightMin > EVTOL_MAX_FLIGHT_MIN) {
+    return res.status(400).json({
+      error: `Route is out of range: eVTOLs fly within a ${EVTOL_MAX_RANGE_KM} km radius (this route is ~${distanceKm} km).`,
+    });
+  }
   const feasibility = await checkRouteFeasibility({
     pickupLat,
     pickupLng,
@@ -454,8 +468,6 @@ router.post("/feasibility", requireAuth, requireRole("customer"), async (req, re
     service,
   });
   const bookingType = typeof b.bookingType === "string" ? b.bookingType : null;
-  const distanceKm =
-    Math.round(haversineKm(pickupLat, pickupLng, destLat, destLng) * 10) / 10;
   const [completedRow, userRow, weather] = await Promise.all([
     queryOne("SELECT COUNT(*) AS n FROM bookings WHERE customerId = ? AND status = 'completed'", [req.user.id]),
     queryOne("SELECT carbonCredits FROM users WHERE id = ?", [req.user.id]),

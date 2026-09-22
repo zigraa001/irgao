@@ -282,17 +282,11 @@ function selectRoute(from, to) {
 // ── Ride Data ──
 const GST_RATE_CLIENT = 0.18;
 
-// Hard ceiling on the total flight cost shown to a customer (INR, GST
-// inclusive). Mirrors MAX_FLIGHT_COST in src/pricing.js — the server clamps
-// the charged fare to the same value, so displayed prices never exceed it.
-const MAX_FLIGHT_COST_CLIENT = 4380;
-
-// eVTOL operating envelope: aircraft serve routes up to 500 km and roughly a
-// 2-hour flight. Cruise ~250 km/h (500 km in 2 h) is used to estimate the
-// straight-line flight time from the route distance so the range and time
-// limits stay consistent. Mirrored server-side in src/booking-routes.js.
-const EVTOL_MAX_RANGE_KM = 500;
-const EVTOL_MAX_FLIGHT_MIN = 120;
+// eVTOL operating envelope: aircraft serve routes inside a 150 km radius.
+// Cruise ~250 km/h makes that about a 36-minute flight. Mirrored server-side
+// in src/booking-routes.js.
+const EVTOL_MAX_RANGE_KM = 150;
+const EVTOL_MAX_FLIGHT_MIN = 36;
 const EVTOL_CRUISE_KMH = 250;
 const rideOptions = {
   taxi: [
@@ -324,7 +318,7 @@ function calcDistance() {
 
 // Distance + estimated flight time for the currently selected route, plus
 // whether it is bookable: source != destination AND within the eVTOL envelope
-// (500 km / ~2 h). Returns null until both endpoints are set. Single source of
+// (150 km radius). Returns null until both endpoints are set. Single source of
 // truth used by searchRides() and by the landing-point scan guard.
 function currentRouteEnvelope() {
   if (!pickupCoord || !destCoord) return null;
@@ -377,7 +371,7 @@ async function searchRides() {
     if (di2) di2.focus();
     return;
   }
-  // eVTOL operating envelope: within range (500 km) and roughly a 2-hour flight.
+  // eVTOL operating envelope: within a 150 km radius.
   if (envelope && !envelope.withinRange) {
     showOutOfRangeWarning(envelope.km, envelope.min);
     return;
@@ -462,8 +456,9 @@ async function searchRides() {
 
   list.innerHTML = rides.map((r, i) => {
     const subtotal = r.base + r.perKm * dist;
-    const fullPrice = Math.min(MAX_FLIGHT_COST_CLIENT, Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100);
-    const price = hasDiscount ? Math.min(MAX_FLIGHT_COST_CLIENT, Math.round(fullPrice * (1 - discountRate) / 100) * 100) : fullPrice;
+    const fullPrice = Math.round(subtotal * (1 + GST_RATE_CLIENT) / 100) * 100;
+    const discountedBase = hasDiscount ? subtotal * (1 - discountRate) : subtotal;
+    const price = Math.round(discountedBase * (1 + GST_RATE_CLIENT) / 100) * 100;
     const timeFactor = Math.max(0.7, Math.max(0.5, dist / 25) * 0.8);
     const time = Math.round(r.baseTime * timeFactor);
     const co2 = (r.co2 * Math.max(0.5, dist / 25)).toFixed(1);
@@ -575,7 +570,6 @@ async function searchRides() {
 // clear, unmissable message (revealed rides panel + toast) and keep the
 // location inputs visible so the customer can pick a closer destination.
 function showOutOfRangeWarning(km, min) {
-  var maxHours = Math.round(EVTOL_MAX_FLIGHT_MIN / 60);
   var list = document.getElementById('rides-list');
   var area = document.getElementById('rides-area');
   var title = document.getElementById('rides-title');
@@ -590,7 +584,7 @@ function showOutOfRangeWarning(km, min) {
           '<div>' +
             '<div class="feas-title">Route out of range</div>' +
             '<div class="feas-sub">IraGo eVTOL flights are available only within a ' + EVTOL_MAX_RANGE_KM +
-              ' km radius (about a ' + maxHours + '-hour flight). This route is about ' + Math.round(km) +
+              ' km radius. This route is about ' + Math.round(km) +
               ' km (~' + min + ' min).</div>' +
           '</div>' +
         '</div>' +
@@ -692,6 +686,7 @@ async function bookRide() {
         destLat: draft.dest.lat,
         destLng: draft.dest.lng,
         service: draft.service,
+        rideName: selectedRide.name,
         bookingType: bookingType,
       }),
     });

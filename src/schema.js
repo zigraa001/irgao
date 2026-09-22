@@ -346,6 +346,7 @@ async function initSchema() {
   await ensureColumn("bookings", "rideOtp", "rideOtp VARCHAR(8) NULL");
   await ensureColumn("bookings", "rideOtpVerified", "rideOtpVerified TINYINT(1) NOT NULL DEFAULT 0");
   await ensureColumn("bookings", "estimatedPickupMin", "estimatedPickupMin INT NULL");
+  await ensureColumn("bookings", "rideName", "rideName VARCHAR(64) NULL");
 
   // Carbon credits: balance on users, per-booking earn/redeem on bookings.
   await ensureColumn("users", "carbonCredits", "carbonCredits INT NOT NULL DEFAULT 0");
