@@ -58,8 +58,13 @@ test("IIT Mandi pads resolve for operator send", () => {
   assert.equal(north.lat, 31.78129);
   assert.equal(south.lat, 31.77314);
   assert.ok(lookupCampusPoint("Pine Mess"));
+  assert.ok(lookupCampusPoint("Alder Mess"));
+  assert.ok(lookupCampusPoint("North Campus Library"));
+  assert.ok(lookupCampusPoint("B28 Hostel"));
+  assert.ok(lookupCampusPoint("Faculty Quarters"));
+  assert.ok(lookupCampusPoint("Sports Complex"));
   assert.ok(lookupCampusPoint("Parashar Hostel (B6)"));
   assert.ok(lookupCampusPoint("Cedar Mess"));
   const mandi = Object.values(require("../src/campus-points").CAMPUS_POINTS).filter((c) => c[0] > 31 && c[0] < 32);
-  assert.ok(mandi.length >= 26);
+  assert.ok(mandi.length >= 60);
 });
