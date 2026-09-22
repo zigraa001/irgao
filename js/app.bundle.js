@@ -889,98 +889,37 @@ function showGooglePhoneCard(state) {
   hideAllAuthCards();
   const card = document.getElementById('google-phone-card');
   if (card) card.style.display = 'block';
-  document.getElementById('google-phone-input').value = '';
-  document.getElementById('google-phone-otp-section').style.display = 'none';
-  document.getElementById('google-phone-input-section').style.display = '';
+  const input = document.getElementById('google-phone-input');
+  if (input) input.value = '';
   hideAuthError('google-phone-error');
-  clearGoogleTimers();
 }
 
-async function googlePhoneSendOtp() {
+async function googlePhoneAccept() {
   const rawPhone = document.getElementById('google-phone-input').value.trim();
   hideAuthError('google-phone-error');
-  if (!rawPhone || rawPhone.length < 10) {
-    return showAuthError('google-phone-error', 'Enter a valid 10-digit mobile number.');
+  const digits = rawPhone.replace(/\D/g, '');
+  if (digits.length < 8) {
+    return showAuthError('google-phone-error', 'Enter your mobile number.');
   }
   googlePending.phone = rawPhone;
 
   const btn = document.getElementById('google-phone-send-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
   try {
-    const res = await fetch('/api/auth/google/send-phone-otp', {
+    const res = await fetch('/api/auth/google/accept-phone', AUTH.fetchOpts({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: googlePending.state, phone: rawPhone }),
-    });
+    }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
-      const msg = data.retryAfterSeconds
-        ? (data.error || 'Could not send code.') + ' Try again in ' + data.retryAfterSeconds + 's.'
-        : (data.error || 'Could not send OTP.');
-      return showAuthError('google-phone-error', msg);
+      if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
+      return showAuthError('google-phone-error', data.error || 'Could not save that number.');
     }
-    googlePending.email = data.email || '';
-    document.getElementById('google-phone-email-display').textContent = data.email || '';
-    document.getElementById('google-phone-input-section').style.display = 'none';
-    document.getElementById('google-phone-otp-section').style.display = '';
-    document.getElementById('google-phone-otp').value = '';
-    document.getElementById('google-phone-otp').focus();
-    startGoogleResendTimer(data);
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
-    showAuthError('google-phone-error', 'Could not reach the server.');
-  }
-}
-
-async function googlePhoneResendOtp() {
-  hideAuthError('google-phone-error');
-  if (!googlePending.phone || !googlePending.state) return;
-  const btn = document.getElementById('google-phone-resend-btn');
-  if (btn) btn.disabled = true;
-  try {
-    const res = await fetch('/api/auth/google/send-phone-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: googlePending.state, phone: googlePending.phone }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      showAuthError('google-phone-error', data.error || 'Could not resend code.');
-      if (btn) btn.disabled = false;
-      return;
-    }
-    startGoogleResendTimer(data);
-  } catch (e) {
-    showAuthError('google-phone-error', 'Could not reach the server.');
-    if (btn) btn.disabled = false;
-  }
-}
-
-async function googlePhoneVerify() {
-  const otp = document.getElementById('google-phone-otp').value.trim();
-  hideAuthError('google-phone-error');
-  if (!otp || otp.length < 6) {
-    return showAuthError('google-phone-error', 'Enter the 6-digit code from your email.');
-  }
-  const btn = document.getElementById('google-phone-verify-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
-  try {
-    const res = await fetch('/api/auth/google/verify-phone', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: googlePending.state, phone: googlePending.phone, otp }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Verify & Create Account'; }
-      return showAuthError('google-phone-error', data.error || 'Invalid or expired code.');
-    }
-    clearGoogleTimers();
     onAuthSuccess(data.user, data.token);
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Verify & Create Account'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
     showAuthError('google-phone-error', 'Could not reach the server.');
   }
 }

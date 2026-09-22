@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=3c1b1a40">
+  <link rel="stylesheet" href="/css/app.css?v=172891b6">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -223,35 +223,21 @@
       </div>
     </div>
 
-    <!-- Google sign-in: phone collection (when Google didn't provide phone) -->
+    <!-- Google sign-in: phone is saved as entered. No OTP. -->
     <div class="auth-card" id="google-phone-card" style="display:none">
       <h2>Almost there!</h2>
-      <p class="auth-subtext">You signed in with Google. We need your phone number to complete your account.</p>
+      <p class="auth-subtext">You signed in with Google. Add your mobile number to finish.</p>
       <div id="google-phone-input-section">
         <div class="auth-field">
           <label>Mobile Number</label>
           <div class="auth-email-otp-row">
             <div class="mobile-phone-input" style="flex:1">
               <span class="mobile-country-code">+91</span>
-              <input id="google-phone-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="" autocomplete="tel-national" onkeydown="if(event.key==='Enter')googlePhoneSendOtp()">
+              <input id="google-phone-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="15" placeholder="" autocomplete="tel-national" onkeydown="if(event.key==='Enter')googlePhoneAccept()">
             </div>
-            <button id="google-phone-send-btn" type="button" class="btn-send-otp" onclick="googlePhoneSendOtp()">Send OTP</button>
+            <button id="google-phone-send-btn" type="button" class="btn-send-otp" onclick="googlePhoneAccept()">Continue</button>
           </div>
         </div>
-        <p class="auth-subtext" style="margin-top:8px;font-size:12px;color:var(--gray-500);">A verification code will be sent to your Google email address.</p>
-      </div>
-      <div id="google-phone-otp-section" style="display:none">
-        <div class="otp-meta">
-          <p class="auth-subtext otp-meta-line">Verification code sent to:</p>
-          <p class="otp-email-line" id="google-phone-email-display"></p>
-        </div>
-        <div class="auth-field">
-          <label>Verification code</label>
-          <input id="google-phone-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')googlePhoneVerify()">
-        </div>
-        <button id="google-phone-verify-btn" type="button" class="btn-auth-primary" onclick="googlePhoneVerify()">Verify &amp; Create Account</button>
-        <p id="google-phone-resend-hint" class="otp-resend-hint"></p>
-        <button id="google-phone-resend-btn" type="button" class="auth-switch-btn" onclick="googlePhoneResendOtp()" disabled style="display:none">Resend code</button>
       </div>
       <div id="google-phone-error" class="auth-error" role="alert"></div>
       <div class="auth-switch" style="margin-top:14px;">
@@ -1844,6 +1830,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=3c1b1a40"></script>
+<script src="/js/app.bundle.js?v=172891b6"></script>
 </body>
 </html>

@@ -557,6 +557,53 @@ router.get("/google/callback", async (req, res) => {
   }
 });
 
+// Accept the digits the user typed. A standard Indian mobile is stored as 91XXXXXXXXXX.
+// Anything else with 8–15 digits is stored as entered — no OTP.
+function acceptPhone(raw) {
+  const normalized = normalizePhone(raw);
+  if (normalized) return normalized;
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length < 8 || digits.length > 15) return null;
+  return digits;
+}
+
+async function finishGooglePhoneSignup(res, state, pending, phone) {
+  const phoneTaken = await queryOne("SELECT id FROM users WHERE phone = ?", [phone]);
+  if (phoneTaken) {
+    return res.status(409).json({ error: "This phone number is already linked to another account." });
+  }
+
+  const emailTaken = await queryOne("SELECT id FROM users WHERE email = ?", [pending.email]);
+  if (emailTaken) {
+    deletePending(state);
+    const auth = googleAuthResponse(res, emailTaken);
+    return res.json(auth);
+  }
+
+  const randomPassword = crypto.randomBytes(32).toString("hex");
+  const passwordHash = await hashPassword(randomPassword);
+  const insert = await query(
+    `INSERT INTO users (name, email, phone, passwordHash, role, emailVerified, passwordSet)
+     VALUES (?, ?, ?, ?, 'customer', 1, 0)`,
+    [pending.name, pending.email, phone, passwordHash]
+  );
+  const user = await queryOne("SELECT * FROM users WHERE id = ?", [insert.insertId]);
+  deletePending(state);
+  const auth = googleAuthResponse(res, user);
+  return res.json(auth);
+}
+
+// POST /api/auth/google/accept-phone — save the number and create the account. No OTP.
+router.post("/google/accept-phone", async (req, res) => {
+  const { state, phone: rawPhone } = req.body || {};
+  if (!state) return res.status(400).json({ error: "Missing state." });
+  const pending = getPending(state);
+  if (!pending) return res.status(400).json({ error: "Session expired. Try signing in with Google again." });
+  const phone = acceptPhone(rawPhone);
+  if (!phone) return res.status(400).json({ error: "Enter your mobile number." });
+  return finishGooglePhoneSignup(res, state, pending, phone);
+});
+
 // POST /api/auth/google/send-phone-otp — send OTP to Google email for phone verification.
 router.post("/google/send-phone-otp", async (req, res) => {
   const { state, phone: rawPhone } = req.body || {};
