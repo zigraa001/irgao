@@ -42,7 +42,7 @@
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="/css/app.css?v=34816769">
+  <link rel="stylesheet" href="/css/app.css?v=3c1b1a40">
 </head>
 <body>
 <div id="toast-container" class="toast-container"></div>
@@ -785,6 +785,33 @@
     </div>
     <div class="confirm-footer">
       <button class="btn-confirm btn-confirm-primary" id="must-reset-submit" onclick="doForcedReset()">Update &amp; continue</button>
+      <button class="btn-confirm btn-confirm-ghost" onclick="logoutForcedReset()">Log out</button>
+    </div>
+  </div>
+</div>
+
+<!-- Google accounts are created with a random password. Ask for a real one
+     before the app opens, so email sign-in works afterwards. -->
+<div class="confirm-overlay" id="set-password-overlay">
+  <div class="confirm-card">
+    <div class="confirm-header">
+      <div class="confirm-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>Set a password</h2>
+      <p>You signed in with Google, so this account doesn't have a password yet. Choose one to also sign in with your email.</p>
+      <div class="confirm-id" id="set-password-email">—</div>
+    </div>
+    <div class="confirm-body">
+      <div class="payment-fields">
+        <input type="password" id="set-password-new" placeholder="Password (min 6 characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter')document.getElementById('set-password-confirm').focus()">
+        <input type="password" id="set-password-confirm" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSetPassword()">
+      </div>
+      <p class="payment-note">You won't be able to use the app until a password is saved.</p>
+      <div class="auth-error payment-error" id="set-password-error" role="alert"></div>
+    </div>
+    <div class="confirm-footer">
+      <button class="btn-confirm btn-confirm-primary" id="set-password-submit" onclick="doSetPassword()">Save password</button>
       <button class="btn-confirm btn-confirm-ghost" onclick="logoutForcedReset()">Log out</button>
     </div>
   </div>
@@ -1817,6 +1844,6 @@
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════ -->
-<script src="/js/app.bundle.js?v=34816769"></script>
+<script src="/js/app.bundle.js?v=3c1b1a40"></script>
 </body>
 </html>

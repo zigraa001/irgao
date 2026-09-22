@@ -43,6 +43,8 @@ const {
   setPending,
   getPending,
   deletePending,
+  issueLoginHandoff,
+  readLoginHandoff,
   normalizePhone,
 } = require("./google-auth");
 const router = express.Router();
@@ -59,6 +61,7 @@ function publicUser(user) {
     role: user.role,
     emailVerified: Boolean(user.emailVerified),
     mustResetPassword: Boolean(user.mustResetPassword),
+    needsPassword: Number(user.passwordSet) === 0,
   };
 }
 
@@ -258,6 +261,33 @@ router.post("/change-password", requireAuth, async (req, res) => {
   const passwordHash = await hashPassword(String(newPassword));
   await query(
     "UPDATE users SET passwordHash = ?, mustResetPassword = 0 WHERE id = ?",
+    [passwordHash, user.id]
+  );
+  const updated = await queryOne("SELECT * FROM users WHERE id = ?", [user.id]);
+  return authResponse(res, 200, updated);
+});
+
+// POST /api/auth/set-password — choose the first password on a Google account.
+// Google sign-in stores a random hash the user never sees, so there is no
+// current password to confirm. Refused once a password has been chosen.
+router.post("/set-password", requireAuth, async (req, res) => {
+  const { newPassword } = req.body || {};
+  if (!newPassword || String(newPassword).length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters." });
+  }
+  const user = await queryOne("SELECT * FROM users WHERE id = ? AND " + USER_NOT_DELETED, [
+    req.user.id,
+  ]);
+  if (!user) return res.status(401).json({ error: "Authentication required" });
+  if (Number(user.passwordSet) !== 0) {
+    return res.status(403).json({
+      error: "This account already has a password.",
+      code: "PASSWORD_ALREADY_SET",
+    });
+  }
+  const passwordHash = await hashPassword(String(newPassword));
+  await query(
+    "UPDATE users SET passwordHash = ?, passwordSet = 1 WHERE id = ?",
     [passwordHash, user.id]
   );
   const updated = await queryOne("SELECT * FROM users WHERE id = ?", [user.id]);
@@ -483,11 +513,7 @@ router.get("/google/callback", async (req, res) => {
       if (existing.bannedAt) {
         return res.redirect("/app.html?google_error=banned");
       }
-      const auth = googleAuthResponse(res, existing);
-      // Store in a temp cookie so the frontend can pick it up.
-      // res.cookie URL-encodes the value itself — do not pre-encode.
-      res.cookie("irago_google_auth", JSON.stringify(auth), { maxAge: 60000, path: "/" });
-      return res.redirect("/app.html?google_success=1");
+      return redirectGoogleLogin(res, existing);
     }
 
     // New user — try to get phone from Google.
@@ -514,15 +540,12 @@ router.get("/google/callback", async (req, res) => {
       const randomPassword = crypto.randomBytes(32).toString("hex");
       const passwordHash = await hashPassword(randomPassword);
       const insert = await query(
-        `INSERT INTO users (name, email, phone, passwordHash, role, emailVerified)
-         VALUES (?, ?, ?, ?, 'customer', 1)`,
+        `INSERT INTO users (name, email, phone, passwordHash, role, emailVerified, passwordSet)
+         VALUES (?, ?, ?, ?, 'customer', 1, 0)`,
         [name, email, phone, passwordHash]
       );
       const user = await queryOne("SELECT * FROM users WHERE id = ?", [insert.insertId]);
-      const auth = googleAuthResponse(res, user);
-      // res.cookie URL-encodes the value itself — do not pre-encode.
-      res.cookie("irago_google_auth", JSON.stringify(auth), { maxAge: 60000, path: "/" });
-      return res.redirect("/app.html?google_success=1");
+      return redirectGoogleLogin(res, user);
     }
 
     // No phone — store pending signup, redirect to phone collection page.
@@ -599,8 +622,8 @@ router.post("/google/verify-phone", async (req, res) => {
   const randomPassword = crypto.randomBytes(32).toString("hex");
   const passwordHash = await hashPassword(randomPassword);
   const insert = await query(
-    `INSERT INTO users (name, email, phone, passwordHash, role, emailVerified)
-     VALUES (?, ?, ?, ?, 'customer', 1)`,
+    `INSERT INTO users (name, email, phone, passwordHash, role, emailVerified, passwordSet)
+     VALUES (?, ?, ?, ?, 'customer', 1, 0)`,
     [pending.name, pending.email, phone, passwordHash]
   );
   const user = await queryOne("SELECT * FROM users WHERE id = ?", [insert.insertId]);
@@ -609,6 +632,29 @@ router.post("/google/verify-phone", async (req, res) => {
   const auth = googleAuthResponse(res, user);
   return res.json(auth);
 });
+
+// POST /api/auth/google/exchange — turn the one-time ?google_code= into a session.
+// Called same-origin from app.html after the OAuth redirect. Setting the
+// session cookie on this response (not on the cross-site Google redirect)
+// is what keeps the browser logged in.
+router.post("/google/exchange", (req, res) => {
+  const code = String((req.body && req.body.code) || "");
+  const auth = readLoginHandoff(code);
+  if (!auth || !auth.user || !auth.token) {
+    return res.status(400).json({ error: "Google sign-in expired. Try again." });
+  }
+  setAuthCookie(res, auth.token);
+  return res.json({ user: auth.user, token: auth.token });
+});
+
+// Issue a session and send the browser to app.html with a one-time code.
+// The HttpOnly cookie is also set here; the exchange POST sets it again
+// once the page is back on our origin.
+function redirectGoogleLogin(res, user) {
+  const auth = googleAuthResponse(res, user);
+  const code = issueLoginHandoff(auth);
+  return res.redirect(`/app.html?google_code=${code}`);
+}
 
 // GET /api/auth/google/status — check if Google OAuth is configured.
 router.get("/google/status", (_req, res) => {

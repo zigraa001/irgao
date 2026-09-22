@@ -36,6 +36,11 @@ const AUTH = {
 // Pending OTP flows (email + role + expiry/resend timers).
 const pendingOtp = { email: '', purpose: '', role: 'passenger', resendTimerId: null };
 let authRole = 'passenger';
+// While a new Google user is entering their phone, /api/me is 401. That must
+// not bounce the page back to the password form.
+let googleHandoffHold = false;
+let authEpoch = 0;
+const GOOGLE_PENDING_KEY = 'irago_google_pending';
 
 const SIGNUP_CONFIG = {
   passenger: {
@@ -165,7 +170,7 @@ function goToSignupPortal() {
   window.location.href = cfg.signupUrl;
 }
 
-function initAuthPortal() {
+async function initAuthPortal() {
   const portal = parsePortalFromLocation();
   authRole = portal.role;
   if (portal.role === 'admin' && portal.mode === 'signup') {
@@ -186,13 +191,22 @@ function initAuthPortal() {
     b.classList.toggle('active', b.getAttribute('data-role') === portal.role);
   });
 
-  // Handle Google OAuth redirects (success / error / pending phone).
+  // Handle Google OAuth redirects before restoreSession, so a 401 from /api/me
+  // cannot wipe a sign-in that has not been stored yet.
   const params = new URLSearchParams(window.location.search);
-  if (params.has('google_success') || params.has('google_error') || params.has('google_pending')) {
+  if (params.has('google_code') || params.has('google_success') || params.has('google_error') || params.has('google_pending')) {
     showView('login-view');
-    handleGoogleAuthOnLoad();
+    await handleGoogleAuthOnLoad();
     return;
   }
+
+  const pendingGoogle = storedGooglePending();
+  if (pendingGoogle && !AUTH.user) {
+    showView('login-view');
+    showGooglePhoneCard(pendingGoogle);
+    return;
+  }
+  if (pendingGoogle && AUTH.user) clearGooglePending();
 
   const publicTrack = (params.get('track') || params.get('k') || '').trim();
   if (publicTrack && typeof bootPublicDroneTrack === 'function') {
@@ -293,6 +307,7 @@ function hideAllAuthCards() {
 }
 
 function showLoginCard() {
+  clearGooglePending();
   hideAllAuthCards();
   document.getElementById('login-card').style.display = 'block';
   applyPortalLabels(authRole || 'passenger');
@@ -421,7 +436,7 @@ async function apiFetch(path, opts = {}) {
     ...opts,
     headers: { ...AUTH.headers(), ...(opts.headers || {}) }
   }));
-  if (res.status === 401 && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup') && !path.startsWith('/api/drones/follow/')) {
+  if (res.status === 401 && !googleHandoffHold && !/\/api\/auth\/(passenger|operator|admin|company)\/login/.test(path) && !path.startsWith('/api/auth/signup') && !path.startsWith('/api/drones/follow/')) {
     if (typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey()) return res;
     AUTH.clear();
     showView('login-view');
@@ -559,8 +574,23 @@ function startGoogleResendTimer(timing) {
   googlePending.resendTimerId = setInterval(tick, 1000);
 }
 
-function showGooglePhoneCard(state) {
+function rememberGooglePending(state) {
+  googleHandoffHold = true;
   googlePending.state = state;
+  try { sessionStorage.setItem(GOOGLE_PENDING_KEY, state); } catch (e) { /* ignore */ }
+}
+
+function storedGooglePending() {
+  try { return sessionStorage.getItem(GOOGLE_PENDING_KEY) || ''; } catch (e) { return ''; }
+}
+
+function clearGooglePending() {
+  googleHandoffHold = false;
+  try { sessionStorage.removeItem(GOOGLE_PENDING_KEY); } catch (e) { /* ignore */ }
+}
+
+function showGooglePhoneCard(state) {
+  rememberGooglePending(state);
   hideAllAuthCards();
   const card = document.getElementById('google-phone-card');
   if (card) card.style.display = 'block';
@@ -690,8 +720,7 @@ function stayInAppHome(e) {
   stripAuthQueryFromUrl();
   var user = AUTH.user;
   if (user) {
-    if (user.mustResetPassword) showForcedResetOverlay(user);
-    else routeForRole(user);
+    continueAfterAuth(user);
   } else {
     showView('login-view');
     showLoginCard();
@@ -699,7 +728,7 @@ function stayInAppHome(e) {
   return false;
 }
 
-function handleGoogleAuthOnLoad() {
+async function handleGoogleAuthOnLoad() {
   const params = new URLSearchParams(window.location.search);
 
   // Google error
@@ -712,12 +741,39 @@ function handleGoogleAuthOnLoad() {
       banned: 'This account has been suspended.',
       server_error: 'Something went wrong. Please try again.',
     };
+    showLoginCard();
     showAuthError('login-error', msgs[err] || 'Google sign-in failed.');
     stripAuthQueryFromUrl();
     return;
   }
 
-  // Google success — pick up the auth data from the cookie.
+  // One-time code from the OAuth callback. Exchange it before anything else
+  // asks /api/me, which would 401 and send the user back to the login form.
+  if (params.has('google_code')) {
+    const code = params.get('google_code');
+    try {
+      const res = await fetch('/api/auth/google/exchange', AUTH.fetchOpts({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      }));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.user || !data.token) {
+        showLoginCard();
+        showAuthError('login-error', data.error || 'Google sign-in expired. Try again.');
+        stripAuthQueryFromUrl();
+        return;
+      }
+      onAuthSuccess(data.user, data.token);
+    } catch (e) {
+      showLoginCard();
+      showAuthError('login-error', 'Could not finish Google sign-in. Try again.');
+      stripAuthQueryFromUrl();
+    }
+    return;
+  }
+
+  // Older callbacks parked the session in a short-lived cookie.
   if (params.has('google_success')) {
     try {
       let raw = decodeURIComponent(
@@ -1099,17 +1155,81 @@ async function resendOtp(forcedPurpose) {
 
 // Persist the session profile + JWT backup, then route to the role dashboard.
 function onAuthSuccess(user, token) {
+  clearGooglePending();
   AUTH.save(user, token);
   syncProfileUI(user);
   stripAuthQueryFromUrl();
   document.title = 'IraGo — Book Your Air Taxi';
-  // Admin-provisioned accounts must choose their own password on first login
-  // before they can use the app.
+  continueAfterAuth(user);
+}
+
+function userNeedsPassword(user) {
+  return !!(user && (user.needsPassword === true || user.passwordSet === 0));
+}
+
+// Password gates run before the role dashboard. Google accounts have no
+// password the user knows; provisioned pilots still confirm their temporary one.
+function continueAfterAuth(user) {
   if (user && user.mustResetPassword) {
     showForcedResetOverlay(user);
     return;
   }
+  if (userNeedsPassword(user)) {
+    showSetPasswordOverlay(user);
+    return;
+  }
   routeForRole(user);
+}
+
+function showSetPasswordOverlay(user) {
+  const emailEl = document.getElementById('set-password-email');
+  if (emailEl) emailEl.textContent = user ? (user.email || '') : '';
+  const err = document.getElementById('set-password-error');
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+  const a = document.getElementById('set-password-new');
+  const b = document.getElementById('set-password-confirm');
+  if (a) a.value = '';
+  if (b) b.value = '';
+  const overlay = document.getElementById('set-password-overlay');
+  if (overlay) overlay.classList.add('active');
+}
+
+async function doSetPassword() {
+  const user = AUTH.user;
+  if (!user) return;
+  const newPassword = document.getElementById('set-password-new').value;
+  const confirmPassword = document.getElementById('set-password-confirm').value;
+  const err = document.getElementById('set-password-error');
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+  if (!newPassword || newPassword.length < 6) {
+    return showAuthError('set-password-error', 'Password must be at least 6 characters.');
+  }
+  if (newPassword !== confirmPassword) {
+    return showAuthError('set-password-error', 'Passwords do not match.');
+  }
+  setBusy('set-password-submit', true, 'Saving...', 'Save password');
+  try {
+    const res = await fetch('/api/auth/set-password', AUTH.fetchOpts({
+      method: 'POST',
+      headers: AUTH.headers(),
+      body: JSON.stringify({ newPassword })
+    }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return showAuthError('set-password-error', data.error || 'Could not save password.');
+    }
+    authEpoch += 1;
+    if (data.user) {
+      AUTH.save(data.user, data.token || AUTH.token);
+      syncProfileUI(data.user);
+    }
+    document.getElementById('set-password-overlay').classList.remove('active');
+    routeForRole(data.user || user);
+  } catch (e) {
+    showAuthError('set-password-error', 'Network error — please try again.');
+  } finally {
+    setBusy('set-password-submit', false, 'Saving...', 'Save password');
+  }
 }
 
 function showForcedResetOverlay(user) {
@@ -1161,7 +1281,10 @@ async function doForcedReset() {
 
 function logoutForcedReset() {
   AUTH.clear();
-  document.getElementById('must-reset-overlay').classList.remove('active');
+  const reset = document.getElementById('must-reset-overlay');
+  const setPw = document.getElementById('set-password-overlay');
+  if (reset) reset.classList.remove('active');
+  if (setPw) setPw.classList.remove('active');
   showView('login-view');
   showLoginCard();
 }

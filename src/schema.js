@@ -227,6 +227,13 @@ async function initSchema() {
     "mustResetPassword",
     "mustResetPassword TINYINT(1) NOT NULL DEFAULT 0"
   );
+  // 1 once the user has chosen a password. Google sign-in creates the row
+  // with a random hash and passwordSet = 0, then the app asks them to choose one.
+  await ensureColumn(
+    "users",
+    "passwordSet",
+    "passwordSet TINYINT(1) NOT NULL DEFAULT 1"
+  );
   await ensureColumn("bookings", "paymentStatus", "paymentStatus VARCHAR(32) NOT NULL DEFAULT 'pending'");
   await ensureColumn("bookings", "carbonSavedKg", "carbonSavedKg DOUBLE NULL");
   await ensureColumn("bookings", "pendingOperatorId", "pendingOperatorId INT NULL");

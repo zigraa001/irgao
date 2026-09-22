@@ -121,12 +121,18 @@ function parseCookies(req) {
 }
 
 // Read the session token from the HttpOnly cookie, or fall back to Bearer.
+// A stale cookie must not hide a valid Bearer token: Google sign-in returns
+// the fresh JWT in the exchange response, and an old irago_session cookie
+// from a previous visit would otherwise force every request to 401.
 function extractToken(req) {
   const cookies = parseCookies(req);
-  if (cookies[COOKIE_NAME]) return cookies[COOKIE_NAME];
+  const cookieTok = cookies[COOKIE_NAME] || "";
   const header = req.headers.authorization || "";
   const match = /^Bearer\s+(.+)$/i.exec(header);
-  return match ? match[1] : null;
+  const bearer = match ? match[1] : "";
+  if (cookieTok && verifyToken(cookieTok)) return cookieTok;
+  if (bearer && verifyToken(bearer)) return bearer;
+  return cookieTok || bearer || null;
 }
 
 // Set the signed JWT in an HttpOnly cookie (not accessible to JavaScript).

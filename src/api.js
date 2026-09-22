@@ -135,7 +135,7 @@ router.get("/weather", async (req, res) => {
 });
 router.get("/me", requireAuth, async (req, res) => {
   const user = await queryOne(
-    `SELECT id, name, email, phone, role, emailVerified, bannedAt, mustResetPassword FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,
+    `SELECT id, name, email, phone, role, emailVerified, bannedAt, mustResetPassword, passwordSet FROM users WHERE id = ? AND ${USER_NOT_DELETED}`,
     [req.user.id]
   );
   if (!user) {
@@ -156,6 +156,7 @@ router.get("/me", requireAuth, async (req, res) => {
       role: user.role,
       emailVerified: Boolean(user.emailVerified),
       mustResetPassword: Boolean(user.mustResetPassword),
+      needsPassword: Number(user.passwordSet) === 0,
     },
   });
 });

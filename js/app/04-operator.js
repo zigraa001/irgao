@@ -934,16 +934,22 @@ async function restoreSession() {
     return;
   }
 
+  // New Google accounts are still on the phone step. /api/me is 401 until that
+  // finishes, and treating it as logout hides the phone card.
+  if (googleHandoffHold) return;
+
   const cached = AUTH.user;
   if (params.has('register') && !cached) return;
-  if (cached && cached.mustResetPassword) {
-    showForcedResetOverlay(cached);
+  if (cached && (cached.mustResetPassword || userNeedsPassword(cached))) {
+    continueAfterAuth(cached);
   } else if (cached) {
     routeForRole(cached);
   }
 
+  const epoch = authEpoch;
   try {
     const res = await fetch('/api/me', AUTH.fetchOpts({ headers: AUTH.headers() }));
+    if (epoch !== authEpoch) return;
     if (res.status === 401) {
       AUTH.clear();
       const publicKey = (typeof pendingPublicTrackKey === 'function' && pendingPublicTrackKey()) || '';
@@ -952,7 +958,8 @@ async function restoreSession() {
         return;
       }
       showView('login-view');
-      showLoginCard();
+      var loginErr = document.getElementById('login-error');
+      if (!(loginErr && loginErr.classList.contains('show') && loginErr.textContent)) showLoginCard();
       return;
     }
     if (!res.ok) {
@@ -962,8 +969,8 @@ async function restoreSession() {
     const data = await res.json();
     if (data.user) {
       AUTH.save(data.user, AUTH.token);
-      if (data.user.mustResetPassword) {
-        showForcedResetOverlay(data.user);
+      if (data.user.mustResetPassword || userNeedsPassword(data.user)) {
+        continueAfterAuth(data.user);
       } else {
         routeForRole(data.user);
       }
@@ -975,8 +982,12 @@ async function restoreSession() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  initAuthPortal();
+document.addEventListener('DOMContentLoaded', async function () {
+  try {
+    await initAuthPortal();
+  } catch (e) {
+    console.error('[auth] init failed:', e);
+  }
   bindProfileActions();
   restoreSession();
   const acc = document.getElementById('dispatch-accept-btn');

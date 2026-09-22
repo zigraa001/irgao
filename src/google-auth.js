@@ -8,6 +8,11 @@
 //   3c. New user without phone         → redirect to /app.html?google_pending=1
 //       Frontend shows phone collection card; phone OTP sent to Google email.
 //
+// Successful logins redirect to /app.html?google_code=… instead of stuffing the
+// JWT into a document.cookie. The page exchanges that code with a same-origin
+// POST, which is what actually stores the session. Cookies set on the
+// cross-site Google redirect were being dropped, so app.html loaded logged out.
+//
 // Scopes requested:
 //   openid, email, profile, https://www.googleapis.com/auth/user.phonenumbers.read
 const https = require("https");
@@ -116,7 +121,8 @@ function publicUser(user) {
     role: user.role,
     phone: user.phone || null,
     emailVerified: Boolean(user.emailVerified),
-    mustResetPassword: false,
+    mustResetPassword: Boolean(user.mustResetPassword),
+    needsPassword: Number(user.passwordSet) === 0,
   };
 }
 
@@ -153,6 +159,34 @@ function deletePending(state) {
   pendingGoogleSignups.delete(state);
 }
 
+// One-time Google login handoff. The OAuth callback redirects with this code
+// in the query string; the browser exchanges it via POST /api/auth/google/exchange.
+// Kept in memory for a couple of minutes and reusable so a single reload during
+// the handoff (service-worker cache nuke) can still finish sign-in.
+const loginHandoffs = new Map();
+const LOGIN_HANDOFF_TTL_MS = 2 * 60 * 1000;
+
+function cleanupLoginHandoffs() {
+  const now = Date.now();
+  for (const [key, val] of loginHandoffs) {
+    if (val.expiresAt < now) loginHandoffs.delete(key);
+  }
+}
+
+function issueLoginHandoff(auth) {
+  cleanupLoginHandoffs();
+  const code = crypto.randomBytes(24).toString("hex");
+  loginHandoffs.set(code, { auth, expiresAt: Date.now() + LOGIN_HANDOFF_TTL_MS });
+  return code;
+}
+
+function readLoginHandoff(code) {
+  if (!code) return null;
+  cleanupLoginHandoffs();
+  const row = loginHandoffs.get(String(code));
+  return row ? row.auth : null;
+}
+
 module.exports = {
   googleConfigured,
   SCOPES,
@@ -167,5 +201,7 @@ module.exports = {
   setPending,
   getPending,
   deletePending,
+  issueLoginHandoff,
+  readLoginHandoff,
   normalizePhone,
 };

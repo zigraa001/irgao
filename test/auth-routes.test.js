@@ -130,6 +130,15 @@ const fakeDb = (() => {
       }
       return { affectedRows: 1 };
     }
+    if (s.includes("UPDATE users SET passwordHash") && s.includes("passwordSet = 1")) {
+      const [passwordHash, id] = params;
+      const row = users.find((u) => u.id === id);
+      if (row) {
+        row.passwordHash = passwordHash;
+        row.passwordSet = 1;
+      }
+      return { affectedRows: 1 };
+    }
     if (s.includes("UPDATE users SET passwordHash") && s.includes("mustResetPassword = 0")) {
       const [passwordHash, id] = params;
       const row = users.find((u) => u.id === id);
@@ -416,4 +425,49 @@ test("change-password is allowed for a console-created admin (mustResetPassword 
   assert.equal(res.status, 200);
   const data = await res.json();
   assert.equal(data.user.mustResetPassword, false);
+});
+
+test("set-password chooses the first password for a Google account", async () => {
+  const passwordHash = await hashPassword("random-secret-the-user-never-saw");
+  fakeDb._users.push({
+    id: 80,
+    name: "Google Rider",
+    email: "google-rider@irago.com",
+    passwordHash,
+    role: "customer",
+    emailVerified: 1,
+    deletedAt: null,
+    bannedAt: null,
+    mustResetPassword: 0,
+    passwordSet: 0,
+  });
+  const token = signToken({ id: 80, name: "Google Rider", role: "customer" });
+  const headers = { "content-type": "application/json", cookie: `${COOKIE_NAME}=${token}` };
+
+  const tooShort = await fetch(`${baseUrl}/api/auth/set-password`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ newPassword: "short" }),
+  });
+  assert.equal(tooShort.status, 400);
+
+  const res = await fetch(`${baseUrl}/api/auth/set-password`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ newPassword: "chosen1" }),
+  });
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.user.needsPassword, false);
+  assert.equal(data.user.email, "google-rider@irago.com");
+  const row = fakeDb._users.find((u) => u.id === 80);
+  assert.equal(row.passwordSet, 1);
+  assert.equal(await require("bcrypt").compare("chosen1", row.passwordHash), true);
+
+  const again = await fetch(`${baseUrl}/api/auth/set-password`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ newPassword: "another1" }),
+  });
+  assert.equal(again.status, 403);
 });

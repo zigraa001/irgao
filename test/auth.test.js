@@ -154,6 +154,17 @@ test("extractToken reads token from HttpOnly cookie header", () => {
   assert.equal(extractToken(req), token);
 });
 
+test("extractToken uses a valid Bearer token when the session cookie is stale", () => {
+  const token = signToken(sampleUser);
+  const req = {
+    headers: {
+      cookie: `${COOKIE_NAME}=not-a-jwt`,
+      authorization: `Bearer ${token}`,
+    },
+  };
+  assert.equal(extractToken(req), token);
+});
+
 test("requireAuth accepts token from cookie", async () => {
   const token = signToken(sampleUser);
   const req = { headers: { cookie: `${COOKIE_NAME}=${token}` } };
@@ -186,6 +197,14 @@ test("requireRole allows the matching role", () => {
   });
   assert.equal(nextCalled, true);
   assert.equal(res.statusCode, 200);
+});
+
+test("google login handoff round-trips the session payload", () => {
+  const { issueLoginHandoff, readLoginHandoff } = require("../src/google-auth");
+  const code = issueLoginHandoff({ user: { id: 7, role: "customer" }, token: "session-token" });
+  assert.equal(readLoginHandoff(code).token, "session-token");
+  assert.equal(readLoginHandoff(code).user.id, 7);
+  assert.equal(readLoginHandoff("missing"), null);
 });
 
 test("requireRole without an authenticated user responds 401", () => {
