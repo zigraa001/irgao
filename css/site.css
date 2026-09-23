@@ -481,6 +481,14 @@
       margin-top: 1.6rem;
       transition: transform 0.7s cubic-bezier(.33,1,.68,1);
     }
+    /* Use-case photos, not partner logos — keep a real picture frame. */
+    #use-cases .feature-item img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      object-position: center;
+    }
     .feature-item:hover img {
       transform: scale(1.04);
     }
